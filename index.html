@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>ArnoldApp Admin Search</title>
+  <style>
+    body {
+      font-family: system-ui, Arial, sans-serif;
+      background: #f5f7fb;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      padding: 10px 16px;
+      font-size: 15px;
+      border-radius: 8px;
+      border: none;
+      background: #1E90FF;
+      color: white;
+      cursor: pointer;
+    }
+
+    pre {
+      margin-top: 20px;
+      background: #111;
+      color: #0f0;
+      padding: 12px;
+      border-radius: 8px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>ArnoldApp Admin Search</h1>
+
+    <input
+      id="queryInput"
+      placeholder="Example: find order #12997"
+    />
+
+    <button onclick="runSearch()">Search</button>
+
+    <pre id="output">Results will appear here…</pre>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
