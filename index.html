@@ -1,73 +1,230 @@
-<!DOCTYPE html>
+<!-- 🟢 index.html -->
+<!-- ArnoldApp index.html — FULL REPLACEMENT (v2026-02-18b) -->
+<!-- Markers are comments only: 🟢 index.html ... 🔴 index.html -->
+
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>ArnoldApp Admin Search</title>
+
+  <!-- Basic “OkObserver-ish” styling (blue header, clean cards) -->
   <style>
-    body {
-      font-family: system-ui, Arial, sans-serif;
-      background: #f5f7fb;
-      margin: 0;
-      padding: 24px;
+    :root{
+      --oo-blue:#1E90FF;
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:rgba(15,23,42,.12);
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:16px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
 
-    .card {
-      max-width: 720px;
-      margin: 0 auto;
-      background: white;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      background:var(--bg);
+      color:var(--text);
     }
 
-    h1 {
-      margin-top: 0;
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:var(--oo-blue);
+      color:#fff;
+      padding:14px 18px;
+      box-shadow:0 8px 18px rgba(2, 132, 199, .22);
+    }
+    .topbar .title{
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:.2px;
+      line-height:1.1;
+    }
+    .topbar .sub{
+      margin-top:3px;
+      font-size:12.5px;
+      opacity:.95;
     }
 
-    input {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      margin-bottom: 12px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+    .wrap{
+      max-width:920px;
+      margin:22px auto;
+      padding:0 14px 40px;
     }
 
-    button {
-      padding: 10px 16px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: none;
-      background: #1E90FF;
-      color: white;
-      cursor: pointer;
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
     }
 
-    pre {
-      margin-top: 20px;
-      background: #111;
-      color: #0f0;
-      padding: 12px;
-      border-radius: 8px;
-      overflow: auto;
+    .searchRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:12px;
+    }
+
+    input[type="text"]{
+      flex:1 1 380px;
+      min-width:260px;
+      font-size:16px;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      outline:none;
+      background:#fff;
+    }
+    input[type="text"]:focus{
+      border-color: rgba(30,144,255,.55);
+      box-shadow:0 0 0 3px rgba(30,144,255,.18);
+    }
+
+    button{
+      font-size:15px;
+      font-weight:700;
+      padding:12px 16px;
+      border-radius:12px;
+      border:0;
+      cursor:pointer;
+      background:var(--oo-blue);
+      color:#fff;
+      box-shadow:0 8px 18px rgba(30,144,255,.25);
+    }
+    button:active{ transform:translateY(1px); }
+    button:disabled{
+      opacity:.65;
+      cursor:not-allowed;
+      box-shadow:none;
+    }
+
+    .hint{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    /* Results */
+    #output{
+      margin-top:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .banner{
+      border-radius:14px;
+      border:1px solid var(--border);
+      padding:12px 12px;
+      background:rgba(30,144,255,.06);
+    }
+    .banner .bTitle{ font-weight:800; }
+    .banner .bBody{ margin-top:6px; color:var(--muted); font-size:13px; line-height:1.4; }
+    .banner code{ font-family:var(--mono); font-size:12.5px; }
+
+    .resultCard{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      background:#fff;
+    }
+
+    .rcTop{
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:10px;
+    }
+    .rcTitle{ font-weight:900; font-size:15px; }
+    .pill{
+      font-size:12px;
+      padding:4px 9px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background:#fff;
+      color:var(--muted);
+      font-weight:700;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 180px 1fr;
+      gap:8px 12px;
+      font-size:14px;
+      align-items:start;
+    }
+    .k{ color:var(--muted); font-weight:700; }
+    .v{ color:var(--text); word-break:break-word; }
+
+    .list{
+      margin:10px 0 0;
+      padding-left:18px;
+      color:var(--text);
+      font-size:14px;
+    }
+
+    details{
+      margin-top:10px;
+      border-top:1px dashed var(--border);
+      padding-top:10px;
+    }
+    details summary{
+      cursor:pointer;
+      color:var(--muted);
+      font-weight:800;
+      font-size:13px;
+      user-select:none;
+    }
+    pre{
+      margin:10px 0 0;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#0b1020;
+      color:#e2e8f0;
+      overflow:auto;
+      font-family:var(--mono);
+      font-size:12.5px;
+      line-height:1.45;
     }
   </style>
 </head>
+
 <body>
-  <div class="card">
-    <h1>ArnoldApp Admin Search</h1>
-
-    <input
-      id="queryInput"
-      placeholder="Example: find order #12997"
-    />
-
-    <button onclick="runSearch()">Search</button>
-
-    <pre id="output">Results will appear here…</pre>
+  <div class="topbar">
+    <div class="title">ArnoldApp Admin Search</div>
+    <div class="sub">WooCommerce: customers • subscriptions • memberships • orders • coupons</div>
   </div>
 
-  <script src="main.js"></script>
+  <div class="wrap">
+    <div class="card">
+      <div class="searchRow">
+        <input id="q" type="text" placeholder='Example: order #12997   •   subscription for joe@abc.com   •   coupon SAVE20' />
+        <button id="btn">Search</button>
+      </div>
+
+      <div class="hint">
+        Tip: this is admin-only. Your browser must have <code>ARNOLD_ADMIN_TOKEN</code> set in <code>localStorage</code> for this site.
+      </div>
+
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script src="./main.js"></script>
 </body>
 </html>
+
+<!-- 🔴 index.html -->
