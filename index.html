@@ -1,307 +1,146 @@
 <!-- 🟢 index.html -->
-<!-- ArnoldApp index.html — FULL REPLACEMENT (v2026-02-18a) -->
+<!-- ArnoldApp index.html — FULL REPLACEMENT (v2026-02-19a) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ArnoldApp Admin Search</title>
-
+  <title>Arnold Admin</title>
   <style>
     :root{
-      --oo-blue:#1E90FF;
-      --bg:#f5f7fb;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --border:#e5e7eb;
-      --shadow:0 10px 25px rgba(15,23,42,.08);
-      --radius:18px;
+      --bg:#0b0f14;
+      --card:#0f1723;
+      --line:#1f2a3a;
+      --text:#e7eefc;
+      --muted:#9db0d0;
+      --blue:#1E90FF;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     }
-
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      font-family:var(--sans);
-      color:var(--text);
-      background:linear-gradient(180deg, #eaf3ff 0%, var(--bg) 35%, var(--bg) 100%);
-    }
-
-    .topbar{
-      position:sticky;
-      top:0;
-      z-index:10;
-      background:var(--oo-blue);
-      color:#fff;
-      box-shadow:0 8px 20px rgba(30,144,255,.25);
-    }
-    .topbar-inner{
-      max-width:1100px;
-      margin:0 auto;
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+    a{color:var(--blue);text-decoration:none;}
+    header{
+      position:sticky;top:0;z-index:10;
+      background:var(--blue);
       padding:14px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      box-shadow:0 2px 10px rgba(0,0,0,.35);
     }
-    .brand{
-      display:flex;
-      flex-direction:column;
-      line-height:1.1;
-    }
-    .brand strong{ font-size:18px; letter-spacing:.2px; }
-    .brand span{ font-size:12px; opacity:.9; }
-
+    .wrap{max-width:1100px;margin:0 auto;padding:16px;}
+    .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+    .brand h1{margin:0;font-size:18px;letter-spacing:.3px;color:#fff;}
     .status-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
       background:rgba(255,255,255,.18);
       border:1px solid rgba(255,255,255,.25);
-      padding:8px 10px;
-      border-radius:999px;
-      font-size:12px;
+      padding:6px 10px;border-radius:999px;
+      display:flex;align-items:center;gap:8px;
+      color:#fff;font-size:13px;
       white-space:nowrap;
     }
-    .dot{
-      width:9px;height:9px;border-radius:50%;
-      background:#22c55e;
-      box-shadow:0 0 0 4px rgba(34,197,94,.25);
-    }
-    .dot.off{ background:#ef4444; box-shadow:0 0 0 4px rgba(239,68,68,.22); }
-
-    .wrap{
-      max-width:1100px;
-      margin:0 auto;
-      padding:20px 16px 40px;
-    }
+    .dot{width:10px;height:10px;border-radius:999px;background:#3ee78b;display:inline-block;box-shadow:0 0 10px rgba(62,231,139,.55);}
+    .dot.off{background:#ff4d4d;box-shadow:0 0 10px rgba(255,77,77,.5);}
 
     .panel{
       background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      padding:18px;
-    }
-
-    .search-row{
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:10px;
-      align-items:center;
-    }
-    input[type="text"]{
-      width:100%;
-      padding:14px 14px;
+      border:1px solid var(--line);
       border-radius:14px;
-      border:1px solid var(--border);
+      padding:14px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);
+    }
+    .search-row{display:flex;gap:10px;flex-wrap:wrap;}
+    input[type="text"], input[type="password"]{
+      flex:1;min-width:260px;
+      padding:12px 12px;
+      background:#0b121d;
+      border:1px solid var(--line);
+      border-radius:10px;
+      color:var(--text);
       outline:none;
-      font-size:15px;
+      font-size:14px;
     }
-    input[type="text"]:focus{
-      border-color:rgba(30,144,255,.6);
-      box-shadow:0 0 0 4px rgba(30,144,255,.15);
-    }
-
     button{
       padding:12px 14px;
-      border-radius:14px;
-      border:none;
-      background:var(--oo-blue);
+      background:var(--blue);
+      border:0;
       color:#fff;
+      border-radius:10px;
       font-weight:600;
       cursor:pointer;
-      min-width:110px;
     }
-    button:disabled{ opacity:.6; cursor:not-allowed; }
-
-    .hint{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .results{
-      margin-top:16px;
-      display:grid;
-      gap:14px;
-    }
-
+    button:disabled{opacity:.55;cursor:not-allowed;}
+    .hint{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35;}
+    .results{margin-top:14px;}
     .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-    .card-hd{
-      padding:14px 16px;
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:10px;
-      border-bottom:1px solid var(--border);
-      background:linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-    }
-    .card-title{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .card-title strong{ font-size:16px; }
-    .subline{ font-size:12px; color:var(--muted); }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      border:1px solid var(--border);
-      background:#f8fafc;
-      color:#0f172a;
-      white-space:nowrap;
-    }
-
-    .card-bd{
-      padding:14px 16px 16px;
-      display:grid;
-      gap:14px;
-    }
-
-    .grid-3{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:12px;
-    }
-    @media (max-width: 920px){
-      .grid-3{ grid-template-columns: 1fr; }
-      .search-row{ grid-template-columns: 1fr; }
-      button{ width:100%; }
-    }
-
-    .kv{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:12px;
-      background:#ffffff;
-    }
-    .kv h4{
-      margin:0 0 10px 0;
-      font-size:13px;
-      color:#0f172a;
-      letter-spacing:.2px;
-    }
-    .kv dl{
-      margin:0;
-      display:grid;
-      grid-template-columns: 130px 1fr;
-      gap:8px 10px;
-      font-size:13px;
-    }
-    .kv dt{ color:var(--muted); }
-    .kv dd{ margin:0; color:#0f172a; overflow-wrap:anywhere; }
-
-    .items table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
-    }
-    .items th, .items td{
-      padding:10px 8px;
-      border-bottom:1px solid var(--border);
-      text-align:left;
-      vertical-align:top;
-    }
-    .items th{ color:var(--muted); font-weight:600; }
-    .items td{ color:#0f172a; }
-
-    .actions{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-    }
-    .linkbtn{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:10px 12px;
+      background:#0b121d;
+      border:1px solid var(--line);
       border-radius:14px;
-      border:1px solid var(--border);
-      background:#fff;
-      color:#0f172a;
-      text-decoration:none;
-      font-size:13px;
-      font-weight:600;
+      padding:14px;
+      margin-bottom:12px;
     }
-
-    details.raw{
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:10px 12px;
-      background:#fff;
-    }
-    details.raw summary{
-      cursor:pointer;
-      font-weight:700;
-      color:#0f172a;
-      font-size:13px;
-    }
+    .card h2{margin:0 0 10px;font-size:16px;}
     pre{
-      margin:10px 0 0;
-      padding:12px;
+      background:#07101a;
+      border:1px solid var(--line);
       border-radius:12px;
-      background:#0b1220;
-      color:#e2e8f0;
+      padding:12px;
       overflow:auto;
       font-family:var(--mono);
-      font-size:12px;
+      font-size:12.5px;
+      color:#d9e6ff;
       line-height:1.35;
     }
-
-    .error{
-      border-left:6px solid #ef4444;
-      background:#fff;
-      padding:12px 14px;
-      border-radius:16px;
-      border:1px solid var(--border);
+    .kv{display:grid;grid-template-columns:220px 1fr;gap:8px 12px;font-size:14px;}
+    .k{color:var(--muted);}
+    .v{color:var(--text);word-break:break-word;}
+    @media (max-width:680px){
+      .kv{grid-template-columns:1fr;}
+      input[type="text"], input[type="password"]{min-width:0; width:100%;}
+      button{width:100%;}
+      .status-pill{font-size:12px;}
     }
-    .error strong{ color:#b91c1c; }
   </style>
 </head>
-
 <body>
-  <header class="topbar">
-    <div class="topbar-inner">
+  <header>
+    <div class="wrap">
       <div class="brand">
-        <strong>ArnoldApp Admin Search</strong>
-        <span>OkObserver-style admin lookup (no sensitive fields like passwords/CC)</span>
-      </div>
-      <div class="status-pill" id="tokenStatus">
-        <span class="dot off" id="tokenDot"></span>
-        <span id="tokenText">Token: not set</span>
+        <h1>Arnold Admin</h1>
+        <div class="status-pill" id="sessionStatus">
+          <span class="dot off" id="sessionDot"></span>
+          <span id="sessionText">Session: logged out</span>
+        </div>
       </div>
     </div>
   </header>
 
   <main class="wrap">
-    <section class="panel">
+    <section class="panel" id="loginPanel">
       <div class="search-row">
-        <input id="queryInput" type="text" placeholder='Example: find order #12997 • subscription for email bob@site.com • coupon CODE' />
-        <button id="searchBtn">Search</button>
+        <input id="usernameInput" type="text" placeholder="WordPress username" autocomplete="username" />
+        <input id="passwordInput" type="password" placeholder="WordPress password" autocomplete="current-password" />
       </div>
-      <div class="hint">
-        Tip: set your token once in DevTools Console:
-        <span style="font-family:var(--mono);">localStorage.setItem("ARNOLD_ADMIN_TOKEN","YOUR_REAL_TOKEN")</span>
+      <div class="search-row" style="margin-top:10px;">
+        <button id="loginBtn">Log in</button>
+        <button id="logoutBtn" disabled>Log out</button>
+      </div>
+      <div class="hint" id="loginHint">
+        Admin-only. Uses an HttpOnly cookie session (no tokens in localStorage).
       </div>
     </section>
 
-    <section class="results" id="results"></section>
+    <section class="panel" id="searchPanel" style="margin-top:14px;">
+      <div class="search-row">
+        <input id="queryInput" type="text" placeholder='Example: find order #12997 • subscription for email bob@site.com • coupon CODE' />
+        <button id="searchBtn" disabled>Search</button>
+      </div>
+      <div class="hint">
+        You must be logged in as a WordPress admin to search.
+      </div>
+    </section>
+
+    <div class="results" id="results"></div>
   </main>
 
-  <script src="main.js"></script>
+  <script src="./main.js"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
