@@ -1,348 +1,448 @@
 // 🟢 main.js
-// ArnoldApp main.js — FULL REPLACEMENT (v2026-02-18b)
-// Markers are comments only: 🟢 main.js ... 🔴 main.js
-
-/* 
-  ArnoldApp main.js (v2026-02-18b)
-  - Calls Arnold Admin Worker: /admin/nl-search
-  - Sends x-arnold-token from localStorage key ARNOLD_ADMIN_TOKEN
-  - Renders user-friendly cards (with optional Raw JSON)
-*/
+// ArnoldApp main.js — FULL REPLACEMENT (v2026-02-18a)
+// - Pretty OkObserver-style cards (no CRT)
+// - Renders wp-admin-ish sections (General/Billing/Shipping/Items/Related)
+// - Still provides Raw JSON toggle for debugging
+// NOTE: This is for the ArnoldApp site (mrrogersweborhood.github.io/arnoldapp/).
 
 (() => {
-  'use strict';
+  "use strict";
 
-  // IMPORTANT: keep this as the real Worker base (no placeholders)
+  // IMPORTANT: must point to your Arnold admin worker service base
   const ARNOLD_WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-  const TOKEN_KEY = "ARNOLD_ADMIN_TOKEN";
 
-  const elQ = document.getElementById('q');
-  const elBtn = document.getElementById('btn');
-  const elOut = document.getElementById('output');
+  const els = {
+    q: document.getElementById("queryInput"),
+    btn: document.getElementById("searchBtn"),
+    results: document.getElementById("results"),
+    tokenDot: document.getElementById("tokenDot"),
+    tokenText: document.getElementById("tokenText")
+  };
 
-  function escapeHtml(s) {
-    return String(s ?? '')
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
-      .replaceAll('"', '&quot;')
-      .replaceAll("'", '&#39;');
+  function getToken() {
+    return localStorage.getItem("ARNOLD_ADMIN_TOKEN") || "";
   }
 
-  function prettyMoney(total, currency) {
-    const t = (total === null || total === undefined) ? '' : String(total);
-    const c = (currency || '').toUpperCase();
-    if (!t) return '';
+  function refreshTokenStatus() {
+    const t = getToken().trim();
+    if (t) {
+      els.tokenDot.classList.remove("off");
+      els.tokenText.textContent = "Token: set";
+    } else {
+      els.tokenDot.classList.add("off");
+      els.tokenText.textContent = "Token: not set";
+    }
+  }
+
+  function esc(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function prettyJson(obj) {
+    try { return JSON.stringify(obj, null, 2); } catch { return String(obj); }
+  }
+
+  function money(total, currency) {
+    const t = (total === null || total === undefined) ? "" : String(total);
+    const c = (currency || "").toUpperCase();
     return c ? `${t} ${c}` : t;
   }
 
-  function banner(title, bodyHtml) {
+  function statusBadge(status) {
+    const s = String(status || "unknown");
+    return `<span class="badge">${esc(s)}</span>`;
+  }
+
+  function dlRow(label, value) {
+    if (value === null || value === undefined || value === "") return "";
+    return `<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`;
+  }
+
+  function renderAddressBlock(title, addr) {
+    if (!addr) return "";
+    const lines = [];
+    const name = [addr.first_name, addr.last_name].filter(Boolean).join(" ").trim();
+    if (name) lines.push(name);
+    if (addr.company) lines.push(addr.company);
+    if (addr.address_1) lines.push(addr.address_1);
+    if (addr.address_2) lines.push(addr.address_2);
+    const cityLine = [addr.city, addr.state, addr.postcode].filter(Boolean).join(", ").replace(", ,", ",").trim();
+    if (cityLine) lines.push(cityLine);
+    if (addr.country) lines.push(addr.country);
+
     return `
-      <div class="banner">
-        <div class="bTitle">${escapeHtml(title)}</div>
-        <div class="bBody">${bodyHtml}</div>
+      <div class="kv">
+        <h4>${esc(title)}</h4>
+        <dl>
+          ${dlRow("Address", lines.join(" • "))}
+          ${dlRow("Phone", addr.phone)}
+          ${dlRow("Email", addr.email)}
+        </dl>
       </div>
     `;
   }
 
-  function card(title, pill, rowsHtml, extraHtml) {
+  function renderMetaBlock(meta) {
+    const arr = Array.isArray(meta) ? meta : [];
+    if (!arr.length) return "";
+    const rows = arr.slice(0, 25).map(m => `<tr><td>${esc(m.key)}</td><td>${esc(m.value)}</td></tr>`).join("");
     return `
-      <div class="resultCard">
-        <div class="rcTop">
-          <div class="rcTitle">${escapeHtml(title)}</div>
-          ${pill ? `<div class="pill">${escapeHtml(pill)}</div>` : ``}
+      <div class="kv items">
+        <h4>Custom fields (safe)</h4>
+        <table>
+          <thead><tr><th>Key</th><th>Value</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderItemsTable(title, items) {
+    const arr = Array.isArray(items) ? items : [];
+    if (!arr.length) return "";
+    const rows = arr.map(li => `
+      <tr>
+        <td>${esc(li.name || "")}<div class="subline">${esc(li.sku || "")}</div></td>
+        <td>${esc(li.quantity ?? "")}</td>
+        <td>${esc(li.total ?? "")}</td>
+      </tr>
+    `).join("");
+    return `
+      <div class="kv items">
+        <h4>${esc(title)}</h4>
+        <table>
+          <thead><tr><th>Item</th><th>Qty</th><th>Total</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderActions(entity) {
+    const links = [];
+    if (entity && entity.admin_edit_url) {
+      links.push(`<a class="linkbtn" href="${esc(entity.admin_edit_url)}" target="_blank" rel="noopener">Open in wp-admin</a>`);
+    }
+    if (!links.length) return "";
+    return `<div class="actions">${links.join("")}</div>`;
+  }
+
+  function card(title, subtitle, badgeHtml, bodyHtml, rawObj) {
+    return `
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-title">
+            <strong>${esc(title)}</strong>
+            ${subtitle ? `<div class="subline">${esc(subtitle)}</div>` : ""}
+          </div>
+          ${badgeHtml || ""}
         </div>
-        <div class="kv">${rowsHtml || ''}</div>
-        ${extraHtml || ''}
+        <div class="card-bd">
+          ${bodyHtml || ""}
+          <details class="raw">
+            <summary>Raw JSON</summary>
+            <pre>${esc(prettyJson(rawObj))}</pre>
+          </details>
+        </div>
       </div>
     `;
   }
 
-  function kvRow(k, v) {
-    const vv = (v === null || v === undefined || v === '') ? '—' : String(v);
+  function renderOrder(o, raw) {
+    const general = `
+      <div class="kv">
+        <h4>General</h4>
+        <dl>
+          ${dlRow("Order ID", o.id)}
+          ${dlRow("Order #", o.number)}
+          ${dlRow("Status", o.status)}
+          ${dlRow("Total", money(o.total, o.currency))}
+          ${dlRow("Discount", o.discount_total)}
+          ${dlRow("Shipping", o.shipping_total)}
+          ${dlRow("Created", o.date_created)}
+          ${dlRow("Paid", o.date_paid)}
+          ${dlRow("Payment", o.payment_method_title || o.payment_method)}
+          ${dlRow("Customer ID", o.customer_id)}
+        </dl>
+      </div>
+    `;
+
+    const blocks = `
+      <div class="grid-3">
+        ${general}
+        ${renderAddressBlock("Billing", o.billing)}
+        ${renderAddressBlock("Shipping", o.shipping)}
+      </div>
+      ${renderItemsTable("Items", o.line_items)}
+      ${renderMetaBlock(o.meta_data)}
+      ${renderActions(o)}
+    `;
+
+    return card(
+      `Order ${o.number ? "#" + o.number : (o.id ? "#" + o.id : "")}`.trim(),
+      "WooCommerce Order",
+      statusBadge(o.status),
+      blocks,
+      raw
+    );
+  }
+
+  function renderCustomer(c, raw) {
+    const general = `
+      <div class="kv">
+        <h4>General</h4>
+        <dl>
+          ${dlRow("Customer ID", c.id)}
+          ${dlRow("Name", [c.first_name, c.last_name].filter(Boolean).join(" "))}
+          ${dlRow("Username", c.username)}
+          ${dlRow("Email", c.email)}
+          ${dlRow("Role", c.role)}
+          ${dlRow("Created", c.date_created)}
+          ${dlRow("Paying customer", c.is_paying_customer)}
+          ${dlRow("Orders", c.orders_count)}
+          ${dlRow("Total spent", c.total_spent)}
+        </dl>
+      </div>
+    `;
+
+    const blocks = `
+      <div class="grid-3">
+        ${general}
+        ${renderAddressBlock("Billing", c.billing)}
+        ${renderAddressBlock("Shipping", c.shipping)}
+      </div>
+      ${renderMetaBlock(c.meta_data)}
+      ${renderActions(c)}
+    `;
+
+    return card(
+      `Customer ${c.id ? "#" + c.id : ""}`.trim(),
+      "WooCommerce Customer",
+      `<span class="badge">customer</span>`,
+      blocks,
+      raw
+    );
+  }
+
+  function renderSubscription(s, raw) {
+    const general = `
+      <div class="kv">
+        <h4>General</h4>
+        <dl>
+          ${dlRow("Subscription ID", s.id)}
+          ${dlRow("Status", s.status)}
+          ${dlRow("Total", money(s.total, s.currency))}
+          ${dlRow("Customer ID", s.customer_id)}
+          ${dlRow("Parent order", s.parent_id)}
+          ${dlRow("Start", s.start_date)}
+          ${dlRow("Next payment", s.next_payment_date)}
+          ${dlRow("End", s.end_date)}
+          ${dlRow("Payment", s.payment_method_title || s.payment_method)}
+        </dl>
+      </div>
+    `;
+
+    const blocks = `
+      <div class="grid-3">
+        ${general}
+        ${renderAddressBlock("Billing", s.billing)}
+        ${renderAddressBlock("Shipping", s.shipping)}
+      </div>
+      ${renderItemsTable("Items", s.line_items)}
+      ${renderMetaBlock(s.meta_data)}
+      ${renderActions(s)}
+    `;
+
+    return card(
+      `Subscription #${s.id || ""}`.trim(),
+      "WooCommerce Subscription",
+      statusBadge(s.status),
+      blocks,
+      raw
+    );
+  }
+
+  function renderMembership(m, raw) {
+    const general = `
+      <div class="kv">
+        <h4>General</h4>
+        <dl>
+          ${dlRow("Membership ID", m.id)}
+          ${dlRow("Status", m.status)}
+          ${dlRow("Plan", m.plan)}
+          ${dlRow("Plan ID", m.plan_id)}
+          ${dlRow("Customer ID", m.customer_id)}
+          ${dlRow("Start", m.start_date)}
+          ${dlRow("End", m.end_date)}
+        </dl>
+      </div>
+    `;
+
+    const blocks = `
+      <div class="grid-3">
+        ${general}
+      </div>
+      ${renderMetaBlock(m.meta_data)}
+      ${renderActions(m)}
+    `;
+
+    return card(
+      `Membership #${m.id || ""}`.trim(),
+      "WooCommerce Membership",
+      statusBadge(m.status),
+      blocks,
+      raw
+    );
+  }
+
+  function renderCoupon(c, raw) {
+    const general = `
+      <div class="kv">
+        <h4>General</h4>
+        <dl>
+          ${dlRow("Coupon ID", c.id)}
+          ${dlRow("Code", c.code)}
+          ${dlRow("Amount", c.amount)}
+          ${dlRow("Type", c.discount_type)}
+          ${dlRow("Expires", c.date_expires)}
+          ${dlRow("Usage", c.usage_count)}
+          ${dlRow("Limit", c.usage_limit)}
+          ${dlRow("Free shipping", c.free_shipping)}
+          ${dlRow("Min", c.minimum_amount)}
+          ${dlRow("Max", c.maximum_amount)}
+        </dl>
+      </div>
+    `;
+
+    const blocks = `
+      <div class="grid-3">
+        ${general}
+      </div>
+      ${renderMetaBlock(c.meta_data)}
+    `;
+
+    return card(
+      `Coupon ${c.code ? `"${c.code}"` : ""}`.trim(),
+      "WooCommerce Coupon",
+      `<span class="badge">coupon</span>`,
+      blocks,
+      raw
+    );
+  }
+
+  function renderError(msg, raw) {
     return `
-      <div class="k">${escapeHtml(k)}</div>
-      <div class="v">${escapeHtml(vv)}</div>
+      <div class="error">
+        <strong>Error:</strong> ${esc(msg)}
+        <details class="raw" style="margin-top:10px;">
+          <summary>Raw response</summary>
+          <pre>${esc(prettyJson(raw))}</pre>
+        </details>
+      </div>
     `;
   }
 
-  function rawDetails(payload) {
-    const txt = JSON.stringify(payload, null, 2);
-    return `
-      <details>
-        <summary>Raw JSON</summary>
-        <pre>${escapeHtml(txt)}</pre>
-      </details>
-    `;
+  function setBusy(on) {
+    els.btn.disabled = !!on;
+    els.btn.textContent = on ? "Searching…" : "Search";
   }
 
-  function getToken() {
-    try { return (localStorage.getItem(TOKEN_KEY) || '').trim(); }
-    catch (_) { return ''; }
-  }
+  async function doSearch() {
+    refreshTokenStatus();
 
-  function setBusy(isBusy) {
-    elBtn.disabled = !!isBusy;
-    elBtn.textContent = isBusy ? 'Searching…' : 'Search';
-  }
+    const query = (els.q.value || "").trim();
+    if (!query) return;
 
-  function renderPayload(payload) {
-    // Always include raw details at bottom
-    const raw = rawDetails(payload);
-
-    if (!payload || typeof payload !== 'object') {
-      elOut.innerHTML = card('Unexpected response', 'error', kvRow('Message', 'Response was not JSON.'), raw);
-      return;
-    }
-
-    if (payload.ok !== true) {
-      const rows = [
-        kvRow('ok', payload.ok),
-        kvRow('error', payload.error || payload.message || 'Unknown error'),
-        kvRow('intent', payload.intent || '')
-      ].join('');
-      elOut.innerHTML = card('Request failed', 'error', rows, raw);
-      return;
-    }
-
-    const intent = payload.intent || 'unknown';
-
-    // Customer by email
-    if (intent === 'customer_by_email') {
-      const matches = Number(payload.matches || 0);
-      const results = Array.isArray(payload.results) ? payload.results : [];
-      let html = card(
-        'Customer lookup',
-        `${matches} match${matches === 1 ? '' : 'es'}`,
-        [
-          kvRow('Intent', intent),
-          kvRow('Matches', matches)
-        ].join('')
-      );
-
-      results.slice(0, 10).forEach((c) => {
-        const displayName = [c?.first_name, c?.last_name].filter(Boolean).join(' ').trim() || (c?.username || 'Customer');
-        html += card(
-          displayName,
-          `Customer #${c?.id ?? '—'}`,
-          [
-            kvRow('Email', c?.email || '—'),
-            kvRow('Username', c?.username || '—'),
-            kvRow('Role', c?.role || '—')
-          ].join('')
-        );
-      });
-
-      elOut.innerHTML = html + raw;
-      return;
-    }
-
-    // Order by ID
-    if (intent === 'order_by_id') {
-      const r = payload.result || {};
-      const items = Array.isArray(r.line_items) ? r.line_items : [];
-      const itemsHtml = items.length
-        ? `<ul class="list">${items.map(li => `<li>${escapeHtml(li?.name || '')} × ${escapeHtml(li?.quantity ?? 0)}</li>`).join('')}</ul>`
-        : `<div class="hint">No line items returned.</div>`;
-
-      elOut.innerHTML =
-        card(
-          `Order #${r?.id ?? '—'}`,
-          r?.status || '',
-          [
-            kvRow('Status', r?.status || ''),
-            kvRow('Total', prettyMoney(r?.total, r?.currency) || '—'),
-            kvRow('Created', r?.date_created || '—'),
-            kvRow('Billing email', r?.billing_email || '—')
-          ].join(''),
-          itemsHtml
-        ) + raw;
-      return;
-    }
-
-    // Subscription by email
-    if (intent === 'subscription_by_email') {
-      const matches = Number(payload.matches || 0);
-      const results = Array.isArray(payload.results) ? payload.results : [];
-      let html = card(
-        'Subscriptions',
-        `${matches} found`,
-        [
-          kvRow('Email', payload.email || '—'),
-          kvRow('Customer ID', payload.customer_id || '—'),
-          kvRow('Matches', matches)
-        ].join('')
-      );
-
-      results.slice(0, 20).forEach((s) => {
-        html += card(
-          `Subscription #${s?.id ?? '—'}`,
-          s?.status || '',
-          [
-            kvRow('Status', s?.status || '—'),
-            kvRow('Total', prettyMoney(s?.total, s?.currency) || '—'),
-            kvRow('Start date', s?.start_date || '—'),
-            kvRow('Next payment', s?.next_payment_date || '—'),
-            kvRow('End date', s?.end_date || '—'),
-            kvRow('Billing email', s?.billing_email || '—')
-          ].join('')
-        );
-      });
-
-      elOut.innerHTML = html + raw;
-      return;
-    }
-
-    // Membership by email
-    if (intent === 'membership_by_email') {
-      const matches = Number(payload.matches || 0);
-      const results = Array.isArray(payload.results) ? payload.results : [];
-      let html = card(
-        'Memberships',
-        `${matches} found`,
-        [
-          kvRow('Email', payload.email || '—'),
-          kvRow('Customer ID', payload.customer_id || '—'),
-          kvRow('Matches', matches)
-        ].join('')
-      );
-
-      results.slice(0, 20).forEach((m) => {
-        html += card(
-          `Membership #${m?.id ?? '—'}`,
-          m?.status || '',
-          [
-            kvRow('Status', m?.status || '—'),
-            kvRow('Plan ID', m?.plan_id || '—'),
-            kvRow('Start date', m?.start_date || '—'),
-            kvRow('End date', m?.end_date || '—'),
-            kvRow('Customer ID', m?.customer_id || '—')
-          ].join('')
-        );
-      });
-
-      elOut.innerHTML = html + raw;
-      return;
-    }
-
-    // Coupon by code
-    if (intent === 'coupon_by_code') {
-      const r = payload.result || null;
-      if (!r) {
-        elOut.innerHTML = card(
-          'Coupon lookup',
-          'not found',
-          [
-            kvRow('Code', payload.code || '—'),
-            kvRow('Matches returned', payload.matches ?? '0'),
-            kvRow('Result', 'No exact coupon match found.')
-          ].join('')
-        ) + raw;
-        return;
-      }
-
-      elOut.innerHTML = card(
-        `Coupon “${r?.code ?? payload.code ?? ''}”`,
-        r?.discount_type || '',
-        [
-          kvRow('Amount', r?.amount ?? '—'),
-          kvRow('Discount type', r?.discount_type ?? '—'),
-          kvRow('Expires', r?.date_expires ?? '—'),
-          kvRow('Usage count', r?.usage_count ?? '—'),
-          kvRow('Usage limit', r?.usage_limit ?? '—'),
-          kvRow('Coupon ID', r?.id ?? '—')
-        ].join('')
-      ) + raw;
-      return;
-    }
-
-    // Unknown / fallback
-    elOut.innerHTML = card(
-      'Result',
-      intent,
-      [
-        kvRow('Intent', intent),
-        kvRow('Note', payload.note || '—')
-      ].join('')
-    ) + raw;
-  }
-
-  async function runSearch() {
-    const q = (elQ.value || '').trim();
-    if (!q) {
-      elOut.innerHTML = banner('Type a search first', 'Examples: <code>order #12997</code>, <code>subscription for joe@abc.com</code>, <code>membership for bob@abc.com</code>, <code>coupon SAVE20</code>.');
-      return;
-    }
-
-    const token = getToken();
+    const token = getToken().trim();
     if (!token) {
-      elOut.innerHTML = banner(
-        'Admin token not set for this site',
-        `Open DevTools Console and run:<br><code>localStorage.setItem("${escapeHtml(TOKEN_KEY)}","YOUR_REAL_TOKEN")</code><br>Then refresh this page and try again.`
+      els.results.innerHTML = renderError(
+        'ARNOLD_ADMIN_TOKEN is not set. In DevTools Console run: localStorage.setItem("ARNOLD_ADMIN_TOKEN","YOUR_REAL_TOKEN")',
+        { ok: false }
       );
       return;
     }
 
     setBusy(true);
-    elOut.innerHTML = banner('Searching…', 'Contacting the admin worker and WooCommerce…');
+    els.results.innerHTML = "";
 
-    const url = `${ARNOLD_WORKER_BASE}/admin/nl-search`;
     try {
-      const resp = await fetch(url, {
-        method: 'POST',
+      const resp = await fetch(`${ARNOLD_WORKER_BASE}/admin/nl-search`, {
+        method: "POST",
         headers: {
-          'content-type': 'application/json',
-          'x-arnold-token': token
+          "content-type": "application/json",
+          "x-arnold-token": token
         },
-        body: JSON.stringify({ query: q })
+        body: JSON.stringify({ query })
       });
 
-      // Handle non-JSON errors cleanly (e.g., "Unauthorized")
       const text = await resp.text();
-      let payload = null;
-      try { payload = text ? JSON.parse(text) : null; } catch (_) { payload = null; }
+      let data;
+      try { data = text ? JSON.parse(text) : null; }
+      catch { data = { ok: false, error: "Non-JSON response", raw: text }; }
 
-      if (!resp.ok) {
-        if (payload) {
-          renderPayload(payload);
-        } else {
-          elOut.innerHTML = card(
-            'Request failed',
-            `${resp.status}`,
-            [
-              kvRow('Status', resp.status),
-              kvRow('Message', text || 'Request failed')
-            ].join(''),
-            `<details><summary>Raw response</summary><pre>${escapeHtml(text || '')}</pre></details>`
-          );
-        }
+      if (!resp.ok || !data || data.ok === false) {
+        els.results.innerHTML = renderError(
+          data?.error || data?.message || `HTTP ${resp.status}`,
+          data
+        );
         return;
       }
 
-      renderPayload(payload || { ok: false, error: 'Empty response' });
-    } catch (err) {
-      elOut.innerHTML = card(
-        'Network error',
-        'failed',
-        kvRow('Message', err?.message || String(err || 'Failed to fetch')),
-        ''
+      // Render by intent
+      const intent = data.intent || "unknown";
+
+      if (intent === "order_by_id" && data.result) {
+        els.results.innerHTML = renderOrder(data.result, data);
+        return;
+      }
+
+      if (intent === "customer_by_email" && Array.isArray(data.results)) {
+        els.results.innerHTML = data.results.map(c => renderCustomer(c, data)).join("");
+        return;
+      }
+
+      if (intent === "subscription_by_email" && Array.isArray(data.results)) {
+        els.results.innerHTML = data.results.map(s => renderSubscription(s, data)).join("");
+        return;
+      }
+
+      if (intent === "membership_by_email" && Array.isArray(data.results)) {
+        els.results.innerHTML = data.results.map(m => renderMembership(m, data)).join("");
+        return;
+      }
+
+      if (intent === "coupon_by_code") {
+        if (data.result) els.results.innerHTML = renderCoupon(data.result, data);
+        else els.results.innerHTML = renderError("No exact coupon match found.", data);
+        return;
+      }
+
+      // Fallback: show raw
+      els.results.innerHTML = card(
+        "Results",
+        `Intent: ${intent}`,
+        `<span class="badge">${esc(intent)}</span>`,
+        "",
+        data
       );
+    } catch (err) {
+      els.results.innerHTML = renderError(err?.message || "Failed to fetch", { ok: false });
     } finally {
       setBusy(false);
     }
   }
 
-  // Wire up UI
-  elBtn.addEventListener('click', runSearch);
-  elQ.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') runSearch();
+  els.btn.addEventListener("click", doSearch);
+  els.q.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doSearch();
   });
 
-  // First paint
-  elOut.innerHTML = banner(
-    'Ready',
-    'Search results will appear here. If you get “Admin token not set”, add it once in DevTools and refresh.'
-  );
+  refreshTokenStatus();
 })();
 
 // 🔴 main.js
