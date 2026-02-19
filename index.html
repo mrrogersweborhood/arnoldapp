@@ -1,139 +1,242 @@
 <!-- 🟢 index.html -->
-<!-- ArnoldApp index.html — FULL REPLACEMENT (v2026-02-19a) -->
+<!-- ArnoldApp index.html — FULL REPLACEMENT (v2026-02-19b) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Arnold Admin</title>
+
   <style>
     :root{
-      --bg:#0b0f14;
-      --card:#0f1723;
-      --line:#1f2a3a;
-      --text:#e7eefc;
-      --muted:#9db0d0;
-      --blue:#1E90FF;
+      --oo-blue:#1E90FF;
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:#e5e7eb;
+      --shadow:0 10px 25px rgba(15,23,42,.08);
+      --radius:18px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
     }
-    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
-    a{color:var(--blue);text-decoration:none;}
-    header{
-      position:sticky;top:0;z-index:10;
-      background:var(--blue);
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:linear-gradient(180deg, #eaf3ff 0%, var(--bg) 35%, var(--bg) 100%);
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:var(--oo-blue);
+      color:#fff;
+      box-shadow:0 8px 20px rgba(30,144,255,.25);
+    }
+    .topbar-inner{
+      max-width:1100px;
+      margin:0 auto;
       padding:14px 16px;
-      box-shadow:0 2px 10px rgba(0,0,0,.35);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    .wrap{max-width:1100px;margin:0 auto;padding:16px;}
-    .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;}
-    .brand h1{margin:0;font-size:18px;letter-spacing:.3px;color:#fff;}
+    .brand{
+      display:flex;
+      flex-direction:column;
+      line-height:1.1;
+    }
+    .brand strong{ font-size:18px; letter-spacing:.2px; }
+    .brand span{ font-size:12px; opacity:.9; }
+
     .status-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
       background:rgba(255,255,255,.18);
       border:1px solid rgba(255,255,255,.25);
-      padding:6px 10px;border-radius:999px;
-      display:flex;align-items:center;gap:8px;
-      color:#fff;font-size:13px;
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:12px;
       white-space:nowrap;
     }
-    .dot{width:10px;height:10px;border-radius:999px;background:#3ee78b;display:inline-block;box-shadow:0 0 10px rgba(62,231,139,.55);}
-    .dot.off{background:#ff4d4d;box-shadow:0 0 10px rgba(255,77,77,.5);}
+    .dot{
+      width:9px;height:9px;border-radius:50%;
+      background:#22c55e;
+      box-shadow:0 0 0 4px rgba(34,197,94,.25);
+    }
+    .dot.off{ background:#ef4444; box-shadow:0 0 0 4px rgba(239,68,68,.22); }
+
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:20px 16px 40px;
+    }
 
     .panel{
       background:var(--card);
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-      box-shadow:0 8px 22px rgba(0,0,0,.35);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
     }
-    .search-row{display:flex;gap:10px;flex-wrap:wrap;}
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      align-items:center;
+    }
+
+    .search-row{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:10px;
+      align-items:center;
+    }
+
     input[type="text"], input[type="password"]{
-      flex:1;min-width:260px;
-      padding:12px 12px;
-      background:#0b121d;
-      border:1px solid var(--line);
-      border-radius:10px;
-      color:var(--text);
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
       outline:none;
       font-size:14px;
+      background:#fff;
+      color:var(--text);
     }
+
     button{
-      padding:12px 14px;
-      background:var(--blue);
       border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      background:var(--oo-blue);
       color:#fff;
-      border-radius:10px;
-      font-weight:600;
+      font-weight:700;
       cursor:pointer;
+      box-shadow:0 10px 18px rgba(30,144,255,.18);
     }
-    button:disabled{opacity:.55;cursor:not-allowed;}
-    .hint{margin-top:10px;color:var(--muted);font-size:13px;line-height:1.35;}
-    .results{margin-top:14px;}
+    button.secondary{
+      background:#0f172a;
+      box-shadow:none;
+    }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .hint{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .results{ margin-top:16px; display:flex; flex-direction:column; gap:14px; }
+
     .card{
-      background:#0b121d;
-      border:1px solid var(--line);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .card h3{ margin:0 0 8px; font-size:16px; }
+    .subtle{ color:var(--muted); font-size:12px; }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 220px 1fr;
+      gap:8px 12px;
+      margin-top:10px;
+      font-size:14px;
+    }
+    .kv dt{ color:var(--muted); }
+    .kv dd{ margin:0; word-break:break-word; }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+      font-size:13px;
+    }
+    th, td{
+      text-align:left;
+      padding:10px 10px;
+      border-bottom:1px solid var(--border);
+      vertical-align:top;
+    }
+    th{ color:var(--muted); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      background:#eef6ff;
+      color:#0b3b75;
+      border:1px solid #d6e9ff;
+      font-size:12px;
+      font-weight:700;
+      margin-left:6px;
+    }
+
+    pre{
+      background:#0b1220;
+      color:#e6f0ff;
       border-radius:14px;
       padding:14px;
-      margin-bottom:12px;
-    }
-    .card h2{margin:0 0 10px;font-size:16px;}
-    pre{
-      background:#07101a;
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px;
       overflow:auto;
       font-family:var(--mono);
       font-size:12.5px;
-      color:#d9e6ff;
       line-height:1.35;
+      border:1px solid #12213a;
     }
-    .kv{display:grid;grid-template-columns:220px 1fr;gap:8px 12px;font-size:14px;}
-    .k{color:var(--muted);}
-    .v{color:var(--text);word-break:break-word;}
-    @media (max-width:680px){
-      .kv{grid-template-columns:1fr;}
-      input[type="text"], input[type="password"]{min-width:0; width:100%;}
-      button{width:100%;}
-      .status-pill{font-size:12px;}
+
+    @media (max-width:760px){
+      .grid2{ grid-template-columns:1fr; }
+      .search-row{ grid-template-columns:1fr; }
+      button{ width:100%; }
+      .kv{ grid-template-columns:1fr; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
+  <div class="topbar">
+    <div class="topbar-inner">
       <div class="brand">
-        <h1>Arnold Admin</h1>
-        <div class="status-pill" id="sessionStatus">
-          <span class="dot off" id="sessionDot"></span>
-          <span id="sessionText">Session: logged out</span>
-        </div>
+        <strong>Arnold Admin</strong>
+        <span>WooCommerce admin read console (cookie session)</span>
+      </div>
+
+      <div class="status-pill" id="sessionStatus">
+        <span class="dot off" id="sessionDot"></span>
+        <span id="sessionText">Session: logged out</span>
       </div>
     </div>
-  </header>
+  </div>
 
   <main class="wrap">
     <section class="panel" id="loginPanel">
-      <div class="search-row">
+      <div class="grid2">
         <input id="usernameInput" type="text" placeholder="WordPress username" autocomplete="username" />
         <input id="passwordInput" type="password" placeholder="WordPress password" autocomplete="current-password" />
       </div>
-      <div class="search-row" style="margin-top:10px;">
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
         <button id="loginBtn">Log in</button>
-        <button id="logoutBtn" disabled>Log out</button>
+        <button id="logoutBtn" class="secondary" disabled>Log out</button>
       </div>
-      <div class="hint" id="loginHint">
-        Admin-only. Uses an HttpOnly cookie session (no tokens in localStorage).
-      </div>
+      <div class="hint" id="loginHint">Admin-only. Uses an HttpOnly cookie session (no localStorage token).</div>
     </section>
 
-    <section class="panel" id="searchPanel" style="margin-top:14px;">
+    <section class="panel" id="searchPanel" style="margin-top:14px; display:none;">
       <div class="search-row">
-        <input id="queryInput" type="text" placeholder='Example: find order #12997 • subscription for email bob@site.com • coupon CODE' />
+        <input id="queryInput" type="text" placeholder='Examples: customer bob@abc.com • subscription for bob@abc.com • order #12997 • coupon SAVE10' />
         <button id="searchBtn" disabled>Search</button>
       </div>
       <div class="hint">
-        You must be logged in as a WordPress admin to search.
+        Output always renders in this order: <b>Customer</b> → <b>Subscriptions</b> → <b>Orders</b>.
       </div>
     </section>
 
