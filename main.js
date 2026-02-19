@@ -9,17 +9,13 @@
 (() => {
   "use strict";
 
-  // Worker base (DO NOT put secrets in client JS)
   const ARNOLD_WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const TIMEZONE = "America/Chicago";
 
-  // ----- DOM (must match index.html IDs) -----
   const el = {
-    // top status pill
     sessionDot: document.getElementById("sessionDot"),
     sessionText: document.getElementById("sessionText"),
 
-    // login panel
     loginPanel: document.getElementById("loginPanel"),
     username: document.getElementById("usernameInput"),
     password: document.getElementById("passwordInput"),
@@ -27,12 +23,10 @@
     logoutBtn: document.getElementById("logoutBtn"),
     loginHint: document.getElementById("loginHint"),
 
-    // search panel
     searchPanel: document.getElementById("searchPanel"),
     query: document.getElementById("queryInput"),
     searchBtn: document.getElementById("searchBtn"),
 
-    // output
     results: document.getElementById("results")
   };
 
@@ -55,7 +49,6 @@
       el.sessionText.textContent = "Session: logged out";
     }
 
-    // Gate UI
     if (el.searchPanel) el.searchPanel.style.display = loggedIn ? "" : "none";
     if (el.searchBtn) el.searchBtn.disabled = !loggedIn;
     if (el.logoutBtn) el.logoutBtn.disabled = !loggedIn;
@@ -79,7 +72,6 @@
   function prettyDateTime(v) {
     const s = String(v ?? "").trim();
     if (!s) return "";
-    // handle "2025-12-16T12:38:35" and "2025-12-16 12:38:35"
     const isoLike = s.includes("T") ? s : s.replace(" ", "T");
     const d = new Date(isoLike);
     if (isNaN(d.getTime())) return s;
@@ -131,7 +123,6 @@
   }
 
   function kv(rows) {
-    // rows: [{k,v}] where v can be html (already escaped if needed)
     const parts = rows
       .filter(r => r && r.v !== null && r.v !== undefined && String(r.v).trim() !== "")
       .map(r => `<dt>${esc(r.k)}</dt><dd>${r.v}</dd>`)
@@ -246,10 +237,7 @@
   }
 
   function renderRaw(payload) {
-    return card(
-      "Raw JSON",
-      `<pre>${esc(JSON.stringify(payload, null, 2))}</pre>`
-    );
+    return card("Raw JSON", `<pre>${esc(JSON.stringify(payload, null, 2))}</pre>`);
   }
 
   function renderAll(payload) {
@@ -292,8 +280,6 @@
 
       setHint("Logged in.", false);
       await refreshStatus();
-
-      // optional: focus query field
       setTimeout(() => el.query?.focus?.(), 0);
     } catch (e) {
       setHint("Login failed (network error). Check DevTools → Network.", true);
@@ -310,7 +296,7 @@
     try {
       await api("/admin/logout", { method: "POST" });
     } catch (_) {
-      // even if network fails, treat as logged out client-side
+      // ignore
     } finally {
       el.password.value = "";
       setStatus(false);
@@ -331,7 +317,6 @@
       const r = await api("/admin/nl-search", { method: "POST", body: { query } });
 
       if (!r.ok) {
-        // Most common: 401/403 if cookie missing/expired
         const errMsg = (typeof r.data === "string") ? r.data : (r.data?.error || r.data?.message || "");
         el.results.innerHTML = card(
           "Error",
@@ -350,10 +335,7 @@
   }
 
   function bind() {
-    if (!el.loginBtn || !el.logoutBtn || !el.searchBtn) {
-      // If IDs don’t exist, do nothing (prevents silent failures)
-      return;
-    }
+    if (!el.loginBtn || !el.logoutBtn || !el.searchBtn) return;
 
     el.loginBtn.addEventListener("click", onLogin);
     el.logoutBtn.addEventListener("click", onLogout);
@@ -363,7 +345,6 @@
       if (e.key === "Enter") onSearch();
     });
 
-    // Enter in password triggers login
     el.password?.addEventListener("keydown", (e) => {
       if (e.key === "Enter") onLogin();
     });
@@ -374,11 +355,8 @@
     await refreshStatus();
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 })();
 
 // 🔴 main.js
