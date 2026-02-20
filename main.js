@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — UI formatting restored + Raw JSON collapsible + numeric=>order + hide redacted (v2026-02-20l)
+// Arnold Admin SPA (GitHub Pages) — pretty layout + desktop 2-col addresses + Raw JSON collapsible + numeric=>order + hide redacted (v2026-02-20m)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -7,8 +7,7 @@
 
   /* ---------------- CONFIG ---------------- */
 
-  // IMPORTANT: This must point at your Cloudflare Worker (Arnold Admin worker)
-  // Example: https://arnold-admin-worker.bob-b5c.workers.dev
+  // Cloudflare Worker (Arnold Admin)
   const PROXY_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
   /* ---------------- STATE ---------------- */
@@ -39,7 +38,34 @@
     msg: $("#msg")
   };
 
-  /* ---------------- UTIL: formatting ---------------- */
+  /* ---------------- UTIL ---------------- */
+
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setMsg(text, kind = "info") {
+    if (!el.msg) return;
+    el.msg.textContent = text || "";
+    el.msg.className = kind ? `msg msg-${kind}` : "msg";
+    el.msg.style.display = text ? "block" : "none";
+  }
+
+  function setSessionUi() {
+    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
+    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
+
+    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
+    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
+
+    if (el.query) el.query.disabled = !state.loggedIn;
+    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
+  }
 
   function fmtPhone(raw) {
     if (!raw) return "";
@@ -73,37 +99,15 @@
     }
   }
 
-  function esc(s) {
-    return String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function setMsg(text, kind = "info") {
-    if (!el.msg) return;
-    el.msg.textContent = text || "";
-    el.msg.className = kind ? `msg msg-${kind}` : "msg";
-    el.msg.style.display = text ? "block" : "none";
-  }
-
-  function setSessionUi() {
-    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
-    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
-
-    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
-    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
-
-    if (el.query) el.query.disabled = !state.loggedIn;
-    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
+  function addressName(a) {
+    if (!a) return "";
+    const n = [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
+    return n || "";
   }
 
   function addressLine(a) {
     if (!a) return "";
     const parts = [
-      [a.first_name, a.last_name].filter(Boolean).join(" ").trim(),
       a.address_1,
       a.address_2,
       [a.city, a.state].filter(Boolean).join(", ").trim(),
@@ -121,14 +125,65 @@
     return customer?.username || customer?.email || "";
   }
 
-  // Uses index.html CSS classes: .row .k .v  (this is the “pretty formatting” grid)
+  // Your index.html CSS is built around .row/.k/.v — keep using it so formatting stays “pretty”.
   function kvRow(key, value) {
     const v = String(value ?? "").trim();
     if (!v) return "";
     return `<div class="row"><div class="k">${esc(key)}</div><div class="v">${esc(v)}</div></div>`;
   }
 
-  /* ---------------- Raw JSON: hide redacted fields ---------------- */
+  /* ---------------- STYLE INJECTION (Customer two-column addresses + blue labels) ---------------- */
+
+  function injectUiTweaks() {
+    // Keep it surgical: add a tiny CSS patch without touching index.html.
+    const style = document.createElement("style");
+    style.setAttribute("data-arnold-ui", "v2026-02-20m");
+    style.textContent = `
+      :root{
+        --blue:#1E90FF;
+        --blue2:#1E90FF;
+      }
+      /* Field labels in OkObserver blue */
+      .row .k{
+        color: var(--blue) !important;
+        font-weight: 600;
+        letter-spacing: .01em;
+        text-transform: none;
+      }
+
+      /* Customer address block layout */
+      .oo-addr-grid{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        padding: 10px 0 2px;
+      }
+      .oo-addr-card{
+        border: 1px solid rgba(15,23,42,.06);
+        border-radius: 14px;
+        padding: 12px 14px;
+        background: rgba(255,255,255,.75);
+      }
+      .oo-addr-title{
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        color: var(--ink);
+      }
+      .oo-addr-card .row{
+        border-bottom: 1px dashed rgba(15,23,42,.05);
+      }
+      .oo-addr-card .row:last-child{
+        border-bottom: none;
+      }
+
+      @media (max-width: 900px){
+        .oo-addr-grid{ grid-template-columns: 1fr; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  /* ---------------- RAW JSON: hide redacted fields ---------------- */
 
   function stripRedacted(val) {
     // Remove any fields whose value is exactly "[redacted]" (recursively).
@@ -161,7 +216,6 @@
   /* ---------------- UI: Raw JSON collapsible (default closed) ---------------- */
 
   function setupRawJsonCollapsible() {
-    // Find the "Raw JSON" card from index.html markup: <div class="card"><h3>Raw JSON</h3><div class="body"><pre id="outJson">...</pre>
     if (!el.outJson) return;
 
     const pre = el.outJson;
@@ -172,16 +226,18 @@
     const h3 = card.querySelector("h3");
     if (!h3) return;
 
-    // Default collapsed (closed)
+    // default closed
     let open = false;
 
-    // Add a right-side chevron indicator
+    // prevent duplicating if this runs twice
+    if (h3.getAttribute("data-collapsible") === "1") return;
+    h3.setAttribute("data-collapsible", "1");
+
     const chev = document.createElement("span");
     chev.textContent = "▸";
     chev.style.marginLeft = "auto";
     chev.style.opacity = "0.85";
 
-    // Make header a flex row so the chevron can sit to the right without changing index.html
     h3.style.display = "flex";
     h3.style.alignItems = "center";
     h3.style.gap = "10px";
@@ -257,47 +313,51 @@
     const email = customer.email || billing?.email || "";
     const phone = customer.phone || billing?.phone || "";
 
+    // Desktop: 2 columns (Billing vs Mailing) — matches your request.
+    // Mobile: collapses to 1 column via @media in injected CSS.
     el.outCustomer.innerHTML = `
       ${kvRow("Customer ID", customer.id ?? "")}
       ${kvRow("Username", customer.username ?? "")}
       ${kvRow("Name", getDisplayName(customer))}
       ${kvRow("Email", email)}
       ${kvRow("Phone", fmtPhone(phone))}
-      ${kvRow("Billing Address", addressLine(billing))}
-      ${kvRow("Shipping Address", addressLine(shipping))}
+
+      <div class="oo-addr-grid">
+        <div class="oo-addr-card">
+          <div class="oo-addr-title">Billing</div>
+          ${kvRow("Name", addressName(billing))}
+          ${kvRow("Address", addressLine(billing))}
+          ${kvRow("Email", billing?.email ?? "")}
+          ${kvRow("Phone", fmtPhone(billing?.phone ?? ""))}
+        </div>
+
+        <div class="oo-addr-card">
+          <div class="oo-addr-title">Mailing</div>
+          ${kvRow("Name", addressName(shipping))}
+          ${kvRow("Address", addressLine(shipping))}
+        </div>
+      </div>
     `;
   }
 
-  function normalizeNotesArray(notesMaybe) {
-    // Worker may return notes under different keys; accept several.
-    const n =
-      notesMaybe ||
-      null;
-
-    if (Array.isArray(n)) return n;
-
-    // Sometimes notes arrive as meta_data entries; we only render if worker already extracted them.
-    return [];
-  }
-
   function renderSubNotes(notes) {
-    const arr = normalizeNotesArray(notes);
+    const arr = Array.isArray(notes) ? notes : [];
     if (!arr.length) return "";
 
-    // newest-first if dates exist
     const sorted = arr.slice().sort((a, b) => {
       const da = Date.parse(a?.date_created || a?.date || "") || 0;
       const db = Date.parse(b?.date_created || b?.date || "") || 0;
       return db - da;
     });
 
-    // Keep compact: each note as “date — note”
-    return sorted.map((n) => {
-      const when = fmtDateTime(n?.date_created || n?.date || "");
-      const note = n?.note != null ? String(n.note) : "";
-      if (!note && !when) return "";
-      return `<div class="muted" style="margin-top:6px">${esc(when)}</div><div style="margin-top:2px">${esc(note)}</div>`;
-    }).join("");
+    return sorted
+      .map((n) => {
+        const when = fmtDateTime(n?.date_created || n?.date || "");
+        const note = n?.note != null ? String(n.note) : "";
+        if (!note && !when) return "";
+        return `<div class="muted" style="margin-top:6px">${esc(when)}</div><div style="margin-top:2px">${esc(note)}</div>`;
+      })
+      .join("");
   }
 
   function renderSubs(subs) {
@@ -312,11 +372,14 @@
       const id = s.id != null ? `#${s.id}` : "";
       const status = s.status ? String(s.status) : "";
       const total = fmtMoney(s.total, s.currency);
+
+      // Start/End + Notes (worker must supply notes array; you asked to retrieve/display all notes)
       const start = fmtDateTime(s.start_date || s.date_created || "");
       const next = fmtDateTime(s.next_payment_date || "");
       const end = fmtDateTime(s.end_date || "");
       const pm = s.payment_method_title || s.payment_method || "";
-      const notes = renderSubNotes(s.notes || s.subscription_notes || s.note_history);
+
+      const notesHtml = renderSubNotes(s.notes || []);
 
       return `
         <tr>
@@ -328,7 +391,7 @@
           <td>${esc(next)}</td>
           <td>${esc(end)}</td>
           <td>${esc(pm)}</td>
-          <td>${notes || ""}</td>
+          <td>${notesHtml || ""}</td>
         </tr>
       `;
     }).join("");
@@ -364,12 +427,9 @@
       const total = fmtMoney(o.total, o.currency);
       const when = fmtDateTime(o.date_created || "");
       const pm = o.payment_method_title || o.payment_method || "";
+
       const items = Array.isArray(o.line_items) ? o.line_items : [];
-      const itemText = items
-        .map((li) => li?.name)
-        .filter(Boolean)
-        .slice(0, 3)
-        .join(" • ");
+      const itemText = items.map((li) => li?.name).filter(Boolean).slice(0, 3).join(" • ");
 
       return `
         <tr>
@@ -446,7 +506,7 @@
   function coerceQuery(raw) {
     const q = String(raw || "").trim();
 
-    // Numeric-only => order lookup
+    // Numeric-only => order lookup (your rule)
     if (/^\d+$/.test(q)) return `order #${q}`;
     if (/^#\d+$/.test(q)) return `order ${q}`;
 
@@ -503,8 +563,9 @@
   }
 
   async function boot() {
+    injectUiTweaks();          // label color + address grid layout
     wire();
-    setupRawJsonCollapsible(); // default closed + clickable
+    setupRawJsonCollapsible(); // default closed, click header to open
     await refreshStatus();
     setMsg("", "info");
   }
