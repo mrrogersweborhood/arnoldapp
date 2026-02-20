@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20j)
+// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20k)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -82,24 +82,6 @@
       .replace(/'/g, "&#39;");
   }
 
-  function setMsg(text, kind = "info") {
-    if (!el.msg) return;
-    el.msg.textContent = text || "";
-    el.msg.className = kind ? `msg msg-${kind}` : "msg";
-    el.msg.style.display = text ? "block" : "none";
-  }
-
-  function setSessionUi() {
-    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
-    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
-
-    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
-    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
-
-    if (el.query) el.query.disabled = !state.loggedIn;
-    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
-  }
-
   // --- NEW: strip redacted fields from Raw JSON display ONLY ---
   // Worker emits "[redacted]" for sensitive meta values; we omit those fields/entries in the Raw JSON panel.
   function stripRedacted(value) {
@@ -126,6 +108,24 @@
     }
 
     return value;
+  }
+
+  function setMsg(text, kind = "info") {
+    if (!el.msg) return;
+    el.msg.textContent = text || "";
+    el.msg.className = kind ? `msg msg-${kind}` : "msg";
+    el.msg.style.display = text ? "block" : "none";
+  }
+
+  function setSessionUi() {
+    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
+    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
+
+    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
+    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
+
+    if (el.query) el.query.disabled = !state.loggedIn;
+    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
   }
 
   /* ---------------- API ---------------- */
@@ -323,8 +323,7 @@
     renderOrders(context?.orders || []);
 
     if (el.outJson) {
-      const cleaned = stripRedacted(rawJson ?? {});
-      el.outJson.textContent = JSON.stringify(cleaned, null, 2);
+      el.outJson.textContent = JSON.stringify(stripRedacted(rawJson ?? {}), null, 2);
     }
   }
 
