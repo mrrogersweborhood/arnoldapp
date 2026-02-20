@@ -1,5 +1,6 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20n)
+// Arnold Admin SPA (GitHub Pages) — cookie-session auth + UI polish (v2026-02-20p)
+// Fix: bind correct DOM ids from index.html (loginEmail, sessionBadge, sessionText)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -13,11 +14,18 @@
   /* ---------------- DOM ---------------- */
 
   const el = {
-    loginUser: document.getElementById("loginUser"),
+    // Login inputs/buttons (match index.html)
+    loginUser:
+      document.getElementById("loginUser") ||
+      document.getElementById("loginEmail"), // ✅ index.html uses loginEmail
     loginPass: document.getElementById("loginPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
-    statusPill: document.getElementById("statusPill"),
+
+    // Session pill (match index.html)
+    sessionBadge: document.getElementById("sessionBadge"),
+    sessionText: document.getElementById("sessionText"),
+
     msg: document.getElementById("msg"),
 
     query: document.getElementById("query"),
@@ -42,10 +50,15 @@
     const headers = { "Content-Type": "application/json" };
     const init = { method, headers, credentials: "include" };
     if (body != null) init.body = JSON.stringify(body);
+
     const r = await fetch(`${WORKER_BASE}${path}`, init);
     const txt = await r.text();
     let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
+    try {
+      data = txt ? JSON.parse(txt) : null;
+    } catch (_) {
+      data = txt;
+    }
     return { ok: r.ok, status: r.status, data };
   }
 
@@ -55,7 +68,13 @@
     const d = new Date(s);
     if (!isFinite(d)) return s;
     try {
-      return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
     } catch (_) {
       return d.toString();
     }
@@ -75,10 +94,10 @@
   function fmtPhone(phone) {
     const s = String(phone || "").trim();
     if (!s) return "";
-    // very light prettifier
     const digits = s.replace(/[^\d]/g, "");
-    if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-    if (digits.length === 11 && digits.startsWith("1")) return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    if (digits.length === 11 && digits.startsWith("1"))
+      return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
     return s;
   }
 
@@ -91,10 +110,30 @@
       .replace(/\'/g, "&#39;");
   }
 
+  /* ---------------- UI: messages + pill ---------------- */
+
+  function setMsg(text, kind = "info") {
+    if (!el.msg) return;
+    const k = String(kind || "info").toLowerCase();
+    el.msg.className = `msg msg-${k}`; // ✅ matches index.html: msg-ok/msg-warn/msg-error/msg-info
+    el.msg.style.display = text ? "block" : "none";
+    el.msg.textContent = text || "";
+  }
+
+  function setStatusPill(loggedIn) {
+    // ✅ index.html uses #sessionBadge (contains .dot) + #sessionText
+    if (el.sessionBadge) {
+      const dot = el.sessionBadge.querySelector(".dot");
+      if (dot) dot.classList.toggle("on", !!loggedIn);
+    }
+    if (el.sessionText) {
+      el.sessionText.textContent = loggedIn ? "Session: logged in" : "Session: logged out";
+    }
+  }
+
   /* ---------------- UI Tweaks ---------------- */
 
   function injectUiTweaks() {
-    // Inject small, safe CSS tweaks without touching index.html
     const id = "arnoldAdminUiTweaks";
     if (document.getElementById(id)) return;
 
@@ -201,11 +240,9 @@
   function setupRawJsonCollapsible() {
     const pre = document.getElementById("outJson");
     if (!pre) return;
-
-    // Avoid double-wrapping
     if (pre.closest(".oo-json-details")) return;
 
-    // Find the Raw JSON card header and hide it so the summary becomes the clickable header.
+    // Hide the "Raw JSON" h3 so summary becomes the header
     const headers = Array.from(document.querySelectorAll(".card h3"));
     const h3 = headers.find((x) => (x.textContent || "").trim().toLowerCase() === "raw json");
     if (h3) h3.style.display = "none";
@@ -223,20 +260,18 @@
     const panel = document.createElement("div");
     panel.className = "oo-json-panel";
 
-    // Move the PRE into the panel
     panel.appendChild(pre);
     details.appendChild(summary);
     details.appendChild(panel);
 
-    // Replace body contents with the details element
     body.innerHTML = "";
     body.appendChild(details);
   }
 
+  /* ---------------- Raw JSON: hide redacted fields ---------------- */
+
   function deepStripRedacted(value) {
-    // Remove any fields whose value is exactly "[redacted]" (case-insensitive), recursively.
-    const isRedacted = (v) =>
-      typeof v === "string" && v.trim().toLowerCase() === "[redacted]";
+    const isRedacted = (v) => typeof v === "string" && v.trim().toLowerCase() === "[redacted]";
 
     if (value == null) return value;
 
@@ -246,7 +281,6 @@
         if (isRedacted(item)) continue;
         const cleaned = deepStripRedacted(item);
         if (isRedacted(cleaned)) continue;
-        // Drop empty objects/arrays only if they are completely empty; keep primitives.
         if (Array.isArray(cleaned) && cleaned.length === 0) continue;
         if (cleaned && typeof cleaned === "object" && !Array.isArray(cleaned) && Object.keys(cleaned).length === 0) continue;
         out.push(cleaned);
@@ -268,6 +302,41 @@
     }
 
     return value;
+  }
+
+  /* ---------------- RENDER HELPERS ---------------- */
+
+  function dlRow(label, value) {
+    if (value == null || String(value).trim() === "") return "";
+    return `<div class="row"><div class="k">${esc(label)}</div><div class="v">${esc(value)}</div></div>`;
+  }
+
+  function addressName(a) {
+    if (!a) return "";
+    return [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
+  }
+
+  function addressLine(a) {
+    if (!a) return "";
+    const bits = [
+      [a.first_name, a.last_name].filter(Boolean).join(" ").trim(),
+      a.company,
+      a.address_1,
+      a.address_2,
+      [a.city, a.state].filter(Boolean).join(", "),
+      a.postcode,
+      a.country,
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).trim())
+      .filter(Boolean);
+
+    return bits.join(" • ");
+  }
+
+  function getDisplayName(cust) {
+    const full = [cust?.first_name, cust?.last_name].filter(Boolean).join(" ").trim();
+    return full || cust?.username || cust?.email || "";
   }
 
   function renderSubNotes(notes) {
@@ -294,49 +363,7 @@
       .join("");
   }
 
-  function addressName(a) {
-    if (!a) return "";
-    return [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
-  }
-
-  function setMsg(text, kind = "info") {
-    if (!el.msg) return;
-    el.msg.className = `msg ${kind}`;
-    el.msg.textContent = text || "";
-  }
-
-  function setStatusPill(loggedIn) {
-    if (!el.statusPill) return;
-    el.statusPill.className = `pill ${loggedIn ? "ok" : "off"}`;
-    el.statusPill.textContent = loggedIn ? "Session: logged in" : "Session: logged out";
-  }
-
-  /* ---------------- RENDER ---------------- */
-
-  function dlRow(label, value) {
-    if (value == null || String(value).trim() === "") return "";
-    return `<div class="row"><div class="k">${esc(label)}</div><div class="v">${esc(value)}</div></div>`;
-  }
-
-  function addressLine(a) {
-    if (!a) return "";
-    const bits = [
-      [a.first_name, a.last_name].filter(Boolean).join(" ").trim(),
-      a.company,
-      a.address_1,
-      a.address_2,
-      [a.city, a.state].filter(Boolean).join(", "),
-      a.postcode,
-      a.country
-    ].filter(Boolean).map((x) => String(x).trim()).filter(Boolean);
-
-    return bits.join(" • ");
-  }
-
-  function getDisplayName(cust) {
-    const full = [cust?.first_name, cust?.last_name].filter(Boolean).join(" ").trim();
-    return full || cust?.username || cust?.email || "";
-  }
+  /* ---------------- RENDER: Customer / Subs / Orders ---------------- */
 
   function renderCustomer(customer) {
     if (!el.outCustomer) return;
@@ -393,35 +420,36 @@
       return;
     }
 
-    const rows = arr.map((s) => {
-      const id = s.id != null ? `#${s.id}` : "";
-      const status = s.status ? String(s.status) : "";
-      const total = fmtMoney(s.total, s.currency);
+    const rows = arr
+      .map((s) => {
+        const id = s.id != null ? `#${s.id}` : "";
+        const status = s.status ? String(s.status) : "";
+        const total = fmtMoney(s.total, s.currency);
 
-      const start = fmtDateTime(s.start_date || s.date_created || "");
-      const next = fmtDateTime(s.next_payment_date || "");
-      const end = fmtDateTime(s.end_date || "");
+        const start = fmtDateTime(s.start_date || s.date_created || "");
+        const next = fmtDateTime(s.next_payment_date || "");
+        const end = fmtDateTime(s.end_date || "");
 
-      const pm = s.payment_method_title || s.payment_method || "";
+        const pm = s.payment_method_title || s.payment_method || "";
 
-      // Notes (worker should provide `notes` as an array)
-      const notesHtml = renderSubNotes(s.notes || s.subscription_notes || []);
+        const notesHtml = renderSubNotes(s.notes || s.subscription_notes || []);
 
-      return `
-        <tr>
-          <td>
-            <strong>${esc(id)}</strong>
-            ${status ? `<span class="pill">${esc(status)}</span>` : ""}
-          </td>
-          <td>${esc(total)}</td>
-          <td>${esc(start)}</td>
-          <td>${esc(next)}</td>
-          <td>${esc(end)}</td>
-          <td>${esc(pm)}</td>
-          <td>${notesHtml || `<span class="muted">—</span>`}</td>
-        </tr>
-      `;
-    }).join("");
+        return `
+          <tr>
+            <td>
+              <strong>${esc(id)}</strong>
+              ${status ? `<span class="pill">${esc(status)}</span>` : ""}
+            </td>
+            <td>${esc(total)}</td>
+            <td>${esc(start)}</td>
+            <td>${esc(next)}</td>
+            <td>${esc(end)}</td>
+            <td>${esc(pm)}</td>
+            <td>${notesHtml || `<span class="muted">—</span>`}</td>
+          </tr>
+        `;
+      })
+      .join("");
 
     el.outSubs.innerHTML = `
       <table class="tbl">
@@ -449,22 +477,25 @@
       return;
     }
 
-    const rows = arr.map((o) => {
-      const id = o.id != null ? `#${o.id}` : "";
-      const status = o.status ? String(o.status) : "";
-      const total = fmtMoney(o.total, o.currency);
-      const when = fmtDateTime(o.date_created || "");
-      const pm = o.payment_method_title || o.payment_method || "";
-      const items = Array.isArray(o.line_items) ? o.line_items.map(li => li?.name).filter(Boolean).join(", ") : "";
-      return `
-        <tr>
-          <td><strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span><div class="muted">${esc(when)}</div></td>
-          <td>${esc(total)}</td>
-          <td>${esc(pm)}</td>
-          <td>${esc(items)}</td>
-        </tr>
-      `;
-    }).join("");
+    const rows = arr
+      .map((o) => {
+        const id = o.id != null ? `#${o.id}` : "";
+        const status = o.status ? String(o.status) : "";
+        const total = fmtMoney(o.total, o.currency);
+        const when = fmtDateTime(o.date_created || "");
+        const pm = o.payment_method_title || o.payment_method || "";
+        const items = Array.isArray(o.line_items) ? o.line_items.map((li) => li?.name).filter(Boolean).join(", ") : "";
+
+        return `
+          <tr>
+            <td><strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span><div class="muted">${esc(when)}</div></td>
+            <td>${esc(total)}</td>
+            <td>${esc(pm)}</td>
+            <td>${esc(items)}</td>
+          </tr>
+        `;
+      })
+      .join("");
 
     el.outOrders.innerHTML = `
       <table class="tbl">
@@ -477,7 +508,6 @@
   }
 
   function renderBundle(context, rawJson) {
-    // Always render: Customer -> Subscriptions -> Orders
     renderCustomer(context?.customer || null);
     renderSubs(context?.subscriptions || []);
     renderOrders(context?.orders || []);
@@ -510,6 +540,7 @@
     setMsg("");
     const username = (el.loginUser?.value || "").trim();
     const password = (el.loginPass?.value || "").trim();
+
     if (!username || !password) {
       setMsg("Login failed: Username and password required.", "warn");
       return;
@@ -550,8 +581,7 @@
 
     let q = (el.query?.value || "").trim();
 
-    // If user enters a purely numeric term, treat it as an order lookup.
-    // Example: "389312" => "order #389312"
+    // If user enters purely numeric term, treat as order lookup.
     if (/^#?\d+$/.test(q)) {
       q = `order #${String(q).replace(/^#/, "")}`;
       if (el.query) el.query.value = q;
