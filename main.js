@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20g)
+// Arnold Admin SPA (GitHub Pages) — admin cookie-session + NL search UI (v2026-02-20h)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -7,14 +7,13 @@
 
   /* ---------------- CONFIG ---------------- */
 
-  // IMPORTANT: This must point at your Cloudflare Worker (Arnold Admin worker)
-  // Example: https://arnold-admin-worker.bob-b5c.workers.dev
+  // Canonical Worker base
   const PROXY_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
   /* ---------------- DOM ---------------- */
 
   const el = {
-    loginEmail: document.getElementById("loginEmail"),
+    loginEmail: document.getElementById("loginEmail"), // actually username OR email (WP accepts either depending on config)
     loginPass: document.getElementById("loginPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
@@ -41,10 +40,11 @@
   }
 
   // --- strip redacted fields from JSON display ---
+  // Worker uses "[redacted]" (lowercase), and may also emit "REDACTED" variants.
   function stripRedacted(value) {
     const isRedacted = (v) => {
       if (v == null) return false;
-      const s = String(v).toLowerCase().trim();
+      const s = String(v).trim().toLowerCase();
       return s === "redacted" || s === "[redacted]" || s.startsWith("redacted");
     };
 
@@ -99,12 +99,12 @@
     let json = null;
     try {
       json = txt ? JSON.parse(txt) : null;
-    } catch (e) {
-      // fallthrough: json stays null
+    } catch (_) {
+      json = null;
     }
 
     if (!res.ok) {
-      const msg = (json && (json.error || json.message)) || txt || `${res.status}`;
+      const msg = (json && (json.message || json.error)) || txt || `${res.status}`;
       const err = new Error(msg);
       err.status = res.status;
       err.body = json;
@@ -124,11 +124,10 @@
 
     const lines = [];
     lines.push(`<div class="cardInner">`);
-    const add = (k, v) => {
+    const add = (k, v) =>
       lines.push(
         `<div class="row"><div class="k">${esc(k)}</div><div class="v">${esc(v ?? "")}</div></div>`
       );
-    };
 
     add("id", customer.id);
     add("email", customer.email);
@@ -161,11 +160,7 @@
         const start = s.date_created ?? s.start_date ?? "";
         const nextPay = s.next_payment_date ?? s.next_payment ?? "";
         const end = s.end_date ?? "";
-        const email =
-          s.billing?.email ??
-          s.billing_email ??
-          (s.billing && s.billing.email) ??
-          "";
+        const email = s.billing?.email ?? s.billing_email ?? "";
 
         return `
         <tr>
@@ -209,7 +204,7 @@
         const status = o.status ?? "";
         const total = o.total ?? "";
         const date = o.date_created ?? o.date_paid ?? "";
-        const email = o.billing?.email ?? o.billing_email ?? "";
+        const email = o.billing?.email ?? "";
         const name = `${o.billing?.first_name ?? ""} ${o.billing?.last_name ?? ""}`.trim();
 
         return `
@@ -237,18 +232,20 @@
   }
 
   function renderAll(payload) {
-    const customer = payload?.customer || null;
-    const subs = payload?.subscriptions || payload?.subs || [];
-    const orders = payload?.orders || [];
-    const rawJson = payload || {};
+    const context = payload?.context || payload || {};
+
+    // Worker sometimes nests results under context (Arnold pipeline)
+    const customer = context?.customer ?? payload?.customer ?? null;
+    const subs = context?.subscriptions ?? payload?.subscriptions ?? payload?.subs ?? [];
+    const orders = context?.orders ?? payload?.orders ?? [];
 
     renderCustomer(customer);
     renderSubs(subs);
     renderOrders(orders);
 
-    // Raw JSON (now strips redacted fields entirely)
+    // Raw JSON (strip redacted fields)
     if (el.outJson) {
-      const cleaned = stripRedacted(rawJson ?? {});
+      const cleaned = stripRedacted(payload ?? {});
       el.outJson.textContent = JSON.stringify(cleaned, null, 2);
     }
   }
@@ -269,17 +266,9 @@
     if (el.outJson) el.outJson.textContent = "";
 
     const r = await api("/admin/nl-search", { method: "POST", body: { query: q } });
-    if (
-      r &&
-      (r.ok === true ||
-        typeof r.customer !== "undefined" ||
-        typeof r.orders !== "undefined" ||
-        typeof r.subscriptions !== "undefined")
-    ) {
-      setMsg("Done.", "ok");
-    } else {
-      setMsg("Search completed, but response looks unusual. Check Raw JSON.", "warn");
-    }
+
+    if (r && r.ok === true) setMsg("Done.", "ok");
+    else setMsg("Search completed. Check results and Raw JSON.", "info");
 
     renderAll(r);
   }
@@ -289,35 +278,36 @@
   async function refreshStatus() {
     try {
       const s = await api("/admin/status");
-      const loggedIn = !!(s && s.ok);
+      // Worker returns { loggedIn: true/false, user, roles }
+      const loggedIn = !!(s && s.loggedIn);
       setSessionUI(loggedIn);
       return loggedIn;
-    } catch (e) {
+    } catch (_) {
       setSessionUI(false);
       return false;
     }
   }
 
   async function doLogin() {
-    const email = (el.loginEmail?.value || "").trim();
-    const pass = (el.loginPass?.value || "").trim();
+    const username = (el.loginEmail?.value || "").trim();
+    const password = (el.loginPass?.value || "").trim();
 
-    if (!email || !pass) {
-      setMsg("Enter email and password.", "warn");
+    if (!username || !password) {
+      setMsg("Login failed: Username and password required.", "error");
       return;
     }
 
     setMsg("Logging in…", "info");
     try {
+      // ✅ FIX: Worker expects { username, password }
       const r = await api("/admin/login", {
         method: "POST",
-        body: { email, password: pass },
+        body: { username, password },
       });
-      if (r && r.ok) {
-        setMsg("Logged in.", "ok");
-      } else {
-        setMsg("Login returned an unexpected response.", "warn");
-      }
+
+      // Worker returns { success: true, user, roles }
+      if (r && r.success) setMsg("Logged in.", "ok");
+      else setMsg("Login returned an unexpected response.", "warn");
     } catch (e) {
       setMsg(`Login failed: ${e.message}`, "error");
     } finally {
@@ -328,11 +318,10 @@
   async function doLogout() {
     setMsg("Logging out…", "info");
     try {
-      // Some workers implement POST /admin/logout. If absent, this will fail harmlessly.
       await api("/admin/logout", { method: "POST" });
       setMsg("Logged out.", "ok");
-    } catch (e) {
-      // Fall back to clearing UI; cookie might expire server-side
+    } catch (_) {
+      // If logout endpoint is temporarily unavailable, still reset UI
       setMsg("Logged out (or session cleared).", "ok");
     } finally {
       await refreshStatus();
