@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20k)
+// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20l)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -44,8 +44,8 @@
   function fmtPhone(raw) {
     if (!raw) return "";
     const digits = String(raw).replace(/\D+/g, "");
-    if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-    if (digits.length === 11 && digits.startsWith("1")) return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+    if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    if (digits.length === 11 && digits.startsWith("1")) return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
     return String(raw);
   }
 
@@ -79,7 +79,7 @@
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
+      .replace(/\'/g, "&#39;");
   }
 
   // --- NEW: strip redacted fields from Raw JSON display ONLY ---
@@ -94,7 +94,7 @@
     if (Array.isArray(value)) {
       return value
         .map(stripRedacted)
-        .filter(v => v !== undefined);
+        .filter((v) => v !== undefined);
     }
 
     if (value && typeof value === "object") {
@@ -132,7 +132,7 @@
 
   async function api(path, { method = "GET", body = null } = {}) {
     const url = `${PROXY_BASE}${path}`;
-    const headers = { "Accept": "application/json" };
+    const headers = { Accept: "application/json" };
     if (body != null) headers["Content-Type"] = "application/json";
 
     const resp = await fetch(url, {
@@ -145,7 +145,11 @@
 
     const text = await resp.text();
     let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_) {
+      data = text;
+    }
     return { ok: resp.ok, status: resp.status, data };
   }
 
@@ -176,7 +180,7 @@
 
     const r = await api("/admin/login", { method: "POST", body: { username, password } });
     if (!r.ok) {
-      const msg = (r.data && r.data.message) ? r.data.message : `Login failed (${r.status}).`;
+      const msg = r.data && r.data.message ? r.data.message : `Login failed (${r.status}).`;
       setMsg(msg, "error");
       await refreshStatus();
       return;
@@ -210,7 +214,10 @@
       [a.city, a.state].filter(Boolean).join(", "),
       a.postcode,
       a.country
-    ].filter(Boolean).map((x) => String(x).trim()).filter(Boolean);
+    ]
+      .filter(Boolean)
+      .map((x) => String(x).trim())
+      .filter(Boolean);
 
     return bits.join(" • ");
   }
@@ -246,7 +253,27 @@
     `;
   }
 
-  function renderSubs(subs) {
+  function getSubscriptionNotes(s) {
+    // Prefer an explicit customer_note if your Worker ever includes it.
+    const direct = s && typeof s.customer_note === "string" ? s.customer_note.trim() : "";
+    if (direct) return direct;
+
+    // Otherwise, derive notes from meta_data entries whose key includes "note".
+    const md = Array.isArray(s?.meta_data) ? s.meta_data : [];
+    const parts = [];
+    for (const m of md) {
+      const k = String(m?.key ?? "").trim();
+      const v = String(m?.value ?? "").trim();
+      if (!k) continue;
+      if (!/note/i.test(k)) continue;
+      if (!v || v.toLowerCase() === "[redacted]") continue;
+      parts.push(`${k}: ${v}`);
+      if (parts.length >= 3) break;
+    }
+    return parts.join(" • ");
+  }
+
+function renderSubs(subs) {
     if (!el.outSubs) return;
     const arr = Array.isArray(subs) ? subs : [];
     if (!arr.length) {
@@ -258,15 +285,25 @@
       const id = s.id != null ? `#${s.id}` : "";
       const status = s.status ? String(s.status) : "";
       const total = fmtMoney(s.total, s.currency);
+
+      const start = fmtDateTime(s.start_date || "");
       const next = fmtDateTime(s.next_payment_date || "");
+      const end = fmtDateTime(s.end_date || "");
+
       const pm = s.payment_method_title || s.payment_method || "";
-      const created = fmtDateTime(s.start_date || "");
+      const notes = getSubscriptionNotes(s);
+
       return `
         <tr>
-          <td><strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span><div class="muted">${esc(created)}</div></td>
+          <td>
+            <strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span>
+            <div class="muted">${esc(start)}</div>
+          </td>
           <td>${esc(total)}</td>
           <td>${esc(next)}</td>
+          <td>${esc(end)}</td>
           <td>${esc(pm)}</td>
+          <td>${esc(notes)}</td>
         </tr>
       `;
     }).join("");
@@ -274,7 +311,14 @@
     el.outSubs.innerHTML = `
       <table class="tbl">
         <thead>
-          <tr><th>Subscription</th><th>Total</th><th>Next Payment</th><th>Payment Method</th></tr>
+          <tr>
+            <th>Subscription</th>
+            <th>Total</th>
+            <th>Next Payment</th>
+            <th>End</th>
+            <th>Payment Method</th>
+            <th>Notes</th>
+          </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -289,14 +333,15 @@
       return;
     }
 
-    const rows = arr.map((o) => {
-      const id = o.id != null ? `#${o.id}` : "";
-      const status = o.status ? String(o.status) : "";
-      const total = fmtMoney(o.total, o.currency);
-      const when = fmtDateTime(o.date_created || "");
-      const pm = o.payment_method_title || o.payment_method || "";
-      const items = Array.isArray(o.line_items) ? o.line_items.map(li => li?.name).filter(Boolean).join(", ") : "";
-      return `
+    const rows = arr
+      .map((o) => {
+        const id = o.id != null ? `#${o.id}` : "";
+        const status = o.status ? String(o.status) : "";
+        const total = fmtMoney(o.total, o.currency);
+        const when = fmtDateTime(o.date_created || "");
+        const pm = o.payment_method_title || o.payment_method || "";
+        const items = Array.isArray(o.line_items) ? o.line_items.map((li) => li?.name).filter(Boolean).join(", ") : "";
+        return `
         <tr>
           <td><strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span><div class="muted">${esc(when)}</div></td>
           <td>${esc(total)}</td>
@@ -304,7 +349,8 @@
           <td>${esc(items)}</td>
         </tr>
       `;
-    }).join("");
+      })
+      .join("");
 
     el.outOrders.innerHTML = `
       <table class="tbl">
@@ -351,7 +397,7 @@
 
     const r = await api("/admin/nl-search", { method: "POST", body: { query: q } });
     if (!r.ok) {
-      const msg = (r.data && r.data.error) ? r.data.error : `Search failed (${r.status}).`;
+      const msg = r.data && r.data.error ? r.data.error : `Search failed (${r.status}).`;
       setMsg(msg, "error");
       await refreshStatus();
       return;
