@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin SPA (GitHub Pages) — cookie-session auth + pretty formatting (v2026-02-20k)
+// Arnold Admin SPA (GitHub Pages) — UI formatting restored + Raw JSON collapsible + numeric=>order + hide redacted (v2026-02-20l)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
@@ -11,10 +11,18 @@
   // Example: https://arnold-admin-worker.bob-b5c.workers.dev
   const PROXY_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
+  /* ---------------- STATE ---------------- */
+
+  const state = {
+    loggedIn: false,
+    user: null,
+    roles: [],
+    lastQuery: ""
+  };
+
   /* ---------------- DOM ---------------- */
 
   const $ = (sel) => document.querySelector(sel);
-
   const el = {
     badge: $("#sessionBadge"),
     statusText: $("#sessionText"),
@@ -31,76 +39,13 @@
     msg: $("#msg")
   };
 
-  const state = {
-    loggedIn: false,
-    user: null,
-    roles: [],
-    lastQuery: ""
-  };
-
-  /* ---------------- UTIL ---------------- */
-
-  function esc(s) {
-    return String(s ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  function stripRedacted(val) {
-    // Removes any fields whose value is exactly "[redacted]" (recursively).
-    if (val === "[redacted]") return undefined;
-    if (val == null) return val;
-
-    if (Array.isArray(val)) {
-      const out = [];
-      for (const item of val) {
-        const v = stripRedacted(item);
-        if (v === undefined) continue;
-        out.push(v);
-      }
-      return out;
-    }
-
-    if (typeof val === "object") {
-      const out = {};
-      for (const [k, v0] of Object.entries(val)) {
-        const v = stripRedacted(v0);
-        if (v === undefined) continue;
-        out[k] = v;
-      }
-      return out;
-    }
-
-    return val;
-  }
-
-  function setMsg(text, kind = "info") {
-    if (!el.msg) return;
-    el.msg.textContent = text || "";
-    el.msg.className = kind ? `msg msg-${kind}` : "msg";
-    el.msg.style.display = text ? "block" : "none";
-  }
-
-  function setSessionUi() {
-    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
-    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
-
-    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
-    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
-
-    if (el.query) el.query.disabled = !state.loggedIn;
-    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
-  }
+  /* ---------------- UTIL: formatting ---------------- */
 
   function fmtPhone(raw) {
-    const s = String(raw ?? "").trim();
-    if (!s) return "";
-    const digits = s.replace(/[^\d]/g, "");
-    if (digits.length === 10) return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-    if (digits.length === 11 && digits.startsWith("1")) return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+    if (!raw) return "";
+    const digits = String(raw).replace(/\D+/g, "");
+    if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+    if (digits.length === 11 && digits.startsWith("1")) return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
     return String(raw);
   }
 
@@ -128,13 +73,40 @@
     }
   }
 
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function setMsg(text, kind = "info") {
+    if (!el.msg) return;
+    el.msg.textContent = text || "";
+    el.msg.className = kind ? `msg msg-${kind}` : "msg";
+    el.msg.style.display = text ? "block" : "none";
+  }
+
+  function setSessionUi() {
+    if (el.badge) el.badge.classList.toggle("on", !!state.loggedIn);
+    if (el.statusText) el.statusText.textContent = state.loggedIn ? "Session: logged in" : "Session: logged out";
+
+    if (el.btnLogin) el.btnLogin.disabled = !!state.loggedIn;
+    if (el.btnLogout) el.btnLogout.disabled = !state.loggedIn;
+
+    if (el.query) el.query.disabled = !state.loggedIn;
+    if (el.btnSearch) el.btnSearch.disabled = !state.loggedIn;
+  }
+
   function addressLine(a) {
     if (!a) return "";
     const parts = [
-      [a.first_name, a.last_name].filter(Boolean).join(" "),
+      [a.first_name, a.last_name].filter(Boolean).join(" ").trim(),
       a.address_1,
       a.address_2,
-      [a.city, a.state].filter(Boolean).join(", "),
+      [a.city, a.state].filter(Boolean).join(", ").trim(),
       a.postcode,
       a.country
     ].filter(Boolean);
@@ -149,14 +121,131 @@
     return customer?.username || customer?.email || "";
   }
 
-  function dlRow(label, value) {
-    const v = String(value ?? "");
+  // Uses index.html CSS classes: .row .k .v  (this is the “pretty formatting” grid)
+  function kvRow(key, value) {
+    const v = String(value ?? "").trim();
     if (!v) return "";
-    return `<div class="dlRow"><div class="dlKey">${esc(label)}</div><div class="dlVal">${esc(v)}</div></div>`;
+    return `<div class="row"><div class="k">${esc(key)}</div><div class="v">${esc(v)}</div></div>`;
   }
+
+  /* ---------------- Raw JSON: hide redacted fields ---------------- */
+
+  function stripRedacted(val) {
+    // Remove any fields whose value is exactly "[redacted]" (recursively).
+    if (val === "[redacted]") return undefined;
+    if (val == null) return val;
+
+    if (Array.isArray(val)) {
+      const out = [];
+      for (const item of val) {
+        const v = stripRedacted(item);
+        if (v === undefined) continue;
+        out.push(v);
+      }
+      return out;
+    }
+
+    if (typeof val === "object") {
+      const out = {};
+      for (const [k, v0] of Object.entries(val)) {
+        const v = stripRedacted(v0);
+        if (v === undefined) continue;
+        out[k] = v;
+      }
+      return out;
+    }
+
+    return val;
+  }
+
+  /* ---------------- UI: Raw JSON collapsible (default closed) ---------------- */
+
+  function setupRawJsonCollapsible() {
+    // Find the "Raw JSON" card from index.html markup: <div class="card"><h3>Raw JSON</h3><div class="body"><pre id="outJson">...</pre>
+    if (!el.outJson) return;
+
+    const pre = el.outJson;
+    const body = pre.closest(".body");
+    const card = pre.closest(".card");
+    if (!body || !card) return;
+
+    const h3 = card.querySelector("h3");
+    if (!h3) return;
+
+    // Default collapsed (closed)
+    let open = false;
+
+    // Add a right-side chevron indicator
+    const chev = document.createElement("span");
+    chev.textContent = "▸";
+    chev.style.marginLeft = "auto";
+    chev.style.opacity = "0.85";
+
+    // Make header a flex row so the chevron can sit to the right without changing index.html
+    h3.style.display = "flex";
+    h3.style.alignItems = "center";
+    h3.style.gap = "10px";
+    h3.style.cursor = "pointer";
+    h3.appendChild(chev);
+
+    const apply = () => {
+      body.style.display = open ? "block" : "none";
+      chev.textContent = open ? "▾" : "▸";
+    };
+
+    apply();
+
+    h3.addEventListener("click", () => {
+      open = !open;
+      apply();
+    });
+  }
+
+  /* ---------------- API ---------------- */
+
+  async function api(path, { method = "GET", body = null } = {}) {
+    const url = `${PROXY_BASE}${path}`;
+    const headers = { "Accept": "application/json" };
+    if (body != null) headers["Content-Type"] = "application/json";
+
+    const resp = await fetch(url, {
+      method,
+      headers,
+      body: body != null ? JSON.stringify(body) : undefined,
+      credentials: "include", // cookie session (HttpOnly)
+      mode: "cors"
+    });
+
+    const txt = await resp.text();
+    let data = null;
+    try {
+      data = txt ? JSON.parse(txt) : null;
+    } catch (_) {
+      data = txt;
+    }
+
+    return { ok: resp.ok, status: resp.status, data };
+  }
+
+  async function refreshStatus() {
+    const r = await api("/admin/status");
+    if (r.ok && r.data && typeof r.data.loggedIn === "boolean") {
+      state.loggedIn = !!r.data.loggedIn;
+      state.user = r.data.user || null;
+      state.roles = Array.isArray(r.data.roles) ? r.data.roles : [];
+    } else {
+      state.loggedIn = false;
+      state.user = null;
+      state.roles = [];
+    }
+    setSessionUi();
+  }
+
+  /* ---------------- RENDER ---------------- */
 
   function renderCustomer(customer) {
     if (!el.outCustomer) return;
+
     if (!customer) {
       el.outCustomer.innerHTML = `<div class="empty">No customer record found for this query.</div>`;
       return;
@@ -164,37 +253,50 @@
 
     const billing = customer.billing || null;
     const shipping = customer.shipping || null;
+
     const email = customer.email || billing?.email || "";
-    const phone = billing?.phone || "";
+    const phone = customer.phone || billing?.phone || "";
 
     el.outCustomer.innerHTML = `
-      <div class="cardInner">
-        ${dlRow("Customer ID", customer.id ?? "")}
-        ${dlRow("Username", customer.username ?? "")}
-        ${dlRow("Name", getDisplayName(customer))}
-        ${dlRow("Email", email)}
-        ${dlRow("Phone", fmtPhone(phone))}
-        ${dlRow("Billing Address", addressLine(billing))}
-        ${dlRow("Shipping Address", addressLine(shipping))}
-      </div>
+      ${kvRow("Customer ID", customer.id ?? "")}
+      ${kvRow("Username", customer.username ?? "")}
+      ${kvRow("Name", getDisplayName(customer))}
+      ${kvRow("Email", email)}
+      ${kvRow("Phone", fmtPhone(phone))}
+      ${kvRow("Billing Address", addressLine(billing))}
+      ${kvRow("Shipping Address", addressLine(shipping))}
     `;
   }
 
+  function normalizeNotesArray(notesMaybe) {
+    // Worker may return notes under different keys; accept several.
+    const n =
+      notesMaybe ||
+      null;
+
+    if (Array.isArray(n)) return n;
+
+    // Sometimes notes arrive as meta_data entries; we only render if worker already extracted them.
+    return [];
+  }
+
   function renderSubNotes(notes) {
-    const arr = Array.isArray(notes) ? notes : [];
+    const arr = normalizeNotesArray(notes);
     if (!arr.length) return "";
-    // Newest first if dates present
+
+    // newest-first if dates exist
     const sorted = arr.slice().sort((a, b) => {
-      const da = Date.parse(a?.date_created || "") || 0;
-      const db = Date.parse(b?.date_created || "") || 0;
+      const da = Date.parse(a?.date_created || a?.date || "") || 0;
+      const db = Date.parse(b?.date_created || b?.date || "") || 0;
       return db - da;
     });
 
+    // Keep compact: each note as “date — note”
     return sorted.map((n) => {
-      const when = fmtDateTime(n?.date_created || "");
+      const when = fmtDateTime(n?.date_created || n?.date || "");
       const note = n?.note != null ? String(n.note) : "";
-      // Keep it readable; notes can contain HTML, so escape it.
-      return `<div class="noteLine"><div class="muted">${esc(when)}</div><div>${esc(note)}</div></div>`;
+      if (!note && !when) return "";
+      return `<div class="muted" style="margin-top:6px">${esc(when)}</div><div style="margin-top:2px">${esc(note)}</div>`;
     }).join("");
   }
 
@@ -210,11 +312,11 @@
       const id = s.id != null ? `#${s.id}` : "";
       const status = s.status ? String(s.status) : "";
       const total = fmtMoney(s.total, s.currency);
-      const start = fmtDateTime(s.start_date || "");
+      const start = fmtDateTime(s.start_date || s.date_created || "");
       const next = fmtDateTime(s.next_payment_date || "");
       const end = fmtDateTime(s.end_date || "");
       const pm = s.payment_method_title || s.payment_method || "";
-      const notesHtml = renderSubNotes(s.notes);
+      const notes = renderSubNotes(s.notes || s.subscription_notes || s.note_history);
 
       return `
         <tr>
@@ -226,7 +328,7 @@
           <td>${esc(next)}</td>
           <td>${esc(end)}</td>
           <td>${esc(pm)}</td>
-          <td>${notesHtml || ""}</td>
+          <td>${notes || ""}</td>
         </tr>
       `;
     }).join("");
@@ -263,11 +365,18 @@
       const when = fmtDateTime(o.date_created || "");
       const pm = o.payment_method_title || o.payment_method || "";
       const items = Array.isArray(o.line_items) ? o.line_items : [];
-      const itemText = items.map((li) => li?.name).filter(Boolean).slice(0, 3).join(" • ");
+      const itemText = items
+        .map((li) => li?.name)
+        .filter(Boolean)
+        .slice(0, 3)
+        .join(" • ");
 
       return `
         <tr>
-          <td><strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span><div class="muted">${esc(when)}</div></td>
+          <td>
+            <strong>${esc(id)}</strong> <span class="pill">${esc(status)}</span>
+            <div class="muted">${esc(when)}</div>
+          </td>
           <td>${esc(total)}</td>
           <td>${esc(pm)}</td>
           <td>${esc(itemText || "")}</td>
@@ -278,7 +387,12 @@
     el.outOrders.innerHTML = `
       <table class="tbl">
         <thead>
-          <tr><th>Order</th><th>Total</th><th>Payment</th><th>Items</th></tr>
+          <tr>
+            <th>Order</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Items</th>
+          </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
@@ -286,53 +400,14 @@
   }
 
   function renderBundle(context, rawJson) {
-    // Always render: Customer -> Subscriptions -> Orders
     renderCustomer(context?.customer || null);
     renderSubs(context?.subscriptions || []);
     renderOrders(context?.orders || []);
 
     if (el.outJson) {
-      el.outJson.textContent = JSON.stringify(stripRedacted(rawJson ?? {}), null, 2);
+      const cleaned = stripRedacted(rawJson ?? {});
+      el.outJson.textContent = JSON.stringify(cleaned === undefined ? {} : cleaned, null, 2);
     }
-  }
-
-  /* ---------------- API ---------------- */
-
-  async function api(path, { method = "GET", body = null } = {}) {
-    const url = `${PROXY_BASE}${path}`;
-    const headers = { "Accept": "application/json" };
-    if (body != null) headers["Content-Type"] = "application/json";
-
-    const resp = await fetch(url, {
-      method,
-      headers,
-      credentials: "include", // IMPORTANT: cookie-session auth
-      body: body != null ? JSON.stringify(body) : null
-    });
-
-    let data = null;
-    const ct = resp.headers.get("content-type") || "";
-    if (ct.includes("application/json")) {
-      data = await resp.json().catch(() => null);
-    } else {
-      data = await resp.text().catch(() => "");
-    }
-
-    return { ok: resp.ok, status: resp.status, data };
-  }
-
-  async function refreshStatus() {
-    const r = await api("/admin/status");
-    if (r.ok && r.data && typeof r.data.loggedIn === "boolean") {
-      state.loggedIn = !!r.data.loggedIn;
-      state.user = r.data.user || null;
-      state.roles = Array.isArray(r.data.roles) ? r.data.roles : [];
-    } else {
-      state.loggedIn = false;
-      state.user = null;
-      state.roles = [];
-    }
-    setSessionUi();
   }
 
   /* ---------------- AUTH ---------------- */
@@ -368,6 +443,16 @@
 
   /* ---------------- SEARCH ---------------- */
 
+  function coerceQuery(raw) {
+    const q = String(raw || "").trim();
+
+    // Numeric-only => order lookup
+    if (/^\d+$/.test(q)) return `order #${q}`;
+    if (/^#\d+$/.test(q)) return `order ${q}`;
+
+    return q;
+  }
+
   async function doSearch() {
     setMsg("");
     if (!state.loggedIn) {
@@ -378,11 +463,7 @@
     const qRaw = (el.query?.value || "").trim();
     state.lastQuery = qRaw;
 
-    // Numeric-only input => treat as order lookup
-    let q = qRaw;
-    if (/^\d+$/.test(qRaw)) q = `order #${qRaw}`;
-    else if (/^#\d+$/.test(qRaw)) q = `order ${qRaw}`;
-
+    const q = coerceQuery(qRaw);
     if (!q) {
       setMsg("Enter a query (example: orders for email bob@abc.com).", "warn");
       return;
@@ -404,7 +485,6 @@
     const data = r.data || {};
     const ctx = data.context || { customer: null, subscriptions: [], orders: [] };
     renderBundle(ctx, data);
-    setMsg("", "info");
   }
 
   /* ---------------- WIREUP ---------------- */
@@ -414,7 +494,6 @@
     if (el.btnLogout) el.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
     if (el.btnSearch) el.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
 
-    // Enter-to-submit
     if (el.loginPass) el.loginPass.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); doLogin(); }
     });
@@ -425,6 +504,7 @@
 
   async function boot() {
     wire();
+    setupRawJsonCollapsible(); // default closed + clickable
     await refreshStatus();
     setMsg("", "info");
   }
