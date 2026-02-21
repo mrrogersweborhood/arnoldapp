@@ -1,214 +1,192 @@
 // 🟢 main.js
-// Arnold Admin SPA — FULL REPLACEMENT (v2026-02-20v)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-21a)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
   "use strict";
 
-  // IMPORTANT:
-  // - This app must talk to the Arnold Admin Worker:
-  //     https://arnold-admin-worker.bob-b5c.workers.dev
-  // - index.html DOM IDs are authoritative; this file must match them exactly.
+  /* ============================================================
+     Arnold Admin main.js — v2026-02-21a
+     Goals:
+     - FIX regression: align JS DOM IDs with index.html (no mismatches)
+     - Use correct Worker base: https://arnold-admin-worker.bob-b5c.workers.dev
+     - Keep OkObserver look/feel: use index.html CSS classes (no injected CSS)
+     - Notes render as cards (noteCard)
+     - Raw JSON updates in <pre id="outJson">
+     ============================================================ */
 
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const ENDPOINTS = {
-    login: `${WORKER_BASE}/admin/login`,
-    logout: `${WORKER_BASE}/admin/logout`,
-    status: `${WORKER_BASE}/admin/status`,
-    search: `${WORKER_BASE}/admin/nl-search`
+    status: "/admin/status",
+    login: "/admin/login",
+    logout: "/admin/logout",
+    search: "/admin/nl-search"
   };
 
   const els = {
-    // Auth
-    user: document.getElementById("inputUser"),
-    pass: document.getElementById("inputPass"),
+    loginEmail: document.getElementById("loginEmail"),
+    loginPass: document.getElementById("loginPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
-    sessionPill: document.getElementById("sessionPill"),
 
-    // Search
-    query: document.getElementById("inputQuery"),
+    sessionBadge: document.getElementById("sessionBadge"),
+    sessionText: document.getElementById("sessionText"),
+
+    msg: document.getElementById("msg"),
+
+    queryInput: document.getElementById("queryInput"),
     btnSearch: document.getElementById("btnSearch"),
-    msg: document.getElementById("statusMsg"),
 
-    // Output
-    outCustomer: document.getElementById("outCustomer"),
-    outSubs: document.getElementById("outSubs"),
-    outOrders: document.getElementById("outOrders"),
+    customerSection: document.getElementById("customerSection"),
+    subsSection: document.getElementById("subsSection"),
+    ordersSection: document.getElementById("ordersSection"),
 
-    // Raw JSON (index.html uses a native <details>)
-    rawDetails: document.getElementById("rawJsonDetails"),
     outJson: document.getElementById("outJson")
   };
 
-  const state = {
-    loggedIn: false,
-    user: null,
-    roles: [],
-    lastRaw: null
-  };
-
-  function injectStyles() {
-    if (document.getElementById("arnoldAdminStyles")) return;
-
-    const style = document.createElement("style");
-    style.id = "arnoldAdminStyles";
-    style.textContent = `
-      /* Arnold Admin UI polish (runtime-injected) */
-      .kvGrid { display: grid; gap: 10px; }
-      .kvRow { display: grid; grid-template-columns: 140px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
-      .kvRow:last-child { border-bottom: none; }
-      .kvK { color: #1E90FF; font-weight: 700; letter-spacing: .2px; text-transform: lowercase; }
-      .kvV { color: #111; }
-      .addrGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
-      @media (max-width: 820px) { .addrGrid { grid-template-columns: 1fr; } }
-      .miniCard { background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 14px 16px; }
-      .miniCard h4 { margin: 0 0 10px 0; font-size: 15px; }
-      .noteStack { display: flex; flex-direction: column; gap: 10px; }
-      .noteCard { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.05); }
-      .noteMeta { color: #666; font-size: 12px; margin-bottom: 6px; }
-      .noteText { color: #111; white-space: pre-wrap; }
-    `;
-    document.head.appendChild(style);
+  // Defensive: if anything critical is missing, fail loud (prevents silent churn)
+  const required = [
+    "loginEmail","loginPass","btnLogin","btnLogout",
+    "sessionBadge","sessionText","msg",
+    "queryInput","btnSearch",
+    "customerSection","subsSection","ordersSection","outJson"
+  ];
+  for (const k of required) {
+    if (!els[k]) {
+      alert(`Arnold Admin: missing element #${k} (index.html/main.js mismatch).`);
+      return;
+    }
   }
 
-  function setMsg(text) {
-    if (!els.msg) return;
+  function setMsg(type, text) {
+    els.msg.className = "msg " + (type || "");
     els.msg.textContent = text || "";
-    els.msg.style.display = text ? "block" : "none";
   }
 
-  function safeText(v) {
-    if (v == null) return "";
-    return String(v);
+  function setSession(loggedIn) {
+    els.sessionBadge.classList.toggle("on", !!loggedIn);
+    els.sessionText.textContent = loggedIn ? "Session: logged in" : "Session: logged out";
   }
 
-  function fmtDate(s) {
-    if (!s) return "";
-    const t = String(s).trim();
-    if (!t) return "";
-    // Keep exact text (Woo returns local string)
-    return t.replace("T", " ").replace("Z", "");
-  }
-
-  function buildNLQuery(input) {
-    const raw = String(input || "").trim();
-    if (!raw) return "";
-
-    // If user types only digits, treat as order id intent.
-    if (/^\d{3,}$/.test(raw)) return `order #${raw}`;
-
-    // If user types "#12345", treat as order id.
-    if (/^#\d{3,}$/.test(raw)) return `order ${raw}`;
-
-    return raw;
-  }
-
-  async function apiGet(url) {
-    const r = await fetch(url, {
-      method: "GET",
+  async function apiFetch(path, options = {}) {
+    const url = WORKER_BASE + path;
+    const opts = {
+      method: options.method || "GET",
+      headers: {
+        "Accept": "application/json",
+        ...(options.headers || {})
+      },
       credentials: "include",
-      headers: { "Accept": "application/json" }
-    });
-    const txt = await r.text();
+      ...(options.body != null ? { body: options.body } : {})
+    };
+
+    if (options.json != null) {
+      opts.method = options.method || "POST";
+      opts.headers["Content-Type"] = "application/json";
+      opts.body = JSON.stringify(options.json);
+    }
+
+    const resp = await fetch(url, opts);
+    const text = await resp.text();
     let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
-    return { ok: r.ok, status: r.status, data };
-  }
-
-  async function apiPost(url, payload) {
-    const r = await fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload || {})
-    });
-    const txt = await r.text();
-    let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
-    return { ok: r.ok, status: r.status, data };
-  }
-
-  function setSessionPill(loggedIn) {
-    if (!els.sessionPill) return;
-
-    // index.html uses "Session: logged in/out" text
-    els.sessionPill.textContent = loggedIn ? "Session: logged in" : "Session: logged out";
+    try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+    return { resp, data, url };
   }
 
   function clearOutputs() {
-    if (els.outCustomer) els.outCustomer.innerHTML = "—";
-    if (els.outSubs) els.outSubs.innerHTML = "—";
-    if (els.outOrders) els.outOrders.innerHTML = "—";
-    if (els.outJson) els.outJson.textContent = "";
-    state.lastRaw = null;
+    els.customerSection.innerHTML = `<div class="muted">—</div>`;
+    els.subsSection.innerHTML = `<div class="muted">—</div>`;
+    els.ordersSection.innerHTML = `<div class="muted">—</div>`;
+    els.outJson.textContent = "";
   }
 
-  function renderKVGrid(rows) {
-    const safeRows = Array.isArray(rows) ? rows : [];
-    return `
-      <div class="kvGrid">
-        ${safeRows.map(r => `
-          <div class="kvRow">
-            <div class="kvK">${safeText(r.k)}</div>
-            <div class="kvV">${safeText(r.v) || "—"}</div>
-          </div>
-        `).join("")}
-      </div>
-    `;
+  function escapeHtml(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function fmtMoney(total, currency) {
+    const t = (total == null || total === "") ? "" : String(total);
+    const c = currency ? String(currency) : "";
+    return t ? (t + (c ? (" " + c) : "")) : "—";
+  }
+
+  function fmtDate(s) {
+    if (!s) return "—";
+    return String(s);
+  }
+
+  function kvRow(label, value) {
+    const v = (value == null || value === "") ? "—" : String(value);
+    return `<div class="kv"><div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(v)}</div></div>`;
   }
 
   function renderAddressCard(title, a) {
-    const rows = [
-      { k: "name", v: [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—" },
-      { k: "address", v: [a?.address_1, a?.address_2, a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ") || "—" },
-      { k: "email", v: a?.email || "—" },
-      { k: "phone", v: a?.phone || "—" }
-    ];
+    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
+    const addrBits = [a?.address_1, a?.address_2, a?.city, a?.state, a?.postcode, a?.country].filter(Boolean);
+    const addr = addrBits.length ? addrBits.join(" • ") : "—";
+
     return `
-      <div class="miniCard">
-        <h4>${safeText(title)}</h4>
-        ${renderKVGrid(rows)}
+      <div class="card">
+        <div class="h3">${escapeHtml(title)}</div>
+        <div class="kvGrid">
+          ${kvRow("name", name)}
+          ${kvRow("address", addr)}
+          ${kvRow("email", a?.email)}
+          ${kvRow("phone", a?.phone)}
+        </div>
       </div>
     `;
   }
 
-  function renderCustomer(cust) {
-    if (!cust) return "—";
+  function renderCustomer(customer) {
+    if (!customer) {
+      els.customerSection.innerHTML = `<div class="muted">—</div>`;
+      return;
+    }
 
-    const rows = [
-      { k: "customer id", v: cust?.id ?? "—" },
-      { k: "username", v: cust?.username ?? "—" },
-      { k: "name", v: [cust?.first_name, cust?.last_name].filter(Boolean).join(" ").trim() || "—" },
-      { k: "email", v: cust?.email ?? "—" },
-      { k: "phone", v: cust?.billing?.phone ?? cust?.shipping?.phone ?? "—" }
-    ];
+    const fullName = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ").trim()
+      || (customer?.name || "—");
 
-    const billing = cust?.billing || null;
-    const shipping = cust?.shipping || null;
+    const left = `
+      <div class="kvGrid">
+        ${kvRow("customer id", customer?.id)}
+        ${kvRow("username", customer?.username)}
+        ${kvRow("name", fullName)}
+        ${kvRow("email", customer?.email)}
+        ${kvRow("phone", customer?.billing?.phone || customer?.shipping?.phone || "")}
+      </div>
+    `;
 
-    return `
-      ${renderKVGrid(rows)}
-      <div class="addrGrid">
-        ${renderAddressCard("Billing", billing)}
-        ${renderAddressCard("Shipping", shipping)}
+    const billing = renderAddressCard("Billing", customer?.billing || null);
+    const shipping = renderAddressCard("Shipping", customer?.shipping || null);
+
+    els.customerSection.innerHTML = `
+      ${left}
+      <div class="grid2" style="margin-top:12px">
+        ${billing}
+        ${shipping}
       </div>
     `;
   }
 
   function renderNotes(notes) {
     const arr = Array.isArray(notes) ? notes : [];
-    if (!arr.length) return "—";
+    if (!arr.length) return `<div class="muted">—</div>`;
+
     return `
       <div class="noteStack">
         ${arr.map(n => {
-          const when = fmtDate(n?.date_created);
-          const meta = [when, n?.author || n?.added_by].filter(Boolean).join(" • ");
-          const text = safeText(n?.note || "");
+          const when = n?.date_created ? String(n.date_created) : "";
+          const txt = n?.note ? String(n.note) : "";
           return `
             <div class="noteCard">
-              <div class="noteMeta">${safeText(meta)}</div>
-              <div class="noteText">${text || "—"}</div>
+              <div class="noteMeta">${escapeHtml(when)}</div>
+              <div class="noteBody">${escapeHtml(txt)}</div>
             </div>
           `;
         }).join("")}
@@ -218,42 +196,40 @@
 
   function renderSubscriptions(subs) {
     const arr = Array.isArray(subs) ? subs : [];
-    if (!arr.length) return "—";
+    if (!arr.length) {
+      els.subsSection.innerHTML = `<div class="muted">—</div>`;
+      return;
+    }
 
-    // Ignore empty end_date (Worker already normalizes, but double-safety)
-    const clean = arr.map(s => ({
-      ...s,
-      end_date: s?.end_date ? String(s.end_date).trim() : null
-    }));
-
-    return `
-      <table class="table">
+    els.subsSection.innerHTML = `
+      <table class="tbl">
         <thead>
           <tr>
-            <th>SUBSCRIPTION</th>
-            <th>TOTAL</th>
-            <th>START</th>
-            <th>NEXT PAY</th>
-            <th>END</th>
-            <th>PAYMENT METHOD</th>
-            <th>NOTES</th>
+            <th>Subscription</th>
+            <th>Total</th>
+            <th>Start</th>
+            <th>Next pay</th>
+            <th>Payment method</th>
+            <th>Notes</th>
           </tr>
         </thead>
         <tbody>
-          ${clean.map(s => {
-            const end = s?.end_date ? fmtDate(s.end_date) : "—";
-            const next = s?.next_payment_date ? fmtDate(s.next_payment_date) : "—";
+          ${arr.map(s => {
+            const id = s?.id ?? "";
+            const status = s?.status ?? "";
+            const start = fmtDate(s?.start_date);
+            const nextPay = fmtDate(s?.next_payment_date);
+            const total = fmtMoney(s?.total, s?.currency);
+            const pm = s?.payment_method_title || s?.payment_method || "—";
+            const badge = status ? `<span class="badge">${escapeHtml(status)}</span>` : "";
+
             return `
               <tr>
-                <td>
-                  <strong>#${safeText(s?.id)}</strong>
-                  <div class="muted">${safeText(s?.status || "")}</div>
-                </td>
-                <td>${safeText(s?.total || "—")}</td>
-                <td>${fmtDate(s?.start_date) || "—"}</td>
-                <td>${next}</td>
-                <td>${end}</td>
-                <td>${safeText(s?.payment_method_title || s?.payment_method || "—")}</td>
+                <td><strong>#${escapeHtml(id)}</strong> ${badge}</td>
+                <td>${escapeHtml(total)}</td>
+                <td>${escapeHtml(start)}</td>
+                <td>${escapeHtml(nextPay)}</td>
+                <td>${escapeHtml(pm)}</td>
                 <td>${renderNotes(s?.notes)}</td>
               </tr>
             `;
@@ -265,31 +241,42 @@
 
   function renderOrders(orders) {
     const arr = Array.isArray(orders) ? orders : [];
-    if (!arr.length) return "—";
+    if (!arr.length) {
+      els.ordersSection.innerHTML = `<div class="muted">—</div>`;
+      return;
+    }
 
-    return `
-      <table class="table">
+    function itemsText(o) {
+      const lis = Array.isArray(o?.line_items) ? o.line_items : [];
+      if (!lis.length) return "—";
+      return lis.slice(0, 3).map(li => li?.name || "").filter(Boolean).join(" • ") || "—";
+    }
+
+    els.ordersSection.innerHTML = `
+      <table class="tbl">
         <thead>
           <tr>
-            <th>ORDER</th>
-            <th>TOTAL</th>
-            <th>PAYMENT</th>
-            <th>ITEMS</th>
+            <th>Order</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Items</th>
           </tr>
         </thead>
         <tbody>
           ${arr.map(o => {
-            const items = Array.isArray(o?.line_items) ? o.line_items : [];
-            const firstItem = items[0]?.name || "—";
+            const id = o?.id ?? "";
+            const status = o?.status ?? "";
+            const created = fmtDate(o?.date_created);
+            const total = fmtMoney(o?.total, o?.currency);
+            const pm = o?.payment_method_title || o?.payment_method || "—";
+            const badge = status ? `<span class="badge">${escapeHtml(status)}</span>` : "";
+
             return `
               <tr>
-                <td>
-                  <strong>#${safeText(o?.id)}</strong>
-                  <div class="muted">${fmtDate(o?.date_created) || ""}</div>
-                </td>
-                <td>${safeText(o?.total || "—")}</td>
-                <td>${safeText(o?.payment_method_title || o?.payment_method || "—")}</td>
-                <td>${safeText(firstItem)}</td>
+                <td><strong>#${escapeHtml(id)}</strong> ${badge}<div class="muted">${escapeHtml(created)}</div></td>
+                <td>${escapeHtml(total)}</td>
+                <td>${escapeHtml(pm)}</td>
+                <td>${escapeHtml(itemsText(o))}</td>
               </tr>
             `;
           }).join("")}
@@ -298,112 +285,111 @@
     `;
   }
 
-  function renderAll(payload) {
-    const ctx = payload?.context || payload?.results?.context || payload?.data?.context || null;
+  function normalizeContext(payload) {
+    const ctx = payload?.context || {};
 
-    // The Worker returns consistent "context" for both email searches and order-id searches.
-    const customer = ctx?.customer || null;
-    const subs = ctx?.subscriptions || [];
-    const orders = ctx?.orders || [];
+    let customer = ctx.customer || null;
+    let subscriptions = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
+    let orders = Array.isArray(ctx.orders) ? ctx.orders : [];
 
-    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
-    if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
-    if (els.outOrders) els.outOrders.innerHTML = renderOrders(orders);
-
-    if (els.outJson) {
-      state.lastRaw = payload;
-      els.outJson.textContent = JSON.stringify(payload, null, 2);
+    if (Array.isArray(payload?.results) && payload?.intent && String(payload.intent).includes("orders")) {
+      orders = payload.results;
     }
+
+    return { customer, subscriptions, orders };
   }
 
   async function refreshStatus() {
-    const r = await apiGet(ENDPOINTS.status);
-    if (!r.ok) {
-      state.loggedIn = false;
-      setSessionPill(false);
-      return;
+    try {
+      const r = await apiFetch(ENDPOINTS.status);
+      const ok = r.resp.ok && r.data && (r.data.loggedIn === true || r.data.loggedIn === false);
+      if (!ok) { setSession(false); return; }
+      setSession(!!r.data.loggedIn);
+    } catch (_) {
+      setSession(false);
     }
-    state.loggedIn = !!r.data?.loggedIn;
-    setSessionPill(state.loggedIn);
   }
 
   async function doLogin() {
-    setMsg("");
-    const username = (els.user?.value || "").trim();
-    const password = (els.pass?.value || "").trim();
+    setMsg("", "");
+    const username = String(els.loginEmail.value || "").trim();
+    const password = String(els.loginPass.value || "");
+    if (!username || !password) { setMsg("bad", "Username and password required."); return; }
 
-    if (!username || !password) {
-      setMsg("Username and password required.");
-      return;
+    els.btnLogin.disabled = true;
+    try {
+      const r = await apiFetch(ENDPOINTS.login, { json: { username, password } });
+      if (!r.resp.ok || !r.data?.success) {
+        const msg = r.data?.message || `Login failed (${r.resp.status}).`;
+        setMsg("bad", msg);
+        setSession(false);
+        return;
+      }
+      setMsg("good", "Logged in.");
+      setSession(true);
+      els.loginPass.value = "";
+    } catch (_) {
+      setMsg("bad", "Login failed (network).");
+      setSession(false);
+    } finally {
+      els.btnLogin.disabled = false;
     }
-
-    const r = await apiPost(ENDPOINTS.login, { username, password });
-    if (!r.ok) {
-      setMsg(`Login failed (${r.status}).`);
-      await refreshStatus();
-      return;
-    }
-
-    setMsg("");
-    await refreshStatus();
   }
 
   async function doLogout() {
-    setMsg("");
-    await apiPost(ENDPOINTS.logout, {});
-    await refreshStatus();
+    setMsg("", "");
+    els.btnLogout.disabled = true;
+    try { await apiFetch(ENDPOINTS.logout, { method: "POST" }); } catch (_) {}
+    setSession(false);
+    setMsg("good", "Logged out.");
+    els.btnLogout.disabled = false;
     clearOutputs();
   }
 
   async function doSearch() {
-    setMsg("");
+    setMsg("", "");
     clearOutputs();
 
-    const raw = (els.query?.value || "").trim();
-    const q = buildNLQuery(raw);
-    if (!q) {
-      setMsg("Enter a search like: customer bob@abc.com • subscription for bob@abc.com • orders for bob@abc.com • order #12997");
-      return;
-    }
+    const q = String(els.queryInput.value || "").trim();
+    if (!q) { setMsg("bad", "Enter a query."); return; }
 
-    const r = await apiPost(ENDPOINTS.search, { query: q });
-    if (!r.ok) {
-      // Show worker error details if present
-      const msg = r.data?.error || r.data?.message || "Search failed";
-      setMsg(`${msg} (${r.status}).`);
-      if (els.outJson) els.outJson.textContent = JSON.stringify(r.data, null, 2);
-      return;
-    }
-
-    renderAll(r.data);
-  }
-
-  function setupRawToggle() {
-    // index.html uses a native <details> element for Raw JSON toggling.
-    // No custom chevron/button wiring needed; we keep this as a safe no-op.
-    return;
-  }
-
-  function wireEvents() {
-    if (els.btnLogin) els.btnLogin.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
-    if (els.btnLogout) els.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
-    if (els.btnSearch) els.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
-
-    // Enter-to-submit
-    if (els.user) els.user.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-    if (els.pass) els.pass.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-    if (els.query) els.query.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
-
-    setupRawToggle();
-  }
-
-  async function init() {
-    injectStyles();
-    wireEvents();
     await refreshStatus();
+
+    els.btnSearch.disabled = true;
+    try {
+      const r = await apiFetch(ENDPOINTS.search, { json: { query: q } });
+      els.outJson.textContent = JSON.stringify(r.data, null, 2);
+
+      if (!r.resp.ok || r.data?.ok === false) {
+        const msg = r.data?.error || r.data?.message || `Search failed (${r.resp.status}).`;
+        setMsg("bad", msg);
+        return;
+      }
+
+      const ctx = normalizeContext(r.data);
+      renderCustomer(ctx.customer);
+      renderSubscriptions(ctx.subscriptions);
+      renderOrders(ctx.orders);
+
+      setMsg("good", "Search complete.");
+    } catch (_) {
+      setMsg("bad", "Search failed (network).");
+    } finally {
+      els.btnSearch.disabled = false;
+    }
   }
 
-  init();
+  els.btnLogin.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
+  els.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
+  els.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
+
+  els.queryInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); doSearch(); }
+  });
+
+  clearOutputs();
+  refreshStatus();
+
 })();
 
 // 🔴 main.js
