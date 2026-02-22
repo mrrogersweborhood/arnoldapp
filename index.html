@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-22b) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-22e) -->
 <!-- (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
 
 <!doctype html>
@@ -12,23 +12,26 @@
   <style>
     :root{
       --blue:#1E90FF;
-      --bg1:#eef4ff;
-      --bg2:#ffffff;
+      --bg1:#f6f8fc;
+      --bg2:#eef3fb;
       --card:#ffffff;
       --ink:#0b1b2a;
-      --muted:#6b7280;
-      --shadow:0 18px 40px rgba(2,8,23,.12);
-      --shadow2:0 10px 24px rgba(2,8,23,.10);
-      --r:18px;
+      --muted:#5b6b7c;
+      --shadow: 0 12px 30px rgba(2,8,23,.09);
+      --shadow2: 0 14px 34px rgba(2,8,23,.14);
+      --radius: 18px;
     }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       color:var(--ink);
-      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      background:
+        radial-gradient(900px 520px at 18% 0%, rgba(30,144,255,.18), transparent 60%),
+        radial-gradient(1100px 760px at 82% 8%, rgba(30,144,255,.12), transparent 62%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      min-height:100vh;
     }
 
     header{
@@ -40,7 +43,7 @@
       padding:16px 18px;
     }
     .bar{
-      max-width:1100px;
+      max-width:1500px;
       margin:0 auto;
       display:flex;
       align-items:center;
@@ -59,51 +62,55 @@
       display:block;
       filter:drop-shadow(0 6px 18px rgba(0,0,0,.20));
     }
-    .titles{
+    .brandTxt{
       display:flex;
       flex-direction:column;
-      line-height:1.05;
+      gap:2px;
+      min-width:0;
     }
-    .titles .top{
-      font-size:12px;
-      letter-spacing:.22em;
+    .brandTxt .top{
+      color:#fff;
+      font-weight:900;
+      letter-spacing:.14em;
       text-transform:uppercase;
-      color:rgba(255,255,255,.95);
-      font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
-    .titles .sub{
-      font-size:13px;
+    .brandTxt .sub{
       color:rgba(255,255,255,.92);
       font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
     .pill{
       display:inline-flex;
       align-items:center;
       gap:10px;
-      padding:10px 14px;
-      border-radius:999px;
-      background:rgba(255,255,255,.14);
-      border:1px solid rgba(255,255,255,.26);
-      backdrop-filter: blur(6px);
+      background:rgba(255,255,255,.16);
       color:#fff;
-      font-weight:800;
+      border:1px solid rgba(255,255,255,.35);
+      border-radius:999px;
+      padding:10px 14px;
+      font-weight:900;
+      box-shadow: 0 10px 26px rgba(2,8,23,.20);
       white-space:nowrap;
-      max-width:52vw;
-      overflow:hidden;
-      text-overflow:ellipsis;
     }
     .dot{
-      width:10px;height:10px;border-radius:999px;
-      background:rgba(255,255,255,.75);
-      box-shadow:0 0 0 3px rgba(255,255,255,.14);
+      width:10px; height:10px; border-radius:999px;
+      background:rgba(248,113,113,.95);
+      box-shadow:0 0 0 3px rgba(255,255,255,.18);
       flex:0 0 auto;
     }
     .pill[data-state="in"] .dot{ background:rgba(34,197,94,.95) }
     .pill[data-state="out"] .dot{ background:rgba(248,113,113,.95) }
 
     main{
-      max-width:1100px;
+      max-width:1500px;
       margin:18px auto 60px;
       padding:0 14px;
     }
@@ -122,153 +129,90 @@
       gap:12px;
       align-items:center;
     }
-    @media (max-width: 920px){
-      .topGrid{ grid-template-columns: 1fr 1fr; }
-    }
-    @media (max-width: 560px){
-      .topGrid{ grid-template-columns: 1fr; }
+
+    .searchRow{
+      display:grid;
+      grid-template-columns: 1fr auto;
+      gap:12px;
+      align-items:center;
+      margin-top:10px;
     }
 
     input{
       width:100%;
       border-radius:14px;
       border:1px solid rgba(0,0,0,.10);
-      background:rgba(255,255,255,.75);
-      padding:12px 12px;
+      padding:12px 14px;
       font-size:14px;
+      background:rgba(255,255,255,.75);
       outline:none;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
     }
     input:focus{
-      border-color:rgba(30,144,255,.55);
-      box-shadow:0 0 0 4px rgba(30,144,255,.12);
+      border-color: rgba(30,144,255,.45);
+      box-shadow: 0 0 0 4px rgba(30,144,255,.14);
+      background:#fff;
     }
 
     .btn{
       border:0;
       border-radius:14px;
-      padding:11px 16px;
+      padding:11px 14px;
       font-weight:900;
       cursor:pointer;
-      font-size:14px;
+      box-shadow:0 10px 22px rgba(2,8,23,.12);
+      transition: transform .06s ease, filter .12s ease;
       white-space:nowrap;
-      box-shadow:0 10px 24px rgba(2,8,23,.12);
     }
+    .btn:active{ transform: translateY(1px); }
     .btn.blue{ background:var(--blue); color:#fff; }
     .btn.dark{ background:#0b1220; color:#fff; }
-    .btn:disabled{ opacity:.65; cursor:not-allowed; }
+    .btn:disabled{ filter:saturate(.25) opacity(.7); cursor:not-allowed; }
 
     .hint{
-      margin-top:8px;
       color:var(--muted);
-      font-size:12px;
-      font-weight:700;
-    }
-    .msg{
-      margin-top:8px;
-      font-size:13px;
       font-weight:800;
+      font-size:12px;
+      margin:10px 2px 0;
+    }
+
+    .msg{
+      margin-top:10px;
+      font-weight:900;
+      padding:10px 12px;
+      border-radius:14px;
       display:none;
+      border:1px solid rgba(0,0,0,.08);
+      background:rgba(255,255,255,.70);
+      box-shadow:0 10px 22px rgba(2,8,23,.08);
     }
+    .msg.ok{ display:block; border-color:rgba(34,197,94,.35); }
+    .msg.bad{ display:block; border-color:rgba(248,113,113,.40); }
 
-    .searchRow{
-      margin-top:12px;
-      display:grid;
-      grid-template-columns: 1fr auto;
-      gap:12px;
-      align-items:center;
+    .section{
+      margin-top:18px;
     }
-
-    h3{
-      margin:16px 0 10px;
+    .section h2{
+      margin:18px 6px 10px;
       font-size:18px;
+      font-weight:950;
       letter-spacing:.01em;
     }
 
-    .out{
-      background:rgba(255,255,255,.65);
-      border:1px solid rgba(0,0,0,.06);
-      border-radius:18px;
-      padding:12px;
-      box-shadow:0 12px 28px rgba(2,8,23,.08);
-    }
-
     .card{
-      background:#fff;
+      background:var(--card);
       border:1px solid rgba(0,0,0,.06);
-      border-radius:18px;
+      border-radius:22px;
+      box-shadow:var(--shadow);
       padding:14px;
-      box-shadow:0 10px 22px rgba(2,8,23,.07);
-    }
-    .h2{
-      font-weight:950;
-      margin:0 0 10px;
-      font-size:16px;
     }
 
-    .row{
+    .cols2{
       display:grid;
-      grid-template-columns: 120px 1fr;
-      gap:12px;
-      padding:10px 0;
-      border-top:1px dashed rgba(0,0,0,.08);
+      grid-template-columns:1fr 1fr;
+      gap:14px;
     }
-    .row:first-child{ border-top:0; padding-top:0; }
-    .k{color:var(--blue); font-weight:900; text-transform:lowercase;}
-    .v{font-weight:800}
-
-    .rawWrap{
-      margin-top:12px;
-    }
-    details{
-      background:rgba(255,255,255,.65);
-      border:1px solid rgba(0,0,0,.06);
-      border-radius:18px;
-      padding:10px 12px;
-      box-shadow:0 10px 22px rgba(2,8,23,.07);
-    }
-    summary{
-      cursor:pointer;
-      font-weight:900;
-      list-style:none;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:8px 2px;
-    }
-    summary::-webkit-details-marker{display:none}
-    pre{
-      margin:10px 0 0;
-      background:#0b1220;
-      color:#dbeafe;
-      border-radius:14px;
-      padding:12px;
-      overflow:auto;
-      max-height:380px;
-      font-size:12px;
-      line-height:1.35;
-    }
-
-    /* Arnold Admin UI polish (v2026-02-21b) */
-    .cols2{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-    @media (max-width: 820px){ .cols2{grid-template-columns:1fr} }
-
-    .tbl{width:100%; border-collapse:separate; border-spacing:0; overflow:hidden; border:1px solid rgba(0,0,0,.06); border-radius:14px; background:#fff}
-    .tbl th{background:rgba(30,144,255,.08); color:#0b1b2a; font-size:12px; letter-spacing:.04em; text-transform:uppercase; padding:10px 12px; text-align:left; border-bottom:1px solid rgba(0,0,0,.06)}
-    .tbl td{padding:12px; vertical-align:top; border-bottom:1px solid rgba(0,0,0,.06)}
-    .tbl tr:last-child td{border-bottom:none}
-    .right{ text-align:right }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-    .badge{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:2px 10px; font-size:12px; font-weight:700; border:1px solid rgba(0,0,0,.08); background:rgba(30,144,255,.10)}
-    .badge.gray{background:rgba(0,0,0,.06)}
-    .badge.red{background:rgba(220,38,38,.12)}
-    .badge.green{background:rgba(34,197,94,.12)}
-    .note{background:rgba(0,0,0,.03); border:1px solid rgba(0,0,0,.06); border-radius:12px; padding:10px 12px; margin:10px 0}
-    .noteTop{display:flex; justify-content:space-between; gap:12px; font-size:12px; color:var(--muted); margin-bottom:6px}
-    .noteText{font-size:13px; line-height:1.35}
-
-    /* --- Renderer classes used by main.js (v2026-02-22b) --- */
-    .muted { color: var(--muted); font-weight: 800; }
+    @media (max-width: 920px){ .cols2{grid-template-columns:1fr} }
 
     .kv { display:block; }
     .kvRow{
@@ -288,6 +232,8 @@
       font-size:15px;
       letter-spacing:.01em;
     }
+
+    .muted { color: var(--muted); font-weight: 800; }
 
     .cardGrid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     @media (max-width: 820px){ .cardGrid2{ grid-template-columns:1fr; } }
@@ -340,17 +286,56 @@
     .noteBody{ font-size:13px; line-height:1.35; }
 
     /* Orders */
-    .orderLines{ display:flex; flex-direction:column; gap:10px; }
-    .orderLine{
+    .orderTableWrap{ width:100%; overflow:auto; }
+    .orderLines{ display:flex; flex-direction:column; gap:10px; min-width:1150px; }
+
+    .orderHeader{
+      display:grid;
+      grid-template-columns: 110px 120px 110px 210px 190px 1fr;
+      gap:12px;
+      align-items:center;
+      padding:10px 12px;
+      background:rgba(30,144,255,.08);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:14px;
+      color:#0b1b2a;
+      font-size:12px;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+
+    .orderRow{
+      display:grid;
+      grid-template-columns: 110px 120px 110px 210px 190px 1fr;
+      gap:12px;
+      align-items:center;
+      padding:10px 12px;
       background:#fff;
       border:1px solid rgba(0,0,0,.06);
       border-radius:14px;
-      padding:12px;
       box-shadow:0 10px 22px rgba(2,8,23,.07);
     }
-    .orderLeft{ font-weight:900; display:flex; gap:10px; flex-wrap:wrap; align-items:baseline; }
-    .orderMid{ margin-top:6px; font-weight:800; color:var(--muted); }
-    .orderRight{ margin-top:6px; }
+
+    .orderRow > div{
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .orderRow .items{
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    @media (max-width: 920px){
+      .orderLines{ min-width:980px; }
+      .orderHeader,
+      .orderRow{
+        grid-template-columns: 100px 110px 100px 190px 170px 1fr;
+      }
+    }
 
     /* Pill used inside tables/lists */
     .pill{
@@ -363,6 +348,7 @@
       font-weight:900;
       font-size:12px;
     }
+    .pillStatus{ background:rgba(30,144,255,.14); border-color:rgba(30,144,255,.35); }
 
     /* JSON pre */
     pre.json{
@@ -377,6 +363,11 @@
       line-height:1.35;
     }
 
+    @media (max-width: 820px){
+      .topGrid{ grid-template-columns: 1fr; }
+      .bar{ align-items:flex-start; }
+      .pill{ margin-left:auto; }
+    }
   </style>
 </head>
 
@@ -385,14 +376,14 @@
   <div class="bar">
     <div class="brand">
       <img src="logo.png" alt="The Oklahoma Observer" />
-      <div class="titles">
-        <div class="top">The Oklahoma Observer</div>
+      <div class="brandTxt">
+        <div class="top">THE OKLAHOMA OBSERVER</div>
         <div class="sub">Arnold Admin</div>
       </div>
     </div>
 
-    <div id="sessionPill" class="pill" data-state="checking" title="Session status">
-      <span class="dot" aria-hidden="true"></span>
+    <div id="sessionPill" class="pill" data-state="out">
+      <span class="dot"></span>
       <span id="sessionText">Session: checking…</span>
     </div>
   </div>
@@ -407,35 +398,42 @@
       <button id="btnLogout" class="btn dark">Log out</button>
     </div>
 
-    <div class="hint">Admin-only. Uses an HttpOnly cookie session (no localStorage token).</div>
     <div id="msg" class="msg"></div>
 
     <div class="searchRow">
-      <input id="query" placeholder="Examples: customer bob@abc.com • subscription for bob@abc.com • orders for email bob@abc.com • order #12997" />
+      <input id="query" placeholder="Examples: customer bob@email.com • order #389313 • subscriptions for alice@email.com" />
       <button id="btnSearch" class="btn blue">Search</button>
     </div>
 
     <div class="hint">Output always renders in this order: <b>Customer → Subscriptions → Orders</b>.</div>
   </div>
 
-  <h3>Customer</h3>
-  <div class="out" id="customerOut">—</div>
+  <section class="section">
+    <h2>Customer</h2>
+    <div class="card" id="customerOut"><div class="muted">—</div></div>
+  </section>
 
-  <h3>Subscriptions</h3>
-  <div class="out" id="subsOut">—</div>
+  <section class="section">
+    <h2>Subscriptions</h2>
+    <div class="card" id="subsOut"><div class="muted">—</div></div>
+  </section>
 
-  <h3>Orders (most recent)</h3>
-  <div class="out" id="ordersOut">—</div>
+  <section class="section">
+    <h2>Orders (most recent)</h2>
+    <div class="card" id="ordersOut"><div class="muted">—</div></div>
+  </section>
 
-  <div class="rawWrap">
+  <div class="section">
     <details>
-      <summary>Raw JSON <span>›</span></summary>
-      <pre id="rawOut"></pre>
+      <summary style="cursor:pointer; font-weight:950; padding:10px 6px;">Raw JSON</summary>
+      <div class="card" style="margin-top:10px;">
+        <div id="rawOut"><div class="muted">—</div></div>
+      </div>
     </details>
   </div>
 </main>
 
-<script src="main.js?v=2026-02-22d"></script>
+<script src="main.js?v=2026-02-22e"></script>
 
 </body>
 </html>
