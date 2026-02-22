@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-22e)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23a)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -14,41 +14,86 @@
     search: `${WORKER_BASE}/admin/nl-search`
   };
 
-  const els = (() => {
-    // Resilient DOM lookups: accept both current ids and legacy ids.
-    const byId = (...ids) => {
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) return el;
+  const els = {
+    loginUser: null,
+    loginPass: null,
+    btnLogin: null,
+    btnLogout: null,
+    sessionPill: null,
+    sessionText: null,
+
+    query: null,
+    btnSearch: null,
+    btnRaw: null,
+    rawWrap: null,
+
+    msg: null,
+
+    outCustomer: null,
+    outSubs: null,
+    outOrders: null,
+    outJson: null
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function bindEls() {
+    // Required IDs (ground truth)
+    els.loginUser = $("loginUser");
+    els.loginPass = $("loginPass");
+    els.btnLogin = $("btnLogin");
+    els.btnLogout = $("btnLogout");
+    els.sessionPill = $("sessionPill");
+    els.sessionText = $("sessionText");
+
+    els.query = $("query");
+    els.btnSearch = $("btnSearch");
+    els.btnRaw = $("btnRaw");
+    els.rawWrap = $("rawWrap");
+
+    els.msg = $("msg");
+
+    els.outCustomer = $("customerOut");
+    els.outSubs = $("subsOut");
+    els.outOrders = $("ordersOut");
+    els.outJson = $("rawOut");
+
+    // Legacy fallback IDs (do not rely on these)
+    if (!els.btnRaw) els.btnRaw = $("btnShowRaw");
+    if (!els.rawWrap) els.rawWrap = $("rawJsonWrap");
+    if (!els.outJson) els.outJson = $("rawOut");
+  }
+
+  function setMsg(text, cls) {
+    if (!els.msg) return;
+    els.msg.className = "";
+    if (cls) els.msg.classList.add(cls);
+    els.msg.textContent = text || "";
+  }
+
+  function setBadge(text, ok) {
+    if (els.sessionText) els.sessionText.textContent = text;
+    if (els.sessionPill) {
+      els.sessionPill.classList.remove("ok", "bad");
+      els.sessionPill.classList.add(ok ? "ok" : "bad");
+    }
+  }
+
+  function showLogout(show) {
+    if (els.btnLogout) els.btnLogout.style.display = show ? "" : "none";
+  }
+
+  async function apiFetch(url, init) {
+    const resp = await fetch(url, {
+      ...init,
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(init && init.headers ? init.headers : {})
       }
-      return null;
-    };
-
-    return {
-      // Auth
-      user: byId("loginUser", "inputUser", "user"),
-      pass: byId("loginPass", "inputPass", "pass"),
-      btnLogin: byId("btnLogin"),
-      btnLogout: byId("btnLogout"),
-
-      // Query
-      query: byId("query", "queryInput", "inputQuery"),
-      btnSearch: byId("searchBtn", "btnSearch"),
-
-      // Session badge / pill
-      sessionBadge: byId("sessionPill", "sessionBadge"),
-
-      // Output
-      statusMsg: byId("msg", "statusMsg"),
-      outCustomer: byId("customerOut", "outCustomer"),
-      outSubs: byId("subsOut", "outSubs"),
-      outOrders: byId("ordersOut", "outOrders"),
-      outJson: byId("rawOut", "outJson"),
-      rawJsonDetails: byId("rawJsonDetails", "rawJson")
-    };
-  })();
-
-  // ---- Utilities ----
+    });
+    return resp;
+  }
 
   function esc(s) {
     return String(s ?? "")
@@ -59,383 +104,377 @@
       .replaceAll("'", "&#039;");
   }
 
-  function setMsg(text, kind) {
-    const m = els.statusMsg;
-    if (!m) return;
-    if (!text) {
-      m.textContent = "";
-      m.className = "msg";
-      m.style.display = "none";
-      return;
-    }
-    m.textContent = text;
-    m.className = `msg ${kind || ""}`.trim();
-    m.style.display = "block";
+  function fmtMoney(total, currency) {
+    const t = String(total ?? "").trim();
+    if (!t) return "—";
+    const c = String(currency ?? "").trim();
+    return c ? `${t} ${esc(c)}` : t;
   }
 
-  function setBadge(text, loggedIn) {
-    const pill = els.sessionBadge;
-    if (!pill) return;
-    const label = pill.querySelector("#sessionText") || pill.querySelector("span:last-child");
-    if (label) label.textContent = text;
-    pill.dataset.state = loggedIn ? "in" : "out";
-  }
-
-  function parseLooseDate(val) {
-    if (val == null) return null;
-    const s = String(val).trim();
+  function parseLooseDate(input) {
+    if (!input) return null;
+    const s = String(input).trim();
     if (!s) return null;
 
-    // First try native parsing (ISO 8601 etc.)
-    const direct = new Date(s);
-    if (!isNaN(direct.getTime())) return direct;
+    // Accept "YYYY-MM-DD", "YYYY-MM-DD HH:MM:SS", ISO
+    // Convert "YYYY-MM-DD HH:MM:SS" → ISO-ish by replacing space with "T"
+    const isoish = s.includes(" ") && !s.includes("T") ? s.replace(" ", "T") : s;
 
-    // Woo/Subs often returns: "YYYY-MM-DD HH:MM:SS" (no T, no timezone)
-    const m = s.match(/^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/);
-    if (m) {
-      const year = Number(m[1]);
-      const month = Number(m[2]) - 1;
-      const day = Number(m[3]);
-      const hour = m[4] ? Number(m[4]) : 0;
-      const min = m[5] ? Number(m[5]) : 0;
-      const sec = m[6] ? Number(m[6]) : 0;
-      const d = new Date(year, month, day, hour, min, sec);
-      if (!isNaN(d.getTime())) return d;
-    }
-
-    // Fallback: if it at least starts with YYYY-MM-DD, parse that as a local date.
-    const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (m2) {
-      const d = new Date(Number(m2[1]), Number(m2[2]) - 1, Number(m2[3]));
-      if (!isNaN(d.getTime())) return d;
-    }
-
-    return null;
+    const d = new Date(isoish);
+    if (Number.isNaN(d.getTime())) return null;
+    return d;
   }
 
-  function fmtDateTime(iso) {
-    if (!iso) return "—";
-    const s = String(iso).trim();
-    const d = parseLooseDate(s);
-    if (!d) return s || "—";
-    try {
-      return d.toLocaleString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "numeric",
-        minute: "2-digit"
-      });
-    } catch {
-      return s || "—";
-    }
-  }
-
-  function fmtMoney(amount, currency) {
-    const a = Number(amount);
-    if (!isFinite(a)) return amount == null ? "—" : String(amount);
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currency || "USD"
-      }).format(a);
-    } catch {
-      return `$${a.toFixed(2)}`;
-    }
+  function fmtDate(input) {
+    const d = parseLooseDate(input);
+    if (!d) return "—";
+    return d.toLocaleString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
   }
 
   function fmtPhone(raw) {
-    if (!raw) return "—";
-    const digits = String(raw).replace(/\D/g, "");
-    // Common Woo cases: "14059907557" or "4059907557"
-    const d = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-    if (d.length === 10) return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-    return raw;
+    const s = String(raw ?? "").trim();
+    if (!s) return "—";
+
+    const digits = s.replace(/\D/g, "");
+    if (digits.length === 10) {
+      const a = digits.slice(0, 3);
+      const b = digits.slice(3, 6);
+      const c = digits.slice(6);
+      return `(${a}) ${b}-${c}`;
+    }
+    return s;
   }
 
-  function fmtDate(iso) {
-    if (!iso) return "—";
-    const s = String(iso).trim();
-    const d = parseLooseDate(s);
-    if (!d) {
-      // If it looks like a date string, show the YYYY-MM-DD portion rather than "—"
-      const m2 = s.match(/^(\d{4}-\d{2}-\d{2})/);
-      return m2 ? m2[1] : (s || "—");
+  function renderCustomer(c) {
+    if (!c) {
+      return `<div class="oo-card"><div class="oo-card-bd">No customer found.</div></div>`;
     }
-    try {
-      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
-    } catch {
-      const m2 = s.match(/^(\d{4}-\d{2}-\d{2})/);
-      return m2 ? m2[1] : (s || "—");
-    }
-  }
 
-  // ---- Networking ----
+    const id = esc(c?.id ?? "—");
+    const username = esc(c?.username ?? "—");
 
-  async function apiFetch(url, init) {
-    const opts = {
-      ...init,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(init?.headers || {})
-      }
+    const billing = c?.billing || {};
+    const shipping = c?.shipping || {};
+
+    // Requirement: don't duplicate name/email/phone if already present in Billing
+    const bName = [billing?.first_name, billing?.last_name].filter(Boolean).join(" ").trim();
+    const bEmail = billing?.email || c?.email || null;
+    const bPhone = billing?.phone || null;
+
+    const left = `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Identity</b><small>Customer</small></div>
+        <div class="oo-card-bd">
+          <div class="oo-kv">
+            <div class="k">Customer ID</div><div class="v">${id}</div>
+            <div class="k">Username</div><div class="v">${username}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const addr = (a) => {
+      const lines = [
+        [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim(),
+        a?.company,
+        a?.address_1,
+        a?.address_2,
+        [a?.city, a?.state, a?.postcode].filter(Boolean).join(" ").trim(),
+        a?.country
+      ].filter(Boolean);
+
+      const email = a?.email ? `Email: ${esc(a.email)}` : (bEmail ? `Email: ${esc(bEmail)}` : null);
+      const phone = a?.phone ? `Phone: ${esc(fmtPhone(a.phone))}` : (bPhone ? `Phone: ${esc(fmtPhone(bPhone))}` : null);
+
+      const footer = [email, phone].filter(Boolean);
+
+      return `
+        <div class="oo-card">
+          <div class="oo-card-hd"><b>${esc(a?.__label || "Address")}</b><small>${bName ? esc(bName) : ""}</small></div>
+          <div class="oo-card-bd">
+            <div style="display:grid;gap:6px;">
+              ${lines.length ? `<div>${lines.map(esc).join("<br>")}</div>` : `<div>—</div>`}
+              ${footer.length ? `<div style="color:#475569;font-size:13px;">${footer.join("<br>")}</div>` : ``}
+            </div>
+          </div>
+        </div>
+      `;
     };
 
-    const resp = await fetch(url, opts);
-    const text = await resp.text();
-    let data = null;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      data = text;
-    }
-    return { resp, data };
-  }
+    billing.__label = "Billing";
+    shipping.__label = "Shipping";
 
-  async function refreshSession() {
-    try {
-      setBadge("Session: checking…", false);
-      const { resp, data } = await apiFetch(API.status, { method: "GET" });
-      const loggedIn = !!(resp.ok && data?.loggedIn);
+    const right = `
+      <div class="oo-out" style="grid-template-columns:1fr;gap:12px;">
+        <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+          <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+            <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+              <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+                <div style="display:grid;grid-template-columns:1fr;gap:12px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
 
-      if (loggedIn) setBadge("Session: logged in", true);
-      else setBadge("Session: logged out", false);
-
-      return loggedIn;
-    } catch (err) {
-      console.error("[ArnoldAdmin] status error:", err);
-      setBadge("Session: error", false);
-      return false;
-    }
-  }
-
-  async function doLogin() {
-    setMsg("", "");
-    const username = els.user?.value?.trim();
-    const password = els.pass?.value;
-
-    if (!username || !password) {
-      setMsg("Enter username + password.", "bad");
-      return;
-    }
-
-    els.btnLogin && (els.btnLogin.disabled = true);
-    try {
-      const { resp, data } = await apiFetch(API.login, {
-        method: "POST",
-        body: JSON.stringify({ username, password })
-      });
-
-      console.log("[ArnoldAdmin] POST /admin/login", resp.status, data);
-
-      if (!resp.ok || !data?.success) {
-        setMsg(data?.message || `Login failed (${resp.status}).`, "bad");
-        await refreshSession();
-        return;
-      }
-
-      setMsg("Logged in.", "ok");
-      await refreshSession();
-    } catch (err) {
-      console.error("[ArnoldAdmin] login error:", err);
-      setMsg("Login error (see Console).", "bad");
-      setBadge("Session: error", false);
-    } finally {
-      els.btnLogin && (els.btnLogin.disabled = false);
-    }
-  }
-
-  async function doLogout() {
-    setMsg("", "");
-    els.btnLogout && (els.btnLogout.disabled = true);
-    try {
-      const { resp, data } = await apiFetch(API.logout, { method: "POST" });
-      console.log("[ArnoldAdmin] POST /admin/logout", resp.status, data);
-      setMsg("Logged out.", "ok");
-      await refreshSession();
-    } catch (err) {
-      console.error("[ArnoldAdmin] logout error:", err);
-      setMsg("Logout error (see Console).", "bad");
-    } finally {
-      els.btnLogout && (els.btnLogout.disabled = false);
-    }
-  }
-
-  // ---- Rendering ----
-
-  function renderKVRows(pairs) {
-    return pairs
-      .map(([k, v]) => {
-        const val = v == null || v === "" ? "—" : String(v);
-        return `<div class="kvRow"><div class="kvK">${esc(k)}</div><div class="kvV">${esc(val)}</div></div>`;
-      })
-      .join("");
-  }
-
-  function renderAddressBlock(title, a) {
-    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
-    const cityLine = [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ") || "—";
-    const email = a?.email || "—";
-    const phone = fmtPhone(a?.phone);
-
-    const rows = [
-      ["name", name],
-      ["address", a?.address_1 || "—"],
-      ...(a?.address_2 ? [["", a.address_2]] : []),
-      ["", cityLine],
-      ["email", email],
-      ["phone", phone]
-    ];
-
+    // Side-by-side billing/shipping
     return `
-      <div class="card" style="box-shadow:none; background:rgba(0,0,0,.02);">
-        <div class="cardTitle">${esc(title)}</div>
-        <div class="kv">${renderKVRows(rows)}</div>
+      <div class="oo-out" style="display:grid;gap:12px;">
+        ${left}
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+            <div style="display:grid;gap:12px;">
+              <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+                <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+            <div style="display:grid;gap:12px;">
+              <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
+          </div>
+        </div>
+
+        <div style="display:grid;gap:12px;">
+          <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
+            ${addr(billing)}
+            ${addr(shipping)}
+          </div>
+        </div>
       </div>
     `;
-  }
-
-  function renderCustomer(customer) {
-    if (!customer) return "<div class='muted'>—</div>";
-
-    const id = customer?.id ?? "—";
-    const username = customer?.username ?? "—";
-
-    const billing = customer?.billing || null;
-    const shipping = customer?.shipping || null;
-
-    // Top row: Customer ID + Username (two columns, one line)
-    const top = `
-      <div class="kv">
-        ${renderKVRows([
-          ["customer id", id],
-          ["username", username]
-        ])}
-      </div>
-    `;
-
-    const addr = `
-      <div class="cardGrid2">
-        ${renderAddressBlock("Billing", billing)}
-        ${renderAddressBlock("Shipping", shipping)}
-      </div>
-    `;
-
-    return `${top}<div style="margin-top:12px;">${addr}</div>`;
   }
 
   function renderSubscriptions(subs) {
-    if (!subs?.length) return "<div class='muted'>—</div>";
+    if (!subs || !subs.length) {
+      return `<div class="oo-card"><div class="oo-card-bd">No subscriptions found.</div></div>`;
+    }
 
-    const rows = subs.slice(0, 50).map((s) => {
-      const id = esc(s?.id ?? "");
+    const rows = subs.map((s) => {
+      const id = esc(s?.id ?? "—");
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
 
       // IMPORTANT: these can be "YYYY-MM-DD HH:MM:SS" → handled by parseLooseDate()
       const nextPay = fmtDate(s?.next_payment_date);
-      const end = fmtDate(s?.end_date);
+      const end =
+        (!s?.end_date && String(s?.status || "").toLowerCase() === "active")
+          ? "Auto-renews"
+          : fmtDate(s?.end_date);
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
       const notesHtml = notes.length
-        ? `<div class="notesStack">${notes.slice(0, 50).map((n) => {
-            const when = fmtDateTime(n?.date_created);
-            const body = (n?.note ?? "").trim();
-            const who = (n?.author || n?.added_by || "").trim() || "WooCommerce";
-            return `
-              <div class="noteCard">
-                <div class="noteTop"><span>${esc(when)}</span><span>${esc(who)}</span></div>
-                <div class="noteBody">${esc(body || "—")}</div>
+        ? `<div style="display:grid;gap:10px;margin-top:12px;">
+            ${notes.map(n => `
+              <div class="oo-note">
+                <small>${esc(fmtDate(n?.date_created))} • ${esc(n?.author || n?.added_by || "")}</small>
+                <div class="txt">${esc(n?.note || "")}</div>
               </div>
-            `;
-          }).join("")}</div>`
-        : "<div class='muted'>—</div>";
-
-      return `
-        <tr>
-          <td><strong>#${id}</strong> <span class="pill pillStatus" style="margin-left:8px;">${status}</span></td>
-          <td class="mono">${esc(total)}</td>
-          <td class="mono">${esc(nextPay)}</td>
-          <td class="mono">${esc(end)}</td>
-          <td>${notesHtml}</td>
-        </tr>
-      `;
-    });
-
-    return `
-      <div class="subTableWrap">
-        <table class="subTable">
-          <thead>
-            <tr>
-              <th>Subscription</th>
-              <th>Total</th>
-              <th>Next payment</th>
-              <th>End</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.join("")}
-          </tbody>
-        </table>
-      </div>
-    `;
-  }
-
-  function renderOrders(orders) {
-    if (!orders?.length) return "<div class='muted'>—</div>";
-
-    const header = `
-      <div class="orderHeader">
-        <div>Order</div>
-        <div>Status</div>
-        <div>Total</div>
-        <div>Payment</div>
-        <div>Date</div>
-        <div>Items</div>
-      </div>
-    `;
-
-    const rows = orders.slice(0, 25).map((o) => {
-      const id = o?.id ?? "";
-      const status = esc(o?.status ?? "—");
-      const total = fmtMoney(o?.total, o?.currency);
-      const date = fmtDateTime(o?.date_created);
-      const pm = esc(o?.payment_method_title || o?.payment_method || "—");
-
-      const items = Array.isArray(o?.line_items)
-        ? o.line_items
-            .map((li) => `${li?.quantity ?? 0}× ${esc(li?.name ?? "")}`.trim())
-            .filter(Boolean)
-            .join(", ")
+            `).join("")}
+          </div>`
         : "";
 
       return `
-        <div class="orderRow">
-          <div class="mono"><strong>#${esc(id)}</strong></div>
-          <div><span class="pill pillStatus">${status}</span></div>
-          <div class="mono">${esc(total)}</div>
-          <div>${pm}</div>
-          <div class="mono">${esc(date)}</div>
-          <div class="items">${items || "—"}</div>
+        <div class="oo-card">
+          <div class="oo-card-hd">
+            <b>Subscription #${id}</b>
+            <small>${status} • ${esc(total)}</small>
+          </div>
+          <div class="oo-card-bd">
+            <table class="oo-table">
+              <thead>
+                <tr>
+                  <th style="width:140px;">Status</th>
+                  <th style="width:160px;">Next Payment</th>
+                  <th style="width:140px;">End</th>
+                  <th style="width:160px;">Total</th>
+                  <th>Parent Order</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>${status}</td>
+                  <td>${esc(nextPay)}</td>
+                  <td>${esc(end)}</td>
+                  <td>${esc(total)}</td>
+                  <td>${esc(s?.parent_id ?? "—")}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            ${notesHtml}
+          </div>
         </div>
       `;
     });
 
-    return `<div class="orderTableWrap"><div class="orderLines">${header}${rows.join("")}</div></div>`;
+    return `<div class="oo-out">${rows.join("")}</div>`;
   }
 
-  function renderJson(obj) {
-    const pretty = JSON.stringify(obj ?? null, null, 2);
-    return `<pre class="json">${esc(pretty)}</pre>`;
+  function renderOrders(orders) {
+    if (!orders || !orders.length) {
+      return `<div class="oo-card"><div class="oo-card-bd">No orders found.</div></div>`;
+    }
+
+    const header = `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Orders</b><small>Most recent first</small></div>
+        <div class="oo-card-bd" style="padding:0;">
+          <table class="oo-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Order</th>
+                <th style="width:140px;">Date</th>
+                <th style="width:120px;">Status</th>
+                <th style="width:160px;">Total</th>
+                <th style="width:220px;">Payment</th>
+                <th>Customer</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orders.map(o => {
+                const id = esc(o?.id ?? "—");
+                const date = esc(fmtDate(o?.date_created));
+                const status = esc(o?.status ?? "—");
+                const total = esc(fmtMoney(o?.total, o?.currency));
+                const pmRaw = String(o?.payment_method_title || o?.payment_method || "").trim();
+                if (!pmRaw) console.warn("[ArnoldAdmin] Order missing payment method fields:", o?.id ?? "(no id)", o);
+                const pm = esc(pmRaw || "Unknown");
+
+                const b = o?.billing || {};
+                const name = [b?.first_name, b?.last_name].filter(Boolean).join(" ").trim();
+                const email = b?.email || "";
+                const who = esc([name, email].filter(Boolean).join(" • ") || "—");
+
+                return `
+                  <tr>
+                    <td>#${id}</td>
+                    <td>${date}</td>
+                    <td>${status}</td>
+                    <td>${total}</td>
+                    <td>${pm}</td>
+                    <td>${who}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    return header;
+  }
+
+  function renderJson(payload) {
+    try {
+      const pretty = JSON.stringify(payload, null, 2);
+      return `<pre>${esc(pretty)}</pre>`;
+    } catch {
+      return `<pre>(Unable to render JSON)</pre>`;
+    }
+  }
+
+  async function checkStatus() {
+    try {
+      const r = await apiFetch(API.status, { method: "GET" });
+      const data = await r.json().catch(() => null);
+
+      const loggedIn = !!data?.loggedIn;
+      if (loggedIn) {
+        setBadge("Session: logged in", true);
+        showLogout(true);
+      } else {
+        setBadge("Session: logged out", false);
+        showLogout(false);
+      }
+      return loggedIn;
+    } catch (err) {
+      console.warn("[ArnoldAdmin] status check error:", err);
+      setBadge("Session: error", false);
+      showLogout(false);
+      return false;
+    }
   }
 
   function setOutputs(payload) {
     const ctx = payload?.context || payload?.results || payload || {};
     const customer = ctx?.customer || null;
-    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
-    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
+    const rawSubs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
+    const rawOrders = Array.isArray(ctx?.orders) ? ctx.orders : [];
+
+    const isLikelySubscription = (x) =>
+      x && (
+        x.next_payment_date != null ||
+        x.billing_interval != null ||
+        x.billing_period != null ||
+        x.parent_id != null
+      );
+
+    const isLikelyOrder = (x) =>
+      x && (
+        x.payment_method != null ||
+        x.payment_method_title != null ||
+        x.date_created != null ||
+        Array.isArray(x.line_items)
+      ) && !isLikelySubscription(x);
+
+    const subs = rawSubs.filter(isLikelySubscription);
+    const orders = rawOrders.filter(isLikelyOrder);
+
+    if (rawSubs.length !== subs.length || rawOrders.length !== orders.length) {
+      console.warn("[ArnoldAdmin] Classified arrays:", {
+        rawSubs: rawSubs.length, subs: subs.length,
+        rawOrders: rawOrders.length, orders: orders.length
+      });
+    }
 
     if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
     if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
@@ -454,88 +493,145 @@
       return;
     }
 
-    // Visible “Searching…” + disable
-    els.btnSearch && (els.btnSearch.disabled = true);
+    // Visible “Searching…” immediately (no silent no-op)
     setMsg("Searching…", "ok");
 
+    let r, data;
     try {
-      const { resp, data } = await apiFetch(API.search, {
+      r = await apiFetch(API.search, {
         method: "POST",
         body: JSON.stringify({ query: q })
       });
-
-      console.log("[ArnoldAdmin] POST /admin/nl-search", resp.status, data);
-
-      if (!resp.ok) {
-        const msg =
-          (data && (data.message || data.error)) ||
-          `Search failed (${resp.status}).`;
-        setMsg(msg, "bad");
-        return;
-      }
-
-      if (!data || data.ok !== true) {
-        setMsg("Search returned unexpected JSON (see Raw JSON).", "bad");
-      } else {
-        setMsg("Search complete.", "ok");
-      }
-
-      setOutputs(data);
     } catch (err) {
-      console.error("[ArnoldAdmin] search error:", err);
-      setMsg("Search error (see Console).", "bad");
-    } finally {
-      els.btnSearch && (els.btnSearch.disabled = false);
-    }
-  }
-
-  // ---- Init ----
-
-  async function init() {
-    // Fail-fast DOM validation (visible)
-    const required = [
-      ["loginUser", els.user],
-      ["loginPass", els.pass],
-      ["btnLogin", els.btnLogin],
-      ["btnLogout", els.btnLogout],
-      ["query", els.query],
-      ["btnSearch", els.btnSearch],
-      ["msg", els.statusMsg],
-      ["customerOut", els.outCustomer],
-      ["subsOut", els.outSubs],
-      ["ordersOut", els.outOrders],
-      ["rawOut", els.outJson],
-      ["sessionPill", els.sessionBadge]
-    ];
-
-    const missing = required.filter(([, el]) => !el).map(([name]) => name);
-    if (missing.length) {
-      console.error("[ArnoldAdmin] Missing required DOM nodes:", missing);
-      setMsg(`Fatal: DOM mismatch (missing: ${missing.join(", ")}). Check index.html ids.`, "bad");
-      setBadge("Session: error", false);
+      console.error("[ArnoldAdmin] search network error:", err);
+      setMsg("Search failed (network). See console.", "bad");
       return;
     }
 
-    // Wire handlers
-    els.btnLogin.addEventListener("click", doLogin);
-    els.btnLogout.addEventListener("click", doLogout);
-    els.btnSearch.addEventListener("click", doSearch);
+    let txt = "";
+    try { txt = await r.text(); } catch (_) { txt = ""; }
 
-    // Enter key convenience
-    els.pass.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") doLogin();
-    });
-    els.query.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") doSearch();
-    });
+    try { data = txt ? JSON.parse(txt) : null; }
+    catch (err) {
+      console.error("[ArnoldAdmin] search JSON parse error:", err, txt);
+      setMsg(`Search failed (bad JSON). HTTP ${r.status}. See console.`, "bad");
+      if (els.outJson) els.outJson.innerHTML = `<pre>${esc(txt || "(empty)")}</pre>`;
+      return;
+    }
 
-    // Initial session check
-    await refreshSession();
+    console.log("[ArnoldAdmin] /admin/nl-search", { status: r.status, data });
+
+    if (!r.ok || data?.ok === false) {
+      setMsg(`Search failed. HTTP ${r.status}. ${data?.error || data?.message || ""}`.trim(), "bad");
+      setOutputs(data || {});
+      return;
+    }
+
+    setMsg(`Search OK. Intent: ${data?.intent || "unknown"}`, "ok");
+    setOutputs(data || {});
   }
 
-  init().catch((err) => {
-    console.error(err);
-    setMsg("Fatal error in main.js (see Console).", "bad");
+  // ---- Login/Logout ----
+
+  async function doLogin() {
+    const u = els.loginUser?.value?.trim();
+    const p = els.loginPass?.value;
+
+    if (!u || !p) {
+      setMsg("Username and password required.", "bad");
+      return;
+    }
+
+    setMsg("Logging in…", "ok");
+
+    let r, data;
+    try {
+      r = await apiFetch(API.login, {
+        method: "POST",
+        body: JSON.stringify({ username: u, password: p })
+      });
+    } catch (err) {
+      console.error("[ArnoldAdmin] login network error:", err);
+      setMsg("Login failed (network). See console.", "bad");
+      return;
+    }
+
+    const txt = await r.text().catch(() => "");
+    try { data = txt ? JSON.parse(txt) : null; }
+    catch (err) {
+      console.error("[ArnoldAdmin] login JSON parse error:", err, txt);
+      setMsg(`Login failed (bad JSON). HTTP ${r.status}.`, "bad");
+      return;
+    }
+
+    console.log("[ArnoldAdmin] /admin/login", { status: r.status, data });
+
+    if (!r.ok || data?.success === false) {
+      setMsg(`Login failed. HTTP ${r.status}. ${data?.message || data?.error || ""}`.trim(), "bad");
+      await checkStatus();
+      return;
+    }
+
+    setMsg("Login OK.", "ok");
+    await checkStatus();
+  }
+
+  async function doLogout() {
+    setMsg("Logging out…", "ok");
+
+    try {
+      const r = await apiFetch(API.logout, { method: "POST", body: JSON.stringify({}) });
+      const data = await r.json().catch(() => null);
+      console.log("[ArnoldAdmin] /admin/logout", { status: r.status, data });
+    } catch (err) {
+      console.error("[ArnoldAdmin] logout error:", err);
+    }
+
+    setMsg("Logged out.", "ok");
+    await checkStatus();
+  }
+
+  function toggleRaw() {
+    if (!els.rawWrap) return;
+    const isHidden = els.rawWrap.style.display === "none" || !els.rawWrap.style.display;
+    els.rawWrap.style.display = isHidden ? "" : "none";
+  }
+
+  // ---- Bind handlers ----
+
+  window.addEventListener("DOMContentLoaded", async () => {
+    bindEls();
+
+    if (els.btnLogin) els.btnLogin.addEventListener("click", doLogin);
+    if (els.btnLogout) els.btnLogout.addEventListener("click", doLogout);
+    if (els.btnSearch) els.btnSearch.addEventListener("click", doSearch);
+    if (els.btnRaw) els.btnRaw.addEventListener("click", toggleRaw);
+
+    // Enter key convenience
+    if (els.query) {
+      els.query.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doSearch();
+      });
+    }
+    if (els.loginPass) {
+      els.loginPass.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doLogin();
+      });
+    }
+
+    setBadge("Session: checking…", false);
+    await checkStatus();
+  });
+
+  window.addEventListener("error", (e) => {
+    console.error("[ArnoldAdmin] window error:", e?.message || e);
+    setMsg("Unexpected error (see console).", "bad");
+    setBadge("Session: error", false);
+  });
+
+  window.addEventListener("unhandledrejection", (e) => {
+    console.error("[ArnoldAdmin] unhandled rejection:", e?.reason || e);
+    setMsg("Unexpected error (see console).", "bad");
     setBadge("Session: error", false);
   });
 })();
