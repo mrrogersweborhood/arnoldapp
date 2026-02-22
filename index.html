@@ -1,6 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-21b) -->
-<!-- Markers are comments only: 🟢 index.html ... 🔴 index.html -->
+<!-- Arnold Admin — index.html (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,232 +7,335 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Arnold Admin</title>
 
-  <style id="arnoldAdminStyles">
+  <style>
     :root{
-      --brand:#1E90FF;
-      --bg:#f3f6ff;
-      --card:#ffffff;
-      --text:#0f172a;
+      --blue:#1E90FF;
+      --ink:#0f172a;
       --muted:#64748b;
-      --shadow:0 18px 45px rgba(15,23,42,.10);
+      --bg:#eef3fb;
+      --card:rgba(255,255,255,.82);
+      --line:rgba(15,23,42,.10);
+      --shadow:0 10px 30px rgba(15,23,42,.14);
       --radius:18px;
+      --radius2:14px;
     }
 
     *{box-sizing:border-box}
-    html,body{height:100%}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:var(--text);
-      background:radial-gradient(900px 350px at 50% 0%, rgba(30,144,255,.22), transparent 70%), var(--bg);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 600px at 20% 0%, rgba(30,144,255,.14), transparent 65%),
+        radial-gradient(900px 500px at 80% 10%, rgba(30,144,255,.10), transparent 70%),
+        linear-gradient(180deg, #f7faff 0%, var(--bg) 55%, #f7faff 100%);
     }
 
     .topbar{
-      position:sticky;top:0;z-index:10;
-      background:linear-gradient(90deg, rgba(30,144,255,.92), rgba(30,144,255,.75));
-      color:#fff;
-      padding:16px 18px;
-      box-shadow:0 14px 40px rgba(0,0,0,.18);
+      position:sticky; top:0; z-index:50;
+      background:linear-gradient(90deg, rgba(30,144,255,.92), rgba(30,144,255,.70));
+      border-bottom:1px solid rgba(255,255,255,.25);
+      box-shadow:0 10px 30px rgba(15,23,42,.20);
+      backdrop-filter: blur(8px);
     }
-    .topbarInner{max-width:1080px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px}
-    .brand{display:flex;align-items:center;gap:12px;min-width:0}
-    .brand img{height:40px;width:auto;display:block;filter:drop-shadow(0 6px 12px rgba(0,0,0,.18))}
-    .brandText{line-height:1.1}
-    .brandText .sub{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.95}
-    .brandText .title{font-size:13px;font-weight:800;opacity:.95}
+    .topbarInner{
+      max-width:1080px; margin:0 auto;
+      padding:12px 14px;
+      display:flex; align-items:center; justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:12px;
+      color:white; font-weight:800; letter-spacing:.02em;
+      min-width:0;
+    }
+    .brand img{
+      width:160px; height:auto; display:block;
+      filter: drop-shadow(0 2px 8px rgba(0,0,0,.20));
+    }
+    .brandText{
+      display:flex; flex-direction:column; line-height:1.1;
+      min-width:0;
+    }
+    .brandText .sub{
+      font-weight:700; opacity:.95; font-size:12px; text-transform:uppercase;
+      letter-spacing:.08em;
+    }
 
-    .sessionPill{
-      display:flex;align-items:center;gap:10px;
-      background:rgba(255,255,255,.18);
-      border:1px solid rgba(255,255,255,.28);
-      border-radius:999px;
+    .session{
+      display:flex; align-items:center; gap:10px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.22);
       padding:8px 12px;
-      font-weight:800;
-      box-shadow:0 10px 25px rgba(0,0,0,.12);
-      white-space:nowrap;
+      border-radius:999px;
+      color:white;
+      min-width:220px;
+      justify-content:center;
     }
-    .sessionDot{width:10px;height:10px;border-radius:999px;background:rgba(255,255,255,.45)}
-    .sessionPill.on .sessionDot{background:#7CFFB2}
+    .dot{
+      width:10px;height:10px;border-radius:999px;background:#cbd5e1;
+      box-shadow:0 0 0 4px rgba(255,255,255,.12);
+    }
+    #sessionBadge.checking .dot{background:#fbbf24}
+    #sessionBadge.in .dot{background:#22c55e}
+    #sessionBadge.out .dot{background:#94a3b8}
 
-    .wrap{max-width:1080px;margin:22px auto 60px;padding:0 16px}
+    .wrap{
+      max-width:1080px;
+      margin:18px auto 28px;
+      padding:0 14px;
+    }
 
-    .card{
+    .panel{
       background:var(--card);
-      border-radius:var(--radius);
+      border:1px solid rgba(255,255,255,.60);
       box-shadow:var(--shadow);
-      border:1px solid rgba(0,0,0,.06);
-      padding:16px;
+      border-radius:var(--radius);
+      padding:16px 16px 14px;
+      backdrop-filter: blur(10px);
     }
 
-    .row{display:flex;gap:12px;flex-wrap:wrap}
-    .row .grow{flex:1;min-width:240px}
+    .row{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
 
     input[type="text"], input[type="password"]{
-      width:100%;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(0,0,0,.10);
-      background:#f8fbff;
+      height:42px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.12);
+      padding:0 12px;
       outline:none;
-      font-size:14px;
+      background:rgba(255,255,255,.72);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+      min-width:220px;
     }
-    input:focus{border-color:rgba(30,144,255,.55);box-shadow:0 0 0 3px rgba(30,144,255,.18)}
+    input:focus{
+      border-color:rgba(30,144,255,.55);
+      box-shadow: 0 0 0 4px rgba(30,144,255,.16), inset 0 1px 0 rgba(255,255,255,.55);
+    }
 
     .btn{
-      border:none;
-      border-radius:14px;
-      padding:10px 14px;
-      font-weight:900;
+      height:42px;
+      padding:0 16px;
+      border-radius:12px;
+      border:0;
+      font-weight:800;
       cursor:pointer;
-      transition:transform .06s ease, opacity .12s ease;
-      user-select:none;
+      box-shadow:0 10px 24px rgba(15,23,42,.12);
+      transition: transform .06s ease, opacity .2s ease;
+      white-space:nowrap;
     }
-    .btn:active{transform:translateY(1px)}
-    .btn.primary{background:var(--brand);color:#fff}
-    .btn.dark{background:#0b1220;color:#fff}
-    .btn.soft{background:rgba(30,144,255,.14);color:var(--brand)}
-    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn:active{transform: translateY(1px)}
+    .btn.primary{background:var(--blue); color:white}
+    .btn.ghost{background:#111827; color:white}
+    .btn:disabled{opacity:.55; cursor:not-allowed}
 
-    .hint{margin-top:8px;color:var(--muted);font-size:12.5px}
-    .msg{margin-top:10px;font-weight:900;color:#b91c1c}
-    .muted{color:var(--muted)}
-
-    .section{margin-top:16px}
-    .section h3{margin:0 0 10px;font-size:16px}
-
-    /* Customer blocks */
-    .kvGrid{display:grid;grid-template-columns:140px 1fr;gap:8px 12px}
-    .kv{display:contents}
-    .k{color:var(--brand);font-weight:900;text-transform:lowercase;font-size:12px;letter-spacing:.08em}
-    .v{font-weight:700;word-break:break-word}
-
-    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
-    @media (max-width: 720px){.twoCol{grid-template-columns:1fr}}
-
-    /* Raw JSON */
-    .rawHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer}
-    .rawChevron{transition:transform .15s ease}
-    .rawOpen .rawChevron{transform:rotate(90deg)}
-    pre.rawOut{display:none;margin:10px 0 0;background:#0b1220;color:#e5e7eb;padding:12px;border-radius:14px;overflow:auto;max-height:420px}
-    .rawOpen pre.rawOut{display:block}
-
-    /* One-line lists (Subscriptions / Orders) */
-    .oneList{display:flex;flex-direction:column;gap:10px}
-    .oneRow, .subRow{
-      background:#fff;
-      border:1px solid rgba(0,0,0,.06);
-      border-radius:14px;
-      padding:12px 14px;
-      box-shadow:0 10px 28px rgba(0,0,0,.06);
-    }
-    .oneRowTitle{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.2px}
-    .oneRowMeta{margin-top:4px;color:var(--muted);font-size:13px;line-height:1.25}
-    .pill{display:inline-block;border:1px solid rgba(0,0,0,.12);background:rgba(30,144,255,.10);color:var(--brand);padding:3px 8px;border-radius:999px;font-weight:900;font-size:12px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-
-    /* Subscription notes: right column, right-justified */
-    .subRow{display:flex;gap:14px;align-items:flex-start}
-    .subLeft{flex:1;min-width:0}
-    .subNotes{
-      width:min(420px, 38%);
-      text-align:right;
+    .help{
       color:var(--muted);
-      font-size:12.5px;
-      line-height:1.25;
-      border-left:1px dashed rgba(0,0,0,.12);
-      padding-left:12px;
+      font-size:12px;
+      margin-top:6px;
     }
-    .noteLine{margin:0 0 6px 0}
-    .noteLine:last-child{margin-bottom:0}
 
-    @media (max-width: 900px){
-      .subRow{flex-direction:column}
-      .subNotes{width:100%;text-align:left;border-left:none;border-top:1px dashed rgba(0,0,0,.12);padding-left:0;padding-top:10px}
+    .msg{
+      margin-top:10px;
+      font-weight:800;
+      font-size:14px;
+    }
+    .msg.ok{color:#0f766e}
+    .msg.bad{color:#b91c1c}
+
+    .section{
+      margin-top:14px;
+    }
+    .sectionTitle{
+      font-weight:900;
+      font-size:18px;
+      margin:14px 0 10px;
+    }
+    .card{
+      background:rgba(255,255,255,.85);
+      border:1px solid rgba(255,255,255,.60);
+      border-radius:var(--radius);
+      box-shadow:0 10px 30px rgba(15,23,42,.10);
+      padding:14px 14px;
+      backdrop-filter: blur(10px);
+    }
+
+    .empty{color:var(--muted); font-weight:700}
+
+    .grid2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    @media (max-width: 920px){
+      .grid2{grid-template-columns: 1fr}
+      .brand img{width:140px}
+      .session{min-width:auto}
+    }
+
+    .cardInset{
+      border:1px solid rgba(15,23,42,.06);
+      border-radius:var(--radius2);
+      padding:12px 12px;
+      background:rgba(255,255,255,.70);
+    }
+    .sectTitle{
+      font-weight:900;
+      margin:0 0 10px;
+    }
+
+    .kv{
+      display:grid;
+      grid-template-columns: 130px 1fr;
+      gap:10px;
+      padding:6px 0;
+      border-bottom:1px dashed rgba(15,23,42,.10);
+    }
+    .kv:last-child{border-bottom:0}
+    /* Field labels should match OkObserver blue */
+    .k{color:var(--blue); font-size:13px; font-weight:700}
+    .v{font-weight:800}
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      height:22px;
+      padding:0 10px;
+      border-radius:999px;
+      background:rgba(30,144,255,.14);
+      color:rgba(15,23,42,.85);
+      border:1px solid rgba(30,144,255,.28);
+      font-weight:900;
+      font-size:12px;
+      text-transform:lowercase;
+      letter-spacing:.02em;
+      margin-left:8px;
+    }
+
+    .tbl{
+      width:100%;
+      border-collapse:collapse;
+      font-size:14px;
+    }
+    .tbl th{
+      text-align:left;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      padding:10px 0;
+      border-bottom:1px solid rgba(15,23,42,.10);
+    }
+    .tbl td{
+      padding:10px 0;
+      vertical-align:top;
+      border-bottom:1px solid rgba(15,23,42,.06);
+    }
+    .tbl tr:last-child td{border-bottom:0}
+
+    /* --- Subscriptions: compact one-line row + note cards within subscription area --- */
+    .subCard{padding:12px 12px;margin:10px 0;border:1px solid rgba(15,23,42,.08);border-radius:14px;background:#fff;box-shadow:0 6px 22px rgba(15,23,42,.06)}
+    .subRow{display:grid;grid-template-columns: 170px 110px 165px 165px 1fr;gap:10px;align-items:center}
+    .subCell{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .subMain{display:flex;gap:8px;align-items:center}
+    .subNotes{margin-top:10px;display:flex;flex-direction:column;gap:10px;align-items:flex-end}
+    .noteCard{width:min(560px,100%);border:1px solid rgba(15,23,42,.08);border-radius:14px;background:rgba(30,144,255,.03);box-shadow:0 6px 18px rgba(15,23,42,.05);padding:10px 12px}
+    .noteMeta{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .noteBody{font-size:13px;line-height:1.35;white-space:pre-wrap}
+
+    details.raw summary{
+      cursor:pointer;
+      font-weight:900;
+    }
+    pre{
+      background:rgba(15,23,42,.90);
+      color:#e2e8f0;
+      border-radius:14px;
+      padding:12px;
+      overflow:auto;
+      max-height:420px;
+      margin:10px 0 0;
+      border:1px solid rgba(255,255,255,.10);
     }
   </style>
 </head>
 
 <body>
-  <header class="topbar">
+  <div class="topbar">
     <div class="topbarInner">
       <div class="brand">
         <img src="logo.png" alt="The Oklahoma Observer" />
         <div class="brandText">
-          <div class="sub">THE OKLAHOMA</div>
-          <div class="title">Observer • Arnold Admin</div>
+          <div style="font-size:14px; font-weight:900; opacity:.98;">Arnold Admin</div>
+          <div class="sub">Admin Tools</div>
         </div>
       </div>
 
-      <div id="sessionPill" class="sessionPill">
-        <span id="sessionDot" class="sessionDot"></span>
-        <span id="sessionText">Session: checking…</span>
+      <div id="sessionBadge" class="session checking">
+        <div class="dot"></div>
+        <div id="sessionText" style="font-weight:900;">Session: checking…</div>
       </div>
     </div>
-  </header>
+  </div>
 
-  <main class="wrap">
-    <section class="card">
-      <div class="row">
-        <div class="grow">
-          <input id="loginUser" type="text" autocomplete="username" placeholder="WordPress username or email" />
-        </div>
-        <div class="grow">
-          <input id="loginPass" type="password" autocomplete="current-password" placeholder="WordPress password" />
-        </div>
-        <div>
+  <div class="wrap">
+    <div class="panel">
+      <div class="row" style="justify-content:space-between;">
+        <div class="row" style="flex:1;">
+          <input id="loginEmail" type="text" placeholder="username" autocomplete="username" />
+          <input id="loginPass" type="password" placeholder="password" autocomplete="current-password" />
           <button id="btnLogin" class="btn primary">Log in</button>
-        </div>
-        <div>
-          <button id="btnLogout" class="btn dark">Log out</button>
+          <button id="btnLogout" class="btn ghost" disabled>Log out</button>
         </div>
       </div>
 
-      <div class="hint">
-        Admin-only. Uses an HttpOnly cookie session (no localStorage token).
-      </div>
-
+      <div class="help">Admin-only. Uses an HttpOnly cookie session (no localStorage token).</div>
       <div id="msg" class="msg"></div>
 
-      <div class="row" style="margin-top:12px">
-        <div class="grow">
-          <input id="query" type="text" placeholder="Examples: customer bob@abc.com • subscription for bob@abc.com • orders for email bob@abc.com • order #12997" />
-        </div>
-        <div>
-          <button id="btnSearch" class="btn primary">Search</button>
-        </div>
+      <div class="row" style="margin-top:12px;">
+        <input id="query" type="text" placeholder="Examples: customer bob@abc.com • subscription for bob@abc.com • orders for email bob@abc.com • order #12997" style="flex:1; min-width:320px;" />
+        <button id="btnSearch" class="btn primary">Search</button>
       </div>
 
-      <div class="hint">
-        Output always renders in this order: <b>Customer</b> → <b>Subscriptions</b> → <b>Orders</b>.
+      <div class="help">Output always renders in this order: <b>Customer → Subscriptions → Orders</b>.</div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <div class="sectionTitle">Customer</div>
+        <div id="outCustomer" class="empty">—</div>
       </div>
-    </section>
+    </div>
 
-    <section class="section card">
-      <h3>Customer</h3>
-      <div id="customerOut" class="muted">—</div>
-    </section>
-
-    <section class="section card">
-      <h3>Subscriptions</h3>
-      <div id="subsOut" class="muted">—</div>
-    </section>
-
-    <section class="section card">
-      <h3>Orders (most recent)</h3>
-      <div id="ordersOut" class="muted">—</div>
-    </section>
-
-    <section id="rawBox" class="section card">
-      <div id="rawToggle" class="rawHeader">
-        <h3 style="margin:0">Raw JSON</h3>
-        <div id="rawChevron" class="rawChevron">›</div>
+    <div class="section">
+      <div class="card">
+        <div class="sectionTitle">Subscriptions</div>
+        <div id="outSubs" class="empty">—</div>
       </div>
-      <pre id="rawOut" class="rawOut"></pre>
-    </section>
-  </main>
+    </div>
 
-  <!-- IMPORTANT: bump this ?v= any time you change main.js -->
+    <div class="section">
+      <div class="card">
+        <div class="sectionTitle">Orders (most recent)</div>
+        <div id="outOrders" class="empty">—</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="card">
+        <details class="raw">
+          <summary>Raw JSON</summary>
+          <pre id="outJson"></pre>
+        </details>
+      </div>
+    </div>
+  </div>
+
   <script src="main.js?v=2026-02-21b"></script>
+  <!-- 🔴 index.html -->
 </body>
 </html>
-<!-- 🔴 index.html -->
