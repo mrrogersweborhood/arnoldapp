@@ -1,434 +1,446 @@
 // 🟢 main.js
-// Arnold Admin SPA — FULL REPLACEMENT (v2026-02-20v)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-21b)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
   "use strict";
 
-  // IMPORTANT:
-  // - This app must talk to the Arnold Admin Worker:
-  //     https://arnold-admin-worker.bob-b5c.workers.dev
-  // - index.html DOM IDs are authoritative; this file must match them exactly.
+  const BUILD = "2026-02-21b";
 
-  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-  const ENDPOINTS = {
-    login: `${WORKER_BASE}/admin/login`,
-    logout: `${WORKER_BASE}/admin/logout`,
-    status: `${WORKER_BASE}/admin/status`,
-    search: `${WORKER_BASE}/admin/nl-search`
+  // ✅ Arnold Admin Worker base URL (do not change without updating handoff docs)
+  const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+
+  // -------- DOM (supports legacy IDs to prevent churn) --------
+  const byId = (id) => document.getElementById(id);
+  const first = (...ids) => {
+    for (const id of ids) {
+      const n = byId(id);
+      if (n) return n;
+    }
+    return null;
   };
 
-  const els = {
+  const el = {
+    // Session
+    sessionPill: first("sessionPill", "sessionBadge"),
+    sessionText: first("sessionText"),
+
     // Auth
-    user: document.getElementById("inputUser"),
-    pass: document.getElementById("inputPass"),
-    btnLogin: document.getElementById("btnLogin"),
-    btnLogout: document.getElementById("btnLogout"),
-    sessionPill: document.getElementById("sessionPill"),
+    loginUser: first("loginUser", "loginEmail", "user"),
+    loginPass: first("loginPass"),
+    btnLogin: first("btnLogin", "loginBtn"),
+    btnLogout: first("btnLogout", "logoutBtn"),
 
     // Search
-    query: document.getElementById("inputQuery"),
-    btnSearch: document.getElementById("btnSearch"),
-    msg: document.getElementById("statusMsg"),
+    query: first("query"),
+    btnSearch: first("btnSearch", "searchBtn"),
+    msg: first("msg"),
 
-    // Output
-    outCustomer: document.getElementById("outCustomer"),
-    outSubs: document.getElementById("outSubs"),
-    outOrders: document.getElementById("outOrders"),
-
-    // Raw JSON (index.html uses a native <details>)
-    rawDetails: document.getElementById("rawJsonDetails"),
-    outJson: document.getElementById("outJson")
+    // Outputs
+    outCustomer: first("customerOut", "outCustomer"),
+    outSubs: first("subsOut", "outSubs"),
+    outOrders: first("ordersOut", "outOrders"),
+    outJson: first("rawOut", "outJson"),
   };
 
-  const state = {
-    loggedIn: false,
-    user: null,
-    roles: [],
-    lastRaw: null
-  };
-
-  function injectStyles() {
-    if (document.getElementById("arnoldAdminStyles")) return;
-
-    const style = document.createElement("style");
-    style.id = "arnoldAdminStyles";
-    style.textContent = `
-      /* Arnold Admin UI polish (runtime-injected) */
-      .kvGrid { display: grid; gap: 10px; }
-      .kvRow { display: grid; grid-template-columns: 140px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px dashed rgba(0,0,0,0.08); }
-      .kvRow:last-child { border-bottom: none; }
-      .kvK { color: #1E90FF; font-weight: 700; letter-spacing: .2px; text-transform: lowercase; }
-      .kvV { color: #111; }
-      .addrGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
-      @media (max-width: 820px) { .addrGrid { grid-template-columns: 1fr; } }
-      .miniCard { background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); padding: 14px 16px; }
-      .miniCard h4 { margin: 0 0 10px 0; font-size: 15px; }
-      .noteStack { display: flex; flex-direction: column; gap: 10px; }
-      .noteCard { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(0,0,0,0.05); }
-      .noteMeta { color: #666; font-size: 12px; margin-bottom: 6px; }
-      .noteText { color: #111; white-space: pre-wrap; }
-    `;
-    document.head.appendChild(style);
+  // Hard stop if index.html / main.js are mismatched.
+  const REQUIRED = [
+    "sessionPill","sessionText","loginUser","loginPass","btnLogin","btnLogout","query","btnSearch","msg",
+    "outCustomer","outSubs","outOrders","outJson"
+  ];
+  const missing = REQUIRED.filter((k) => !el[k]);
+  if (missing.length) {
+    const warn = `DOM mismatch: missing element(s): ${missing.join(", ")}. index.html and main.js must be updated together.`;
+    console.error(warn);
+    // Best effort to display
+    if (el.msg) {
+      el.msg.textContent = warn;
+      el.msg.style.display = "block";
+      el.msg.style.color = "#b91c1c";
+      el.msg.style.fontWeight = "800";
+    } else {
+      alert(warn);
+    }
+    return;
   }
 
-  function setMsg(text) {
-    if (!els.msg) return;
-    els.msg.textContent = text || "";
-    els.msg.style.display = text ? "block" : "none";
-  }
-
-  function safeText(v) {
-    if (v == null) return "";
-    return String(v);
-  }
-
-  function fmtDate(s) {
-    if (!s) return "";
-    const t = String(s).trim();
-    if (!t) return "";
-    // Keep exact text (Woo returns local string)
-    return t.replace("T", " ").replace("Z", "");
-  }
+  // -------- helpers --------
+  const esc = (s) => String(s ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
   function fmtPhone(v) {
     const raw = String(v ?? "").trim();
     if (!raw) return "";
-    const digits = raw.replace(/\D+/g, "");
-    if (digits.length === 10) {
-      return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
-    }
+    const digits = raw.replace(/\D/g, "");
     if (digits.length === 11 && digits.startsWith("1")) {
-      return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+      const d = digits.slice(1);
+      return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    }
+    if (digits.length === 10) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     }
     return raw;
   }
 
-  function buildNLQuery(input) {
-    const raw = String(input || "").trim();
-    if (!raw) return "";
+  const fmtMoney = (v) => {
+    if (v === null || v === undefined || v === "") return "—";
+    const n = Number(v);
+    if (!Number.isFinite(n)) return String(v);
+    return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
+  };
 
-    // If user types only digits, treat as order id intent.
-    if (/^\d{3,}$/.test(raw)) return `order #${raw}`;
+  const fmtDateTime = (v) => {
+    if (!v) return "—";
+    // Accept ISO, unix seconds, or unix ms
+    let d = null;
+    if (typeof v === "number") d = new Date(v > 1e12 ? v : v * 1000);
+    else {
+      const s = String(v);
+      if (/^\d{10,13}$/.test(s)) {
+        const n = Number(s);
+        d = new Date(n > 1e12 ? n : n * 1000);
+      } else {
+        d = new Date(s);
+      }
+    }
+    if (!(d instanceof Date) || isNaN(d.getTime())) return String(v);
+    return d.toLocaleString();
+  };
 
-    // If user types "#12345", treat as order id.
-    if (/^#\d{3,}$/.test(raw)) return `order ${raw}`;
+  const badgeClass = (status) => {
+    const s = String(status ?? "").toLowerCase();
+    if (["active","processing","completed","paid"].includes(s)) return "badge green";
+    if (["cancelled","canceled","failed","refunded","expired","trash"].includes(s)) return "badge red";
+    return "badge gray";
+  };
 
-    return raw;
-  }
+  const setMsg = (text, tone = "normal") => {
+    el.msg.textContent = text || "";
+    el.msg.style.display = text ? "block" : "none";
+    el.msg.style.color = tone === "error" ? "#b91c1c" : "inherit";
+    el.msg.style.fontWeight = tone === "error" ? "800" : "normal";
+  };
 
-  async function apiGet(url) {
-    const r = await fetch(url, {
-      method: "GET",
+  const setSession = (state, extra = "") => {
+    // state: "checking" | "in" | "out"
+    const label =
+      state === "checking" ? "Session: checking…" :
+      state === "in" ? "Session: logged in" :
+      "Session: logged out";
+    el.sessionText.textContent = extra ? `${label} — ${extra}` : label;
+
+    el.sessionPill.dataset.state = state;
+  };
+
+  async function api(path, { method = "GET", body = null, headers = {}, timeoutMs = 15000 } = {}) {
+    const url = `${API_BASE}${path}`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+
+    const opts = {
+      method,
       credentials: "include",
-      headers: { "Accept": "application/json" }
-    });
-    const txt = await r.text();
-    let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
-    return { ok: r.ok, status: r.status, data };
-  }
+      headers: { ...headers },
+      signal: ctrl.signal
+    };
 
-  async function apiPost(url, payload) {
-    const r = await fetch(url, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload || {})
-    });
-    const txt = await r.text();
-    let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
-    return { ok: r.ok, status: r.status, data };
-  }
+    if (body !== null) {
+      // Default to JSON; worker should accept JSON.
+      if (!opts.headers["Content-Type"]) opts.headers["Content-Type"] = "application/json";
+      opts.body = typeof body === "string" ? body : JSON.stringify(body);
+    }
 
-  function setSessionPill(loggedIn) {
-    if (!els.sessionPill) return;
+    try {
+      const res = await fetch(url, opts);
+      const ctype = (res.headers.get("content-type") || "").toLowerCase();
 
-    // index.html uses "Session: logged in/out" text
-    els.sessionPill.textContent = loggedIn ? "Session: logged in" : "Session: logged out";
+      let data = null;
+      if (ctype.includes("application/json")) data = await res.json();
+      else data = await res.text();
+
+      return { ok: res.ok, status: res.status, data, res };
+    } finally {
+      clearTimeout(t);
+    }
   }
 
   function clearOutputs() {
-    if (els.outCustomer) els.outCustomer.innerHTML = "—";
-    if (els.outSubs) els.outSubs.innerHTML = "—";
-    if (els.outOrders) els.outOrders.innerHTML = "—";
-    if (els.outJson) els.outJson.textContent = "";
-    state.lastRaw = null;
+    el.outCustomer.innerHTML = "—";
+    el.outSubs.innerHTML = "—";
+    el.outOrders.innerHTML = "—";
+    el.outJson.textContent = "";
   }
 
-  function renderKVGrid(rows) {
-    const safeRows = Array.isArray(rows) ? rows : [];
+  // -------- renderers --------
+  function kvRow(k, v) {
+    return `<div class="row"><div class="k">${esc(k)}</div><div class="v">${v || "—"}</div></div>`;
+  }
+
+  function renderAddressCard(title, obj = {}) {
+    const name = esc(obj.name || (obj.first_name && obj.last_name ? `${obj.first_name} ${obj.last_name}` : obj.company || ""));
+    const email = esc(obj.email || "");
+    const phone = esc(fmtPhone(obj.phone || ""));
+    const parts = [
+      obj.address_1, obj.address_2, obj.city,
+      obj.state, obj.postcode, obj.country
+    ].filter(Boolean);
+
+    const addr = parts.length ? esc(parts.join(" • ")) : "—";
+
     return `
-      <div class="kvGrid">
-        ${safeRows.map(r => `
-          <div class="kvRow">
-            <div class="kvK">${safeText(r.k)}</div>
-            <div class="kvV">${safeText(r.v) || "—"}</div>
-          </div>
-        `).join("")}
+      <div class="card">
+        <div class="h2">${esc(title)}</div>
+        ${kvRow("name", name || "—")}
+        ${kvRow("address", addr)}
+        ${kvRow("email", email || "—")}
+        ${kvRow("phone", phone || "—")}
       </div>
     `;
   }
 
-  function renderAddressCard(title, a) {
-    const rows = [
-      { k: "name", v: [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—" },
-      { k: "address", v: [a?.address_1, a?.address_2, a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ") || "—" },
-      { k: "email", v: a?.email || "—" },
-      { k: "phone", v: a?.phone || "—" }
-    ];
-    return `
-      <div class="miniCard">
-        <h4>${safeText(title)}</h4>
-        ${renderKVGrid(rows)}
-      </div>
-    `;
-  }
+  function renderCustomer(data = {}) {
+    const c = data.customer || data || {};
+    const billing = c.billing || data.billing || {};
+    const shipping = c.shipping || data.shipping || {};
 
-  function renderCustomer(c) {
-    if (!c) return "—";
+    // Customer summary: ONLY id + username (as requested)
+    const cid = c.id ?? c.customer_id ?? "—";
+    const uname = c.username || c.user_login || c.email || "—";
 
-    const id = safeText(c?.id ?? "—");
-    const username = safeText(c?.username ?? "—");
-
-    const billing = c?.billing || {};
-    const shipping = c?.shipping || {};
-
-    return `
-      <div class="metaRow">
-        <div class="kv"><div class="k">customer id</div><div class="v">${id}</div></div>
-        <div class="kv"><div class="k">username</div><div class="v">${username}</div></div>
-      </div>
-
-      <div class="grid2">
-        <div class="cardInner">
-          <h4 class="subhead">Billing</h4>
-          ${renderAddressCompact(billing)}
-        </div>
-        <div class="cardInner">
-          <h4 class="subhead">Shipping</h4>
-          ${renderAddressCompact(shipping)}
+    const top = `
+      <div class="card">
+        <div class="h2">Customer</div>
+        <div class="cols2">
+          <div>${kvRow("customer id", `<span class="mono">${esc(cid)}</span>`)}</div>
+          <div>${kvRow("username", esc(uname))}</div>
         </div>
       </div>
     `;
-  }
 
-  function renderAddressCompact(a) {
-    if (!a) return "<div class=\"muted\">—</div>";
-
-    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
-    const address = [
-      a?.address_1,
-      a?.address_2,
-      a?.city,
-      a?.state,
-      a?.postcode,
-      a?.country
-    ].filter(Boolean).join(" • ").trim() || "—";
-
-    const email = a?.email ? safeText(a.email) : "—";
-    const phone = a?.phone ? safeText(fmtPhone(a.phone)) : "—";
-
-    return `
-      <div class="kvGrid">
-        <div class="kv"><div class="k">name</div><div class="v">${name}</div></div>
-        <div class="kv"><div class="k">address</div><div class="v">${address}</div></div>
-        <div class="kv"><div class="k">email</div><div class="v">${email}</div></div>
-        <div class="kv"><div class="k">phone</div><div class="v">${phone}</div></div>
+    // Billing + Shipping side-by-side
+    const cards = `
+      <div class="cols2">
+        ${renderAddressCard("Billing", billing)}
+        ${renderAddressCard("Shipping", shipping)}
       </div>
     `;
+
+    return `${top}${cards}`;
   }
 
-function renderSubscriptions(subs) {
-    const arr = Array.isArray(subs) ? subs : [];
-    if (!arr.length) return "—";
+  function renderSubscriptionNotes(notes) {
+    if (!Array.isArray(notes) || notes.length === 0) return "—";
+    return notes.map((n) => {
+      const when = fmtDateTime(n.date_created_gmt || n.date_created || n.created || n.time || n.date);
+      const who = esc(n.author || n.by || n.type || "WooCommerce");
+      const text = esc(n.note || n.content || n.message || "");
+      return `
+        <div class="note">
+          <div class="noteTop"><span>${esc(when)}</span><span>${who}</span></div>
+          <div class="noteText">${text || "—"}</div>
+        </div>
+      `;
+    }).join("");
+  }
 
-    // Ignore empty end_date (Worker already normalizes, but double-safety)
-    const clean = arr.map(s => ({
-      ...s,
-      end_date: s?.end_date ? String(s.end_date).trim() : null
-    }));
+  function renderSubs(data = {}) {
+    const subs = data.subscriptions || data.subs || [];
+    if (!Array.isArray(subs) || subs.length === 0) return "—";
+
+    const rows = subs.map((s) => {
+      const id = s.id ?? s.subscription_id ?? "—";
+      const status = s.status ?? "—";
+      const total = s.total ?? s.recurring_total ?? s.order_total ?? "—";
+
+      const nextPay =
+        s.next_payment_date || s.next_payment || s.schedule_next_payment || s.date_next_payment || s.next_payment_gmt || null;
+
+      const end =
+        s.end_date || s.date_end || s.schedule_end || s.date_end_gmt || null;
+
+      const notes = s.notes || s.subscription_notes || s.note || [];
+
+      return `
+        <tr>
+          <td><span class="mono">#${esc(id)}</span></td>
+          <td><span class="${badgeClass(status)}">${esc(status)}</span></td>
+          <td>${esc(fmtMoney(total))}</td>
+          <td>${esc(fmtDateTime(nextPay))}</td>
+          <td>${esc(fmtDateTime(end))}</td>
+          <td class="right">${renderSubscriptionNotes(notes)}</td>
+        </tr>
+      `;
+    }).join("");
 
     return `
-      <table class="table">
+      <table class="tbl">
         <thead>
           <tr>
-            <th>SUBSCRIPTION</th>
-            <th>TOTAL</th>
-            <th>START</th>
-            <th>NEXT PAY</th>
-            <th>END</th>
-            <th>PAYMENT METHOD</th>
-            <th>NOTES</th>
+            <th>Subscription</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Next payment</th>
+            <th>End</th>
+            <th class="right">Notes</th>
           </tr>
         </thead>
-        <tbody>
-          ${clean.map(s => {
-            const endRaw = s?.end_date ?? s?.schedule_end ?? s?.schedule?.end ?? s?.end ?? null;
-            const end = endRaw ? fmtDate(endRaw) : "—";
-
-            const nextRaw = s?.next_payment_date ?? s?.next_payment_date_gmt ?? s?.schedule_next_payment ?? s?.schedule?.next_payment ?? s?.next_payment ?? null;
-            const next = nextRaw ? fmtDate(nextRaw) : "—";
-            return `
-              <tr>
-                <td class="nowrap">
-                  <div class="oneLine"><strong>#${safeText(s?.id)}</strong> <span class="tag">${safeText(s?.status || "—")}</span></div>
-                </td>
-                <td>${safeText((s?.total ?? "—"))}</td>
-                <td>${fmtDate(s?.start_date ?? s?.date_created ?? "") || "—"}</td>
-                <td>${next}</td>
-                <td>${end}</td>
-                <td>${safeText(s?.payment_method_title || s?.payment_method || "—")}</td>
-                <td class="notesCell">${renderNotes(s?.notes)}</td>
-              </tr>
-            `;
-          }).join("")}
-        </tbody>
+        <tbody>${rows}</tbody>
       </table>
     `;
   }
 
-  function renderOrders(orders) {
-    const arr = Array.isArray(orders) ? orders : [];
-    if (!arr.length) return "—";
+  function renderOrders(data = {}) {
+    const orders = data.orders || [];
+    if (!Array.isArray(orders) || orders.length === 0) return "—";
+
+    const rows = orders.map((o) => {
+      const id = o.id ?? o.order_id ?? "—";
+      const status = o.status ?? "—";
+      const total = o.total ?? o.order_total ?? "—";
+      const payment = o.payment_method_title || o.payment_method || "—";
+      const when = o.date_created_gmt || o.date_created || o.created || o.date || null;
+
+      const items = Array.isArray(o.line_items) ? o.line_items.map((li) => li.name).filter(Boolean) : [];
+      const itemText = items.length ? esc(items.slice(0, 2).join(" • ") + (items.length > 2 ? ` • +${items.length - 2} more` : "")) : "—";
+
+      return `
+        <tr>
+          <td><span class="mono">#${esc(id)}</span> <span class="${badgeClass(status)}">${esc(status)}</span></td>
+          <td>${esc(fmtMoney(total))}</td>
+          <td>${esc(payment)}</td>
+          <td>${esc(fmtDateTime(when))}</td>
+          <td>${itemText}</td>
+        </tr>
+      `;
+    }).join("");
 
     return `
-      <table class="table">
+      <table class="tbl">
         <thead>
           <tr>
-            <th>ORDER</th>
-            <th>TOTAL</th>
-            <th>PAYMENT</th>
-            <th>ITEMS</th>
+            <th>Order</th>
+            <th>Total</th>
+            <th>Payment</th>
+            <th>Date</th>
+            <th>Items</th>
           </tr>
         </thead>
-        <tbody>
-          ${arr.map(o => {
-            const items = Array.isArray(o?.line_items) ? o.line_items : [];
-            const firstItem = items[0]?.name || "—";
-            return `
-              <tr>
-                <td class="nowrap">
-                  <div class="oneLine"><strong>#${safeText(o?.id)}</strong> <span class="tag">${safeText(o?.status || "—")}</span> <span class="muted">${fmtDate(o?.date_created) || ""}</span></div>
-                </td>
-                <td>${safeText(o?.total || "—")}</td>
-                <td>${safeText(o?.payment_method_title || o?.payment_method || "—")}</td>
-                <td>${safeText(firstItem)}</td>
-              </tr>
-            `;
-          }).join("")}
-        </tbody>
+        <tbody>${rows}</tbody>
       </table>
     `;
   }
 
-  function renderAll(payload) {
-    const ctx = payload?.context || payload?.results?.context || payload?.data?.context || null;
-
-    // The Worker returns consistent "context" for both email searches and order-id searches.
-    const customer = ctx?.customer || null;
-    const subs = ctx?.subscriptions || [];
-    const orders = ctx?.orders || [];
-
-    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
-    if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
-    if (els.outOrders) els.outOrders.innerHTML = renderOrders(orders);
-
-    if (els.outJson) {
-      state.lastRaw = payload;
-      els.outJson.textContent = JSON.stringify(payload, null, 2);
-    }
+  function setRawJson(obj) {
+    const pretty = JSON.stringify(obj, null, 2);
+    el.outJson.textContent = pretty;
   }
 
-  async function refreshStatus() {
-    const r = await apiGet(ENDPOINTS.status);
-    if (!r.ok) {
-      state.loggedIn = false;
-      setSessionPill(false);
-      return;
+  // -------- actions --------
+  async function checkStatus() {
+    setSession("checking");
+    try {
+      const r = await api("/admin/status", { method: "GET" });
+      if (r.ok && r.data && typeof r.data === "object") {
+        const loggedIn = !!(r.data.logged_in ?? r.data.ok ?? r.data.authenticated);
+        setSession(loggedIn ? "in" : "out");
+        return loggedIn;
+      }
+      setSession("out");
+      return false;
+    } catch (e) {
+      console.warn("status check failed", e);
+      setSession("out", "status error");
+      return false;
     }
-    state.loggedIn = !!r.data?.loggedIn;
-    setSessionPill(state.loggedIn);
   }
 
   async function doLogin() {
     setMsg("");
-    const username = (els.user?.value || "").trim();
-    const password = (els.pass?.value || "").trim();
-
-    if (!username || !password) {
-      setMsg("Username and password required.");
+    const user = String(el.loginUser.value || "").trim();
+    const pass = String(el.loginPass.value || "").trim();
+    if (!user || !pass) {
+      setMsg("Enter username and password.", "error");
       return;
     }
 
-    const r = await apiPost(ENDPOINTS.login, { username, password });
-    if (!r.ok) {
-      setMsg(`Login failed (${r.status}).`);
-      await refreshStatus();
-      return;
+    setSession("checking");
+    try {
+      const r = await api("/admin/login", { method: "POST", body: { username: user, password: pass } });
+      if (r.ok) {
+        await checkStatus();
+        setMsg("");
+        return;
+      }
+      setSession("out");
+      setMsg("Login failed.", "error");
+    } catch (e) {
+      setSession("out");
+      setMsg("Login failed (network error).", "error");
     }
-
-    setMsg("");
-    await refreshStatus();
   }
 
   async function doLogout() {
     setMsg("");
-    await apiPost(ENDPOINTS.logout, {});
-    await refreshStatus();
+    setSession("checking");
+    try {
+      await api("/admin/logout", { method: "POST", body: {} });
+    } catch {}
+    await checkStatus();
     clearOutputs();
   }
 
   async function doSearch() {
     setMsg("");
-    clearOutputs();
+    const q = String(el.query.value || "").trim();
+    if (!q) return;
 
-    const raw = (els.query?.value || "").trim();
-    const q = buildNLQuery(raw);
-    if (!q) {
-      setMsg("Enter a search like: customer bob@abc.com • subscription for bob@abc.com • orders for bob@abc.com • order #12997");
+    const ok = await checkStatus();
+    if (!ok) {
+      setMsg("Not logged in. Please log in first.", "error");
       return;
     }
 
-    const r = await apiPost(ENDPOINTS.search, { query: q });
-    if (!r.ok) {
-      // Show worker error details if present
-      const msg = r.data?.error || r.data?.message || "Search failed";
-      setMsg(`${msg} (${r.status}).`);
-      if (els.outJson) els.outJson.textContent = JSON.stringify(r.data, null, 2);
-      return;
+    el.btnSearch.disabled = true;
+    try {
+      const r = await api("/admin/nl-search", { method: "POST", body: { q } });
+      if (!r.ok) {
+        setMsg(`Search failed (HTTP ${r.status}).`, "error");
+        return;
+      }
+      const data = r.data && typeof r.data === "object" ? r.data : { raw: r.data };
+
+      // Render in strict order: Customer → Subscriptions → Orders
+      el.outCustomer.innerHTML = renderCustomer(data);
+      el.outSubs.innerHTML = renderSubs(data);
+      el.outOrders.innerHTML = renderOrders(data);
+
+      setRawJson(data);
+    } catch (e) {
+      console.error(e);
+      setMsg("Search failed (network error).", "error");
+    } finally {
+      el.btnSearch.disabled = false;
     }
-
-    renderAll(r.data);
   }
 
-  function setupRawToggle() {
-    // index.html uses a native <details> element for Raw JSON toggling.
-    // No custom chevron/button wiring needed; we keep this as a safe no-op.
-    return;
-  }
+  // -------- wire up --------
+  el.btnLogin.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
+  el.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
+  el.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
 
-  function wireEvents() {
-    if (els.btnLogin) els.btnLogin.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
-    if (els.btnLogout) els.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
-    if (els.btnSearch) els.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
+  el.query.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doSearch();
+  });
 
-    // Enter-to-submit
-    if (els.user) els.user.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-    if (els.pass) els.pass.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
-    if (els.query) els.query.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+  // Initial paint
+  setRawJson({ build: BUILD, apiBase: API_BASE });
+  clearOutputs();
+  checkStatus();
 
-    setupRawToggle();
-  }
-
-  async function init() {
-    injectStyles();
-    wireEvents();
-    await refreshStatus();
-  }
-
-  init();
 })();
 
 // 🔴 main.js
