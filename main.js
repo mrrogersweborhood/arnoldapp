@@ -32,7 +32,7 @@
       btnLogout: byId("btnLogout"),
 
       // Query
-      query: byId("queryInput", "inputQuery"),
+      query: byId("query", "queryInput", "inputQuery"),
       btnSearch: byId("searchBtn", "btnSearch"),
 
       // Session badge / pill
