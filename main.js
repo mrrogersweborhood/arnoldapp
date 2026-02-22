@@ -1,446 +1,428 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-21b)
-// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-22a)
+// Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
   "use strict";
 
-  const BUILD = "2026-02-21b";
+  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
-  // ✅ Arnold Admin Worker base URL (do not change without updating handoff docs)
-  const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-
-  // -------- DOM (supports legacy IDs to prevent churn) --------
-  const byId = (id) => document.getElementById(id);
-  const first = (...ids) => {
-    for (const id of ids) {
-      const n = byId(id);
-      if (n) return n;
-    }
-    return null;
+  const API = {
+    status: `${WORKER_BASE}/admin/status`,
+    login: `${WORKER_BASE}/admin/login`,
+    logout: `${WORKER_BASE}/admin/logout`,
+    search: `${WORKER_BASE}/admin/nl-search`
   };
 
-  const el = {
-    // Session
-    sessionPill: first("sessionPill", "sessionBadge"),
-    sessionText: first("sessionText"),
+  const els = (() => {
+    // Resilient DOM lookups: accept both current ids and legacy ids.
+    const byId = (...ids) => {
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) return el;
+      }
+      return null;
+    };
 
-    // Auth
-    loginUser: first("loginUser", "loginEmail", "user"),
-    loginPass: first("loginPass"),
-    btnLogin: first("btnLogin", "loginBtn"),
-    btnLogout: first("btnLogout", "logoutBtn"),
+    return {
+      // Auth
+      user: byId("loginUser", "inputUser", "user"),
+      pass: byId("loginPass", "inputPass", "pass"),
+      btnLogin: byId("btnLogin"),
+      btnLogout: byId("btnLogout"),
 
-    // Search
-    query: first("query"),
-    btnSearch: first("btnSearch", "searchBtn"),
-    msg: first("msg"),
+      // Query
+      query: byId("queryInput", "inputQuery"),
+      btnSearch: byId("searchBtn", "btnSearch"),
 
-    // Outputs
-    outCustomer: first("customerOut", "outCustomer"),
-    outSubs: first("subsOut", "outSubs"),
-    outOrders: first("ordersOut", "outOrders"),
-    outJson: first("rawOut", "outJson"),
-  };
+      // Session badge / pill
+      sessionBadge: byId("sessionPill", "sessionBadge"),
 
-  // Hard stop if index.html / main.js are mismatched.
-  const REQUIRED = [
-    "sessionPill","sessionText","loginUser","loginPass","btnLogin","btnLogout","query","btnSearch","msg",
-    "outCustomer","outSubs","outOrders","outJson"
-  ];
-  const missing = REQUIRED.filter((k) => !el[k]);
-  if (missing.length) {
-    const warn = `DOM mismatch: missing element(s): ${missing.join(", ")}. index.html and main.js must be updated together.`;
-    console.error(warn);
-    // Best effort to display
-    if (el.msg) {
-      el.msg.textContent = warn;
-      el.msg.style.display = "block";
-      el.msg.style.color = "#b91c1c";
-      el.msg.style.fontWeight = "800";
-    } else {
-      alert(warn);
-    }
-    return;
+      // Output
+      statusMsg: byId("msg", "statusMsg"),
+      outCustomer: byId("customerOut", "outCustomer"),
+      outSubs: byId("subsOut", "outSubs"),
+      outOrders: byId("ordersOut", "outOrders"),
+      outJson: byId("rawOut", "outJson"),
+      rawJsonDetails: byId("rawJsonDetails", "rawJson")
+    };
+  })();
+
+  // ---- Utilities ----
+
+  function esc(s) {
+    return String(s ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
   }
 
-  // -------- helpers --------
-  const esc = (s) => String(s ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+  function fmtDateTime(iso) {
+    if (!iso) return "—";
+    try {
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "numeric",
+        minute: "2-digit"
+      });
+    } catch {
+      return "—";
+    }
+  }
+
+  function fmtMoney(amount, currency) {
+    const a = Number(amount);
+    if (!isFinite(a)) return amount == null ? "—" : String(amount);
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency: currency || "USD"
+      }).format(a);
+    } catch {
+      return `$${a.toFixed(2)}`;
+    }
+  }
 
   function fmtPhone(v) {
     const raw = String(v ?? "").trim();
-    if (!raw) return "";
-    const digits = raw.replace(/\D/g, "");
+    if (!raw) return "—";
+
+    const digits = raw.replace(/[^0-9]/g, "");
+    if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
     if (digits.length === 11 && digits.startsWith("1")) {
       const d = digits.slice(1);
       return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
     }
-    if (digits.length === 10) {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
     return raw;
   }
 
-  const fmtMoney = (v) => {
-    if (v === null || v === undefined || v === "") return "—";
-    const n = Number(v);
-    if (!Number.isFinite(n)) return String(v);
-    return n.toLocaleString(undefined, { style: "currency", currency: "USD" });
-  };
+  function setBadge(text, ok) {
+    if (!els.sessionBadge) return;
+    els.sessionBadge.textContent = text;
+    els.sessionBadge.classList.toggle("ok", !!ok);
+    els.sessionBadge.classList.toggle("bad", !ok);
+  }
 
-  const fmtDateTime = (v) => {
-    if (!v) return "—";
-    // Accept ISO, unix seconds, or unix ms
-    let d = null;
-    if (typeof v === "number") d = new Date(v > 1e12 ? v : v * 1000);
-    else {
-      const s = String(v);
-      if (/^\d{10,13}$/.test(s)) {
-        const n = Number(s);
-        d = new Date(n > 1e12 ? n : n * 1000);
-      } else {
-        d = new Date(s);
-      }
-    }
-    if (!(d instanceof Date) || isNaN(d.getTime())) return String(v);
-    return d.toLocaleString();
-  };
+  function setMsg(text, kind) {
+    if (!els.statusMsg) return;
+    els.statusMsg.textContent = text || "";
+    els.statusMsg.classList.remove("ok", "bad");
+    if (kind === "ok") els.statusMsg.classList.add("ok");
+    if (kind === "bad") els.statusMsg.classList.add("bad");
+  }
 
-  const badgeClass = (status) => {
-    const s = String(status ?? "").toLowerCase();
-    if (["active","processing","completed","paid"].includes(s)) return "badge green";
-    if (["cancelled","canceled","failed","refunded","expired","trash"].includes(s)) return "badge red";
-    return "badge gray";
-  };
-
-  const setMsg = (text, tone = "normal") => {
-    el.msg.textContent = text || "";
-    el.msg.style.display = text ? "block" : "none";
-    el.msg.style.color = tone === "error" ? "#b91c1c" : "inherit";
-    el.msg.style.fontWeight = tone === "error" ? "800" : "normal";
-  };
-
-  const setSession = (state, extra = "") => {
-    // state: "checking" | "in" | "out"
-    const label =
-      state === "checking" ? "Session: checking…" :
-      state === "in" ? "Session: logged in" :
-      "Session: logged out";
-    el.sessionText.textContent = extra ? `${label} — ${extra}` : label;
-
-    el.sessionPill.dataset.state = state;
-  };
-
-  async function api(path, { method = "GET", body = null, headers = {}, timeoutMs = 15000 } = {}) {
-    const url = `${API_BASE}${path}`;
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), timeoutMs);
-
-    const opts = {
-      method,
+  async function apiGet(url) {
+    const r = await fetch(url, {
+      method: "GET",
       credentials: "include",
-      headers: { ...headers },
-      signal: ctrl.signal
-    };
-
-    if (body !== null) {
-      // Default to JSON; worker should accept JSON.
-      if (!opts.headers["Content-Type"]) opts.headers["Content-Type"] = "application/json";
-      opts.body = typeof body === "string" ? body : JSON.stringify(body);
-    }
-
+      headers: { Accept: "application/json" }
+    });
+    const txt = await r.text();
+    let data = null;
     try {
-      const res = await fetch(url, opts);
-      const ctype = (res.headers.get("content-type") || "").toLowerCase();
-
-      let data = null;
-      if (ctype.includes("application/json")) data = await res.json();
-      else data = await res.text();
-
-      return { ok: res.ok, status: res.status, data, res };
-    } finally {
-      clearTimeout(t);
+      data = txt ? JSON.parse(txt) : null;
+    } catch {
+      data = { raw: txt };
     }
+    return { r, data };
   }
 
-  function clearOutputs() {
-    el.outCustomer.innerHTML = "—";
-    el.outSubs.innerHTML = "—";
-    el.outOrders.innerHTML = "—";
-    el.outJson.textContent = "";
+  async function apiPost(url, body) {
+    const r = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify(body || {})
+    });
+    const txt = await r.text();
+    let data = null;
+    try {
+      data = txt ? JSON.parse(txt) : null;
+    } catch {
+      data = { raw: txt };
+    }
+    return { r, data };
   }
 
-  // -------- renderers --------
-  function kvRow(k, v) {
-    return `<div class="row"><div class="k">${esc(k)}</div><div class="v">${v || "—"}</div></div>`;
-  }
+  // ---- Render helpers ----
 
-  function renderAddressCard(title, obj = {}) {
-    const name = esc(obj.name || (obj.first_name && obj.last_name ? `${obj.first_name} ${obj.last_name}` : obj.company || ""));
-    const email = esc(obj.email || "");
-    const phone = esc(fmtPhone(obj.phone || ""));
-    const parts = [
-      obj.address_1, obj.address_2, obj.city,
-      obj.state, obj.postcode, obj.country
-    ].filter(Boolean);
-
-    const addr = parts.length ? esc(parts.join(" • ")) : "—";
-
+  function kv(k, v) {
     return `
-      <div class="card">
-        <div class="h2">${esc(title)}</div>
-        ${kvRow("name", name || "—")}
-        ${kvRow("address", addr)}
-        ${kvRow("email", email || "—")}
-        ${kvRow("phone", phone || "—")}
+      <div class="kvRow">
+        <div class="kvK">${esc(k)}</div>
+        <div class="kvV">${v ?? "—"}</div>
       </div>
     `;
   }
 
-  function renderCustomer(data = {}) {
-    const c = data.customer || data || {};
-    const billing = c.billing || data.billing || {};
-    const shipping = c.shipping || data.shipping || {};
+  function addressLine(a) {
+    const addr = [a?.address_1, a?.address_2].filter(Boolean).join(" ").trim();
+    const cityLine = [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ").trim();
+    return [addr, cityLine].filter(Boolean).join("<br>") || "—";
+  }
 
-    // Customer summary: ONLY id + username (as requested)
-    const cid = c.id ?? c.customer_id ?? "—";
-    const uname = c.username || c.user_login || c.email || "—";
-
-    const top = `
+  function renderAddressCard(title, a) {
+    return `
       <div class="card">
-        <div class="h2">Customer</div>
-        <div class="cols2">
-          <div>${kvRow("customer id", `<span class="mono">${esc(cid)}</span>`)}</div>
-          <div>${kvRow("username", esc(uname))}</div>
+        <div class="cardTitle">${esc(title)}</div>
+        <div class="kv">
+          ${kv("name", esc([a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—"))}
+          ${kv("address", addressLine(a))}
+          ${kv("email", esc(a?.email || "—"))}
+          ${kv("phone", esc(fmtPhone(a?.phone)))}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCustomer(cust) {
+    if (!cust) return "<div class='muted'>—</div>";
+
+    const id = esc(cust.id ?? "");
+    const username = esc(cust.username ?? "");
+
+    // Keep only customer id + username here (Billing/Shipping already carry the contact info).
+    const header = `
+      <div class="cardGrid2" style="margin-bottom:12px;">
+        <div class="kvRow">
+          <div class="kvK">customer id</div>
+          <div class="kvV"><strong>${id || "—"}</strong></div>
+        </div>
+        <div class="kvRow">
+          <div class="kvK">username</div>
+          <div class="kvV"><strong>${username || "—"}</strong></div>
         </div>
       </div>
     `;
 
-    // Billing + Shipping side-by-side
-    const cards = `
-      <div class="cols2">
-        ${renderAddressCard("Billing", billing)}
-        ${renderAddressCard("Shipping", shipping)}
-      </div>
-    `;
+    const billing = renderAddressCard("Billing", cust.billing);
+    const shipping = renderAddressCard("Shipping", cust.shipping);
 
-    return `${top}${cards}`;
+    return header + `<div class="cardGrid2">${billing}${shipping}</div>`;
   }
 
-  function renderSubscriptionNotes(notes) {
-    if (!Array.isArray(notes) || notes.length === 0) return "—";
-    return notes.map((n) => {
-      const when = fmtDateTime(n.date_created_gmt || n.date_created || n.created || n.time || n.date);
-      const who = esc(n.author || n.by || n.type || "WooCommerce");
-      const text = esc(n.note || n.content || n.message || "");
+  function renderNotes(notes) {
+    if (!notes?.length) return `<div class="muted">—</div>`;
+
+    const cards = notes.slice(0, 200).map((n) => {
+      const when = fmtDateTime(n?.date_created);
+      const by = esc(n?.author || n?.added_by || "WooCommerce");
+      const text = esc(n?.note || "");
       return `
-        <div class="note">
-          <div class="noteTop"><span>${esc(when)}</span><span>${who}</span></div>
-          <div class="noteText">${text || "—"}</div>
+        <div class="noteCard">
+          <div class="noteTop">
+            <div class="noteWhen">${esc(when)}</div>
+            <div class="noteBy">${by}</div>
+          </div>
+          <div class="noteBody">${text}</div>
         </div>
       `;
-    }).join("");
+    });
+
+    return `<div class="notesStack">${cards.join("")}</div>`;
   }
 
-  function renderSubs(data = {}) {
-    const subs = data.subscriptions || data.subs || [];
-    if (!Array.isArray(subs) || subs.length === 0) return "—";
-
-    const rows = subs.map((s) => {
-      const id = s.id ?? s.subscription_id ?? "—";
-      const status = s.status ?? "—";
-      const total = s.total ?? s.recurring_total ?? s.order_total ?? "—";
-
-      const nextPay =
-        s.next_payment_date || s.next_payment || s.schedule_next_payment || s.date_next_payment || s.next_payment_gmt || null;
-
-      const end =
-        s.end_date || s.date_end || s.schedule_end || s.date_end_gmt || null;
-
-      const notes = s.notes || s.subscription_notes || s.note || [];
-
-      return `
-        <tr>
-          <td><span class="mono">#${esc(id)}</span></td>
-          <td><span class="${badgeClass(status)}">${esc(status)}</span></td>
-          <td>${esc(fmtMoney(total))}</td>
-          <td>${esc(fmtDateTime(nextPay))}</td>
-          <td>${esc(fmtDateTime(end))}</td>
-          <td class="right">${renderSubscriptionNotes(notes)}</td>
-        </tr>
-      `;
-    }).join("");
-
-    return `
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Subscription</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Next payment</th>
-            <th>End</th>
-            <th class="right">Notes</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
-  }
-
-  function renderOrders(data = {}) {
-    const orders = data.orders || [];
-    if (!Array.isArray(orders) || orders.length === 0) return "—";
-
-    const rows = orders.map((o) => {
-      const id = o.id ?? o.order_id ?? "—";
-      const status = o.status ?? "—";
-      const total = o.total ?? o.order_total ?? "—";
-      const payment = o.payment_method_title || o.payment_method || "—";
-      const when = o.date_created_gmt || o.date_created || o.created || o.date || null;
-
-      const items = Array.isArray(o.line_items) ? o.line_items.map((li) => li.name).filter(Boolean) : [];
-      const itemText = items.length ? esc(items.slice(0, 2).join(" • ") + (items.length > 2 ? ` • +${items.length - 2} more` : "")) : "—";
-
-      return `
-        <tr>
-          <td><span class="mono">#${esc(id)}</span> <span class="${badgeClass(status)}">${esc(status)}</span></td>
-          <td>${esc(fmtMoney(total))}</td>
-          <td>${esc(payment)}</td>
-          <td>${esc(fmtDateTime(when))}</td>
-          <td>${itemText}</td>
-        </tr>
-      `;
-    }).join("");
-
-    return `
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Order</th>
-            <th>Total</th>
-            <th>Payment</th>
-            <th>Date</th>
-            <th>Items</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    `;
-  }
-
-  function setRawJson(obj) {
-    const pretty = JSON.stringify(obj, null, 2);
-    el.outJson.textContent = pretty;
-  }
-
-  // -------- actions --------
-  async function checkStatus() {
-    setSession("checking");
+  function fmtDate(iso) {
+    if (!iso) return "—";
     try {
-      const r = await api("/admin/status", { method: "GET" });
-      if (r.ok && r.data && typeof r.data === "object") {
-        const loggedIn = !!(r.data.logged_in ?? r.data.ok ?? r.data.authenticated);
-        setSession(loggedIn ? "in" : "out");
-        return loggedIn;
-      }
-      setSession("out");
-      return false;
-    } catch (e) {
-      console.warn("status check failed", e);
-      setSession("out", "status error");
-      return false;
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return "—";
+      return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "2-digit" });
+    } catch {
+      return "—";
     }
   }
+
+  function renderSubscriptions(subs) {
+    if (!subs?.length) return "<div class='muted'>—</div>";
+
+    const rows = subs.slice(0, 50).map((s) => {
+      const id = esc(s?.id ?? "");
+      const status = esc(s?.status ?? "—");
+      const total = fmtMoney(s?.total, s?.currency);
+      const next = fmtDate(s?.next_payment_date);
+      const end = fmtDate(s?.end_date);
+
+      return `
+        <tr>
+          <td class="mono"><strong>#${id}</strong> <span class="pill">${status}</span></td>
+          <td class="mono">${esc(total)}</td>
+          <td class="mono">${esc(next)}</td>
+          <td class="mono">${esc(end)}</td>
+          <td>${renderNotes(s?.notes)}</td>
+        </tr>
+      `;
+    });
+
+    return `
+      <div class="subTableWrap">
+        <table class="subTable">
+          <thead>
+            <tr>
+              <th>Subscription</th>
+              <th>Total</th>
+              <th>Next payment</th>
+              <th>End</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>${rows.join("")}</tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  function renderOrders(orders) {
+    if (!orders?.length) return "<div class='muted'>—</div>";
+
+    const rows = orders.slice(0, 25).map((o) => {
+      const id = o?.id ?? "";
+      const status = esc(o?.status ?? "");
+      const total = fmtMoney(o?.total, o?.currency);
+      const date = fmtDateTime(o?.date_created);
+      const pm = esc(o?.payment_method_title || o?.payment_method || "");
+      const items = Array.isArray(o?.line_items)
+        ? o.line_items
+            .map((li) => `${li?.quantity ?? 0}× ${esc(li?.name ?? "")}`.trim())
+            .filter(Boolean)
+            .join(", ")
+        : "";
+
+      return `
+        <div class="orderLine">
+          <div class="orderLeft"><strong>#${esc(id)}</strong> <span class="pill">${status || "—"}</span> <span class="mono">${esc(total)}</span></div>
+          <div class="orderMid">${esc([pm, date].filter(Boolean).join(" • "))}</div>
+          <div class="orderRight">${items ? `<span class="muted">${items}</span>` : ""}</div>
+        </div>
+      `;
+    });
+
+    return `<div class="orderLines">${rows.join("")}</div>`;
+  }
+
+  function renderJson(obj) {
+    const pretty = JSON.stringify(obj ?? null, null, 2);
+    return `<pre class="json">${esc(pretty)}</pre>`;
+  }
+
+  // ---- Session ----
+
+  async function refreshSession() {
+    setBadge("Session: checking…", false);
+    const { r, data } = await apiGet(API.status);
+
+    if (!r.ok) {
+      setBadge("Session: error", false);
+      setMsg(`Status failed (${r.status})`, "bad");
+      return false;
+    }
+
+    if (data?.loggedIn) {
+      setBadge("Session: logged in", true);
+      setMsg("", null);
+      return true;
+    }
+
+    setBadge("Session: logged out", false);
+    return false;
+  }
+
+  // ---- Actions ----
 
   async function doLogin() {
-    setMsg("");
-    const user = String(el.loginUser.value || "").trim();
-    const pass = String(el.loginPass.value || "").trim();
-    if (!user || !pass) {
-      setMsg("Enter username and password.", "error");
+    const username = String(els.user?.value || "").trim();
+    const password = String(els.pass?.value || "").trim();
+
+    if (!username || !password) {
+      setMsg("Username and password required.", "bad");
       return;
     }
 
-    setSession("checking");
-    try {
-      const r = await api("/admin/login", { method: "POST", body: { username: user, password: pass } });
-      if (r.ok) {
-        await checkStatus();
-        setMsg("");
-        return;
-      }
-      setSession("out");
-      setMsg("Login failed.", "error");
-    } catch (e) {
-      setSession("out");
-      setMsg("Login failed (network error).", "error");
+    setMsg("Logging in…", null);
+
+    const { r, data } = await apiPost(API.login, { username, password });
+
+    if (!r.ok || !data?.success) {
+      setMsg(data?.message || `Login failed (${r.status})`, "bad");
+      await refreshSession();
+      return;
     }
+
+    setMsg("Logged in.", "ok");
+    await refreshSession();
   }
 
   async function doLogout() {
-    setMsg("");
-    setSession("checking");
-    try {
-      await api("/admin/logout", { method: "POST", body: {} });
-    } catch {}
-    await checkStatus();
-    clearOutputs();
+    setMsg("Logging out…", null);
+    await apiPost(API.logout, {});
+    await refreshSession();
+    setMsg("Logged out.", "ok");
   }
 
   async function doSearch() {
-    setMsg("");
-    const q = String(el.query.value || "").trim();
-    if (!q) return;
-
-    const ok = await checkStatus();
-    if (!ok) {
-      setMsg("Not logged in. Please log in first.", "error");
+    const q = String(els.query?.value || "").trim();
+    if (!q) {
+      setMsg("Enter a search query.", "bad");
       return;
     }
 
-    el.btnSearch.disabled = true;
-    try {
-      const r = await api("/admin/nl-search", { method: "POST", body: { q } });
-      if (!r.ok) {
-        setMsg(`Search failed (HTTP ${r.status}).`, "error");
-        return;
-      }
-      const data = r.data && typeof r.data === "object" ? r.data : { raw: r.data };
+    setMsg("Searching…", null);
 
-      // Render in strict order: Customer → Subscriptions → Orders
-      el.outCustomer.innerHTML = renderCustomer(data);
-      el.outSubs.innerHTML = renderSubs(data);
-      el.outOrders.innerHTML = renderOrders(data);
+    const { r, data } = await apiPost(API.search, { query: q });
 
-      setRawJson(data);
-    } catch (e) {
-      console.error(e);
-      setMsg("Search failed (network error).", "error");
-    } finally {
-      el.btnSearch.disabled = false;
+    if (!r.ok || !data?.ok) {
+      setMsg(data?.error || `Search failed (${r.status})`, "bad");
+      els.outCustomer.innerHTML = "<div class='muted'>—</div>";
+      els.outSubs.innerHTML = "<div class='muted'>—</div>";
+      els.outOrders.innerHTML = "<div class='muted'>—</div>";
+      els.outJson.innerHTML = renderJson(data);
+      return;
     }
+
+    const ctx = data?.context || {};
+    els.outCustomer.innerHTML = renderCustomer(ctx.customer);
+    els.outSubs.innerHTML = renderSubscriptions(ctx.subscriptions);
+    els.outOrders.innerHTML = renderOrders(ctx.orders);
+    els.outJson.innerHTML = renderJson(data);
+
+    setMsg("Done.", "ok");
   }
 
-  // -------- wire up --------
-  el.btnLogin.addEventListener("click", (e) => { e.preventDefault(); doLogin(); });
-  el.btnLogout.addEventListener("click", (e) => { e.preventDefault(); doLogout(); });
-  el.btnSearch.addEventListener("click", (e) => { e.preventDefault(); doSearch(); });
+  // ---- Init ----
 
-  el.query.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") doSearch();
+  function wire() {
+    els.btnLogin?.addEventListener("click", doLogin);
+    els.btnLogout?.addEventListener("click", doLogout);
+    els.btnSearch?.addEventListener("click", doSearch);
+
+    els.query?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doSearch();
+    });
+
+    els.user?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
+    });
+    els.pass?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doLogin();
+    });
+  }
+
+  async function init() {
+    wire();
+    await refreshSession();
+  }
+
+  init().catch((err) => {
+    console.error(err);
+    setMsg("Fatal error in main.js (see Console).", "bad");
+    setBadge("Session: error", false);
   });
-
-  // Initial paint
-  setRawJson({ build: BUILD, apiBase: API_BASE });
-  clearOutputs();
-  checkStatus();
-
 })();
 
 // 🔴 main.js
