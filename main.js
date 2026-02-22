@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-22b)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-22d)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -120,7 +120,6 @@
     els.statusMsg.textContent = msg;
     els.statusMsg.style.display = msg ? "block" : "none";
 
-    // Optional future hooks
     els.statusMsg.classList.remove("ok", "bad");
     if (kind === "ok") els.statusMsg.classList.add("ok");
     if (kind === "bad") els.statusMsg.classList.add("bad");
@@ -287,15 +286,63 @@
     `;
   }
 
+  // ✅ Orders: true 1-line rows + headings WITHOUT requiring new CSS (uses inline grid styles)
   function renderOrders(orders) {
     if (!orders?.length) return "<div class='muted'>—</div>";
 
+    const headStyle = [
+      "display:grid",
+      "grid-template-columns:110px 120px 110px 260px 1fr",
+      "gap:12px",
+      "padding:10px 12px",
+      "margin:0 0 10px",
+      "border-radius:14px",
+      "background:rgba(30,144,255,.08)",
+      "border:1px solid rgba(0,0,0,.06)",
+      "font-size:12px",
+      "font-weight:950",
+      "letter-spacing:.04em",
+      "text-transform:uppercase",
+      "color:#0b1b2a"
+    ].join(";");
+
+    const rowStyle = [
+      "display:grid",
+      "grid-template-columns:110px 120px 110px 260px 1fr",
+      "gap:12px",
+      "align-items:center"
+    ].join(";");
+
+    const cellStyle = "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:850;";
+    const statusStyle = [
+      "display:inline-flex",
+      "align-items:center",
+      "padding:4px 10px",
+      "border-radius:999px",
+      "background:rgba(30,144,255,.18)",
+      "border:1px solid rgba(30,144,255,.40)",
+      "font-weight:950",
+      "font-size:12px",
+      "text-transform:lowercase"
+    ].join(";");
+
+    const header = `
+      <div style="${headStyle}">
+        <div>Order</div>
+        <div>Status</div>
+        <div>Total</div>
+        <div>Payment • Date</div>
+        <div>Items</div>
+      </div>
+    `;
+
     const rows = orders.slice(0, 25).map((o) => {
       const id = o?.id ?? "";
-      const status = esc(o?.status ?? "");
+      const status = esc(o?.status ?? "—");
       const total = fmtMoney(o?.total, o?.currency);
       const date = fmtDateTime(o?.date_created);
-      const pm = esc(o?.payment_method_title || o?.payment_method || "");
+      const pm = esc(o?.payment_method_title || o?.payment_method || "—");
+
       const items = Array.isArray(o?.line_items)
         ? o.line_items
             .map((li) => `${li?.quantity ?? 0}× ${esc(li?.name ?? "")}`.trim())
@@ -305,14 +352,18 @@
 
       return `
         <div class="orderLine">
-          <div class="orderLeft"><strong>#${esc(id)}</strong> <span class="pill">${status || "—"}</span> <span class="mono">${esc(total)}</span></div>
-          <div class="orderMid">${esc([pm, date].filter(Boolean).join(" • "))}</div>
-          <div class="orderRight">${items ? `<span class="muted">${items}</span>` : ""}</div>
+          <div style="${rowStyle}">
+            <div style="${cellStyle}" class="mono"><strong>#${esc(id)}</strong></div>
+            <div style="${cellStyle}"><span style="${statusStyle}">${status}</span></div>
+            <div style="${cellStyle}" class="mono">${esc(total)}</div>
+            <div style="${cellStyle}">${esc(`${pm} • ${date}`)}</div>
+            <div style="${cellStyle}color:var(--muted);font-weight:800;">${items || "—"}</div>
+          </div>
         </div>
       `;
     });
 
-    return `<div class="orderLines">${rows.join("")}</div>`;
+    return `<div class="orderLines">${header}${rows.join("")}</div>`;
   }
 
   function renderJson(obj) {
@@ -387,18 +438,18 @@
 
     if (!r.ok || !data?.ok) {
       setMsg(data?.error || `Search failed (${r.status})`, "bad");
-      els.outCustomer.innerHTML = "<div class='muted'>—</div>";
-      els.outSubs.innerHTML = "<div class='muted'>—</div>";
-      els.outOrders.innerHTML = "<div class='muted'>—</div>";
-      els.outJson.innerHTML = renderJson(data);
+      if (els.outCustomer) els.outCustomer.innerHTML = "<div class='muted'>—</div>";
+      if (els.outSubs) els.outSubs.innerHTML = "<div class='muted'>—</div>";
+      if (els.outOrders) els.outOrders.innerHTML = "<div class='muted'>—</div>";
+      if (els.outJson) els.outJson.innerHTML = renderJson(data);
       return;
     }
 
     const ctx = data?.context || {};
-    els.outCustomer.innerHTML = renderCustomer(ctx.customer);
-    els.outSubs.innerHTML = renderSubscriptions(ctx.subscriptions);
-    els.outOrders.innerHTML = renderOrders(ctx.orders);
-    els.outJson.innerHTML = renderJson(data);
+    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(ctx.customer);
+    if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(ctx.subscriptions);
+    if (els.outOrders) els.outOrders.innerHTML = renderOrders(ctx.orders);
+    if (els.outJson) els.outJson.innerHTML = renderJson(data);
 
     setMsg("Done.", "ok");
   }
