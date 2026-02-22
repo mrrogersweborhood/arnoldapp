@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-21b) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-22b) -->
 <!-- (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
 
 <!doctype html>
@@ -267,6 +267,116 @@
     .noteTop{display:flex; justify-content:space-between; gap:12px; font-size:12px; color:var(--muted); margin-bottom:6px}
     .noteText{font-size:13px; line-height:1.35}
 
+    /* --- Renderer classes used by main.js (v2026-02-22b) --- */
+    .muted { color: var(--muted); font-weight: 800; }
+
+    .kv { display:block; }
+    .kvRow{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:12px;
+      padding:10px 0;
+      border-top:1px dashed rgba(0,0,0,.08);
+    }
+    .kvRow:first-child{ border-top:0; padding-top:0; }
+    .kvK{ color:var(--blue); font-weight:900; text-transform:lowercase; }
+    .kvV{ font-weight:800; }
+
+    .cardTitle{
+      font-weight:950;
+      margin:0 0 10px;
+      font-size:15px;
+      letter-spacing:.01em;
+    }
+
+    .cardGrid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media (max-width: 820px){ .cardGrid2{ grid-template-columns:1fr; } }
+
+    /* Subscriptions table */
+    .subTableWrap{ width:100%; overflow:auto; }
+    .subTable{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:14px;
+      background:#fff;
+    }
+    .subTable th{
+      background:rgba(30,144,255,.08);
+      color:#0b1b2a;
+      font-size:12px;
+      letter-spacing:.04em;
+      text-transform:uppercase;
+      padding:10px 12px;
+      text-align:left;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      white-space:nowrap;
+    }
+    .subTable td{
+      padding:12px;
+      vertical-align:top;
+      border-bottom:1px solid rgba(0,0,0,.06);
+    }
+    .subTable tr:last-child td{ border-bottom:none; }
+
+    /* Notes */
+    .notesStack{ display:flex; flex-direction:column; gap:10px; }
+    .noteCard{
+      background:rgba(0,0,0,.03);
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:12px;
+      padding:10px 12px;
+    }
+    .noteTop{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .noteBody{ font-size:13px; line-height:1.35; }
+
+    /* Orders */
+    .orderLines{ display:flex; flex-direction:column; gap:10px; }
+    .orderLine{
+      background:#fff;
+      border:1px solid rgba(0,0,0,.06);
+      border-radius:14px;
+      padding:12px;
+      box-shadow:0 10px 22px rgba(2,8,23,.07);
+    }
+    .orderLeft{ font-weight:900; display:flex; gap:10px; flex-wrap:wrap; align-items:baseline; }
+    .orderMid{ margin-top:6px; font-weight:800; color:var(--muted); }
+    .orderRight{ margin-top:6px; }
+
+    /* Pill used inside tables/lists */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      background:rgba(30,144,255,.10);
+      border:1px solid rgba(0,0,0,.08);
+      font-weight:900;
+      font-size:12px;
+    }
+
+    /* JSON pre */
+    pre.json{
+      margin:0;
+      background:#0b1220;
+      color:#dbeafe;
+      border-radius:14px;
+      padding:12px;
+      overflow:auto;
+      max-height:380px;
+      font-size:12px;
+      line-height:1.35;
+    }
+
   </style>
 </head>
 
@@ -325,7 +435,7 @@
   </div>
 </main>
 
-<script src="main.js?v=2026-02-21d"></script>
+<script src="main.js?v=2026-02-22b"></script>
 
 </body>
 </html>

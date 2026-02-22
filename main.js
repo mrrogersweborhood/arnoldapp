@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-22a)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-22b)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -104,14 +104,23 @@
 
   function setBadge(text, ok) {
     if (!els.sessionBadge) return;
-    els.sessionBadge.textContent = text;
-    els.sessionBadge.classList.toggle("ok", !!ok);
-    els.sessionBadge.classList.toggle("bad", !ok);
+
+    // Preserve the pill structure in index.html (dot + #sessionText).
+    const t = document.getElementById("sessionText");
+    if (t) t.textContent = text;
+
+    // Drive the existing CSS via data-state.
+    els.sessionBadge.setAttribute("data-state", ok ? "in" : "out");
   }
 
   function setMsg(text, kind) {
     if (!els.statusMsg) return;
-    els.statusMsg.textContent = text || "";
+
+    const msg = String(text || "");
+    els.statusMsg.textContent = msg;
+    els.statusMsg.style.display = msg ? "block" : "none";
+
+    // Optional future hooks
     els.statusMsg.classList.remove("ok", "bad");
     if (kind === "ok") els.statusMsg.classList.add("ok");
     if (kind === "bad") els.statusMsg.classList.add("bad");
