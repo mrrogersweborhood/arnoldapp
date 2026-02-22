@@ -1,11 +1,11 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-21a)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-21b)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
   "use strict";
 
-  // Worker base (DO NOT FORGET):
+  // Worker base URL (DO NOT FORGET):
   // https://arnold-admin-worker.bob-b5c.workers.dev
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
@@ -63,7 +63,6 @@
   function normalizeNullableDate(d) {
     const s = String(d ?? "").trim();
     if (!s) return "";
-    // WC sometimes sends "0000-00-00 00:00:00"
     if (s.startsWith("0000-00-00")) return "";
     return s;
   }
@@ -109,8 +108,7 @@
 
   function setSessionUi(isLoggedIn, detail) {
     el.sessionPill.classList.toggle("on", !!isLoggedIn);
-    el.statusText.textContent = isLoggedIn ? "Session: logged in" : "Session: logged out";
-    if (detail) el.statusText.textContent = detail;
+    el.statusText.textContent = detail || (isLoggedIn ? "Session: logged in" : "Session: logged out");
   }
 
   /* ---------------- API ---------------- */
@@ -124,11 +122,11 @@
       credentials: "include"
     });
 
-    let data = null;
     const ct = res.headers.get("content-type") || "";
-    if (ct.includes("application/json")) {
-      data = await res.json().catch(() => null);
-    } else {
+    let data = null;
+
+    if (ct.includes("application/json")) data = await res.json().catch(() => null);
+    else {
       const text = await res.text().catch(() => "");
       data = text ? { text } : null;
     }
@@ -144,18 +142,22 @@
     return data;
   }
 
+  // Worker returns: { loggedIn: true/false, user?, roles? }
   async function refreshStatus() {
     try {
       const data = await apiFetch("/admin/status");
-      const ok = !!data?.ok;
-      setSessionUi(ok, ok ? "Session: logged in" : "Session: logged out");
-      return ok;
+      const loggedIn = !!data?.loggedIn;
+      setSessionUi(loggedIn, loggedIn ? "Session: logged in" : "Session: logged out");
+      return loggedIn;
     } catch {
       setSessionUi(false, "Session: logged out");
       return false;
     }
   }
 
+  /* ---------------- Auth ---------------- */
+
+  // Worker returns: { success: true/false, user?, roles?, message? }
   async function doLogin() {
     setMsg("");
     try {
@@ -167,13 +169,22 @@
       }
 
       el.btnLogin.disabled = true;
-      const data = await apiFetch("/admin/login", { method: "POST", body: { username: user, password: pass } });
-      if (data?.ok) {
+
+      const data = await apiFetch("/admin/login", {
+        method: "POST",
+        body: { username: user, password: pass }
+      });
+
+      const ok = (data?.success === true) || (data?.ok === true);
+
+      if (ok) {
         setSessionUi(true, "Session: logged in");
         setMsg("");
+        // Immediately verify session cookie is active
+        await refreshStatus();
       } else {
         setSessionUi(false, "Session: logged out");
-        setMsg(data?.error || "Login failed.");
+        setMsg(data?.message || data?.error || "Login failed.");
       }
     } catch (e) {
       setSessionUi(false, "Session: logged out");
@@ -315,6 +326,7 @@
     el.outSubs.innerHTML = `<div class="oneList">${rows}</div>`;
   }
 
+  // Orders: one-line rows, no redundant billing/shipping blocks (customer section owns addresses)
   function renderOrders(orders) {
     const arr = Array.isArray(orders) ? orders : [];
     if (!arr.length) {
@@ -373,12 +385,23 @@
     }
 
     el.btnSearch.disabled = true;
+
     try {
-      const data = await apiFetch("/admin/nl-search", { method: "POST", body: { q } });
-      // expected structure: { ok:true, customer, subscriptions, orders, raw }
-      renderCustomer(data?.customer || null);
-      renderSubs(data?.subscriptions || []);
-      renderOrders(data?.orders || []);
+      // Worker expects: { query: "..." }
+      const data = await apiFetch("/admin/nl-search", { method: "POST", body: { query: q } });
+
+      // Worker returns different shapes, but ALWAYS includes "context" on success for email paths.
+      // Prefer context if present.
+      const ctx = data?.context || null;
+
+      const customer = ctx?.customer || null;
+      const subscriptions = ctx?.subscriptions || [];
+      const orders = ctx?.orders || [];
+
+      renderCustomer(customer);
+      renderSubs(subscriptions);
+      renderOrders(orders);
+
       renderRawJson(data);
     } catch (e) {
       setMsg(e?.message || "Search failed.");
@@ -391,7 +414,7 @@
   /* ---------------- Wire & Boot ---------------- */
 
   function wire() {
-    // DOM mismatch guard: if index.html and main.js are out of sync, stop immediately.
+    // DOM mismatch guard: prevents silent regressions when only one file updates.
     const required = [
       "sessionPill", "sessionDot", "statusText",
       "loginUser", "loginPass", "btnLogin", "btnLogout",
@@ -431,10 +454,12 @@
       const box = document.getElementById("rawBox");
       if (box) box.classList.toggle("rawOpen", rawOpen);
     };
+
     el.rawToggle.addEventListener("click", (e) => {
       e.preventDefault();
       setRawOpen(!rawOpen);
     });
+
     setRawOpen(false);
   }
 
