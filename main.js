@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-23a)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23b)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -208,79 +208,10 @@
     billing.__label = "Billing";
     shipping.__label = "Shipping";
 
-    const right = `
-      <div class="oo-out" style="grid-template-columns:1fr;gap:12px;">
-        <div style="display:grid;grid-template-columns:1fr;gap:12px;">
-          <div style="display:grid;grid-template-columns:1fr;gap:12px;">
-            <div style="display:grid;grid-template-columns:1fr;gap:12px;">
-              <div style="display:grid;grid-template-columns:1fr;gap:12px;">
-                <div style="display:grid;grid-template-columns:1fr;gap:12px;">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
     // Side-by-side billing/shipping
     return `
       <div class="oo-out" style="display:grid;gap:12px;">
         ${left}
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-            <div style="display:grid;gap:12px;">
-              <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-                <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-            <div style="display:grid;gap:12px;">
-              <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
-
-        <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          <div style="display:grid;gap:12px;grid-template-columns:1fr;">
-          </div>
-        </div>
 
         <div style="display:grid;gap:12px;">
           <div style="display:grid;gap:12px;grid-template-columns:1fr 1fr;">
@@ -358,6 +289,23 @@
     return `<div class="oo-out">${rows.join("")}</div>`;
   }
 
+  function orderProductSummary(o) {
+    const items = Array.isArray(o?.line_items) ? o.line_items : [];
+    if (!items.length) return "—";
+
+    const first = items[0] || {};
+    const name = String(first?.name || "").trim();
+    const qty = (first?.quantity == null) ? null : Number(first.quantity);
+
+    const primary = name ? esc(name) : "—";
+    const qtyPart = (qty && Number.isFinite(qty) && qty > 0) ? ` (${qty}×)` : "";
+
+    const extraCount = Math.max(0, items.length - 1);
+    const extraPart = extraCount ? ` + ${extraCount} more` : "";
+
+    return `${primary}${qtyPart}${extraPart}`;
+  }
+
   function renderOrders(orders) {
     if (!orders || !orders.length) {
       return `<div class="oo-card"><div class="oo-card-bd">No orders found.</div></div>`;
@@ -375,6 +323,7 @@
                 <th style="width:120px;">Status</th>
                 <th style="width:160px;">Total</th>
                 <th style="width:220px;">Payment</th>
+                <th style="width:320px;">Product(s)</th>
                 <th>Customer</th>
               </tr>
             </thead>
@@ -388,6 +337,9 @@
                 if (!pmRaw) console.warn("[ArnoldAdmin] Order missing payment method fields:", o?.id ?? "(no id)", o);
                 const pm = esc(pmRaw || "Unknown");
 
+                const prod = orderProductSummary(o);
+                if (prod === "—") console.warn("[ArnoldAdmin] Order missing line_items (product) data:", o?.id ?? "(no id)", o);
+
                 const b = o?.billing || {};
                 const name = [b?.first_name, b?.last_name].filter(Boolean).join(" ").trim();
                 const email = b?.email || "";
@@ -400,6 +352,7 @@
                     <td>${status}</td>
                     <td>${total}</td>
                     <td>${pm}</td>
+                    <td>${prod}</td>
                     <td>${who}</td>
                   </tr>
                 `;
