@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-23f)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23g)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -114,13 +114,51 @@
     return `$${n.toFixed(2)}`;
   }
 
-  function renderCustomer(c) {
+  function firstNonEmpty(...vals) {
+    for (const v of vals) {
+      if (v == null) continue;
+      const s = String(v).trim();
+      if (s) return s;
+    }
+    return "";
+  }
+
+  // Derive Customer ID/Username when the Worker had to fall back to billing/shipping-only customer context.
+  function deriveIdentity(payload, ctx) {
+    const customer = ctx?.customer || null;
+    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
+    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
+
+    const idFromCustomer = customer?.id ?? null;
+    const idFromSub = subs[0]?.customer_id ?? null;
+    const idFromOrder = orders[0]?.customer_id ?? null;
+
+    const idFromPayload =
+      payload?.customer_id ??
+      payload?.inferred_customer_id ??
+      payload?.context?.customer?.id ??
+      null;
+
+    const derivedId = firstNonEmpty(idFromCustomer, idFromSub, idFromOrder, idFromPayload);
+
+    const username = firstNonEmpty(customer?.username);
+    const derivedUsername = username || "";
+
+    return {
+      derivedCustomerId: derivedId || "",
+      derivedUsername
+    };
+  }
+
+  function renderCustomer(c, identity) {
     if (!c) {
       return `<div class="oo-card"><div class="oo-card-bd">No customer found.</div></div>`;
     }
 
-    const id = esc(c?.id ?? "—");
-    const username = esc(c?.username ?? "—");
+    const showId = identity?.derivedCustomerId ? esc(identity.derivedCustomerId) : "—";
+    const showUser = identity?.derivedUsername
+      ? esc(identity.derivedUsername)
+      : "<span style='color:var(--oo-muted);font-weight:800;'>(Not available)</span>";
 
     const billing = c?.billing || {};
     const shipping = c?.shipping || {};
@@ -130,8 +168,8 @@
         <div class="oo-card-hd"><b>Identity</b><small>Customer</small></div>
         <div class="oo-card-bd">
           <div class="oo-kv">
-            <div class="k">Customer ID</div><div class="v">${id}</div>
-            <div class="k">Username</div><div class="v">${username}</div>
+            <div class="k">Customer ID</div><div class="v">${showId}</div>
+            <div class="k">Username</div><div class="v">${showUser}</div>
           </div>
         </div>
       </div>
@@ -157,7 +195,6 @@
       `;
     }
 
-    // Requirement: do not duplicate name/email/phone outside Billing if Billing already has them.
     const billingCard = `
       <div class="oo-card">
         <div class="oo-card-hd"><b>Billing</b><small>${esc([billing?.first_name, billing?.last_name].filter(Boolean).join(" ").trim() || "—")}</small></div>
@@ -224,7 +261,7 @@
 
                 return `
                   <tr>
-                    <td><b>#${id}</b> <span style="color:var(--oo-muted);font-weight:750;">(${esc(status)})</span></td>
+                    <td><b>#${id}</b> <span style="color:var(--oo-muted);font-weight:800;">(${esc(status)})</span></td>
                     <td>${total}</td>
                     <td>${nextPay}</td>
                     <td>${end}</td>
@@ -314,7 +351,9 @@
     const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
     const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
 
-    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
+    const identity = deriveIdentity(payload, ctx);
+
+    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer, identity);
     if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
     if (els.outOrders) els.outOrders.innerHTML = renderOrders(orders);
     if (els.outJson) els.outJson.innerHTML = renderJson(payload);
