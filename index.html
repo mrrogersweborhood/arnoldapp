@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23c) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23d) -->
 <!-- (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
 
 <!doctype html>
@@ -12,22 +12,22 @@
   <style>
     :root{
       --blue:#1E90FF;
-      --blue2:#0b5fb7;
-      --bg:#f4f7fb;
-      --card:#fff;
-      --text:#0f172a;
-      --muted:#475569;
-      --border:rgba(15,23,42,.12);
-      --shadow:0 10px 30px rgba(2,6,23,.10);
-      --shadow2:0 6px 18px rgba(2,6,23,.10);
+      --bg1:#f6f8fc;
+      --bg2:#eef3fb;
+      --card:#ffffff;
+      --ink:#0b1b2a;
+      --muted:#5b6b7c;
+      --shadow: 0 12px 30px rgba(2,6,23,.10);
+      --shadow2: 0 8px 20px rgba(2,6,23,.10);
       --radius:14px;
+      --border: rgba(2,6,23,.10);
     }
     *{ box-sizing:border-box; }
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      background:var(--bg);
-      color:var(--text);
+      background:linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:var(--ink);
     }
     header{
       position:sticky;
@@ -96,6 +96,7 @@
       max-width:1500px;
       margin:0 auto;
     }
+
     .panel{
       background:var(--card);
       border:1px solid var(--border);
@@ -192,8 +193,11 @@
       margin:0;
       font-size:14px;
       letter-spacing:.2px;
+      color:var(--blue);
     }
     .secTitle small{ color:var(--muted); }
+
+    .muted{ color:var(--muted); }
 
     .card{
       border:1px solid rgba(15,23,42,.10);
@@ -215,32 +219,30 @@
     .cardHd small{ font-size:12px; color:var(--muted); }
     .cardBd{ padding:12px; }
 
-    .muted{ color:var(--muted); }
-
-    /* Customer blocks */
-    .kv{
+    /* Key/value rows */
+    .kv { display:block; }
+    .kvRow{
       display:grid;
-      grid-template-columns:120px 1fr;
-      gap:8px 12px;
-      font-size:13px;
-      line-height:1.35;
+      grid-template-columns: 120px 1fr;
+      gap:12px;
+      padding:10px 0;
+      border-top:1px dashed rgba(0,0,0,.08);
     }
-    .kv .k{ color:var(--muted); }
-    .kv .v{ overflow-wrap:anywhere; }
+    .kvRow:first-child{ border-top:0; padding-top:0; }
+    .kvK{ color:var(--blue); font-weight:900; text-transform:lowercase; }
+    .kvV{ font-weight:800; overflow-wrap:anywhere; }
 
-    .addrGrid{
+    .cardGrid2{
       display:grid;
       grid-template-columns:1fr 1fr;
       gap:12px;
     }
     @media (max-width: 900px){
-      .addrGrid{ grid-template-columns:1fr; }
+      .cardGrid2{ grid-template-columns:1fr; }
     }
 
     /* Subscriptions */
-    .subTableWrap{
-      overflow:auto;
-    }
+    .subTableWrap{ overflow:auto; }
     table.subTable{
       width:100%;
       border-collapse:collapse;
@@ -256,7 +258,8 @@
       text-transform:uppercase;
       font-size:12px;
       letter-spacing:.2px;
-      color:var(--muted);
+      color: var(--blue);
+      font-weight:900;
     }
 
     .pillStatus{
@@ -271,8 +274,8 @@
       font-weight:800;
     }
 
-    /* ✅ Notes: right-justified + cards */
-    .notesStack{ display:grid; gap:10px; justify-items:end; }
+    /* Notes: right-justified + cards */
+    .notesStack{ display:flex; flex-direction:column; gap:10px; align-items:flex-end; }
     .noteCard{
       background:rgba(0,0,0,.03);
       border:1px solid rgba(0,0,0,.06);
@@ -311,10 +314,11 @@
       font-size:12px;
       text-transform:uppercase;
       letter-spacing:.2px;
-      color:var(--muted);
+      color: var(--blue);
       font-weight:900;
     }
     .orderRow .items{ overflow-wrap:anywhere; }
+
     .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12.5px; }
 
     details.raw{
@@ -360,7 +364,6 @@
 
 <main>
   <div class="panel">
-    <!-- Login stays on top -->
     <div class="topGrid">
       <input id="loginUser" placeholder="username" autocomplete="username" />
       <input id="loginPass" placeholder="password" type="password" autocomplete="current-password" />
@@ -370,7 +373,6 @@
 
     <div id="msg" class="msg"></div>
 
-    <!-- Search stays on top -->
     <div class="searchRow">
       <input id="query" placeholder="Examples: customer bob@email.com • order #389313 • subscriptions for alice@email.com" />
       <button id="btnSearch" class="btn blue">Search</button>
@@ -403,7 +405,7 @@
   </div>
 </main>
 
-<script src="main.js?v=2026-02-23c"></script>
+<script src="main.js?v=2026-02-23d"></script>
 
 </body>
 </html>

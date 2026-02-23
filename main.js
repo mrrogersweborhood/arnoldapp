@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-23c)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23d)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -14,29 +14,42 @@
     search: `${WORKER_BASE}/admin/nl-search`
   };
 
-  const els = {};
-  const $ = (id) => document.getElementById(id);
+  const els = (() => {
+    // Resilient DOM lookups: accept both current ids and legacy ids
+    const map = {
+      loginUser: ["loginUser"],
+      loginPass: ["loginPass"],
+      btnLogin: ["btnLogin"],
+      btnLogout: ["btnLogout"],
 
-  function bindEls() {
-    els.loginUser = $("loginUser");
-    els.loginPass = $("loginPass");
-    els.btnLogin = $("btnLogin");
-    els.btnLogout = $("btnLogout");
-    els.sessionPill = $("sessionPill");
-    els.sessionText = $("sessionText");
+      sessionPill: ["sessionPill"],
+      sessionText: ["sessionText"],
 
-    els.query = $("query");
-    els.btnSearch = $("btnSearch");
-    els.btnShowRaw = $("btnShowRaw");
-    els.rawWrap = $("rawWrap");
+      query: ["query"],
+      btnSearch: ["btnSearch"],
+      btnShowRaw: ["btnShowRaw"],
+      rawWrap: ["rawWrap"],
 
-    els.msg = $("msg");
+      msg: ["msg"],
 
-    els.customerOut = $("customerOut");
-    els.subsOut = $("subsOut");
-    els.ordersOut = $("ordersOut");
-    els.rawOut = $("rawOut");
-  }
+      outCustomer: ["customerOut"],
+      outSubs: ["subsOut"],
+      outOrders: ["ordersOut"],
+      outJson: ["rawOut"]
+    };
+
+    function findFirst(ids) {
+      for (const id of ids) {
+        const el = document.getElementById(id);
+        if (el) return el;
+      }
+      return null;
+    }
+
+    const out = {};
+    for (const [k, ids] of Object.entries(map)) out[k] = findFirst(ids);
+    return out;
+  })();
 
   function esc(s) {
     return String(s ?? "")
@@ -101,36 +114,21 @@
   }
 
   function fmtMoney(total, currency) {
-    const t = String(total ?? "").trim();
-    if (!t) return "—";
-    const c = String(currency ?? "").trim();
-    return c ? `${t} ${c}` : t;
+    // Display in $0.00 format (no "USD" suffix)
+    const raw = total == null ? "" : String(total).trim();
+    if (!raw) return "—";
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return `$${raw}`; // fallback if API returns non-numeric
+    return `$${n.toFixed(2)}`;
   }
 
-  function renderCustomer(c) {
-    if (!c) return "<div class='muted'>—</div>";
-
-    const id = esc(c?.id ?? "—");
-    const username = esc(c?.username ?? "—");
-    const billing = c?.billing || {};
-    const shipping = c?.shipping || {};
-
-    return `
-      <div class="card">
-        <div class="cardHd"><b>Customer</b><small>ID + username</small></div>
-        <div class="cardBd">
-          <div class="kv">
-            <div class="k">Customer ID</div><div class="v">${id}</div>
-            <div class="k">Username</div><div class="v">${username}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="addrGrid" style="margin-top:12px;">
-        ${renderAddressBlock("Billing", billing)}
-        ${renderAddressBlock("Shipping", shipping)}
-      </div>
-    `;
+  function renderKVRows(pairs) {
+    return pairs
+      .map(([k, v]) => {
+        const val = v == null || v === "" ? "—" : String(v);
+        return `<div class="kvRow"><div class="kvK">${esc(k)}</div><div class="kvV">${esc(val)}</div></div>`;
+      })
+      .join("");
   }
 
   function renderAddressBlock(title, a) {
@@ -152,13 +150,45 @@
         <div class="cardHd"><b>${esc(title)}</b><small>${esc(name)}</small></div>
         <div class="cardBd">
           <div class="kv">
-            ${rows.map(([k, v]) => `
-              <div class="k">${esc(k)}</div><div class="v">${esc(v)}</div>
-            `).join("")}
+            ${renderKVRows(rows)}
           </div>
         </div>
       </div>
     `;
+  }
+
+  function renderCustomer(customer) {
+    if (!customer) return "<div class='muted'>—</div>";
+
+    const id = customer?.id ?? "—";
+    const username = customer?.username ?? "—";
+
+    const billing = customer?.billing || null;
+    const shipping = customer?.shipping || null;
+
+    // Put identity into a visible card so it can't "disappear" visually.
+    const identityCard = `
+      <div class="card">
+        <div class="cardHd"><b>Identity</b><small>Customer</small></div>
+        <div class="cardBd">
+          <div class="kv">
+            ${renderKVRows([
+              ["customer id", id],
+              ["username", username]
+            ])}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const addr = `
+      <div class="cardGrid2" style="margin-top:12px;">
+        ${renderAddressBlock("Billing", billing)}
+        ${renderAddressBlock("Shipping", shipping)}
+      </div>
+    `;
+
+    return `${identityCard}${addr}`;
   }
 
   function renderSubscriptions(subs) {
@@ -266,43 +296,16 @@
     return `<pre class="json">${esc(pretty)}</pre>`;
   }
 
-  function classifyContext(payload) {
+  function setOutputs(payload) {
     const ctx = payload?.context || payload?.results || payload || {};
     const customer = ctx?.customer || null;
+    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
+    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
 
-    const rawSubs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
-    const rawOrders = Array.isArray(ctx?.orders) ? ctx.orders : [];
-
-    const isLikelySubscription = (x) =>
-      x && (
-        x.next_payment_date != null ||
-        x.billing_interval != null ||
-        x.billing_period != null ||
-        x.parent_id != null
-      );
-
-    const isLikelyOrder = (x) =>
-      x && (
-        x.payment_method != null ||
-        x.payment_method_title != null ||
-        x.date_created != null ||
-        Array.isArray(x.line_items)
-      ) && !isLikelySubscription(x);
-
-    return {
-      customer,
-      subs: rawSubs.filter(isLikelySubscription),
-      orders: rawOrders.filter(isLikelyOrder)
-    };
-  }
-
-  function setOutputs(payload) {
-    const { customer, subs, orders } = classifyContext(payload);
-
-    if (els.customerOut) els.customerOut.innerHTML = renderCustomer(customer);
-    if (els.subsOut) els.subsOut.innerHTML = renderSubscriptions(subs);
-    if (els.ordersOut) els.ordersOut.innerHTML = renderOrders(orders);
-    if (els.rawOut) els.rawOut.innerHTML = renderJson(payload);
+    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
+    if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
+    if (els.outOrders) els.outOrders.innerHTML = renderOrders(orders);
+    if (els.outJson) els.outJson.innerHTML = renderJson(payload);
   }
 
   async function checkStatus() {
@@ -377,6 +380,8 @@
   }
 
   async function doSearch() {
+    setMsg("", "");
+
     const q = els.query?.value?.trim();
     if (!q) {
       setMsg("Enter a search query.", "bad");
@@ -399,7 +404,7 @@
     catch (err) {
       console.error("[ArnoldAdmin] search JSON parse error:", err, txt);
       setMsg(`Search failed (bad JSON). HTTP ${r.status}.`, "bad");
-      if (els.rawOut) els.rawOut.innerHTML = `<pre class="json">${esc(txt || "(empty)")}</pre>`;
+      if (els.outJson) els.outJson.innerHTML = `<pre class="json">${esc(txt || "(empty)")}</pre>`;
       return;
     }
 
@@ -422,15 +427,13 @@
   }
 
   window.addEventListener("DOMContentLoaded", async () => {
-    bindEls();
+    document.getElementById("btnLogin")?.addEventListener("click", doLogin);
+    document.getElementById("btnLogout")?.addEventListener("click", doLogout);
+    document.getElementById("btnSearch")?.addEventListener("click", doSearch);
+    document.getElementById("btnShowRaw")?.addEventListener("click", toggleRaw);
 
-    els.btnLogin?.addEventListener("click", doLogin);
-    els.btnLogout?.addEventListener("click", doLogout);
-    els.btnSearch?.addEventListener("click", doSearch);
-    els.btnShowRaw?.addEventListener("click", toggleRaw);
-
-    els.query?.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
-    els.loginPass?.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
+    document.getElementById("query")?.addEventListener("keydown", (e) => { if (e.key === "Enter") doSearch(); });
+    document.getElementById("loginPass")?.addEventListener("keydown", (e) => { if (e.key === "Enter") doLogin(); });
 
     await checkStatus();
   });
