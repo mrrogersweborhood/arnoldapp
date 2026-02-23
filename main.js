@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-23d)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23e)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -15,7 +15,6 @@
   };
 
   const els = (() => {
-    // Resilient DOM lookups: accept both current ids and legacy ids
     const map = {
       loginUser: ["loginUser"],
       loginPass: ["loginPass"],
@@ -87,6 +86,8 @@
     if (!input) return null;
     const s = String(input).trim();
     if (!s) return null;
+
+    // Accept "YYYY-MM-DD", "YYYY-MM-DD HH:MM:SS", ISO
     const isoish = s.includes(" ") && !s.includes("T") ? s.replace(" ", "T") : s;
     const d = new Date(isoish);
     if (Number.isNaN(d.getTime())) return null;
@@ -96,13 +97,8 @@
   function fmtDate(input) {
     const d = parseLooseDate(input);
     if (!d) return "—";
+    // Date only (no time)
     return d.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
-  }
-
-  function fmtDateTime(input) {
-    const d = parseLooseDate(input);
-    if (!d) return "—";
-    return d.toLocaleString();
   }
 
   function fmtPhone(raw) {
@@ -114,186 +110,216 @@
   }
 
   function fmtMoney(total, currency) {
-    // Display in $0.00 format (no "USD" suffix)
-    const raw = total == null ? "" : String(total).trim();
-    if (!raw) return "—";
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return `$${raw}`; // fallback if API returns non-numeric
+    const t = String(total ?? "").trim();
+    if (!t) return "—";
+    const n = Number(t);
+    if (!Number.isFinite(n)) return `$${t}`;
     return `$${n.toFixed(2)}`;
   }
 
-  function renderKVRows(pairs) {
-    return pairs
-      .map(([k, v]) => {
-        const val = v == null || v === "" ? "—" : String(v);
-        return `<div class="kvRow"><div class="kvK">${esc(k)}</div><div class="kvV">${esc(val)}</div></div>`;
-      })
-      .join("");
-  }
+  function renderCustomer(c) {
+    if (!c) {
+      return `<div class="oo-card"><div class="oo-card-bd">No customer found.</div></div>`;
+    }
 
-  function renderAddressBlock(title, a) {
-    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
-    const cityLine = [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ") || "—";
-    const email = a?.email || "—";
-    const phone = fmtPhone(a?.phone);
+    const id = esc(c?.id ?? "—");
+    const username = esc(c?.username ?? "—");
 
-    const rows = [
-      ["name", name],
-      ["address", a?.address_1 || "—"],
-      ...(a?.address_2 ? [["", a.address_2]] : []),
-      ["", cityLine],
-      ...(title === "Billing" ? [["email", email], ["phone", phone]] : [])
-    ];
+    const billing = c?.billing || {};
+    const shipping = c?.shipping || {};
+
+    // Requirement: don't duplicate name/email/phone if already present in Billing
+    const bName = [billing?.first_name, billing?.last_name].filter(Boolean).join(" ").trim();
+    const bEmail = billing?.email || c?.email || null;
+    const bPhone = billing?.phone || null;
+
+    const left = `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Identity</b><small>Customer</small></div>
+        <div class="oo-card-bd">
+          <div class="oo-kv">
+            <div class="k">Customer ID</div><div class="v">${id}</div>
+            <div class="k">Username</div><div class="v">${username}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const addr = (a) => {
+      const lines = [
+        [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim(),
+        a?.company,
+        a?.address_1,
+        a?.address_2,
+        [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ")
+      ].filter(Boolean);
+
+      const email = a?.email || null;
+      const phone = a?.phone || null;
+
+      return `
+        <div class="oo-kv">
+          <div class="k">Name</div><div class="v">${esc(lines[0] || "—")}</div>
+          <div class="k">Address</div><div class="v">${esc(lines.slice(1).join("\n") || "—").replaceAll("\n","<br>")}</div>
+          ${email ? `<div class="k">Email</div><div class="v">${esc(email)}</div>` : ""}
+          ${phone ? `<div class="k">Phone</div><div class="v">${esc(fmtPhone(phone))}</div>` : ""}
+        </div>
+      `;
+    };
+
+    const billingCard = `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Billing</b><small>${esc(bName || "—")}</small></div>
+        <div class="oo-card-bd">
+          ${addr({ ...billing, email: bEmail, phone: bPhone })}
+        </div>
+      </div>
+    `;
+
+    const shippingName = [shipping?.first_name, shipping?.last_name].filter(Boolean).join(" ").trim();
+    const shippingCard = `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Shipping</b><small>${esc(shippingName || "—")}</small></div>
+        <div class="oo-card-bd">
+          ${addr(shipping)}
+        </div>
+      </div>
+    `;
 
     return `
-      <div class="card">
-        <div class="cardHd"><b>${esc(title)}</b><small>${esc(name)}</small></div>
-        <div class="cardBd">
-          <div class="kv">
-            ${renderKVRows(rows)}
-          </div>
-        </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        ${billingCard}
+        ${shippingCard}
       </div>
     `;
-  }
-
-  function renderCustomer(customer) {
-    if (!customer) return "<div class='muted'>—</div>";
-
-    const id = customer?.id ?? "—";
-    const username = customer?.username ?? "—";
-
-    const billing = customer?.billing || null;
-    const shipping = customer?.shipping || null;
-
-    // Put identity into a visible card so it can't "disappear" visually.
-    const identityCard = `
-      <div class="card">
-        <div class="cardHd"><b>Identity</b><small>Customer</small></div>
-        <div class="cardBd">
-          <div class="kv">
-            ${renderKVRows([
-              ["customer id", id],
-              ["username", username]
-            ])}
-          </div>
-        </div>
-      </div>
-    `;
-
-    const addr = `
-      <div class="cardGrid2" style="margin-top:12px;">
-        ${renderAddressBlock("Billing", billing)}
-        ${renderAddressBlock("Shipping", shipping)}
-      </div>
-    `;
-
-    return `${identityCard}${addr}`;
   }
 
   function renderSubscriptions(subs) {
-    if (!subs?.length) return "<div class='muted'>—</div>";
-
-    const rows = subs.slice(0, 50).map((s) => {
-      const id = esc(s?.id ?? "");
-      const status = esc(s?.status ?? "—");
-      const total = fmtMoney(s?.total, s?.currency);
-
-      const nextPay = fmtDate(s?.next_payment_date);
-      const end = fmtDate(s?.end_date);
-
-      const notes = Array.isArray(s?.notes) ? s.notes : [];
-      const notesHtml = notes.length
-        ? `<div class="notesStack">${notes.slice(0, 50).map((n) => {
-            const when = fmtDateTime(n?.date_created);
-            const body = (n?.note ?? "").trim();
-            const who = (n?.author || n?.added_by || "").trim() || "WooCommerce";
-            return `
-              <div class="noteCard">
-                <div class="noteTop"><span>${esc(when)}</span><span>${esc(who)}</span></div>
-                <div class="noteBody">${esc(body || "—")}</div>
-              </div>
-            `;
-          }).join("")}</div>`
-        : "<div class='muted'>—</div>";
-
-      return `
-        <tr>
-          <td><strong>#${id}</strong> <span class="pillStatus" style="margin-left:8px;">${status}</span></td>
-          <td class="mono">${esc(total)}</td>
-          <td class="mono">${esc(nextPay)}</td>
-          <td class="mono">${esc(end)}</td>
-          <td>${notesHtml}</td>
-        </tr>
-      `;
-    });
+    if (!subs || !subs.length) {
+      return `<div class="oo-card"><div class="oo-card-bd">No subscriptions found.</div></div>`;
+    }
 
     return `
-      <div class="subTableWrap">
-        <table class="subTable">
-          <thead>
-            <tr>
-              <th>Subscription</th>
-              <th>Total</th>
-              <th>Next payment</th>
-              <th>End</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.join("")}
-          </tbody>
-        </table>
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Subscriptions</b><small>Contract + schedule</small></div>
+        <div class="oo-card-bd" style="padding:0;">
+          <table class="oo-table">
+            <thead>
+              <tr>
+                <th style="width:160px;">Subscription</th>
+                <th style="width:140px;">Total</th>
+                <th style="width:160px;">Next Payment</th>
+                <th style="width:150px;">End</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subs.map(s => {
+                const id = esc(s?.id ?? "—");
+                const status = esc(s?.status ?? "—");
+                const total = esc(fmtMoney(s?.total, s?.currency));
+                const nextPay = esc(fmtDate(s?.next_payment_date));
+
+                const statusLc = String(s?.status || "").toLowerCase();
+                const endRaw = s?.end_date;
+                const end = endRaw ? esc(fmtDate(endRaw)) : (statusLc === "active" ? "Auto-renews" : "—");
+
+                const notes = Array.isArray(s?.notes) ? s.notes : [];
+                const notesHtml = notes.length
+                  ? `<div class="oo-notes" style="margin-top:12px;">
+                      ${notes.map(n => `
+                        <div class="oo-note">
+                          <small>${esc(fmtDate(n?.date_created))} • ${esc(n?.author || n?.added_by || "WooCommerce")}</small>
+                          <div class="txt">${esc(n?.note || "")}</div>
+                        </div>
+                      `).join("")}
+                    </div>`
+                  : "";
+
+                return `
+                  <tr>
+                    <td><b>#${id}</b> <span style="color:var(--oo-muted);">(${status})</span></td>
+                    <td>${total}</td>
+                    <td>${nextPay}</td>
+                    <td>${end}</td>
+                    <td>${notesHtml || "—"}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
   }
 
   function renderOrders(orders) {
-    if (!orders?.length) return "<div class='muted'>—</div>";
+    if (!orders || !orders.length) {
+      return `<div class="oo-card"><div class="oo-card-bd">No orders found.</div></div>`;
+    }
 
-    const header = `
-      <div class="orderHeader">
-        <div>Order</div>
-        <div>Status</div>
-        <div>Total</div>
-        <div>Payment</div>
-        <div>Date</div>
-        <div>Items</div>
+    return `
+      <div class="oo-card">
+        <div class="oo-card-hd"><b>Orders</b><small>Most recent first</small></div>
+        <div class="oo-card-bd" style="padding:0;">
+          <table class="oo-table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Order</th>
+                <th style="width:140px;">Date</th>
+                <th style="width:120px;">Status</th>
+                <th style="width:140px;">Total</th>
+                <th style="width:220px;">Payment</th>
+                <th>Items</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orders.map(o => {
+                const id = esc(o?.id ?? "—");
+                const date = esc(fmtDate(o?.date_created));
+                const status = esc(o?.status ?? "—");
+                const total = esc(fmtMoney(o?.total, o?.currency));
+
+                const pmRaw = String(o?.payment_method_title || o?.payment_method || "").trim();
+                const pm = pmRaw || "Unknown";
+
+                const items = Array.isArray(o?.line_items)
+                  ? o.line_items
+                      .slice(0, 10)
+                      .map(li => {
+                        const qty = Number(li?.quantity ?? 0) || 0;
+                        const name = String(li?.name ?? "").trim();
+                        return name ? `${qty} x ${name}` : "";
+                      })
+                      .filter(Boolean)
+                      .join(", ")
+                  : "";
+
+                return `
+                  <tr>
+                    <td><b>#${id}</b></td>
+                    <td>${date}</td>
+                    <td>${status}</td>
+                    <td>${total}</td>
+                    <td>${esc(pm)}</td>
+                    <td>${esc(items || "—")}</td>
+                  </tr>
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
       </div>
     `;
-
-    const rows = orders.slice(0, 25).map((o) => {
-      const id = o?.id ?? "";
-      const status = esc(o?.status ?? "—");
-      const total = fmtMoney(o?.total, o?.currency);
-      const date = fmtDateTime(o?.date_created);
-      const pm = esc(o?.payment_method_title || o?.payment_method || "—");
-
-      const items = Array.isArray(o?.line_items)
-        ? o.line_items
-            .map((li) => `${li?.quantity ?? 0}× ${esc(li?.name ?? "")}`.trim())
-            .filter(Boolean)
-            .join(", ")
-        : "";
-
-      return `
-        <div class="orderRow">
-          <div class="mono"><strong>#${esc(id)}</strong></div>
-          <div><span class="pillStatus">${status}</span></div>
-          <div class="mono">${esc(total)}</div>
-          <div>${pm}</div>
-          <div class="mono">${esc(date)}</div>
-          <div class="items">${items || "—"}</div>
-        </div>
-      `;
-    });
-
-    return `<div class="orderTableWrap"><div class="orderLines">${header}${rows.join("")}</div></div>`;
   }
 
-  function renderJson(obj) {
-    const pretty = JSON.stringify(obj ?? null, null, 2);
-    return `<pre class="json">${esc(pretty)}</pre>`;
+  function renderJson(payload) {
+    try {
+      const pretty = JSON.stringify(payload, null, 2);
+      return `<pre>${esc(pretty)}</pre>`;
+    } catch {
+      return `<pre>(Unable to render JSON)</pre>`;
+    }
   }
 
   function setOutputs(payload) {
@@ -312,7 +338,6 @@
     try {
       const r = await apiFetch(API.status, { method: "GET" });
       const data = await r.json().catch(() => null);
-
       const loggedIn = !!data?.loggedIn;
       setBadge(loggedIn ? "Session: logged in" : "Session: logged out", loggedIn);
       return loggedIn;
@@ -336,10 +361,7 @@
 
     let r, data;
     try {
-      r = await apiFetch(API.login, {
-        method: "POST",
-        body: JSON.stringify({ username, password })
-      });
+      r = await apiFetch(API.login, { method: "POST", body: JSON.stringify({ username, password }) });
     } catch (err) {
       console.error("[ArnoldAdmin] login network error:", err);
       setMsg("Login failed (network). See console.", "bad");
@@ -404,7 +426,7 @@
     catch (err) {
       console.error("[ArnoldAdmin] search JSON parse error:", err, txt);
       setMsg(`Search failed (bad JSON). HTTP ${r.status}.`, "bad");
-      if (els.outJson) els.outJson.innerHTML = `<pre class="json">${esc(txt || "(empty)")}</pre>`;
+      if (els.outJson) els.outJson.innerHTML = `<pre>${esc(txt || "(empty)")}</pre>`;
       return;
     }
 
