@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (v2026-02-23e)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-23f)
 // Markers are comments only: 🟢 main.js ... 🔴 main.js
 
 (() => {
@@ -86,8 +86,6 @@
     if (!input) return null;
     const s = String(input).trim();
     if (!s) return null;
-
-    // Accept "YYYY-MM-DD", "YYYY-MM-DD HH:MM:SS", ISO
     const isoish = s.includes(" ") && !s.includes("T") ? s.replace(" ", "T") : s;
     const d = new Date(isoish);
     if (Number.isNaN(d.getTime())) return null;
@@ -97,7 +95,6 @@
   function fmtDate(input) {
     const d = parseLooseDate(input);
     if (!d) return "—";
-    // Date only (no time)
     return d.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
   }
 
@@ -109,7 +106,7 @@
     return s;
   }
 
-  function fmtMoney(total, currency) {
+  function fmtMoney(total) {
     const t = String(total ?? "").trim();
     if (!t) return "—";
     const n = Number(t);
@@ -128,12 +125,7 @@
     const billing = c?.billing || {};
     const shipping = c?.shipping || {};
 
-    // Requirement: don't duplicate name/email/phone if already present in Billing
-    const bName = [billing?.first_name, billing?.last_name].filter(Boolean).join(" ").trim();
-    const bEmail = billing?.email || c?.email || null;
-    const bPhone = billing?.phone || null;
-
-    const left = `
+    const identityCard = `
       <div class="oo-card">
         <div class="oo-card-hd"><b>Identity</b><small>Customer</small></div>
         <div class="oo-card-bd">
@@ -145,53 +137,46 @@
       </div>
     `;
 
-    const addr = (a) => {
-      const lines = [
-        [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim(),
-        a?.company,
-        a?.address_1,
-        a?.address_2,
-        [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ")
-      ].filter(Boolean);
+    function addrBlock(a, includeEmailPhone) {
+      const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
+      const addr1 = a?.address_1 || "—";
+      const addr2 = a?.address_2 || "";
+      const city = [a?.city, a?.state, a?.postcode, a?.country].filter(Boolean).join(" • ") || "—";
 
-      const email = a?.email || null;
-      const phone = a?.phone || null;
+      const email = includeEmailPhone ? (a?.email || null) : null;
+      const phone = includeEmailPhone ? (a?.phone || null) : null;
 
       return `
         <div class="oo-kv">
-          <div class="k">Name</div><div class="v">${esc(lines[0] || "—")}</div>
-          <div class="k">Address</div><div class="v">${esc(lines.slice(1).join("\n") || "—").replaceAll("\n","<br>")}</div>
+          <div class="k">Name</div><div class="v">${esc(name)}</div>
+          <div class="k">Address</div>
+          <div class="v">${esc(addr1)}${addr2 ? `<br>${esc(addr2)}` : ""}<br>${esc(city)}</div>
           ${email ? `<div class="k">Email</div><div class="v">${esc(email)}</div>` : ""}
           ${phone ? `<div class="k">Phone</div><div class="v">${esc(fmtPhone(phone))}</div>` : ""}
         </div>
       `;
-    };
+    }
 
+    // Requirement: do not duplicate name/email/phone outside Billing if Billing already has them.
     const billingCard = `
       <div class="oo-card">
-        <div class="oo-card-hd"><b>Billing</b><small>${esc(bName || "—")}</small></div>
+        <div class="oo-card-hd"><b>Billing</b><small>${esc([billing?.first_name, billing?.last_name].filter(Boolean).join(" ").trim() || "—")}</small></div>
         <div class="oo-card-bd">
-          ${addr({ ...billing, email: bEmail, phone: bPhone })}
+          ${addrBlock(billing, true)}
         </div>
       </div>
     `;
 
-    const shippingName = [shipping?.first_name, shipping?.last_name].filter(Boolean).join(" ").trim();
     const shippingCard = `
       <div class="oo-card">
-        <div class="oo-card-hd"><b>Shipping</b><small>${esc(shippingName || "—")}</small></div>
+        <div class="oo-card-hd"><b>Shipping</b><small>${esc([shipping?.first_name, shipping?.last_name].filter(Boolean).join(" ").trim() || "—")}</small></div>
         <div class="oo-card-bd">
-          ${addr(shipping)}
+          ${addrBlock(shipping, false)}
         </div>
       </div>
     `;
 
-    return `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        ${billingCard}
-        ${shippingCard}
-      </div>
-    `;
+    return `<div class="custGrid">${identityCard}${billingCard}${shippingCard}</div>`;
   }
 
   function renderSubscriptions(subs) {
@@ -216,11 +201,12 @@
             <tbody>
               ${subs.map(s => {
                 const id = esc(s?.id ?? "—");
-                const status = esc(s?.status ?? "—");
-                const total = esc(fmtMoney(s?.total, s?.currency));
+                const status = String(s?.status ?? "—");
+                const statusLc = status.toLowerCase();
+
+                const total = esc(fmtMoney(s?.total));
                 const nextPay = esc(fmtDate(s?.next_payment_date));
 
-                const statusLc = String(s?.status || "").toLowerCase();
                 const endRaw = s?.end_date;
                 const end = endRaw ? esc(fmtDate(endRaw)) : (statusLc === "active" ? "Auto-renews" : "—");
 
@@ -238,7 +224,7 @@
 
                 return `
                   <tr>
-                    <td><b>#${id}</b> <span style="color:var(--oo-muted);">(${status})</span></td>
+                    <td><b>#${id}</b> <span style="color:var(--oo-muted);font-weight:750;">(${esc(status)})</span></td>
                     <td>${total}</td>
                     <td>${nextPay}</td>
                     <td>${end}</td>
@@ -278,7 +264,7 @@
                 const id = esc(o?.id ?? "—");
                 const date = esc(fmtDate(o?.date_created));
                 const status = esc(o?.status ?? "—");
-                const total = esc(fmtMoney(o?.total, o?.currency));
+                const total = esc(fmtMoney(o?.total));
 
                 const pmRaw = String(o?.payment_method_title || o?.payment_method || "").trim();
                 const pm = pmRaw || "Unknown";

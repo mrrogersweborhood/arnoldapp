@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23e) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23f) -->
 <!-- (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
 
 <!doctype html>
@@ -17,8 +17,8 @@
       --oo-text: #0f172a;
       --oo-muted: #475569;
       --oo-border: rgba(15, 23, 42, 0.10);
-      --oo-shadow: 0 10px 30px rgba(2, 6, 23, 0.10);
-      --oo-shadow-soft: 0 6px 18px rgba(2, 6, 23, 0.10);
+      --oo-shadow: 0 12px 34px rgba(2, 6, 23, 0.10);
+      --oo-shadow-soft: 0 7px 20px rgba(2, 6, 23, 0.10);
       --oo-radius: 14px;
     }
 
@@ -28,6 +28,8 @@
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
       color: var(--oo-text);
       background: var(--oo-bg);
+      font-size: 15px;
+      line-height: 1.45;
     }
 
     header {
@@ -36,7 +38,7 @@
       z-index: 100;
       background: var(--oo-blue);
       color: #fff;
-      box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
+      box-shadow: 0 10px 26px rgba(2, 6, 23, 0.25);
     }
 
     .bar {
@@ -73,6 +75,7 @@
       opacity: 0.95;
       margin-top: 2px;
       line-height: 1.05;
+      font-weight: 650;
     }
 
     .sessionPill {
@@ -86,6 +89,7 @@
       box-shadow: 0 10px 24px rgba(2,6,23,0.18);
       font-size: 13px;
       user-select: none;
+      font-weight: 700;
     }
     .sessionDot {
       width: 10px;
@@ -137,6 +141,7 @@
       font-size: 12px;
       color: var(--oo-muted);
       margin-bottom: 6px;
+      font-weight: 700;
     }
 
     input[type="text"], input[type="password"] {
@@ -159,7 +164,7 @@
       border-radius: 12px;
       padding: 10px 12px;
       font-size: 14px;
-      font-weight: 800;
+      font-weight: 850;
       box-shadow: var(--oo-shadow-soft);
       transition: transform .06s ease, filter .15s ease;
       white-space: nowrap;
@@ -181,6 +186,7 @@
       font-size: 13px;
       color: var(--oo-muted);
       white-space: pre-wrap;
+      font-weight: 650;
     }
     .msg.ok { background: rgba(16,185,129,0.08); color: #065f46; }
     .msg.bad { background: rgba(249,115,22,0.08); color: #7c2d12; }
@@ -203,7 +209,7 @@
     .sections {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 16px;
+      gap: 18px;
       padding: 14px;
     }
 
@@ -212,16 +218,16 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 10px;
-      margin: 0 0 10px 0;
+      margin: 2px 0 10px 0;
     }
     .secTitle h3 {
       margin: 0;
-      font-size: 14px;
+      font-size: 15px;
       letter-spacing: 0.2px;
       color: var(--oo-blue);
-      font-weight: 900;
+      font-weight: 950;
     }
-    .secTitle small { color: var(--oo-muted); }
+    .secTitle small { color: var(--oo-muted); font-weight: 650; }
 
     .oo-card {
       border: 1px solid var(--oo-border);
@@ -239,24 +245,37 @@
       gap: 10px;
       flex-wrap: wrap;
     }
-    .oo-card-hd b { font-size: 13px; }
-    .oo-card-hd small { font-size: 12px; color: var(--oo-muted); }
+    .oo-card-hd b { font-size: 13px; font-weight: 950; letter-spacing: .1px; }
+    .oo-card-hd small { font-size: 12px; color: var(--oo-muted); font-weight: 700; }
     .oo-card-bd { padding: 14px 16px 16px; }
 
     .oo-kv {
       display: grid;
       grid-template-columns: 160px 1fr;
       gap: 8px 12px;
-      font-size: 13px;
+      font-size: 13.5px;
       line-height: 1.35;
     }
     .oo-kv .k { color: var(--oo-blue); font-weight: 900; }
-    .oo-kv .v { color: var(--oo-text); overflow-wrap: anywhere; }
+    .oo-kv .v { color: var(--oo-text); overflow-wrap: anywhere; font-weight: 750; }
+
+    /* Customer layout */
+    .custGrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 1150px) {
+      .custGrid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 780px) {
+      .custGrid { grid-template-columns: 1fr; }
+    }
 
     .oo-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 13.5px;
     }
     .oo-table th, .oo-table td {
       padding: 10px 10px;
@@ -266,7 +285,7 @@
     }
     .oo-table th {
       color: var(--oo-blue);
-      font-weight: 900;
+      font-weight: 950;
       font-size: 12.5px;
       letter-spacing: 0.1px;
       text-transform: none;
@@ -278,7 +297,7 @@
       border: 1px solid rgba(15, 23, 42, 0.10);
       border-radius: 12px;
       padding: 10px 10px;
-      background: rgba(255,255,255,0.70);
+      background: rgba(255,255,255,0.85);
       box-shadow: 0 6px 16px rgba(2, 6, 23, 0.06);
       width: min(560px, 100%);
     }
@@ -286,11 +305,12 @@
       color: var(--oo-muted);
       display: block;
       margin-bottom: 6px;
-      font-weight: 700;
+      font-weight: 800;
     }
     .oo-note .txt {
       white-space: pre-wrap;
       line-height: 1.35;
+      font-weight: 700;
     }
 
     details.raw {
@@ -300,7 +320,7 @@
     details.raw summary {
       cursor: pointer;
       padding: 12px 14px;
-      font-weight: 900;
+      font-weight: 950;
       color: #0b2a57;
       user-select: none;
     }
@@ -361,30 +381,30 @@
     <div class="sections">
       <section>
         <div class="secTitle"><h3>Customer</h3><small>Identity + Billing/Shipping</small></div>
-        <div id="customerOut" class="oo-out"><div style="color:var(--oo-muted);">—</div></div>
+        <div id="customerOut"><div style="color:var(--oo-muted);font-weight:700;">—</div></div>
       </section>
 
       <section>
         <div class="secTitle"><h3>Subscriptions</h3><small>Contract + Schedule + Notes</small></div>
-        <div id="subsOut" class="oo-out"><div style="color:var(--oo-muted);">—</div></div>
+        <div id="subsOut"><div style="color:var(--oo-muted);font-weight:700;">—</div></div>
       </section>
 
       <section>
         <div class="secTitle"><h3>Orders</h3><small>Payment events</small></div>
-        <div id="ordersOut" class="oo-out"><div style="color:var(--oo-muted);">—</div></div>
+        <div id="ordersOut"><div style="color:var(--oo-muted);font-weight:700;">—</div></div>
       </section>
     </div>
 
     <details class="raw" id="rawWrap" open style="display:none;">
       <summary>Raw JSON</summary>
       <div style="padding:0 14px 14px;">
-        <div id="rawOut"><div style="color:var(--oo-muted);">—</div></div>
+        <div id="rawOut"><div style="color:var(--oo-muted);font-weight:700;">—</div></div>
       </div>
     </details>
   </div>
 </main>
 
-<script src="main.js?v=2026-02-23e"></script>
+<script src="main.js?v=2026-02-23f"></script>
 </body>
 </html>
 
