@@ -1,6 +1,6 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23b) -->
-<!-- (Markers are comments only: 🟢 index.html ... 🔴 index.html) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-23a) -->
+<!-- Markers are comments only: 🟢 index.html ... 🔴 index.html -->
 
 <!doctype html>
 <html lang="en">
@@ -10,477 +10,444 @@
   <title>Arnold Admin</title>
 
   <style>
-    :root {
-      --oo-blue: #1E90FF;
-      --oo-bg: #f4f7fb;
-      --oo-card: #ffffff;
-      --oo-text: #0f172a;
-      --oo-muted: #475569;
-      --oo-border: rgba(15, 23, 42, 0.10);
-      --oo-shadow: 0 10px 30px rgba(2, 6, 23, 0.10);
-      --oo-shadow-soft: 0 6px 18px rgba(2, 6, 23, 0.10);
-      --oo-radius: 14px;
+    :root{
+      --oo-blue:#1E90FF;
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line:rgba(15,23,42,.10);
+      --shadow:0 10px 30px rgba(2,6,23,.12);
+      --shadow-soft:0 8px 20px rgba(2,6,23,.10);
+      --r:16px;
+      --pad:16px;
+      --pad-lg:20px;
+      --max:1180px;
     }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      color: var(--oo-text);
-      background: var(--oo-bg);
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
     }
 
-    header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: var(--oo-blue);
-      color: #fff;
-      box-shadow: 0 8px 24px rgba(2, 6, 23, 0.25);
+    /* Header */
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:50;
+      background:var(--oo-blue);
+      color:#fff;
+      box-shadow:var(--shadow);
+    }
+    .topbarInner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      min-width:0;
+    }
+    .brandMark{
+      width:36px;height:36px;
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      background:rgba(255,255,255,.20);
+      font-weight:800;
+      letter-spacing:.02em;
+      flex:0 0 auto;
+    }
+    .brandText{min-width:0}
+    .brandTitle{
+      font-weight:800;
+      font-size:18px;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .brandSub{
+      font-size:12px;
+      opacity:.92;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
     }
 
-    .bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 18px;
-      gap: 12px;
+    .sessionPill{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.25);
+      font-size:12px;
+      white-space:nowrap;
+      user-select:none;
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background:#ffb020; /* default = logged out */
+      box-shadow:0 0 0 3px rgba(0,0,0,.08) inset;
+    }
+    .dot.ok{ background:#22c55e; }
+
+    /* Layout */
+    .page{
+      max-width:var(--max);
+      margin:18px auto 40px;
+      padding:0 16px;
+    }
+    .stack{ display:flex; flex-direction:column; gap:16px; }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--r);
+      box-shadow:var(--shadow-soft);
+      border:1px solid rgba(15,23,42,.06);
+      overflow:hidden;
+    }
+    .cardHead{
+      padding:14px var(--pad-lg);
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(to bottom, rgba(30,144,255,.06), rgba(255,255,255,0));
+    }
+    .cardTitle{
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+    .cardMeta{
+      font-size:12px;
+      color:var(--muted);
+    }
+    .cardBody{
+      padding:var(--pad-lg);
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 200px;
+    /* Labels + Inputs */
+    .label{
+      font-size:12px;
+      color:var(--oo-blue);
+      font-weight:800;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      margin-bottom:6px;
+      display:block;
+    }
+    input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(15,23,42,.14);
+      outline:none;
+      font-size:14px;
+      background:#fff;
+    }
+    input:focus{
+      border-color:rgba(30,144,255,.55);
+      box-shadow:0 0 0 4px rgba(30,144,255,.16);
     }
 
-    .brand .logo {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.20);
-      display: grid;
-      place-items: center;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      user-select: none;
+    .btnRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    button{
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:800;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .btnPrimary{ background:var(--oo-blue); color:#fff; }
+    .btnGhost{
+      background:rgba(15,23,42,.06);
+      color:var(--text);
+      border:1px solid rgba(15,23,42,.10);
+    }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .hint{
+      margin-top:10px;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
     }
 
-    .brand .title {
-      line-height: 1.1;
+    /* Top card grid */
+    .loginGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap:12px;
+      align-items:end;
+    }
+    .searchGrid{
+      display:grid;
+      grid-template-columns: 1fr auto auto;
+      gap:12px;
+      align-items:end;
+      margin-top:14px;
+      padding-top:14px;
+      border-top:1px solid var(--line);
+    }
+    @media (max-width: 900px){
+      .loginGrid{ grid-template-columns: 1fr; }
+      .searchGrid{ grid-template-columns: 1fr; }
+      .btnRow{ margin-top:0; }
     }
 
-    .brand .title b {
-      display: block;
-      font-size: 16px;
-      letter-spacing: 0.2px;
+    /* Status message */
+    .statusMsg{
+      margin-top:10px;
+      font-size:13px;
+      font-weight:700;
+    }
+    .statusOk{ color:#166534; }
+    .statusBad{ color:#991b1b; }
+
+    /* Results typography hooks (main.js uses these classnames) */
+    .muted{ color:var(--muted); }
+    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum" 1; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(15,23,42,.14);
+      background:rgba(15,23,42,.04);
+      font-size:12px;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:.02em;
     }
 
-    .brand .title small {
-      display: block;
-      font-size: 12px;
-      opacity: 0.92;
+    /* Notes (right-justified cards) */
+    .notesStack{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-items:flex-end;
+    }
+    .noteCard{
+      width:min(520px, 100%);
+      border:1px solid rgba(15,23,42,.12);
+      background:rgba(255,255,255,.95);
+      border-radius:14px;
+      padding:12px 12px;
+      box-shadow:0 6px 16px rgba(2,6,23,.08);
+    }
+    .noteTop{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
+    .noteBody{
+      margin-top:6px;
+      font-size:13px;
+      line-height:1.35;
+      font-weight:650;
     }
 
-    .session {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
+    /* Orders table-ish rows */
+    .orderLines{ display:flex; flex-direction:column; gap:8px; }
+    .orderHeader, .orderRow{
+      display:grid;
+      grid-template-columns: 90px 120px 110px 220px 110px 1fr;
+      gap:10px;
+      align-items:center;
+      padding:10px 10px;
+      border-radius:12px;
+    }
+    .orderHeader{
+      font-size:12px;
+      color:var(--oo-blue);
+      font-weight:900;
+      text-transform:uppercase;
+      letter-spacing:.03em;
+      border:1px solid rgba(15,23,42,.10);
+      background:rgba(30,144,255,.05);
+    }
+    .orderRow{
+      border:1px solid rgba(15,23,42,.10);
+      background:#fff;
+    }
+    .items{ color:var(--text); font-weight:650; }
+    @media (max-width: 980px){
+      .orderHeader, .orderRow{ grid-template-columns: 90px 110px 110px 1fr; }
+      .orderHeader > div:nth-child(4),
+      .orderHeader > div:nth-child(5),
+      .orderRow > div:nth-child(4),
+      .orderRow > div:nth-child(5){ display:none; }
     }
 
-    #sessionPill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.16);
-      border: 1px solid rgba(255,255,255,0.25);
-      font-size: 13px;
-      box-shadow: 0 10px 28px rgba(2, 6, 23, 0.18);
-      user-select: none;
+    /* Raw JSON */
+    pre.json{
+      margin:0;
+      padding:14px;
+      background:rgba(2,6,23,.92);
+      color:#e2e8f0;
+      border-radius:14px;
+      overflow:auto;
+      font-size:12px;
+      line-height:1.35;
     }
+    .rawWrap{ margin-top:14px; display:none; }
+    .rawWrap.on{ display:block; }
 
-    #sessionPill .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.60);
-      box-shadow: 0 0 0 3px rgba(255,255,255,0.10);
+    /* Section headings inside Results */
+    .sectionTitle{
+      margin:0;
+      padding:0;
+      font-size:14px;
+      font-weight:900;
+      letter-spacing:.01em;
     }
-
-    #sessionPill.ok .dot { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.18); }
-    #sessionPill.bad .dot { background: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.18); }
-
-    main {
-      padding: 22px 16px 40px;
+    .divider{
+      height:1px;
+      background:var(--line);
+      margin:12px 0;
     }
-
-    .wrap {
-      max-width: 1500px;
-      margin: 0 auto;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
-
-    @media (min-width: 980px) {
-      .grid {
-        grid-template-columns: 440px 1fr;
-        align-items: start;
-      }
-    }
-
-    .card {
-      background: var(--oo-card);
-      border: 1px solid var(--oo-border);
-      border-radius: var(--oo-radius);
-      box-shadow: var(--oo-shadow);
-      overflow: hidden;
-    }
-
-    .card .hd {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--oo-border);
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .card .hd h2 {
-      margin: 0;
-      font-size: 16px;
-      letter-spacing: 0.2px;
-      font-weight: 800;
-    }
-
-    .card .hd small {
-      color: var(--oo-muted);
-    }
-
-    .card .bd {
-      padding: 14px 16px 16px;
-    }
-
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--oo-blue);
-      font-weight: 700;
-      letter-spacing: 0.25px;
-      margin-bottom: 6px;
-      text-transform: none;
-    }
-
-    input[type="text"], input[type="password"] {
-      width: 100%;
-      padding: 11px 12px;
-      border-radius: 12px;
-      border: 1px solid rgba(15, 23, 42, 0.18);
-      outline: none;
-      font-size: 14px;
-      background: #fff;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
-    }
-
-    input[type="text"]:focus, input[type="password"]:focus {
-      border-color: rgba(30,144,255,0.75);
-      box-shadow: 0 0 0 3px rgba(30,144,255,0.16);
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    @media (min-width: 520px) {
-      .row.two {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .btns {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    button {
-      appearance: none;
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 700;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: var(--oo-shadow-soft);
-    }
-
-    button.primary {
-      background: var(--oo-blue);
-      color: #fff;
-    }
-
-    button.ghost {
-      background: rgba(15,23,42,0.06);
-      color: var(--oo-text);
-      border: 1px solid rgba(15,23,42,0.10);
-      box-shadow: none;
-    }
-
-    button.danger {
-      background: rgba(239,68,68,0.16);
-      color: #fff;
-      border: 1px solid rgba(239,68,68,0.35);
-      box-shadow: none;
-    }
-
-    .section {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(15, 23, 42, 0.08);
-    }
-
-    .section:first-child {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: 0;
-    }
-
-    .section h3 {
-      margin: 0 0 10px;
-      font-size: 14px;
-      letter-spacing: 0.2px;
-    }
-
-    #msg {
-      margin-top: 10px;
-      border-radius: 12px;
-      padding: 10px 12px;
-      border: 1px solid rgba(15, 23, 42, 0.10);
-      background: rgba(255,255,255,0.75);
-      display: none;
-      box-shadow: var(--oo-shadow-soft);
-      font-size: 13px;
-    }
-
-    #msg.bad { border-color: rgba(239,68,68,0.30); background: rgba(239,68,68,0.08); }
-    #msg.ok  { border-color: rgba(16,185,129,0.30); background: rgba(16,185,129,0.08); }
-
-    /* Output styling (OkObserver-ish) */
-    .oo-out { display: grid; gap: 12px; }
-
-    .oo-card {
-      border: 1px solid rgba(15,23,42,0.10);
-      border-radius: 14px;
-      background: #fff;
-      box-shadow: var(--oo-shadow-soft);
-      overflow: hidden;
-    }
-
-    .oo-card-hd {
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(15,23,42,0.08);
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    .oo-card-hd b {
-      font-size: 14px;
-      letter-spacing: 0.2px;
-      font-weight: 800;
-    }
-
-    .oo-card-hd small {
-      color: var(--oo-muted);
-      font-size: 12px;
-    }
-
-    .oo-card-bd {
-      padding: 12px 14px;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    .oo-kv {
-      display: grid;
-      grid-template-columns: 160px 1fr;
-      gap: 8px 12px;
-      font-size: 13px;
-      line-height: 1.35;
-    }
-
-    .oo-kv .k { color: var(--oo-blue); font-weight: 800; text-transform: capitalize; }
-    .oo-kv .v { color: var(--oo-text); }
-
-    .oo-grid2 {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    @media (min-width: 860px) {
-      .oo-grid2 {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .oo-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    .oo-table th, .oo-table td {
-      text-align: left;
-      padding: 10px 10px;
-      border-bottom: 1px solid rgba(15, 23, 42, 0.10);
-      vertical-align: top;
-    }
-    .oo-table th {
-      color: var(--oo-blue);
-      font-weight: 800;
-      font-size: 12px;
-      letter-spacing: 0.25px;
-      text-transform: capitalize;
-    }
-
-    .oo-notes {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 12px;
-    }
-
-    .oo-notes .stack {
-      display: grid;
-      gap: 10px;
-      max-width: 560px;
-      width: 100%;
-    }
-
-    .oo-note {
-      border: 1px solid rgba(15, 23, 42, 0.10);
-      border-radius: 12px;
-      padding: 10px 10px;
-      background: rgba(255,255,255,0.70);
-      box-shadow: 0 4px 14px rgba(2, 6, 23, 0.06);
-    }
-    .oo-note small { color: var(--oo-muted); display:block; margin-bottom: 6px; }
-    .oo-note .txt { white-space: pre-wrap; }
   </style>
 </head>
 
 <body>
-<header>
-  <div class="bar">
-    <div class="brand">
-      <div class="logo">A</div>
-      <div class="title">
-        <b>Arnold Admin</b>
-        <small>WooCommerce lookups for okobserver.org</small>
+  <header class="topbar">
+    <div class="topbarInner">
+      <div class="brand">
+        <div class="brandMark">A</div>
+        <div class="brandText">
+          <div class="brandTitle">Arnold Admin</div>
+          <div class="brandSub">WooCommerce lookups for okobserver.org</div>
+        </div>
       </div>
-    </div>
 
-    <div class="session">
-      <div id="sessionPill" class="bad" title="Session status">
-        <span class="dot"></span>
+      <div id="sessionPill" class="sessionPill">
+        <span id="sessionDot" class="dot"></span>
         <span id="sessionText">Session: checking…</span>
       </div>
-      <button id="btnLogout" class="danger" type="button" style="display:none;">Log out</button>
     </div>
-  </div>
-</header>
+  </header>
 
-<main>
-  <div class="wrap">
-    <div class="grid">
+  <main class="page">
+    <div class="stack">
 
-      <!-- Left column -->
+      <!-- Login + Search MUST BE ON TOP (your requirement) -->
       <section class="card">
-        <div class="hd">
-          <h2>Login & Search</h2>
-          <small>Worker cookie session</small>
+        <div class="cardHead">
+          <div class="cardTitle">Login &amp; Search</div>
+          <div class="cardMeta">Worker cookie session</div>
         </div>
-        <div class="bd">
-          <div class="section">
-            <h3>Login</h3>
-            <div class="row two">
-              <div>
-                <label for="loginUser">WordPress Username</label>
-                <input id="loginUser" type="text" autocomplete="username" placeholder="username" />
-              </div>
-              <div>
-                <label for="loginPass">WordPress Password</label>
-                <input id="loginPass" type="password" autocomplete="current-password" placeholder="password" />
-              </div>
+
+        <div class="cardBody">
+
+          <div class="loginGrid">
+            <div>
+              <label class="label" for="loginUser">WordPress Username</label>
+              <input id="loginUser" autocomplete="username" placeholder="admin@okobserver.net" />
             </div>
-            <div class="btns">
-              <button id="btnLogin" class="primary" type="button">Log in</button>
+
+            <div>
+              <label class="label" for="loginPass">WordPress Password</label>
+              <input id="loginPass" type="password" autocomplete="current-password" />
             </div>
-            <div class="hint">
-              Uses HttpOnly cookie session from the Worker: <code>arnold_admin_jwt</code>. Refresh should remain logged in.
+
+            <div class="btnRow" style="margin-top:0;">
+              <button id="btnLogin" class="btnPrimary">Log in</button>
+            </div>
+
+            <div class="btnRow" style="margin-top:0;">
+              <button id="btnLogout" class="btnGhost">Log out</button>
             </div>
           </div>
 
-          <div class="section">
-            <h3>Search</h3>
-            <label for="query">Query</label>
-            <input id="query" type="text" placeholder="email, order #12345, subscriptions for email…" />
-            <div class="btns">
-              <button id="btnSearch" class="primary" type="button">Search</button>
-              <button id="btnRaw" class="ghost" type="button">Toggle Raw JSON</button>
+          <div class="hint">
+            Uses HttpOnly cookie session from the Worker: <span class="mono">arnold_admin_jwt</span>.
+            Refresh should remain logged in.
+          </div>
+
+          <div class="searchGrid">
+            <div>
+              <label class="label" for="query">Query</label>
+              <input id="query" placeholder="email, order #12345, subscriptions for email…" />
             </div>
-            <div id="msg"></div>
+
+            <div class="btnRow" style="margin-top:0;">
+              <button id="btnSearch" class="btnPrimary">Search</button>
+            </div>
+
+            <div class="btnRow" style="margin-top:0;">
+              <button id="btnToggleRaw" class="btnGhost">Toggle Raw JSON</button>
+            </div>
+          </div>
+
+          <div id="msg" class="statusMsg"></div>
+
+          <div id="rawWrap" class="rawWrap">
+            <div class="divider"></div>
+            <div id="rawOut"></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Results -->
+      <section class="card">
+        <div class="cardHead">
+          <div class="cardTitle">Results</div>
+          <div class="cardMeta">Customer → Subscriptions → Orders</div>
+        </div>
+        <div class="cardBody">
+          <div>
+            <h3 class="sectionTitle">Customer</h3>
+            <div class="divider"></div>
+            <div id="customerOut" class="muted">—</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <h3 class="sectionTitle">Subscriptions</h3>
+            <div class="divider"></div>
+            <div id="subsOut" class="muted">—</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div>
+            <h3 class="sectionTitle">Orders</h3>
+            <div class="divider"></div>
+            <div id="ordersOut" class="muted">—</div>
           </div>
         </div>
       </section>
 
-      <!-- Right column -->
-      <section class="card">
-        <div class="hd">
-          <h2>Results</h2>
-          <small>Customer → Subscriptions → Orders</small>
-        </div>
-        <div class="bd">
-          <div class="section">
-            <h3>Customer</h3>
-            <div id="customerOut" class="oo-out"></div>
-          </div>
-
-          <div class="section">
-            <h3>Subscriptions</h3>
-            <div id="subsOut" class="oo-out"></div>
-          </div>
-
-          <div class="section">
-            <h3>Orders</h3>
-            <div id="ordersOut" class="oo-out"></div>
-          </div>
-
-          <div class="section" style="margin-top: 18px;">
-            <details id="rawWrap" open style="display:none;">
-              <summary>Raw JSON</summary>
-              <div id="rawOut"></div>
-            </details>
-          </div>
-        </div>
-      </section>
-
     </div>
-  </div>
-</main>
+  </main>
 
-<script src="main.js?v=2026-02-23b"></script>
-
+  <script src="./main.js?v=2026-02-23a"></script>
 </body>
 </html>
 
