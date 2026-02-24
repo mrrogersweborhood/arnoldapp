@@ -1,4 +1,6 @@
 // 🟢 main.js
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-23)
+// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
@@ -61,38 +63,30 @@
 
   function fmtDate(iso) {
     if (!iso) return "—";
-    // Keep only date part. Handles "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
     const s = String(iso);
     const datePart = s.split("T")[0].split(" ")[0];
     return datePart || "—";
   }
 
-function fmtMoney(total, currency) {
-  const n = Number(total);
-  if (!isFinite(n)) return "—";
-  const cur = String(currency || "USD").toUpperCase();
+  function fmtMoney(total, currency) {
+    const n = Number(total);
+    if (!isFinite(n)) return "—";
+    const cur = String(currency || "USD").toUpperCase();
 
-  // Prefer the familiar $0.00 style for USD.
-  if (cur === "USD" || cur === "$") {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-  }
+    if (cur === "USD" || cur === "$") {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+    }
 
-  // Fallback for other currencies (still numeric + symbol/code as appropriate).
-  try {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: cur }).format(n);
-  } catch (_) {
-    return `${n.toFixed(2)} ${cur}`;
+    try {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: cur }).format(n);
+    } catch (_) {
+      return `${n.toFixed(2)} ${cur}`;
+    }
   }
-}
 
   function fmtPhone(p) {
     const s = String(p || "").trim();
-    if (!s) return "";
-    return s;
-  }
-
-  function safe(obj, fallback = null) {
-    return obj == null ? fallback : obj;
+    return s || "";
   }
 
   async function fetchJson(url, opts) {
@@ -119,86 +113,106 @@ function fmtMoney(total, currency) {
     els.rawWrap.style.display = show ? "" : "none";
   }
 
+  function pickEmail(c) {
+    // We do NOT render email in Subscriber card per your spec,
+    // but it’s still useful as a fallback for billing/shipping blocks.
+    return c?.billing?.email || c?.email || null;
+  }
+
   /* ========= RENDER ========= */
 
-  function renderCustomer(c) {
-    if (!c) {
-      return `<div class="aa-card"><div class="aa-card-bd">No customer found.</div></div>`;
-    }
-
-    const id = esc(c?.id ?? "—");
-    const username = esc(c?.username ?? "—");
-    const email = esc(c?.email ?? c?.billing?.email ?? "—");
-
-    const billing = c?.billing || {};
-    const shipping = c?.shipping || {};
-
-    const addrLines = (a) => ([
-      [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim(),
+  function renderAddressCard(title, a, fallbackEmail) {
+    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
+    const lines = [
       a?.company,
       a?.address_1,
       a?.address_2,
       [a?.city, a?.state, a?.postcode].filter(Boolean).join(" ").trim(),
       a?.country
-    ].filter(Boolean));
+    ].filter(Boolean);
 
-    const addrHtml = (label, a) => {
-      const lines = addrLines(a);
-      const emailLine = a?.email ? esc(a.email) : (label === "Billing" ? email : "");
-      const phoneLine = a?.phone ? esc(fmtPhone(a.phone)) : "";
-
-      return `
-        <div class="aa-card">
-          <div class="aa-card-hd">
-            <div class="aa-card-title">${esc(label)}</div>
-          </div>
-          <div class="aa-card-bd">
-            <div class="aa-kv">
-              <div class="aa-k">Name</div>
-              <div class="aa-v">${esc([a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—")}</div>
-
-              <div class="aa-k">Address</div>
-              <div class="aa-v">${lines.length ? lines.map(esc).join("<br>") : "—"}</div>
-
-              <div class="aa-k">Email</div>
-              <div class="aa-v">${emailLine || "—"}</div>
-
-              <div class="aa-k">Phone</div>
-              <div class="aa-v">${phoneLine || "—"}</div>
-            </div>
-          </div>
-        </div>
-      `;
-    };
+    const emailLine = a?.email || fallbackEmail || null;
+    const phoneLine = a?.phone ? fmtPhone(a.phone) : "";
 
     return `
-      <div class="aa-customer">
-        <div class="aa-card aa-customer-identity">
-          <div class="aa-card-hd">
-            <div class="aa-card-title">Customer</div>
-            <div class="aa-card-sub">Identity</div>
-          </div>
-          <div class="aa-card-bd">
-            <div class="aa-identity-row">
-              <div><span class="aa-pill-k">Customer ID</span><span class="aa-pill-v">${id}</span></div>
-              <div><span class="aa-pill-k">Username</span><span class="aa-pill-v">${username}</span></div>
-              <div class="aa-identity-email"><span class="aa-pill-k">Email</span><span class="aa-pill-v">${email}</span></div>
-            </div>
-          </div>
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">${esc(title)}</div>
+          <div class="card-sub">Address</div>
         </div>
+        <div class="card-bd">
+          <div class="aa-kv">
+            <div class="aa-k">Name</div>
+            <div class="aa-v">${esc(name)}</div>
 
-        <div class="aa-grid-2">
-          ${addrHtml("Billing", billing)}
-          ${addrHtml("Shipping", shipping)}
+            <div class="aa-k">Address</div>
+            <div class="aa-v">${lines.length ? lines.map(esc).join("<br>") : "—"}</div>
+
+            <div class="aa-k">Email</div>
+            <div class="aa-v">${emailLine ? esc(emailLine) : "—"}</div>
+
+            <div class="aa-k">Phone</div>
+            <div class="aa-v">${phoneLine ? esc(phoneLine) : "—"}</div>
+          </div>
         </div>
-      </div>
+      </section>
+    `;
+  }
+
+  function renderSubscriber(c) {
+    if (!c) {
+      return `
+        <section class="card">
+          <div class="card-hd">
+            <div class="card-title">Subscriber</div>
+            <div class="card-sub">Not found</div>
+          </div>
+          <div class="card-bd">No subscriber found.</div>
+        </section>
+      `;
+    }
+
+    const id = esc(c?.id ?? "—");
+    const username = esc(c?.username ?? "—");
+    const billing = c?.billing || {};
+    const shipping = c?.shipping || {};
+    const fallbackEmail = pickEmail(c);
+
+    return `
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">Subscriber</div>
+          <div class="card-sub">Identity</div>
+        </div>
+        <div class="card-bd">
+          <div class="aa-identity-row">
+            <div><span class="aa-pill-k">Customer ID</span><span class="aa-pill-v">${id}</span></div>
+            <div><span class="aa-pill-k">Username</span><span class="aa-pill-v">${username}</span></div>
+          </div>
+
+          <div style="height:14px;"></div>
+
+          <div class="aa-grid-2">
+            ${renderAddressCard("Billing", billing, fallbackEmail)}
+            ${renderAddressCard("Shipping", shipping, fallbackEmail)}
+          </div>
+        </div>
+      </section>
     `;
   }
 
   function renderSubscriptions(subs) {
     const arr = Array.isArray(subs) ? subs : [];
     if (!arr.length) {
-      return `<div class="aa-card"><div class="aa-card-bd">No subscriptions found.</div></div>`;
+      return `
+        <section class="card">
+          <div class="card-hd">
+            <div class="card-title">Subscriptions</div>
+            <div class="card-sub">None</div>
+          </div>
+          <div class="card-bd">No subscriptions found.</div>
+        </section>
+      `;
     }
 
     const rowHtml = (s) => {
@@ -206,6 +220,8 @@ function fmtMoney(total, currency) {
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
       const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
+
+      // Don’t invent values. If end_date is empty, show em dash.
       const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
@@ -238,12 +254,12 @@ function fmtMoney(total, currency) {
     };
 
     return `
-      <div class="aa-card">
-        <div class="aa-card-hd">
-          <div class="aa-card-title">Subscriptions</div>
-          <div class="aa-card-sub">Contract + Schedule + Notes</div>
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">Subscriptions</div>
+          <div class="card-sub">Schedule &amp; Notes</div>
         </div>
-        <div class="aa-card-bd">
+        <div class="card-bd">
           <div class="aa-table-wrap">
             <table class="aa-table">
               <thead>
@@ -260,14 +276,22 @@ function fmtMoney(total, currency) {
             </table>
           </div>
         </div>
-      </div>
+      </section>
     `;
   }
 
   function renderOrders(orders) {
     const arr = Array.isArray(orders) ? orders : [];
     if (!arr.length) {
-      return `<div class="aa-card"><div class="aa-card-bd">No orders found.</div></div>`;
+      return `
+        <section class="card">
+          <div class="card-hd">
+            <div class="card-title">Orders</div>
+            <div class="card-sub">None</div>
+          </div>
+          <div class="card-bd">No orders found.</div>
+        </section>
+      `;
     }
 
     const itemsSummary = (o) => {
@@ -304,12 +328,12 @@ function fmtMoney(total, currency) {
     };
 
     return `
-      <div class="aa-card">
-        <div class="aa-card-hd">
-          <div class="aa-card-title">Orders</div>
-          <div class="aa-card-sub">Most recent first</div>
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">Orders</div>
+          <div class="card-sub">Most recent first</div>
         </div>
-        <div class="aa-card-bd">
+        <div class="card-bd">
           <div class="aa-table-wrap">
             <table class="aa-table">
               <thead>
@@ -328,7 +352,7 @@ function fmtMoney(total, currency) {
             </table>
           </div>
         </div>
-      </div>
+      </section>
     `;
   }
 
@@ -338,7 +362,7 @@ function fmtMoney(total, currency) {
     const orders = context?.orders || [];
 
     return `
-      ${renderCustomer(c)}
+      ${renderSubscriber(c)}
       <div style="height:14px;"></div>
       ${renderSubscriptions(subs)}
       <div style="height:14px;"></div>
@@ -420,12 +444,24 @@ function fmtMoney(total, currency) {
 
       if (!ok) {
         setStatus(els.searchStatus, `Search failed (${status}).`, "err");
-        els.results.innerHTML = `<div class="aa-card"><div class="aa-card-bd">Error: ${esc(JSON.stringify(data))}</div></div>`;
+        els.results.innerHTML = `
+          <section class="card">
+            <div class="card-hd"><div class="card-title">Error</div><div class="card-sub">Search</div></div>
+            <div class="card-bd">${esc(JSON.stringify(data))}</div>
+          </section>
+        `;
         return;
       }
 
       const ctx = data?.context || null;
-      els.results.innerHTML = ctx ? renderAll(ctx) : `<div class="aa-card"><div class="aa-card-bd">No context returned.</div></div>`;
+      els.results.innerHTML = ctx
+        ? renderAll(ctx)
+        : `
+          <section class="card">
+            <div class="card-hd"><div class="card-title">Results</div><div class="card-sub">Empty</div></div>
+            <div class="card-bd">No context returned.</div>
+          </section>
+        `;
       setStatus(els.searchStatus, "Search complete.", "ok");
     } catch (e) {
       setStatus(els.searchStatus, `Search error: ${e?.message || e}`, "err");

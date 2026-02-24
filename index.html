@@ -1,4 +1,5 @@
 <!-- 🟢 index.html -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-23) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -48,13 +49,6 @@
       gap:12px;
       min-width:0;
     }
-    .logo{
-      width:36px;height:36px;border-radius:12px;
-      background:rgba(255,255,255,0.18);
-      display:flex;align-items:center;justify-content:center;
-      font-weight:900;
-      flex:0 0 auto;
-    }
     .brand-text{min-width:0}
     .brand-title{
       font-weight:900;
@@ -90,6 +84,42 @@
     }
     .dot.ok{background:#22c55e; box-shadow:0 0 0 4px rgba(34,197,94,0.18);}
 
+    /* Logo (restored + hardened) */
+    .logo{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:40px;
+      height:40px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.18);
+      border:1px solid rgba(255,255,255,0.22);
+      flex:0 0 auto;
+      overflow:hidden;
+    }
+    .logo-img{
+      width:34px;
+      height:34px;
+      object-fit:contain;
+      border-radius:8px;
+      background:#fff;
+      padding:4px;
+      box-shadow: 0 2px 10px rgba(2,6,23,0.12);
+    }
+    .logo-fallback{
+      display:none;
+      width:34px;
+      height:34px;
+      align-items:center;
+      justify-content:center;
+      border-radius:10px;
+      background: rgba(255,255,255,0.20);
+      color:#fff;
+      font-weight:900;
+      letter-spacing:0.02em;
+    }
+    .logo.noimg .logo-fallback{display:flex;}
+
     main{
       max-width:1200px;
       margin:18px auto 48px;
@@ -101,12 +131,6 @@
       grid-template-columns: 1fr;
       gap:18px;
       align-items:start;
-    }
-    @media (min-width: 980px) {
-      .grid {
-        grid-template-columns: 1fr;
-        align-items: start;
-      }
     }
 
     .card{
@@ -139,6 +163,7 @@
     }
     .card-bd{
       padding:16px;
+      overflow:visible;
     }
 
     .row{
@@ -148,15 +173,18 @@
       align-items:flex-end;
     }
     .row > .field{flex:1 1 240px;}
+
+    /* Field labels: OkObserver blue, Title Case (no ALL CAPS) */
     .field label{
       display:block;
       font-size:12px;
       font-weight:900;
-      letter-spacing:0.02em;
-      text-transform:uppercase;
+      letter-spacing:0.01em;
       color:var(--oo-blue);
       margin:0 0 6px;
+      text-transform:none;
     }
+
     input{
       width:100%;
       padding:12px 12px;
@@ -217,46 +245,66 @@
       line-height:1.35;
     }
 
-    /* --- UI stabilization pass (2026-02-23) --- */
-    .logo { display:flex; align-items:center; gap:10px; }
-    .logo-img { width:34px; height:34px; object-fit:contain; border-radius:8px; background:#fff; padding:4px; box-shadow: 0 2px 10px rgba(2,6,23,0.12); }
-    .logo.noimg .logo-fallback { display:flex; }
-    .logo-fallback { display:none; width:34px; height:34px; align-items:center; justify-content:center; border-radius:10px; background: rgba(255,255,255,0.20); color:#fff; font-weight:800; }
-
+    /* ---- Results layout helpers ---- */
     .aa-grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 980px) { .aa-grid-2 { grid-template-columns: 1fr; } }
 
-    .aa-card { overflow: visible; }
-    .aa-card-bd { overflow: visible; }
+    .aa-kv { display:grid; grid-template-columns: 120px 1fr; gap: 10px 14px; align-items:start; }
+    .aa-k { color: var(--oo-blue); font-weight: 900; letter-spacing: 0.01em; font-size: 12px; text-transform:none; }
+    .aa-v { font-weight: 550; color: var(--oo-text); line-height: 1.25; word-break: break-word; }
 
-    .aa-kv { display:grid; grid-template-columns: 110px 1fr; gap: 10px 14px; align-items:start; }
-    .aa-k { color: var(--oo-blue); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; font-size: 12px; }
-    .aa-v { font-weight: 650; color: var(--oo-text); line-height: 1.25; word-break: break-word; }
-    .aa-v br { line-height: 1.1; }
-
+    /* Subscriber identity row: prefer single line on desktop */
     .aa-identity-row { display:flex; flex-wrap:wrap; gap: 10px 14px; align-items:center; }
     .aa-identity-row > div { display:flex; gap: 8px; align-items:baseline; }
-    .aa-identity-email { flex: 1 1 320px; min-width: 280px; }
-
-    .aa-pill-k { color: var(--oo-blue); text-transform: uppercase; font-weight: 900; letter-spacing: 0.02em; font-size: 12px; }
+    .aa-pill-k { color: var(--oo-blue); font-weight: 900; letter-spacing: 0.01em; font-size: 12px; text-transform:none; }
     .aa-pill-v { font-weight: 750; color: var(--oo-text); }
+    @media (min-width: 980px) {
+      .aa-identity-row { flex-wrap:nowrap; }
+    }
 
     .aa-table { width:100%; border-collapse: collapse; }
-    .aa-table thead th { text-transform: uppercase; letter-spacing: 0.02em; color: var(--oo-blue); font-weight: 900; font-size: 12px; border-bottom: 1px solid var(--oo-border); padding: 10px 8px; text-align:left; }
+    .aa-table thead th {
+      letter-spacing: 0.01em;
+      color: var(--oo-blue);
+      font-weight: 900;
+      font-size: 12px;
+      border-bottom: 1px solid var(--oo-border);
+      padding: 10px 8px;
+      text-align:left;
+      text-transform:none;
+      white-space:nowrap;
+    }
     .aa-table tbody td { border-bottom: 1px solid rgba(15,23,42,0.08); padding: 10px 8px; vertical-align: top; }
     .aa-table-wrap { overflow-x:auto; }
 
-    .aa-badge { display:inline-block; padding: 4px 10px; border-radius: 999px; background: rgba(30,144,255,0.10); color: var(--oo-blue); font-weight: 800; font-size: 12px; margin-left: 8px; text-transform: lowercase; }
+    .aa-badge {
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(30,144,255,0.10);
+      color: var(--oo-blue);
+      font-weight: 800;
+      font-size: 12px;
+      margin-left: 8px;
+      text-transform: lowercase;
+      white-space:nowrap;
+    }
     .aa-items { min-width: 260px; white-space: normal; }
 
+    /* Notes: right-justified, narrower cards, no bold text */
     .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
     .aa-notes-col { width: min(520px, 100%); display:flex; flex-direction:column; gap: 10px; }
-    .aa-note-card { background: #fff; border: 1px solid rgba(15,23,42,0.10); border-radius: 12px; padding: 10px 12px; box-shadow: 0 6px 16px rgba(2,6,23,0.06); }
+    .aa-note-card {
+      background: #fff;
+      border: 1px solid rgba(15,23,42,0.10);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: 0 6px 16px rgba(2,6,23,0.06);
+    }
     .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-    .aa-note-text { color: var(--oo-text); font-weight: 650; line-height: 1.25; white-space: pre-wrap; }
+    .aa-note-text { color: var(--oo-text); font-weight: 500; line-height: 1.25; white-space: pre-wrap; }
 
     .aa-sub-notes-row td { border-bottom: none; padding-top: 0; }
-
     .aa-raw-toggle-row { display:flex; justify-content:flex-end; margin: 12px 0 0; }
   </style>
 </head>
@@ -264,10 +312,10 @@
   <header>
     <div class="header-inner">
       <div class="brand">
-      <div class="logo" aria-label="The Oklahoma Observer">
-        <img class="logo-img" src="logo.png" alt="The Oklahoma Observer" onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">
-        <span class="logo-fallback" aria-hidden="true">A</span>
-      </div>
+        <div class="logo" aria-label="The Oklahoma Observer">
+          <img class="logo-img" src="logo.png" alt="The Oklahoma Observer" onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">
+          <span class="logo-fallback" aria-hidden="true">OO</span>
+        </div>
         <div class="brand-text">
           <div class="brand-title">Arnold Admin</div>
           <div class="brand-sub">WooCommerce lookups for okobserver.org</div>
@@ -325,14 +373,17 @@
       <section class="card">
         <div class="card-hd">
           <div class="card-title">Results</div>
-          <div class="card-sub">Customer → Subscriptions → Orders</div>
+          <div class="card-sub">Subscriber → Subscriptions → Orders</div>
         </div>
         <div class="card-bd">
           <div id="results"></div>
         </div>
       </section>
 
-      <div class="aa-raw-toggle-row"><button id="btnRaw" class="btn secondary">Toggle Raw JSON</button></div>
+      <!-- Raw JSON toggle goes LAST (per UI spec) -->
+      <div class="aa-raw-toggle-row">
+        <button id="btnRaw" class="btn secondary">Toggle Raw JSON</button>
+      </div>
 
       <details id="rawWrap" class="card" style="display:none;">
         <summary>
@@ -345,7 +396,7 @@
     </div>
   </main>
 
-  <script src="./main.js"></script>
+  <script src="./main.js?v=2026-02-24a"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
