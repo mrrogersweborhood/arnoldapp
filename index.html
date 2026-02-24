@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24h) -->
+<!-- Arnold Admin — FULL REPLACEMENT (UI widen + name layout fix 2026-02-24i) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -36,14 +36,17 @@
       padding:12px 18px;
       box-shadow:0 6px 18px rgba(2,6,23,0.20);
     }
+
+    /* ✅ WIDEN: give Orders room before horizontal scroll */
     .header-inner{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:16px;
-      max-width:1200px;
+      max-width:1400px;
       margin:0 auto;
     }
+
     .brand{
       display:flex;
       align-items:center;
@@ -87,11 +90,14 @@
       white-space:nowrap;
     }
     .badge b{font-weight:900}
+
+    /* ✅ WIDEN: increase overall working width */
     main{
-      max-width:1200px;
+      max-width:1400px;
       margin:0 auto;
       padding:18px;
     }
+
     .stack{display:flex; flex-direction:column; gap:14px;}
     .row{
       display:flex;
@@ -214,8 +220,33 @@
       background:linear-gradient(180deg, #ffffff, #fbfdff);
       box-shadow:0 8px 18px rgba(2,6,23,0.05);
     }
-    .aa-addr-title{font-weight:1000; margin-bottom:6px;}
-    .aa-addr-name{font-weight:900; color:var(--oo-text); margin-bottom:8px;}
+    .aa-addr-title{font-weight:1000; margin-bottom:10px;}
+
+    /* ✅ Name fields directly above address, in two columns */
+    .aa-namegrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px 14px;
+      margin-bottom:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid rgba(15,23,42,0.08);
+    }
+    .aa-nameitem{min-width:0}
+    .aa-namelbl{
+      font-weight:1000;
+      color:var(--oo-blue);
+      font-size:12px;
+      letter-spacing:0.02em;
+      text-transform:capitalize;
+      margin-bottom:4px;
+    }
+    .aa-nameval{
+      font-weight:800;
+      color:var(--oo-text);
+      line-height:1.2;
+      word-break:break-word;
+    }
+
     .aa-addr-row{
       display:flex;
       gap:10px;
@@ -253,8 +284,15 @@
       width:100%;
       border-collapse:collapse;
       background:#fff;
-      min-width:860px;
+
+      /* ✅ Wider baseline so Orders columns + Notes chevron stay visible */
+      min-width:1100px;
     }
+    table.aa-orders{
+      /* ✅ Orders needs more room than subs */
+      min-width:1300px;
+    }
+
     th, td{
       padding:10px 10px;
       border-top:1px solid rgba(15,23,42,0.08);
@@ -295,19 +333,18 @@
       font-weight:900;
     }
     .aa-items{
-      min-width: 320px;
+      min-width: 360px;
       white-space: normal;
     }
 
     /* Notes (right-justified, narrow, not bold) */
-    /* Collapsible notes control */
     .aa-notes { width: 100%; }
     .aa-notes-summary{
       list-style:none;
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      gap:10px;
+      gap:12px;
       cursor:pointer;
       user-select:none;
       color: var(--oo-blue);
@@ -316,18 +353,19 @@
     }
     .aa-notes-summary::-webkit-details-marker{ display:none; }
     .aa-notes-label{ letter-spacing:0.01em; }
+
+    /* ✅ Bigger arrow so it’s obvious + clickable */
     .aa-notes-arrow{
-      font-size: 20px;
+      font-size: 22px;
       line-height: 1;
       transform: translateY(-1px);
     }
     .aa-notes[open] .aa-notes-arrow{ transform: rotate(180deg) translateY(1px); }
 
-    /* Notes column sizing + alignment */
     .aa-notes-th{ width: 1%; white-space: nowrap; text-align: right; }
     .aa-notes-cell{ text-align:right; vertical-align: top; }
     .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
-    .aa-notes-col { width: min(520px, 100%); display:flex; flex-direction:column; gap: 10px; }
+    .aa-notes-col { width: min(560px, 100%); display:flex; flex-direction:column; gap: 10px; }
     .aa-note-card {
       background: #fff;
       border: 1px solid rgba(15,23,42,0.10);
@@ -336,7 +374,7 @@
       box-shadow: 0 6px 16px rgba(2,6,23,0.06);
     }
     .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-    .aa-note-text { color: var(--oo-text); font-weight: 600; line-height: 1.35; font-size: 14px;
+    .aa-note-text { color: var(--oo-text); font-weight: 600; line-height: 1.35; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -404,7 +442,7 @@
     </div>
   </main>
 
-  <script src="./main.js?v=2026-02-24h"></script>
+  <script src="./main.js?v=2026-02-24i"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

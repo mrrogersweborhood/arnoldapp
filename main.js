@@ -1,15 +1,11 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24h)
+// Arnold Admin — FULL REPLACEMENT (widen orders + name fields above address 2026-02-24i)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 
 (() => {
   "use strict";
 
-  /* ========= CONFIG ========= */
-
   const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-
-  /* ========= DOM ========= */
 
   const els = {
     msg: document.getElementById("msg"),
@@ -34,8 +30,6 @@
     rawJson: document.getElementById("rawJson")
   };
 
-  /* ========= HELPERS ========= */
-
   function esc(s) {
     return String(s ?? "")
       .replaceAll("&", "&amp;")
@@ -45,19 +39,14 @@
       .replaceAll("'", "&#039;");
   }
 
-  // Convert Woo HTML notes -> plain text (so we don't display <span> etc.)
   function toPlainText(html) {
     const s = String(html ?? "");
     if (!s) return "";
     try {
       const doc = new DOMParser().parseFromString(s, "text/html");
-      const txt =
-        (doc && doc.body && typeof doc.body.textContent === "string")
-          ? doc.body.textContent
-          : "";
+      const txt = (doc && doc.body && typeof doc.body.textContent === "string") ? doc.body.textContent : "";
       return txt.replace(/\s+/g, " ").trim();
     } catch (_) {
-      // Fallback: strip tags (best-effort)
       return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
     }
   }
@@ -89,7 +78,6 @@
   function fmtDate(iso) {
     if (!iso) return "—";
     const s = String(iso);
-    // Keep date-only
     return s.split("T")[0].split(" ")[0] || "—";
   }
 
@@ -108,22 +96,6 @@
     }
   }
 
-  function okobserverCard(title, subtitle, bodyHtml) {
-    return `
-      <section class="card">
-        <div class="card-hd">
-          <div>
-            <div class="card-title">${esc(title)}</div>
-            <div class="card-sub">${subtitle ? esc(subtitle) : ""}</div>
-          </div>
-        </div>
-        <div class="card-bd">${bodyHtml || ""}</div>
-      </section>
-    `;
-  }
-
-  // Render collapsible notes (Subscription Notes / Order Notes) as a right-justified details panel.
-  // Notes are shown only when user expands the chevron.
   function renderNotesDetails(notes, labelText) {
     const arr = Array.isArray(notes) ? notes : [];
     if (!arr.length) return "";
@@ -149,19 +121,24 @@
     `;
   }
 
-  /* ========= RENDERERS ========= */
-
   function renderSubscriber(customer) {
     const c = customer || null;
     if (!c) {
-      return okobserverCard("Subscriber", "None", "No subscriber found.");
+      return `
+        <section class="card">
+          <div class="card-hd">
+            <div class="card-title">Subscriber</div>
+            <div class="card-sub">None</div>
+          </div>
+          <div class="card-bd">No subscriber found.</div>
+        </section>
+      `;
     }
 
     const id = c?.id ?? "—";
     const username = c?.username ? String(c.username) : "—";
     const fullName =
-      [c?.first_name, c?.last_name].filter(Boolean).map(String).join(" ").trim() ||
-      "—";
+      [c?.first_name, c?.last_name].filter(Boolean).map(String).join(" ").trim() || "—";
 
     const billing = c?.billing || null;
     const shipping = c?.shipping || null;
@@ -169,7 +146,6 @@
     const renderAddressCard = (label, a) => {
       const first = String(a?.first_name || "").trim();
       const last = String(a?.last_name || "").trim();
-      const nameLine = [first, last].filter(Boolean).join(" ").trim();
 
       const addrParts = [
         a?.company,
@@ -182,34 +158,41 @@
         .map(String);
 
       const addr = addrParts.join(", ") || "—";
-
-      // Keep email/phone inside billing/shipping blocks (per your instruction)
       const email = a?.email ? String(a.email) : "—";
       const phone = a?.phone ? String(a.phone) : "—";
 
+      // ✅ First/Last name labeled fields directly above Address (same card)
       return `
         <div class="aa-addr">
           <div class="aa-addr-title">${esc(label)}</div>
-          ${nameLine ? `<div class="aa-addr-name">${esc(nameLine)}</div>` : ""}
-          <div class="aa-addr-grid">
-            <div class="aa-addr-row">
-              <div class="aa-lbl">Address</div>
-              <div class="aa-val">${esc(addr)}</div>
+
+          <div class="aa-namegrid">
+            <div class="aa-nameitem">
+              <div class="aa-namelbl">First name</div>
+              <div class="aa-nameval">${esc(first || "—")}</div>
             </div>
-            <div class="aa-addr-row">
-              <div class="aa-lbl">Email</div>
-              <div class="aa-val">${esc(email)}</div>
+            <div class="aa-nameitem">
+              <div class="aa-namelbl">Last name</div>
+              <div class="aa-nameval">${esc(last || "—")}</div>
             </div>
-            <div class="aa-addr-row">
-              <div class="aa-lbl">Phone</div>
-              <div class="aa-val">${esc(phone)}</div>
-            </div>
+          </div>
+
+          <div class="aa-addr-row">
+            <div class="aa-lbl">Address</div>
+            <div class="aa-val">${esc(addr)}</div>
+          </div>
+          <div class="aa-addr-row">
+            <div class="aa-lbl">Email</div>
+            <div class="aa-val">${esc(email)}</div>
+          </div>
+          <div class="aa-addr-row">
+            <div class="aa-lbl">Phone</div>
+            <div class="aa-val">${esc(phone)}</div>
           </div>
         </div>
       `;
     };
 
-    // Do NOT repeat customer email in subscriber card (spec)
     return `
       <section class="card">
         <div class="card-hd">
@@ -257,10 +240,7 @@
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
       const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
-
-      // If end_date is empty, show Auto-renews (spec)
       const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
-
       const notesHtml = renderNotesDetails(s?.notes, "Notes");
 
       return `
@@ -335,7 +315,6 @@
       const total = fmtMoney(o?.total, o?.currency);
       const pay = esc(o?.payment_method_title || o?.payment_method || "—");
       const items = itemsSummary(o);
-
       const notesHtml = renderNotesDetails(o?.notes, "Notes");
 
       return `
@@ -345,12 +324,13 @@
           <td><span class="aa-badge">${status}</span></td>
           <td>${total}</td>
           <td>${pay}</td>
-          <td>${items}</td>
+          <td class="aa-items">${items}</td>
           <td class="aa-notes-cell">${notesHtml || ""}</td>
         </tr>
       `;
     };
 
+    // ✅ table.aa-orders triggers wider min-width in CSS
     return `
       <section class="card">
         <div class="card-hd">
@@ -359,7 +339,7 @@
         </div>
         <div class="card-bd">
           <div class="aa-table-wrap">
-            <table class="aa-table">
+            <table class="aa-table aa-orders">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -381,19 +361,14 @@
     `;
   }
 
-  /* ========= ACTIONS ========= */
-
   async function api(path, init) {
     const url = `${API_BASE}${path}`;
     const opts = {
       ...init,
       credentials: "include",
-      headers: {
-        ...(init && init.headers ? init.headers : {})
-      }
+      headers: { ...(init && init.headers ? init.headers : {}) }
     };
-    const resp = await fetch(url, opts);
-    return resp;
+    return fetch(url, opts);
   }
 
   function clearOutputs() {
@@ -427,7 +402,6 @@
       setBadge("logged out", false);
     }
 
-    // Enable/disable buttons based on session state
     if (els.btnLogin) els.btnLogin.disabled = loggedIn;
     if (els.btnLogout) els.btnLogout.disabled = !loggedIn;
     if (els.btnSearch) els.btnSearch.disabled = !loggedIn;
@@ -520,8 +494,6 @@
     toggleRaw(true, data);
   }
 
-  /* ========= WIRE UP ========= */
-
   els.btnLogin?.addEventListener("click", () => doLogin().catch(err => {
     console.log("[Login] error", err);
     setMsg("Login failed (see console).", "err");
@@ -537,7 +509,6 @@
     setMsg("Search failed (see console).", "err");
   }));
 
-  // Enter key behavior
   els.loginPass?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") els.btnLogin?.click();
   });
@@ -545,12 +516,8 @@
     if (e.key === "Enter") els.btnSearch?.click();
   });
 
-  /* ========= INIT ========= */
-
   toggleRaw(false);
-  refreshStatus().catch(() => {
-    setBadge("Session: error", false);
-  });
+  refreshStatus().catch(() => setBadge("Session: error", false));
 })();
 
 // 🔴 main.js
