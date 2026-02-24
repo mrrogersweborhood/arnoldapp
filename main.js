@@ -1,42 +1,42 @@
 // 🟢 main.js
-// Arnold Admin main.js — FULL REPLACEMENT (v2026-02-23a)
-// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
-
 (() => {
-  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+  "use strict";
 
+  /* ========= CONFIG ========= */
+
+  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const API = {
     login: `${WORKER_BASE}/admin/login`,
-    logout: `${WORKER_BASE}/admin/logout`,
     status: `${WORKER_BASE}/admin/status`,
+    logout: `${WORKER_BASE}/admin/logout`,
     search: `${WORKER_BASE}/admin/nl-search`
   };
 
+  /* ========= DOM ========= */
+
   const els = {
-    user: document.getElementById("loginUser"),
-    pass: document.getElementById("loginPass"),
+    wpUser: document.getElementById("wpUser"),
+    wpPass: document.getElementById("wpPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
+    loginStatus: document.getElementById("loginStatus"),
 
     query: document.getElementById("query"),
     btnSearch: document.getElementById("btnSearch"),
-    btnToggleRaw: document.getElementById("btnToggleRaw"),
-
-    statusMsg: document.getElementById("msg"),
+    searchStatus: document.getElementById("searchStatus"),
 
     sessionPill: document.getElementById("sessionPill"),
-    sessionText: document.getElementById("sessionText"),
     sessionDot: document.getElementById("sessionDot"),
+    sessionText: document.getElementById("sessionText"),
 
-    outCustomer: document.getElementById("customerOut"),
-    outSubs: document.getElementById("subsOut"),
-    outOrders: document.getElementById("ordersOut"),
+    results: document.getElementById("results"),
 
+    btnRaw: document.getElementById("btnRaw"),
     rawWrap: document.getElementById("rawWrap"),
-    outJson: document.getElementById("rawOut")
+    rawJson: document.getElementById("rawJson")
   };
 
-  /* ---------------- Utils ---------------- */
+  /* ========= HELPERS ========= */
 
   function esc(s) {
     return String(s ?? "")
@@ -44,462 +44,416 @@
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#39;");
-  }
-
-  function setMsg(text, kind) {
-    if (!els.statusMsg) return;
-    els.statusMsg.textContent = text || "";
-    els.statusMsg.className = "statusMsg";
-    if (kind === "ok") els.statusMsg.classList.add("statusOk");
-    if (kind === "bad") els.statusMsg.classList.add("statusBad");
+      .replaceAll("'", "&#039;");
   }
 
   function setBadge(text, ok) {
-    if (els.sessionText) els.sessionText.textContent = text;
-    if (els.sessionDot) {
-      els.sessionDot.classList.toggle("ok", !!ok);
-    }
+    els.sessionText.textContent = text;
+    els.sessionDot.classList.toggle("ok", !!ok);
+    els.sessionDot.classList.toggle("warn", !ok);
   }
 
-  function parseLooseDate(val) {
-    if (!val) return null;
-    const s = String(val).trim();
-    if (!s) return null;
-    // accepts "YYYY-MM-DD" or "YYYY-MM-DD HH:MM:SS"
-    const iso = s.replace(" ", "T");
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return null;
-    return d;
+  function setStatus(el, msg, kind) {
+    el.textContent = msg;
+    el.classList.remove("ok", "err");
+    if (kind) el.classList.add(kind);
   }
 
-  // Dates: DROP TIME everywhere per your requirement
-  function fmtDate(val) {
-    const d = parseLooseDate(val);
-    if (!d) return "—";
-    return d.toLocaleDateString("en-US");
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    // Keep only date part. Handles "YYYY-MM-DD" or "YYYY-MM-DDTHH:mm:ss"
+    const s = String(iso);
+    const datePart = s.split("T")[0].split(" ")[0];
+    return datePart || "—";
   }
 
-  // Currency: $0.00 style (symbol), never "USD"
-  function fmtMoney(total, currency) {
-    if (total == null || total === "") return "—";
-    const num = Number(total);
-    if (Number.isNaN(num)) return "—";
+function fmtMoney(total, currency) {
+  const n = Number(total);
+  if (!isFinite(n)) return "—";
+  const cur = String(currency || "USD").toUpperCase();
 
-    // Use provided currency if valid; default to USD
-    const cur = (currency && String(currency).trim()) ? String(currency).trim().toUpperCase() : "USD";
-
-    try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: cur,
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(num);
-    } catch (_) {
-      // fallback
-      return `$${num.toFixed(2)}`;
-    }
+  // Prefer the familiar $0.00 style for USD.
+  if (cur === "USD" || cur === "$") {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
   }
 
-  async function apiFetch(url, init) {
-    const resp = await fetch(url, {
-      ...init,
+  // Fallback for other currencies (still numeric + symbol/code as appropriate).
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: cur }).format(n);
+  } catch (_) {
+    return `${n.toFixed(2)} ${cur}`;
+  }
+}
+
+  function fmtPhone(p) {
+    const s = String(p || "").trim();
+    if (!s) return "";
+    return s;
+  }
+
+  function safe(obj, fallback = null) {
+    return obj == null ? fallback : obj;
+  }
+
+  async function fetchJson(url, opts) {
+    const r = await fetch(url, {
+      ...opts,
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
-        ...(init && init.headers ? init.headers : {})
-      },
-      credentials: "include"
+        ...(opts && opts.headers ? opts.headers : {})
+      }
     });
 
-    const txt = await resp.text();
+    const txt = await r.text();
     let data = null;
-    try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
-    return { resp, data };
-  }
-
-  /* ---------------- Auth ---------------- */
-
-  async function refreshStatus() {
     try {
-      const { resp, data } = await apiFetch(API.status, { method: "GET" });
-      const loggedIn = !!(resp.ok && data && data.loggedIn);
-
-      if (loggedIn) {
-        setBadge("Session: logged in", true);
-      } else {
-        setBadge("Session: logged out", false);
-      }
-    } catch (err) {
-      console.error("[ArnoldAdmin] status error:", err);
-      setBadge("Session: error", false);
+      data = txt ? JSON.parse(txt) : null;
+    } catch (_) {
+      data = txt;
     }
+    return { ok: r.ok, status: r.status, data };
   }
 
-  async function doLogin() {
-    setMsg("", "");
-    const username = els.user?.value?.trim();
-    const password = els.pass?.value ?? "";
-
-    if (!username || !password) {
-      setMsg("Enter username and password.", "bad");
-      return;
-    }
-
-    els.btnLogin && (els.btnLogin.disabled = true);
-    setMsg("Logging in…", "ok");
-
-    try {
-      const { resp, data } = await apiFetch(API.login, {
-        method: "POST",
-        body: JSON.stringify({ username, password })
-      });
-
-      console.log("[ArnoldAdmin] POST /admin/login", resp.status, data);
-
-      if (!resp.ok || !data?.success) {
-        setMsg((data && (data.message || data.error)) || `Login failed (${resp.status}).`, "bad");
-        setBadge("Session: logged out", false);
-        return;
-      }
-
-      setMsg("Logged in.", "ok");
-      setBadge("Session: logged in", true);
-    } catch (err) {
-      console.error("[ArnoldAdmin] login error:", err);
-      setMsg("Login error (see Console).", "bad");
-      setBadge("Session: error", false);
-    } finally {
-      els.btnLogin && (els.btnLogin.disabled = false);
-    }
+  function toggleRaw(show) {
+    els.rawWrap.style.display = show ? "" : "none";
   }
 
-  async function doLogout() {
-    setMsg("", "");
-    els.btnLogout && (els.btnLogout.disabled = true);
-    setMsg("Logging out…", "ok");
+  /* ========= RENDER ========= */
 
-    try {
-      const { resp, data } = await apiFetch(API.logout, { method: "POST" });
-      console.log("[ArnoldAdmin] POST /admin/logout", resp.status, data);
-
-      if (!resp.ok) {
-        setMsg((data && (data.message || data.error)) || `Logout failed (${resp.status}).`, "bad");
-        return;
-      }
-
-      setMsg("Logged out.", "ok");
-      setBadge("Session: logged out", false);
-    } catch (err) {
-      console.error("[ArnoldAdmin] logout error:", err);
-      setMsg("Logout error (see Console).", "bad");
-    } finally {
-      els.btnLogout && (els.btnLogout.disabled = false);
+  function renderCustomer(c) {
+    if (!c) {
+      return `<div class="aa-card"><div class="aa-card-bd">No customer found.</div></div>`;
     }
-  }
 
-  /* ---------------- Rendering ---------------- */
+    const id = esc(c?.id ?? "—");
+    const username = esc(c?.username ?? "—");
+    const email = esc(c?.email ?? c?.billing?.email ?? "—");
 
-  function renderIdentity(customer) {
-    const id = customer?.id ?? "—";
-    const username = customer?.username ?? customer?.slug ?? null;
+    const billing = c?.billing || {};
+    const shipping = c?.shipping || {};
 
-    return `
-      <div class="card" style="box-shadow:none;border:1px solid rgba(15,23,42,.10);border-radius:14px;">
-        <div class="cardHead" style="padding:12px 14px;">
-          <div class="cardTitle" style="font-size:13px;">Identity</div>
-          <div class="cardMeta">Customer</div>
-        </div>
-        <div class="cardBody" style="padding:12px 14px;">
-          <div style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;">
-            <div class="label" style="margin:0;">Customer ID</div>
-            <div class="mono" style="font-weight:900;">${esc(id)}</div>
+    const addrLines = (a) => ([
+      [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim(),
+      a?.company,
+      a?.address_1,
+      a?.address_2,
+      [a?.city, a?.state, a?.postcode].filter(Boolean).join(" ").trim(),
+      a?.country
+    ].filter(Boolean));
 
-            <div class="label" style="margin:0;">Username</div>
-            <div class="mono" style="font-weight:900;">${esc(username || "Not available")}</div>
+    const addrHtml = (label, a) => {
+      const lines = addrLines(a);
+      const emailLine = a?.email ? esc(a.email) : (label === "Billing" ? email : "");
+      const phoneLine = a?.phone ? esc(fmtPhone(a.phone)) : "";
+
+      return `
+        <div class="aa-card">
+          <div class="aa-card-hd">
+            <div class="aa-card-title">${esc(label)}</div>
+          </div>
+          <div class="aa-card-bd">
+            <div class="aa-kv">
+              <div class="aa-k">Name</div>
+              <div class="aa-v">${esc([a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—")}</div>
+
+              <div class="aa-k">Address</div>
+              <div class="aa-v">${lines.length ? lines.map(esc).join("<br>") : "—"}</div>
+
+              <div class="aa-k">Email</div>
+              <div class="aa-v">${emailLine || "—"}</div>
+
+              <div class="aa-k">Phone</div>
+              <div class="aa-v">${phoneLine || "—"}</div>
+            </div>
           </div>
         </div>
-      </div>
-    `;
-  }
-
-  function renderAddressBlock(title, a) {
-    const first = (a?.first_name || "").trim();
-    const last = (a?.last_name || "").trim();
-    const name = [first, last].filter(Boolean).join(" ").trim();
-
-    const line1 = (a?.address_1 || "").trim();
-    const line2 = (a?.address_2 || "").trim();
-    const city = (a?.city || "").trim();
-    const state = (a?.state || "").trim();
-    const zip = (a?.postcode || "").trim();
-    const country = (a?.country || "").trim();
-
-    const loc = [city, state, zip, country].filter(Boolean).join(" • ");
-
-    const email = (a?.email || "").trim();
-    const phone = (a?.phone || "").trim();
-
-    const rows = [
-      ["Name", name || "—"],
-      ["Address", [line1, line2].filter(Boolean).join(", ") || "—"],
-      ["", loc || ""],
-      ["Email", email || "—"],
-      ["Phone", phone || "—"]
-    ].filter(([k, v]) => (k !== "" ? true : !!v));
-
-    const rowHtml = rows
-      .map(([k, v]) => {
-        if (k === "") {
-          return `<div></div><div style="font-weight:800;">${esc(v)}</div>`;
-        }
-        return `<div class="label" style="margin:0;">${esc(k)}</div><div style="font-weight:900;">${esc(v)}</div>`;
-      })
-      .join("");
+      `;
+    };
 
     return `
-      <div class="card" style="box-shadow:none;border:1px solid rgba(15,23,42,.10);border-radius:14px;">
-        <div class="cardHead" style="padding:12px 14px;">
-          <div class="cardTitle" style="font-size:13px;">${esc(title)}</div>
-          <div class="cardMeta">${esc(name || "—")}</div>
-        </div>
-        <div class="cardBody" style="padding:12px 14px;">
-          <div style="display:grid;grid-template-columns:140px 1fr;gap:10px;align-items:center;">
-            ${rowHtml}
+      <div class="aa-customer">
+        <div class="aa-card aa-customer-identity">
+          <div class="aa-card-hd">
+            <div class="aa-card-title">Customer</div>
+            <div class="aa-card-sub">Identity</div>
+          </div>
+          <div class="aa-card-bd">
+            <div class="aa-identity-row">
+              <div><span class="aa-pill-k">Customer ID</span><span class="aa-pill-v">${id}</span></div>
+              <div><span class="aa-pill-k">Username</span><span class="aa-pill-v">${username}</span></div>
+              <div class="aa-identity-email"><span class="aa-pill-k">Email</span><span class="aa-pill-v">${email}</span></div>
+            </div>
           </div>
         </div>
-      </div>
-    `;
-  }
 
-  function renderCustomer(customer) {
-    if (!customer) return "<div class='muted'>—</div>";
-
-    const billing = customer?.billing || null;
-    const shipping = customer?.shipping || null;
-
-    return `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
-        ${renderIdentity(customer)}
-        ${renderAddressBlock("Billing", billing)}
-        ${renderAddressBlock("Shipping", shipping)}
+        <div class="aa-grid-2">
+          ${addrHtml("Billing", billing)}
+          ${addrHtml("Shipping", shipping)}
+        </div>
       </div>
     `;
   }
 
   function renderSubscriptions(subs) {
-    if (!subs?.length) return "<div class='muted'>—</div>";
+    const arr = Array.isArray(subs) ? subs : [];
+    if (!arr.length) {
+      return `<div class="aa-card"><div class="aa-card-bd">No subscriptions found.</div></div>`;
+    }
 
-    const rows = subs.slice(0, 50).map((s) => {
-      const id = esc(s?.id ?? "");
+    const rowHtml = (s) => {
+      const id = esc(s?.id ?? "—");
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
-
-      const nextPay = fmtDate(s?.next_payment_date);
-      const end = fmtDate(s?.end_date);
+      const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
+      const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
       const notesHtml = notes.length
-        ? `<div class="notesStack">${
-            notes.slice(0, 50).map((n) => {
-              const when = fmtDate(n?.date_created);
-              const body = (n?.note ?? "").trim();
-              const who = (n?.author || n?.added_by || "").trim() || "WooCommerce";
-              return `
-                <div class="noteCard">
-                  <div class="noteTop"><span>${esc(when)}</span><span>${esc(who)}</span></div>
-                  <div class="noteBody">${esc(body || "—")}</div>
+        ? `
+          <div class="aa-notes-wrap">
+            <div class="aa-notes-col">
+              ${notes.slice(0, 50).map(n => `
+                <div class="aa-note-card">
+                  <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
+                  <div class="aa-note-text">${esc(n?.note || "")}</div>
                 </div>
-              `;
-            }).join("")
-          }</div>`
-        : "<div class='muted'>—</div>";
+              `).join("")}
+            </div>
+          </div>
+        `
+        : "";
 
       return `
         <tr>
-          <td><strong>#${id}</strong> <span class="pill" style="margin-left:8px;">${status}</span></td>
-          <td class="mono">${esc(total)}</td>
-          <td class="mono">${esc(nextPay)}</td>
-          <td class="mono">${esc(end)}</td>
-          <td>${notesHtml}</td>
+          <td><span class="aa-mono">#${id}</span> <span class="aa-badge">${status}</span></td>
+          <td>${total}</td>
+          <td>${nextPay}</td>
+          <td>${end}</td>
+        </tr>
+        <tr class="aa-sub-notes-row">
+          <td colspan="4">${notesHtml}</td>
         </tr>
       `;
-    });
+    };
 
     return `
-      <div style="overflow:auto;">
-        <table style="width:100%;border-collapse:separate;border-spacing:0 10px;">
-          <thead>
-            <tr class="orderHeader" style="display:table-row;">
-              <th style="text-align:left;padding:10px;">Subscription</th>
-              <th style="text-align:left;padding:10px;">Total</th>
-              <th style="text-align:left;padding:10px;">Next Payment</th>
-              <th style="text-align:left;padding:10px;">End</th>
-              <th style="text-align:left;padding:10px;">Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.join("")}
-          </tbody>
-        </table>
+      <div class="aa-card">
+        <div class="aa-card-hd">
+          <div class="aa-card-title">Subscriptions</div>
+          <div class="aa-card-sub">Contract + Schedule + Notes</div>
+        </div>
+        <div class="aa-card-bd">
+          <div class="aa-table-wrap">
+            <table class="aa-table">
+              <thead>
+                <tr>
+                  <th>Subscription</th>
+                  <th>Total</th>
+                  <th>Next Payment</th>
+                  <th>End</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${arr.map(rowHtml).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     `;
   }
 
   function renderOrders(orders) {
-    if (!orders?.length) return "<div class='muted'>—</div>";
+    const arr = Array.isArray(orders) ? orders : [];
+    if (!arr.length) {
+      return `<div class="aa-card"><div class="aa-card-bd">No orders found.</div></div>`;
+    }
 
-    const header = `
-      <div class="orderHeader">
-        <div>Order</div>
-        <div>Status</div>
-        <div>Total</div>
-        <div>Payment</div>
-        <div>Date</div>
-        <div>Items</div>
-      </div>
-    `;
+    const itemsSummary = (o) => {
+      const items = Array.isArray(o?.line_items) ? o.line_items : [];
+      if (!items.length) return "—";
+      const parts = items.slice(0, 6).map(li => {
+        const q = Number(li?.quantity || 0) || 0;
+        const nm = String(li?.name || "").trim();
+        if (!nm) return "";
+        return `${q} × ${nm}`;
+      }).filter(Boolean);
+      const more = items.length > 6 ? ` (+${items.length - 6} more)` : "";
+      return esc(parts.join(" • ") + more);
+    };
 
-    const rows = orders.slice(0, 25).map((o) => {
-      const id = o?.id ?? "";
+    const rowHtml = (o) => {
+      const id = esc(o?.id ?? "—");
       const status = esc(o?.status ?? "—");
       const total = fmtMoney(o?.total, o?.currency);
-      const date = fmtDate(o?.date_created); // DROP TIME
-      const pm = esc(o?.payment_method_title || o?.payment_method || "—");
-
-      // Orders: show product ordered (line_items)
-      const items = Array.isArray(o?.line_items)
-        ? o.line_items
-            .map((li) => `${li?.quantity ?? 0}× ${esc(li?.name ?? "")}`.trim())
-            .filter(Boolean)
-            .join(", ")
-        : "";
+      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
+      const payment = esc(o?.payment_method_title || o?.payment_method || "—");
+      const items = itemsSummary(o);
 
       return `
-        <div class="orderRow">
-          <div class="mono"><strong>#${esc(id)}</strong></div>
-          <div><span class="pill">${status}</span></div>
-          <div class="mono">${esc(total)}</div>
-          <div>${pm}</div>
-          <div class="mono">${esc(date)}</div>
-          <div class="items">${items || "—"}</div>
-        </div>
+        <tr>
+          <td class="aa-mono">#${id}</td>
+          <td>${date}</td>
+          <td><span class="aa-badge">${status}</span></td>
+          <td>${total}</td>
+          <td>${payment}</td>
+          <td class="aa-items">${items}</td>
+        </tr>
       `;
-    });
+    };
 
-    return `<div class="orderLines">${header}${rows.join("")}</div>`;
+    return `
+      <div class="aa-card">
+        <div class="aa-card-hd">
+          <div class="aa-card-title">Orders</div>
+          <div class="aa-card-sub">Most recent first</div>
+        </div>
+        <div class="aa-card-bd">
+          <div class="aa-table-wrap">
+            <table class="aa-table">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Payment</th>
+                  <th>Items</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${arr.map(rowHtml).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
-  function renderJson(obj) {
-    const pretty = JSON.stringify(obj ?? null, null, 2);
-    return `<pre class="json">${esc(pretty)}</pre>`;
+  function renderAll(context) {
+    const c = context?.customer || null;
+    const subs = context?.subscriptions || [];
+    const orders = context?.orders || [];
+
+    return `
+      ${renderCustomer(c)}
+      <div style="height:14px;"></div>
+      ${renderSubscriptions(subs)}
+      <div style="height:14px;"></div>
+      ${renderOrders(orders)}
+    `;
   }
 
-  function setOutputs(payload) {
-    const ctx = payload?.context || payload?.results || payload || {};
-    const customer = ctx?.customer || null;
-    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
-    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
+  /* ========= ACTIONS ========= */
 
-    if (els.outCustomer) els.outCustomer.innerHTML = renderCustomer(customer);
-    if (els.outSubs) els.outSubs.innerHTML = renderSubscriptions(subs);
-    if (els.outOrders) els.outOrders.innerHTML = renderOrders(orders);
-    if (els.outJson) els.outJson.innerHTML = renderJson(payload);
+  async function refreshStatus() {
+    const { ok, data } = await fetchJson(API.status, { method: "GET" });
+    if (ok && data && data.loggedIn) {
+      setBadge("Session: logged in", true);
+      setStatus(els.loginStatus, "Logged in (cookie session active).", "ok");
+      return true;
+    }
+    setBadge("Session: logged out", false);
+    setStatus(els.loginStatus, "Logged out.", "");
+    return false;
   }
 
-  /* ---------------- Search ---------------- */
-
-  async function doSearch() {
-    setMsg("", "");
-
-    const q = els.query?.value?.trim();
-    if (!q) {
-      setMsg("Enter a search query.", "bad");
+  async function doLogin() {
+    const username = String(els.wpUser.value || "").trim();
+    const password = String(els.wpPass.value || "").trim();
+    if (!username || !password) {
+      setStatus(els.loginStatus, "Username + password required.", "err");
       return;
     }
 
-    els.btnSearch && (els.btnSearch.disabled = true);
-    setMsg("Searching…", "ok");
-
+    els.btnLogin.disabled = true;
     try {
-      const { resp, data } = await apiFetch(API.search, {
+      setStatus(els.loginStatus, "Logging in…", "");
+      const { ok, status, data } = await fetchJson(API.login, {
+        method: "POST",
+        body: JSON.stringify({ username, password })
+      });
+
+      if (!ok) {
+        setStatus(els.loginStatus, `Login failed (${status}). ${data?.message || ""}`, "err");
+        await refreshStatus();
+        return;
+      }
+
+      setStatus(els.loginStatus, "Login successful.", "ok");
+      await refreshStatus();
+    } catch (e) {
+      setStatus(els.loginStatus, `Login error: ${e?.message || e}`, "err");
+      await refreshStatus();
+    } finally {
+      els.btnLogin.disabled = false;
+    }
+  }
+
+  async function doLogout() {
+    els.btnLogout.disabled = true;
+    try {
+      await fetchJson(API.logout, { method: "POST" });
+    } catch (_) {}
+    await refreshStatus();
+    els.btnLogout.disabled = false;
+  }
+
+  async function doSearch() {
+    const q = String(els.query.value || "").trim();
+    if (!q) {
+      setStatus(els.searchStatus, "Enter a search (email, order #12345, etc.).", "err");
+      return;
+    }
+
+    els.btnSearch.disabled = true;
+    try {
+      setStatus(els.searchStatus, "Searching…", "");
+      const { ok, status, data } = await fetchJson(API.search, {
         method: "POST",
         body: JSON.stringify({ query: q })
       });
 
-      console.log("[ArnoldAdmin] POST /admin/nl-search", resp.status, data);
+      els.rawJson.textContent = JSON.stringify(data, null, 2);
 
-      if (!resp.ok) {
-        const msg =
-          (data && (data.message || data.error)) ||
-          `Search failed (${resp.status}).`;
-        setMsg(msg, "bad");
+      if (!ok) {
+        setStatus(els.searchStatus, `Search failed (${status}).`, "err");
+        els.results.innerHTML = `<div class="aa-card"><div class="aa-card-bd">Error: ${esc(JSON.stringify(data))}</div></div>`;
         return;
       }
 
-      if (!data || data.ok !== true) {
-        setMsg("Search returned unexpected JSON (see Raw JSON).", "bad");
-      } else {
-        setMsg("Search complete.", "ok");
-      }
-
-      setOutputs(data);
-    } catch (err) {
-      console.error("[ArnoldAdmin] search error:", err);
-      setMsg("Search error (see Console).", "bad");
+      const ctx = data?.context || null;
+      els.results.innerHTML = ctx ? renderAll(ctx) : `<div class="aa-card"><div class="aa-card-bd">No context returned.</div></div>`;
+      setStatus(els.searchStatus, "Search complete.", "ok");
+    } catch (e) {
+      setStatus(els.searchStatus, `Search error: ${e?.message || e}`, "err");
     } finally {
-      els.btnSearch && (els.btnSearch.disabled = false);
+      els.btnSearch.disabled = false;
     }
   }
 
-  function toggleRaw() {
-    if (!els.rawWrap) return;
-    els.rawWrap.classList.toggle("on");
-  }
+  /* ========= WIRE UP ========= */
 
-  /* ---------------- Init ---------------- */
+  els.btnLogin.addEventListener("click", doLogin);
+  els.btnLogout.addEventListener("click", doLogout);
+  els.btnSearch.addEventListener("click", doSearch);
 
-  async function init() {
-    const required = [
-      ["loginUser", els.user],
-      ["loginPass", els.pass],
-      ["btnLogin", els.btnLogin],
-      ["btnLogout", els.btnLogout],
-      ["query", els.query],
-      ["btnSearch", els.btnSearch],
-      ["btnToggleRaw", els.btnToggleRaw],
-      ["msg", els.statusMsg],
-      ["customerOut", els.outCustomer],
-      ["subsOut", els.outSubs],
-      ["ordersOut", els.outOrders],
-      ["rawWrap", els.rawWrap],
-      ["rawOut", els.outJson],
-      ["sessionPill", els.sessionPill],
-      ["sessionText", els.sessionText],
-      ["sessionDot", els.sessionDot]
-    ];
+  els.query.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doSearch();
+  });
 
-    const missing = required.filter(([, el]) => !el).map(([name]) => name);
-    if (missing.length) {
-      console.error("[ArnoldAdmin] Missing required DOM nodes:", missing);
-      setMsg(`Fatal: DOM mismatch (missing: ${missing.join(", ")}). Check index.html ids.`, "bad");
-      setBadge("Session: error", false);
-      return;
-    }
+  els.btnRaw.addEventListener("click", () => {
+    const show = els.rawWrap.style.display === "none";
+    toggleRaw(show);
+  });
 
-    els.btnLogin.addEventListener("click", doLogin);
-    els.btnLogout.addEventListener("click", doLogout);
-    els.btnSearch.addEventListener("click", doSearch);
-    els.btnToggleRaw.addEventListener("click", toggleRaw);
-
-    els.query.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") doSearch();
-    });
-
-    await refreshStatus();
-  }
-
-  init();
+  // Init
+  toggleRaw(false);
+  refreshStatus().catch(() => {
+    setBadge("Session: error", false);
+  });
 })();
 
 // 🔴 main.js
