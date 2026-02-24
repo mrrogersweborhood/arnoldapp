@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24 (subscription+order notes toggles))
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24c: collapsible notes + Auto-renews + aria arrow)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -26,7 +26,11 @@
     sessionText: document.getElementById("sessionText"),
 
     msg: document.getElementById("msg"),
-    results: document.getElementById("results")
+    results: document.getElementById("results"),
+
+    btnRaw: document.getElementById("btnRaw"),
+    rawWrap: document.getElementById("rawWrap"),
+    rawJson: document.getElementById("rawJson")
   };
 
   /* ========= UTILS ========= */
@@ -98,8 +102,6 @@
   /* ========= RENDER ========= */
 
   function pickEmail(contextCustomer, c, subs, orders) {
-    // We do NOT render email in Subscriber card per your spec,
-    // but it’s still useful as a fallback for billing/shipping blocks.
     const a = contextCustomer?.email || c?.email;
     if (a) return a;
 
@@ -230,7 +232,7 @@
       const notesRowId = sid ? `aaSubNotesRow-${sid}` : "";
 
       const notesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
+        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
         : "";
 
       const notesRow = (notes.length && notesRowId)
@@ -337,7 +339,7 @@
         : "";
 
       const orderNotesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" data-aa-toggle="row" data-aa-target="${esc(orderNotesRowId)}">Notes (${notes.length})</button>`
+        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(orderNotesRowId)}">Notes (${notes.length})</button>`
         : "";
 
       return `
@@ -396,10 +398,8 @@
     const subs = context?.subscriptions || [];
     const orders = context?.orders || [];
 
-    const safeCustomer = c || null;
-
     return `
-      ${renderSubscriber(safeCustomer, safeCustomer, subs, orders)}
+      ${renderSubscriber(c, c, subs, orders)}
       ${renderSubscriptions(subs)}
       ${renderOrders(orders)}
       <div class="aa-raw-toggle-row">
@@ -421,6 +421,12 @@
 
   /* ========= ACTIONS ========= */
 
+  function toggleRaw(show) {
+    const rawWrap = document.getElementById("rawWrap");
+    if (!rawWrap) return;
+    rawWrap.style.display = show ? "" : "none";
+  }
+
   async function refreshStatus() {
     try {
       const { resp, data, url } = await apiJson("/admin/status", { method: "GET" });
@@ -430,11 +436,11 @@
       if (loggedIn) {
         setBadge("Session: logged in", true);
         setLoginStatus("Logged in.");
-        els.btnLogout.disabled = false;
+        document.getElementById("btnLogout").disabled = false;
       } else {
         setBadge("Session: logged out", false);
         setLoginStatus("Not logged in.");
-        els.btnLogout.disabled = true;
+        document.getElementById("btnLogout").disabled = true;
       }
       return loggedIn;
     } catch (err) {
@@ -516,12 +522,6 @@
     }
   }
 
-  function toggleRaw(show) {
-    const rawWrap = document.getElementById("rawWrap");
-    if (!rawWrap) return;
-    rawWrap.style.display = show ? "" : "none";
-  }
-
   async function doSearch() {
     showMsg("", false);
     setSearchStatus("Searching…");
@@ -550,7 +550,7 @@
         return;
       }
 
-      const ctx = data?.context || data?.results?.context || null;
+      const ctx = data?.context || null;
       if (!ctx) {
         showMsg("Search succeeded but returned no context payload. See console.", true);
         setSearchStatus("No context.");
@@ -559,7 +559,7 @@
 
       els.results.innerHTML = renderAll(ctx);
 
-      // Wire raw toggle + set JSON
+      // Wire raw toggle + set JSON (dynamic elements after render)
       const btnRaw = document.getElementById("btnRaw");
       const rawJson = document.getElementById("rawJson");
       const rawWrap = document.getElementById("rawWrap");
@@ -601,7 +601,10 @@
     if (!row) return;
 
     const showing = row.style.display !== "none";
-    row.style.display = showing ? "none" : "";
+    const willShow = !showing;
+
+    row.style.display = willShow ? "" : "none";
+    btn.setAttribute("aria-expanded", willShow ? "true" : "false");
   });
 
   els.query.addEventListener("keydown", (e) => {

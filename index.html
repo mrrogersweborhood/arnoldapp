@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24 (notes toggles + cache-bust)) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24c: badge color + notes collapse arrow) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,44 +9,39 @@
   <style>
     :root{
       --oo-blue:#1E90FF;
-      --oo-bg:#f4f6fb;
+      --oo-bg:#f3f6fb;
       --oo-card:#ffffff;
       --oo-text:#0f172a;
-      --oo-muted:#475569;
+      --oo-muted:#64748b;
       --oo-border:rgba(15,23,42,0.10);
-      --oo-shadow:0 10px 28px rgba(2,6,23,0.08);
-      --oo-radius:16px;
-      --oo-radius-sm:12px;
-      --oo-font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      --max: 1120px;
+      --oo-shadow:0 10px 30px rgba(2,6,23,0.10);
+      --radius:16px;
+      --pad:16px;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; }
+    *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:var(--oo-font);
+      font-family:var(--font);
       color:var(--oo-text);
-      background:linear-gradient(180deg, rgba(30,144,255,0.12), rgba(244,246,251,1) 180px);
+      background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
     }
-
     header{
       position:sticky;
       top:0;
-      z-index:10;
+      z-index:50;
       background:var(--oo-blue);
       color:#fff;
-      box-shadow:0 8px 20px rgba(2,6,23,0.18);
+      padding:12px 18px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.20);
     }
-
-    .hd-inner{
-      max-width:var(--max);
-      margin:0 auto;
-      padding:14px 16px;
+    .header-inner{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
+      gap:16px;
+      max-width:1200px;
+      margin:0 auto;
     }
     .brand{
       display:flex;
@@ -55,80 +50,84 @@
       min-width:0;
     }
     .brand img{
-      width:38px;
-      height:38px;
+      width:40px;
+      height:40px;
       border-radius:10px;
       background:#fff;
-      padding:4px;
+      padding:5px;
       flex:0 0 auto;
     }
-    .brand .t1{
+    .brand-text{min-width:0}
+    .brand-title{
       font-weight:900;
-      letter-spacing:0.2px;
-      font-size:18px;
+      letter-spacing:0.02em;
       line-height:1.05;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:560px;
     }
-    .brand .t2{
+    .brand-sub{
       font-size:12px;
-      font-weight:700;
       opacity:0.92;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
-      max-width:560px;
     }
+    .session-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.18);
+      border:1px solid rgba(255,255,255,0.22);
+      font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.65);
+    }
+    .dot.ok{background:#34d399}
+    .dot.no{background:#f87171}
 
     .wrap{
-      max-width:var(--max);
+      max-width:1200px;
       margin:0 auto;
-      padding:18px 16px 34px;
-    }
-
-    /* Top rows */
-    .top{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-      margin-top:14px;
+      padding:18px;
     }
 
     .row{
       background:var(--oo-card);
       border:1px solid var(--oo-border);
+      border-radius:var(--radius);
       box-shadow:var(--oo-shadow);
-      border-radius:var(--oo-radius);
-      padding:14px;
-    }
-
-    .row-hd{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:10px;
+      padding:var(--pad);
+      margin-top:14px;
     }
     .row-title{
       font-weight:900;
-      font-size:14px;
-      letter-spacing:0.2px;
+      margin:0 0 10px;
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:12px;
     }
-    .row-sub{
-      font-size:12px;
+    .row-title small{
       color:var(--oo-muted);
       font-weight:700;
+      font-size:12px;
     }
 
     .grid{
       display:grid;
-      grid-template-columns: 1fr 1fr auto auto;
       gap:10px;
+      grid-template-columns: 1fr 1fr auto auto;
       align-items:end;
     }
-
     label{
       display:block;
       font-size:12px;
@@ -136,7 +135,7 @@
       color:var(--oo-blue);
       margin:0 0 6px;
       text-transform:capitalize;
-      letter-spacing:0.2px;
+      letter-spacing:0.02em;
     }
     input{
       width:100%;
@@ -161,13 +160,13 @@
       cursor:pointer;
       background:var(--oo-blue);
       color:#fff;
-      letter-spacing:0.1px;
+      letter-spacing:0.01em;
       box-shadow:0 8px 18px rgba(30,144,255,0.22);
       transition:transform 120ms ease, opacity 120ms ease;
+      height:40px;
     }
     .btn:hover{ transform:translateY(-1px); }
     .btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
-
     .btn.secondary{
       background:#0f172a;
       box-shadow:0 8px 18px rgba(2,6,23,0.16);
@@ -184,69 +183,8 @@
       font-weight:700;
     }
 
-    /* Session pill */
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      background:rgba(255,255,255,0.18);
-      padding:8px 10px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .dot{
-      width:10px;
-      height:10px;
-      border-radius:999px;
-      background:rgba(255,255,255,0.65);
-      box-shadow:0 0 0 4px rgba(255,255,255,0.14);
-    }
-    .dot.ok{ background:#34d399; box-shadow:0 0 0 4px rgba(52,211,153,0.18); }
-    .dot.no{ background:#f87171; box-shadow:0 0 0 4px rgba(248,113,113,0.18); }
-
-    /* Results cards */
-    .cards{
-      margin-top:14px;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .card{
-      background:var(--oo-card);
-      border:1px solid var(--oo-border);
-      box-shadow:var(--oo-shadow);
-      border-radius:var(--oo-radius);
-      overflow:hidden;
-    }
-    .card-hd{
-      padding:14px 14px 10px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      border-bottom:1px solid rgba(15,23,42,0.06);
-      background:linear-gradient(180deg, rgba(30,144,255,0.06), rgba(255,255,255,1) 72px);
-    }
-    .card-title{
-      font-weight:1000;
-      font-size:15px;
-      letter-spacing:0.2px;
-    }
-    .card-sub{
-      font-size:12px;
-      color:var(--oo-muted);
-      font-weight:800;
-      text-align:right;
-    }
-    .card-bd{
-      padding:14px;
-    }
-
     .msg{
-      margin-top:12px;
+      margin-top:14px;
       padding:12px 14px;
       border-radius:14px;
       font-weight:800;
@@ -259,6 +197,42 @@
       background:rgba(248,113,113,0.10);
       border-color:rgba(248,113,113,0.25);
     }
+
+    /* Results cards */
+    .cards{
+      margin-top:14px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+    .card{
+      background:var(--oo-card);
+      border:1px solid var(--oo-border);
+      border-radius:var(--radius);
+      box-shadow:var(--oo-shadow);
+      overflow:hidden;
+    }
+    .card-hd{
+      padding:14px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid rgba(15,23,42,0.06);
+      background:linear-gradient(180deg, rgba(30,144,255,0.06), rgba(255,255,255,1) 72px);
+    }
+    .card-title{
+      font-weight:1000;
+      font-size:15px;
+      letter-spacing:0.02em;
+    }
+    .card-sub{
+      font-size:12px;
+      color:var(--oo-muted);
+      font-weight:800;
+      text-align:right;
+    }
+    .card-bd{ padding:14px; }
 
     /* Subscriber layout */
     .identity{
@@ -299,7 +273,7 @@
       font-weight:900;
       font-size:12px;
       text-transform:capitalize;
-      letter-spacing:0.2px;
+      letter-spacing:0.02em;
       white-space:nowrap;
     }
     .aa-v{
@@ -337,21 +311,24 @@
       z-index:1;
     }
 
-    .aa-badge{
-      display:inline-flex;
-      align-items:center;
-      padding:4px 8px;
-      border-radius:999px;
-      font-weight:900;
-      font-size:11px;
-      border:1px solid rgba(15,23,42,0.10);
-      background:#fff;
+    /* Status pills (light OkObserver blue) */
+    .aa-badge {
+      display:inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(30,144,255,0.12);
+      border: 1px solid rgba(30,144,255,0.28);
+      color: var(--oo-blue);
+      font-weight: 800;
+      font-size: 12px;
+      margin-left: 8px;
+      text-transform: lowercase;
+      white-space:nowrap;
     }
     .aa-mono{
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
       font-weight:900;
     }
-
     .aa-items{
       min-width: 320px;
       white-space: normal;
@@ -367,28 +344,33 @@
       padding: 10px 12px;
       box-shadow: 0 6px 16px rgba(2,6,23,0.06);
     }
-    .aa-note-meta { color: var(--oo-muted); font-weight: 800; font-size: 12px; margin-bottom: 6px; }
+    .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
     .aa-note-text { color: var(--oo-text); font-weight: 500; line-height: 1.25; white-space: pre-wrap; }
 
     .aa-notes-toggle { margin-left: 10px; }
-    .aa-linkbtn {
-      border: none;
-      background: transparent;
-      color: var(--oo-blue);
-      font-weight: 900;
-      font-size: 12px;
-      padding: 0;
-      cursor: pointer;
-      text-decoration: underline;
-      text-underline-offset: 2px;
+
+    /* Collapsible Notes toggle (arrow indicator) */
+    .aa-linkbtn{
+      border:none;
+      background:transparent;
+      color:var(--oo-blue);
+      font-weight:900;
+      font-size:12px;
+      padding:0;
+      cursor:pointer;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
-    .aa-linkbtn:hover { opacity: 0.85; }
+    .aa-linkbtn:hover{ opacity:0.85; }
+    .aa-linkbtn::after{ content:"▾"; font-size:12px; line-height:1; opacity:0.9; }
+    .aa-linkbtn[aria-expanded="true"]::after{ content:"▴"; }
 
     .aa-sub-notes-row td { border-bottom: none; padding-top: 0; }
     .aa-raw-toggle-row { display:flex; justify-content:flex-end; margin: 12px 0 0; }
 
     @media (max-width: 920px){
-      .brand .t1, .brand .t2{ max-width: 360px; }
       .grid{ grid-template-columns: 1fr; }
       .cols{ grid-template-columns: 1fr; }
       table.aa-table{ min-width: 820px; }
@@ -397,16 +379,16 @@
 </head>
 <body>
   <header>
-    <div class="hd-inner">
+    <div class="header-inner">
       <div class="brand">
         <img src="./logo.png" alt="Arnold Admin" />
-        <div style="min-width:0">
-          <div class="t1">Arnold Admin</div>
-          <div class="t2">To Comfort The Afflicted And Afflict The Comfortable</div>
+        <div class="brand-text">
+          <div class="brand-title">Arnold Admin</div>
+          <div class="brand-sub">To Comfort The Afflicted And Afflict The Comfortable</div>
         </div>
       </div>
 
-      <div class="pill" id="sessionPill">
+      <div class="session-pill" id="sessionPill">
         <span class="dot no" id="sessionDot"></span>
         <span id="sessionText">Session: unknown</span>
       </div>
@@ -415,60 +397,55 @@
 
   <div class="wrap">
 
-    <div class="top">
-      <!-- LOGIN -->
-      <div class="row">
-        <div class="row-hd">
-          <div class="row-title">Login</div>
-          <div class="row-sub">WordPress admin users only</div>
-        </div>
-
-        <div class="grid">
-          <div>
-            <label for="wpUser">Username</label>
-            <input id="wpUser" autocomplete="username" placeholder="WordPress username" />
-          </div>
-          <div>
-            <label for="wpPass">Password</label>
-            <input id="wpPass" type="password" autocomplete="current-password" placeholder="WordPress password" />
-          </div>
-          <button class="btn" id="btnLogin">Login</button>
-          <button class="btn secondary" id="btnLogout" disabled>Logout</button>
-        </div>
-
-        <div class="statusline">
-          <div id="loginStatus">Not logged in.</div>
-          <div style="opacity:0.85">Cookie session persists on refresh</div>
-        </div>
+    <div class="row">
+      <div class="row-title">
+        <span>Login</span>
+        <small>WordPress admin users only</small>
       </div>
 
-      <!-- SEARCH -->
-      <div class="row">
-        <div class="row-hd">
-          <div class="row-title">Search</div>
-          <div class="row-sub">Email, order #, subscription</div>
+      <div class="grid">
+        <div>
+          <label for="wpUser">Username</label>
+          <input id="wpUser" autocomplete="username" placeholder="WordPress username" />
         </div>
+        <div>
+          <label for="wpPass">Password</label>
+          <input id="wpPass" type="password" autocomplete="current-password" placeholder="WordPress password" />
+        </div>
+        <button class="btn" id="btnLogin">Login</button>
+        <button class="btn secondary" id="btnLogout" disabled>Logout</button>
+      </div>
 
-        <div class="grid" style="grid-template-columns: 1fr auto;">
-          <div>
-            <label for="query">Query</label>
-            <input id="query" placeholder="e.g. subscription for joe@abc.com, order #12997, orders for bob@x.com" />
-          </div>
-          <button class="btn" id="btnSearch">Search</button>
-        </div>
+      <div class="statusline">
+        <div id="loginStatus">Not logged in.</div>
+        <div style="opacity:0.85">Cookie session persists on refresh</div>
+      </div>
+    </div>
 
-        <div class="statusline">
-          <div id="searchStatus">Ready.</div>
-          <div style="opacity:0.85">Shows Subscriber • Subscriptions • Orders</div>
+    <div class="row">
+      <div class="row-title">
+        <span>Search</span>
+        <small>Email, order #, subscription</small>
+      </div>
+
+      <div class="grid" style="grid-template-columns: 1fr auto;">
+        <div>
+          <label for="query">Query</label>
+          <input id="query" placeholder="e.g. subscription for joe@abc.com, order #12997, orders for bob@x.com" />
         </div>
+        <button class="btn" id="btnSearch">Search</button>
+      </div>
+
+      <div class="statusline">
+        <div id="searchStatus">Ready.</div>
+        <div style="opacity:0.85">Shows Subscriber • Subscriptions • Orders</div>
       </div>
     </div>
 
     <div id="msg" class="msg"></div>
-
     <div id="results" class="cards"></div>
 
-    <script src="./main.js?v=2026-02-24b"></script>
+    <script src="./main.js?v=2026-02-24c"></script>
   </div>
 </body>
 </html>
