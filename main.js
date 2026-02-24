@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24e: billing/shipping name line above address + subscriber ID+Name 2-col identity row)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username 2-col row, orders notes column rightmost + collapsible like subs)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -107,7 +107,7 @@
     const emailLine = addr.email || fallbackEmail || "";
     const phoneLine = addr.phone || "";
 
-    // Per request: show First+Last on a line ABOVE the address rows
+    // Name goes above address (as requested)
     const nameLine = `${addr.first_name || ""} ${addr.last_name || ""}`.trim();
 
     const lines = [
@@ -141,9 +141,9 @@
   function renderSubscriber(contextCustomer, customer, subs, orders) {
     const c = contextCustomer || customer || null;
     const customerId = c?.id ?? null;
+    const username = c?.username ?? null;
 
     const displayName = pickName(contextCustomer, customer);
-    const username = c?.username ?? null;
 
     const fallbackEmail = pickEmail(contextCustomer, customer, subs, orders);
     const billing = c?.billing || subs?.[0]?.billing || orders?.[0]?.billing || null;
@@ -156,19 +156,17 @@
           <div class="card-sub">${displayName ? esc(displayName) : "Identity"}</div>
         </div>
         <div class="card-bd">
-          <!-- ID + Name in one row (2 columns) -->
+          <!-- Customer ID + Username in one row (2 columns) -->
           <div class="identity-grid">
             <div class="identity-item">
               <span class="aa-k">Customer ID</span>
               <span class="aa-v">${customerId ? esc(customerId) : "—"}</span>
             </div>
             <div class="identity-item">
-              <span class="aa-k">Name</span>
-              <span class="aa-v">${displayName ? esc(displayName) : "—"}</span>
+              <span class="aa-k">Username</span>
+              <span class="aa-v">${username ? esc(username) : "—"}</span>
             </div>
           </div>
-
-          ${username ? `<div style="margin:-4px 0 12px; color:#64748b; font-weight:800; font-size:12px;">Username: ${esc(username)}</div>` : ""}
 
           <div class="cols">
             ${renderAddressCard("Billing", billing, fallbackEmail)}
@@ -176,6 +174,23 @@
           </div>
         </div>
       </section>
+    `;
+  }
+
+  function renderNotesBlock(notes) {
+    const arr = Array.isArray(notes) ? notes : [];
+    if (!arr.length) return "";
+    return `
+      <div class="aa-notes-wrap">
+        <div class="aa-notes-col">
+          ${arr.slice(0, 50).map(n => `
+            <div class="aa-note-card">
+              <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
+              <div class="aa-note-text">${esc(n?.note || "")}</div>
+            </div>
+          `).join("")}
+        </div>
+      </div>
     `;
   }
 
@@ -208,25 +223,10 @@
         ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
         : "—";
 
-      const notesHtml = notes.length
-        ? `
-          <div class="aa-notes-wrap">
-            <div class="aa-notes-col">
-              ${notes.slice(0, 50).map(n => `
-                <div class="aa-note-card">
-                  <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
-                  <div class="aa-note-text">${esc(n?.note || "")}</div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `
-        : "";
-
       const notesRow = (notes.length && notesRowId)
         ? `
         <tr id="${esc(notesRowId)}" class="aa-sub-notes-row" style="display:none;">
-          <td colspan="5">${notesHtml}</td>
+          <td colspan="5">${renderNotesBlock(notes)}</td>
         </tr>
         `
         : "";
@@ -308,27 +308,21 @@
       const payment = esc(o?.payment_method_title || o?.payment_method || "—");
       const items = itemsSummary(o);
 
+      // Order notes: same behavior as subscription notes (right-most column + collapsible row)
       const notes = Array.isArray(o?.notes) ? o.notes : [];
       const oid = String(o?.id ?? "").trim();
-      const orderNotesRowId = oid ? `aaOrderNotesRow-${oid}` : "";
+      const notesRowId = oid ? `aaOrderNotesRow-${oid}` : "";
 
-      const orderNotesHtml = notes.length
+      const notesToggle = notes.length
+        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
+        : "—";
+
+      const notesRow = (notes.length && notesRowId)
         ? `
-          <div class="aa-notes-wrap">
-            <div class="aa-notes-col">
-              ${notes.slice(0, 50).map(n => `
-                <div class="aa-note-card">
-                  <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
-                  <div class="aa-note-text">${esc(n?.note || "")}</div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
+        <tr id="${esc(notesRowId)}" class="aa-sub-notes-row" style="display:none;">
+          <td colspan="7">${renderNotesBlock(notes)}</td>
+        </tr>
         `
-        : "";
-
-      const orderNotesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(orderNotesRowId)}">Notes (${notes.length})</button>`
         : "";
 
       return `
@@ -338,18 +332,10 @@
           <td><span class="aa-badge">${status}</span></td>
           <td>${total}</td>
           <td>${payment}</td>
-          <td class="aa-items">
-            ${items}
-            ${orderNotesToggle ? ` <span style="margin-left:10px">${orderNotesToggle}</span>` : ""}
-          </td>
+          <td class="aa-items">${items}</td>
+          <td>${notesToggle}</td>
         </tr>
-        ${
-          (notes.length && orderNotesRowId)
-            ? `<tr id="${esc(orderNotesRowId)}" class="aa-sub-notes-row" style="display:none;">
-                 <td colspan="6">${orderNotesHtml}</td>
-               </tr>`
-            : ""
-        }
+        ${notesRow}
       `;
     };
 
@@ -370,6 +356,7 @@
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Items</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -546,7 +533,6 @@
 
       els.results.innerHTML = renderAll(ctx);
 
-      // Wire raw toggle + set JSON (dynamic elements after render)
       const btnRaw = document.getElementById("btnRaw");
       const rawJson = document.getElementById("rawJson");
       const rawWrap = document.getElementById("rawWrap");
@@ -574,7 +560,7 @@
   els.btnLogout.addEventListener("click", doLogout);
   els.btnSearch.addEventListener("click", doSearch);
 
-  // Notes toggles (event delegation because results are rendered dynamically)
+  // Collapsible notes toggles (delegated)
   els.results.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-aa-toggle='row']");
     if (!btn) return;

@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24e: bigger detail font, bigger notes arrow, subscriber ID+Name 2-col row, addr name line above address) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,7 +25,7 @@
       font-family:var(--font);
       color:var(--oo-text);
       background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
-      font-size:15px; /* slightly larger, OkObserver-friendly */
+      font-size:15px;
     }
     header{
       position:sticky;
@@ -199,7 +199,6 @@
       border-color:rgba(248,113,113,0.25);
     }
 
-    /* Results cards */
     .cards{
       margin-top:14px;
       display:flex;
@@ -290,25 +289,24 @@
     .aa-v{
       font-weight:650;
       color:var(--oo-text);
-      font-size:14px; /* bigger detail font */
+      font-size:14px;
       line-height:1.25;
       word-break:break-word;
     }
 
-    /* Tables */
     .aa-table-wrap{ overflow:auto; }
     table.aa-table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      min-width:920px;
+      min-width:980px;
     }
     .aa-table th, .aa-table td{
       border-bottom:1px solid rgba(15,23,42,0.08);
       padding:10px 10px;
       text-align:left;
       vertical-align:top;
-      font-size:14px; /* bigger */
+      font-size:14px;
     }
     .aa-table th{
       font-size:12px;
@@ -322,7 +320,6 @@
       z-index:1;
     }
 
-    /* Status pills (light OkObserver blue) */
     .aa-badge {
       display:inline-block;
       padding: 4px 10px;
@@ -345,7 +342,7 @@
       white-space: normal;
     }
 
-    /* Notes: right-justified, narrower cards, no bold text */
+    /* Notes (right-justified, narrow, not bold) */
     .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
     .aa-notes-col { width: min(520px, 100%); display:flex; flex-direction:column; gap: 10px; }
     .aa-note-card {
@@ -384,7 +381,7 @@
       .grid{ grid-template-columns: 1fr; }
       .cols{ grid-template-columns: 1fr; }
       .identity-grid{ grid-template-columns: 1fr; }
-      table.aa-table{ min-width: 900px; }
+      table.aa-table{ min-width: 980px; }
     }
   </style>
 </head>
@@ -456,7 +453,7 @@
     <div id="msg" class="msg"></div>
     <div id="results" class="cards"></div>
 
-    <script src="./main.js?v=2026-02-24e"></script>
+    <script src="./main.js?v=2026-02-24g"></script>
   </div>
 </body>
 </html>
