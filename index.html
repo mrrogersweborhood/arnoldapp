@@ -1,448 +1,458 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (UI widen + name layout fix 2026-02-24i) -->
+<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-24b). Markers are comments only. -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Arnold Admin</title>
+
   <style>
     :root{
       --oo-blue:#1E90FF;
-      --oo-bg:#f3f6fb;
-      --oo-card:#ffffff;
-      --oo-text:#0f172a;
-      --oo-muted:#64748b;
-      --oo-border:rgba(15,23,42,0.10);
-      --oo-shadow:0 10px 30px rgba(2,6,23,0.10);
-      --radius:16px;
-      --pad:16px;
-      --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --bg:#f3f6fb;
+      --card:#ffffff;
+      --line:#e7edf6;
+      --text:#0b1320;
+      --muted:#5e6a7a;
+      --shadow:0 8px 24px rgba(13,28,54,.12);
     }
+
     *{box-sizing:border-box}
     body{
       margin:0;
-      font-family:var(--font);
-      color:var(--oo-text);
-      background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
-      font-size:16px;
-    }
-    header{
-      position:sticky;
-      top:0;
-      z-index:50;
-      background:var(--oo-blue);
-      color:#fff;
-      padding:12px 18px;
-      box-shadow:0 6px 18px rgba(2,6,23,0.20);
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:var(--bg);
     }
 
-    /* ✅ WIDEN: give Orders room before horizontal scroll */
-    .header-inner{
+    header{
+      position:sticky; top:0; z-index:50;
+      background:var(--oo-blue);
+      color:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.15);
+    }
+
+    .wrap{
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 12px 16px;
+    }
+
+    .mast{
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:16px;
-      max-width:1400px;
-      margin:0 auto;
+      gap:12px;
     }
+
+    .logo{
+      width:44px; height:44px;
+      border-radius:10px;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex:0 0 auto;
+      box-shadow:0 4px 14px rgba(0,0,0,.15);
+    }
+    .logo img{width:100%; height:100%; object-fit:contain}
 
     .brand{
       display:flex;
-      align-items:center;
-      gap:12px;
+      flex-direction:column;
+      gap:2px;
       min-width:0;
     }
-    .brand img{
-      width:40px;
-      height:40px;
-      border-radius:10px;
-      background:#fff;
-      padding:5px;
-      flex:0 0 auto;
-    }
-    .brand-text{min-width:0}
-    .brand-title{
-      font-weight:900;
-      letter-spacing:0.02em;
-      line-height:1.05;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .brand-sub{
-      font-size:12px;
-      opacity:0.92;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
+    .brand .title{
       font-weight:800;
+      letter-spacing:.2px;
+      font-size:18px;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .brand .tag{
+      font-weight:600;
+      opacity:.95;
       font-size:12px;
-      background:rgba(255,255,255,0.16);
-      border:1px solid rgba(255,255,255,0.22);
-      padding:8px 12px;
+      line-height:1.1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .session-pill{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.25);
       border-radius:999px;
+      padding:8px 12px;
+      font-weight:700;
+      font-size:12px;
       white-space:nowrap;
     }
-    .badge b{font-weight:900}
+    .dot{
+      width:10px; height:10px;
+      border-radius:999px;
+      background:#9aa7b7;
+      box-shadow:0 0 0 3px rgba(255,255,255,.15);
+    }
+    .dot.on{ background:#79e27d; }
+    .dot.off{ background:#ffb3b3; }
 
-    /* ✅ WIDEN: increase overall working width */
-    main{
-      max-width:1400px;
-      margin:0 auto;
-      padding:18px;
+    main .wrap{ padding-top: 14px; padding-bottom: 24px; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
     }
 
-    .stack{display:flex; flex-direction:column; gap:14px;}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .card.pad{ padding:14px; }
+
     .row{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:flex-end;
+      display:grid;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap:12px;
+      align-items:end;
     }
-    .row .grow{flex:1 1 300px; min-width:260px;}
+    @media (max-width: 900px){
+      .row{ grid-template-columns:1fr; align-items:stretch; }
+    }
+
     label{
       display:block;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:0.02em;
+      font-weight:800;
       color:var(--oo-blue);
-      margin:0 0 6px;
+      font-size:12px;
+      margin-bottom:6px;
     }
     input{
       width:100%;
-      border-radius:14px;
-      border:1px solid var(--oo-border);
       padding:12px 12px;
-      font-size:15px;
-      background:#fff;
-      box-shadow:0 6px 18px rgba(2,6,23,0.06);
+      border-radius:12px;
+      border:1px solid var(--line);
       outline:none;
-    }
-    input:focus{border-color:rgba(30,144,255,0.55); box-shadow:0 0 0 4px rgba(30,144,255,0.12), 0 8px 22px rgba(2,6,23,0.08);}
-    button{
-      border:0;
-      border-radius:14px;
-      padding:12px 14px;
       font-size:14px;
-      font-weight:900;
-      letter-spacing:0.01em;
-      cursor:pointer;
-      box-shadow:0 10px 24px rgba(2,6,23,0.12);
-      transition:transform .05s ease;
+      background:#fff;
     }
-    button:active{transform:translateY(1px)}
-    .btn-blue{background:var(--oo-blue); color:#fff;}
-    .btn-ghost{
+
+    .btn{
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(30,144,255,.45);
+      background:var(--oo-blue);
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 10px 18px rgba(30,144,255,.18);
+      white-space:nowrap;
+    }
+    .btn.secondary{
       background:#fff;
       color:var(--oo-blue);
-      border:1px solid rgba(30,144,255,0.35);
     }
-    .msg{
+
+    .status{
+      margin-top:10px;
       padding:12px 14px;
-      border-radius:14px;
-      background:#fff;
-      border:1px solid var(--oo-border);
-      box-shadow:0 8px 20px rgba(2,6,23,0.06);
-      font-weight:700;
-      color:var(--oo-text);
+      border-radius:12px;
+      border:1px solid rgba(30,144,255,.25);
+      background:rgba(30,144,255,.08);
+      font-weight:800;
     }
-    .msg.ok{border-color:rgba(16,185,129,0.35)}
-    .msg.err{border-color:rgba(239,68,68,0.35); color:#7f1d1d}
-    .card{
-      background:var(--oo-card);
-      border-radius:var(--radius);
-      border:1px solid var(--oo-border);
-      box-shadow:var(--oo-shadow);
-      overflow:hidden;
-    }
-    .card-hd{
+    .status.ok{ border-color: rgba(121,226,125,.35); background: rgba(121,226,125,.12); }
+    .status.warn{ border-color: rgba(255,200,90,.45); background: rgba(255,200,90,.16); }
+    .status.err{ border-color: rgba(255,120,120,.45); background: rgba(255,120,120,.16); }
+
+    /* section styles (rendered by main.js) */
+    .aa-section{ padding: 14px; }
+    .aa-section-head{
       display:flex;
-      align-items:flex-start;
+      align-items:baseline;
       justify-content:space-between;
       gap:12px;
-      padding:14px 14px 0 14px;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--line);
+      margin-bottom:12px;
     }
-    .card-title{
-      font-weight:1000;
-      letter-spacing:0.01em;
+    .aa-section-title{
       font-size:16px;
-      margin:0;
-      line-height:1.1;
+      font-weight:900;
+      letter-spacing:.2px;
     }
-    .card-sub{
-      color:var(--oo-muted);
-      font-weight:800;
+    .aa-section-subtitle{
       font-size:12px;
-      margin-top:2px;
+      font-weight:800;
+      color:var(--muted);
     }
-    .card-bd{ padding:14px; }
 
-    /* Subscriber identity row: 2 columns */
-    .identity-grid{
+    .aa-two{
       display:grid;
       grid-template-columns: 1fr 1fr;
-      gap:10px 16px;
-      margin-bottom:12px;
-      align-items:center;
+      gap:12px;
+      margin-top:12px;
     }
-    .identity-item{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:0;
-    }
-    .val-mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      font-weight:900;
-      font-size:13px;
-      word-break:break-word;
+    @media (max-width: 900px){
+      .aa-two{ grid-template-columns:1fr; }
     }
 
-    /* Subscriber split */
-    .aa-split{
+    .mini{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#fbfcff;
+      box-shadow:none;
+    }
+    .mini-title{
+      font-weight:900;
+      margin-bottom:8px;
+    }
+
+    .aa-kv{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:8px 10px;
+      align-items:start;
+      font-size:15px;
+    }
+    .aa-k{
+      font-weight:900;
+      color:var(--oo-blue);
+    }
+    .aa-v{
+      font-weight:700;
+      color:var(--text);
+      line-height:1.25;
+    }
+    .aa-name-line{
+      font-weight:900;
+      margin: 2px 0 8px 0;
+    }
+
+    .aa-id-name-row{
       display:grid;
       grid-template-columns: 1fr 1fr;
       gap:14px;
+      align-items:baseline;
+      margin-top:6px;
     }
-    @media (max-width: 860px){
-      .aa-split{grid-template-columns: 1fr;}
-    }
-    .aa-addr{
-      border:1px solid rgba(15,23,42,0.10);
-      border-radius:14px;
-      padding:12px;
-      background:linear-gradient(180deg, #ffffff, #fbfdff);
-      box-shadow:0 8px 18px rgba(2,6,23,0.05);
-    }
-    .aa-addr-title{font-weight:1000; margin-bottom:10px;}
+    .aa-field{ margin:0; }
+    .aa-label{ font-weight:900; color:var(--oo-blue); font-size:12px; }
+    .aa-value{ font-weight:900; margin-top:4px; }
 
-    /* ✅ Name fields directly above address, in two columns */
-    .aa-namegrid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px 14px;
-      margin-bottom:10px;
-      padding-bottom:10px;
-      border-bottom:1px solid rgba(15,23,42,0.08);
-    }
-    .aa-nameitem{min-width:0}
-    .aa-namelbl{
-      font-weight:1000;
-      color:var(--oo-blue);
-      font-size:12px;
-      letter-spacing:0.02em;
-      text-transform:capitalize;
-      margin-bottom:4px;
-    }
-    .aa-nameval{
-      font-weight:800;
-      color:var(--oo-text);
-      line-height:1.2;
-      word-break:break-word;
-    }
-
-    .aa-addr-row{
-      display:flex;
-      gap:10px;
-      align-items:flex-start;
-      padding:6px 0;
-      border-top:1px solid rgba(15,23,42,0.08);
-    }
-    .aa-addr-row:first-child{border-top:0}
-    .aa-lbl{
-      flex:0 0 92px;
-      font-weight:1000;
-      color:var(--oo-blue);
-      font-size:12px;
-      letter-spacing:0.02em;
-      text-transform:capitalize;
-    }
-    .aa-val{
-      flex:1 1 auto;
-      font-weight:750;
-      color:var(--oo-text);
-      line-height:1.25;
-      min-width:0;
-      word-break:break-word;
-    }
-
-    /* Tables */
     .aa-table-wrap{
-      width:100%;
-      overflow:auto;
-      border-radius:14px;
-      border:1px solid rgba(15,23,42,0.10);
-      box-shadow:0 8px 18px rgba(2,6,23,0.05);
+      overflow-x:auto;
+      padding-bottom:6px;
     }
     table{
       width:100%;
       border-collapse:collapse;
-      background:#fff;
-
-      /* ✅ Wider baseline so Orders columns + Notes chevron stay visible */
-      min-width:1100px;
     }
-    table.aa-orders{
-      /* ✅ Orders needs more room than subs */
-      min-width:1300px;
+    .aa-table{
+      min-width: 1100px;
+      font-size:15px;
     }
-
+    .aa-orders .aa-table{
+      min-width: 1280px;
+    }
     th, td{
       padding:10px 10px;
-      border-top:1px solid rgba(15,23,42,0.08);
+      border-bottom:1px solid var(--line);
       text-align:left;
       vertical-align:top;
-      font-weight:750;
       white-space:nowrap;
     }
     th{
       font-size:12px;
-      font-weight:1000;
-      letter-spacing:0.02em;
-      color:var(--oo-blue);
-      background:rgba(30,144,255,0.06);
-      border-top:0;
-      box-shadow:inset 0 -1px 0 rgba(15,23,42,0.10);
-      position:sticky;
-      top:0;
-      z-index:1;
+      letter-spacing:.8px;
+      text-transform:uppercase;
+      color:var(--muted);
+      font-weight:900;
+      background:#f7faff;
     }
 
-    .aa-badge {
-      display:inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(30,144,255,0.12);
-      border: 1px solid rgba(30,144,255,0.28);
-      color: var(--oo-blue);
-      font-weight: 800;
-      font-size: 12px;
-      margin-left: 8px;
-      text-transform: lowercase;
+    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; font-weight:900; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      background: rgba(30,144,255,0.14);
+      border: 1px solid rgba(30,144,255,0.35);
+      color:#0b3d73;
+    }
+
+    .aa-empty{
+      padding:12px 2px;
+      color:var(--muted);
+      font-weight:800;
+    }
+
+    .aa-notes-col{
+      text-align:right;
       white-space:nowrap;
     }
 
-    .aa-mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-      font-weight:900;
-    }
-    .aa-items{
-      min-width: 360px;
-      white-space: normal;
-    }
-
-    /* Notes (right-justified, narrow, not bold) */
-    .aa-notes { width: 100%; }
-    .aa-notes-summary{
-      list-style:none;
-      display:flex;
+    .aa-notes-toggle{
+      display:inline-flex;
       align-items:center;
-      justify-content:flex-end;
-      gap:12px;
+      gap:6px;
       cursor:pointer;
       user-select:none;
-      color: var(--oo-blue);
-      font-weight: 900;
-      padding: 4px 0;
+      font-weight:900;
+      color:var(--oo-blue);
     }
-    .aa-notes-summary::-webkit-details-marker{ display:none; }
-    .aa-notes-label{ letter-spacing:0.01em; }
+    .aa-notes-toggle .aa-caret{
+      font-size:18px;
+      line-height:1;
+      transform: translateY(1px);
+    }
+    .aa-notes-toggle .aa-caret.open{
+      transform: rotate(180deg) translateY(-1px);
+    }
 
-    /* ✅ Bigger arrow so it’s obvious + clickable */
-    .aa-notes-arrow{
-      font-size: 22px;
-      line-height: 1;
-      transform: translateY(-1px);
+    .aa-notes{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:12px 0 4px 0;
+      white-space:normal;
     }
-    .aa-notes[open] .aa-notes-arrow{ transform: rotate(180deg) translateY(1px); }
+    .aa-note{
+      border:1px solid var(--line);
+      background:#fff;
+      border-radius:12px;
+      padding:10px 12px;
+      box-shadow:0 6px 14px rgba(13,28,54,.06);
+    }
+    .aa-note-meta{
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+      color:var(--muted);
+      font-weight:900;
+      font-size:12px;
+      margin-bottom:6px;
+    }
+    .aa-note-body{
+      font-weight:800;
+      font-size:14px;
+      line-height:1.25;
+      color:var(--text);
+    }
 
-    .aa-notes-th{ width: 1%; white-space: nowrap; text-align: right; }
-    .aa-notes-cell{ text-align:right; vertical-align: top; }
-    .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
-    .aa-notes-col { width: min(560px, 100%); display:flex; flex-direction:column; gap: 10px; }
-    .aa-note-card {
-      background: #fff;
-      border: 1px solid rgba(15,23,42,0.10);
-      border-radius: 12px;
-      padding: 10px 12px;
-      box-shadow: 0 6px 16px rgba(2,6,23,0.06);
+    /* Raw JSON */
+    #rawWrap{
+      display:none;
+      margin-top:14px;
     }
-    .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-    .aa-note-text { color: var(--oo-text); font-weight: 600; line-height: 1.35; font-size: 14px; }
+    pre{
+      margin:0;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid var(--line);
+      background:#0b1320;
+      color:#d9e7ff;
+      overflow:auto;
+      max-height: 340px;
+      font-size:12px;
+      line-height:1.35;
+    }
+    .raw-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .raw-head strong{
+      font-weight:900;
+      color:var(--text);
+    }
   </style>
 </head>
+
 <body>
   <header>
-    <div class="header-inner">
-      <div class="brand">
-        <img src="./logo.png" alt="Arnold Admin logo" />
-        <div class="brand-text">
-          <div class="brand-title">Arnold Admin</div>
-          <div class="brand-sub">OkObserver admin lookups (cookie session)</div>
+    <div class="wrap">
+      <div class="mast">
+        <div class="logo"><img src="./logo.png" alt="Arnold Admin"></div>
+        <div class="brand">
+          <div class="title">Arnold Admin</div>
+          <div class="tag">OkObserver admin lookups (cookie session)</div>
+        </div>
+
+        <div class="session-pill">
+          <span id="sessionDot" class="dot off"></span>
+          <span id="sessionText">Session: unknown</span>
         </div>
       </div>
-      <div class="badge" id="sessionPill"><b id="sessionText">Session:</b> <span id="sessionState">unknown</span></div>
     </div>
   </header>
 
   <main>
-    <div class="stack">
+    <div class="wrap">
+      <div class="grid">
 
-      <div class="row">
-        <div class="grow">
-          <label for="loginUser">Username</label>
-          <input id="loginUser" autocomplete="username" />
-        </div>
-        <div class="grow">
-          <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" autocomplete="current-password" />
-        </div>
-        <div>
-          <button class="btn-blue" id="btnLogin">Login</button>
-        </div>
-        <div>
-          <button class="btn-ghost" id="btnLogout">Logout</button>
-        </div>
-      </div>
-
-      <div class="row">
-        <div class="grow">
-          <label for="query">Search</label>
-          <input id="query" placeholder="Find subscription for email, find order #12345, etc." />
-        </div>
-        <div>
-          <button class="btn-blue" id="btnSearch">Search</button>
-        </div>
-      </div>
-
-      <div id="msg" class="msg" style="display:none;"></div>
-
-      <div id="customerOut"></div>
-      <div id="subsOut"></div>
-      <div id="ordersOut"></div>
-
-      <details id="rawWrap" class="card" style="display:none;">
-        <summary class="card-hd" style="cursor:pointer; padding-bottom:14px;">
-          <div>
-            <div class="card-title">Raw JSON</div>
-            <div class="card-sub">Debug payload from Worker</div>
+        <div class="card pad">
+          <div class="row">
+            <div>
+              <label for="loginUser">Username</label>
+              <input id="loginUser" autocomplete="username" placeholder="admin user" />
+            </div>
+            <div>
+              <label for="loginPass">Password</label>
+              <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
+            </div>
+            <button id="btnLogin" class="btn">Login</button>
+            <button id="btnLogout" class="btn secondary">Logout</button>
           </div>
-        </summary>
-        <div class="card-bd">
-          <pre id="rawJson" style="white-space:pre-wrap; margin:0;"></pre>
-        </div>
-      </details>
 
+          <div style="margin-top:12px; display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
+            <div style="flex:1 1 520px; min-width: 260px;">
+              <label for="query">Search</label>
+              <input id="query" placeholder="Find subscription for email, find order #12345, etc." />
+            </div>
+            <button id="btnSearch" class="btn">Search</button>
+          </div>
+
+          <div id="statusLine" class="status">No search results</div>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="card pad">
+          <div class="raw-head">
+            <strong>Raw JSON</strong>
+            <button id="btnRaw" class="btn secondary">Toggle Raw JSON</button>
+          </div>
+          <div id="rawWrap">
+            <pre id="rawJson">{}</pre>
+          </div>
+        </div>
+
+      </div>
     </div>
   </main>
 
-  <script src="./main.js?v=2026-02-24j"></script>
+  <script src="./main.js?v=2026-02-24b"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

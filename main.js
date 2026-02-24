@@ -1,208 +1,248 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-23)
+// Arnold Admin — FULL REPLACEMENT (v2026-02-24b)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
-  /* ========= CONFIG ========= */
+  /* ================== CONFIG ================== */
 
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const API = {
     login: `${WORKER_BASE}/admin/login`,
-    status: `${WORKER_BASE}/admin/status`,
     logout: `${WORKER_BASE}/admin/logout`,
+    status: `${WORKER_BASE}/admin/status`,
     search: `${WORKER_BASE}/admin/nl-search`
   };
 
-  /* ========= DOM ========= */
+  /* ================== DOM ================== */
+
+  // Support both historical id sets (wpUser/wpPass) and newer (loginUser/loginPass)
+  function byId(id) { return document.getElementById(id); }
+  function firstId(...ids) { return ids.map(byId).find(Boolean) || null; }
 
   const els = {
-    wpUser: document.getElementById("wpUser"),
-    wpPass: document.getElementById("wpPass"),
-    btnLogin: document.getElementById("btnLogin"),
-    btnLogout: document.getElementById("btnLogout"),
-    loginStatus: document.getElementById("loginStatus"),
+    user: firstId("loginUser", "wpUser"),
+    pass: firstId("loginPass", "wpPass"),
+    btnLogin: firstId("btnLogin"),
+    btnLogout: firstId("btnLogout"),
+    query: firstId("query"),
+    btnSearch: firstId("btnSearch"),
+    results: firstId("results"),
+    statusLine: firstId("statusLine"),
 
-    query: document.getElementById("query"),
-    btnSearch: document.getElementById("btnSearch"),
-    searchStatus: document.getElementById("searchStatus"),
+    sessionText: firstId("sessionText"),
+    sessionDot: firstId("sessionDot"),
 
-    sessionPill: document.getElementById("sessionPill"),
-    sessionDot: document.getElementById("sessionDot"),
-    sessionText: document.getElementById("sessionText"),
-
-    results: document.getElementById("results"),
-
-    btnRaw: document.getElementById("btnRaw"),
-    rawWrap: document.getElementById("rawWrap"),
-    rawJson: document.getElementById("rawJson")
+    btnRaw: firstId("btnRaw"),
+    rawWrap: firstId("rawWrap"),
+    rawJson: firstId("rawJson")
   };
 
-  /* ========= UTIL ========= */
-
-  const esc = (s) =>
-    String(s ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
-
-  const fmtDate = (iso) => {
-    if (!iso) return "";
-    const s = String(iso);
-    const d = new Date(s);
-    if (Number.isNaN(d.getTime())) {
-      // If server gave "YYYY-MM-DD", pass it through.
-      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
-      return m ? `${m[2]}/${m[3]}/${m[1]}` : s;
+  function must(el, name) {
+    if (!el) {
+      console.error(`[ArnoldAdmin] Missing DOM element: ${name}`);
+      return false;
     }
+    return true;
+  }
+
+  /* ================== STATE ================== */
+
+  const state = {
+    lastResponse: null,
+    openSubNotes: new Set(),   // subscription id strings
+    openOrderNotes: new Set()  // order id strings
+  };
+
+  /* ================== HELPERS ================== */
+
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  // Strip tags + decode entities safely (for notes that contain HTML like <span>...)
+  function htmlToText(html) {
+    const div = document.createElement("div");
+    div.innerHTML = String(html ?? "");
+    return (div.textContent || "").replace(/\s+/g, " ").trim();
+  }
+
+  function fmtMoney(total, currency) {
+    const t = total == null ? "" : String(total);
+    if (!t) return "—";
+    if (!currency || String(currency).toUpperCase() === "USD") return `$${t}`;
+    return `${t} ${String(currency).toUpperCase()}`;
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    const s = String(iso);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return s;
+    const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
-    const yyyy = String(d.getFullYear());
-    return `${mm}/${dd}/${yyyy}`;
-  };
+    return `${yyyy}-${mm}-${dd}`;
+  }
 
-  const fmtMoney = (total, currency) => {
-    const n = Number(total);
-    const val = Number.isFinite(n) ? n : 0;
-    const sym = currency && String(currency).toUpperCase() === "USD" ? "$" : "$";
-    return `${sym}${val.toFixed(2)}`;
-  };
+  function setStatusLine(msg, tone) {
+    if (!els.statusLine) return;
+    els.statusLine.textContent = msg || "";
+    els.statusLine.classList.remove("ok", "warn", "err");
+    if (tone) els.statusLine.classList.add(tone);
+  }
 
-  // For Raw JSON panel: remove Woo meta_data blocks (can be large and noisy).
-  function sanitizeForRaw(obj) {
-    try {
-      return JSON.parse(JSON.stringify(obj ?? null, (k, v) => (k === "meta_data" ? undefined : v)));
-    } catch (_) {
-      return obj ?? null;
+  function setSessionPill({ loggedIn, user }) {
+    if (els.sessionDot) {
+      els.sessionDot.classList.toggle("on", !!loggedIn);
+      els.sessionDot.classList.toggle("off", !loggedIn);
+    }
+    if (els.sessionText) {
+      if (!loggedIn) {
+        els.sessionText.textContent = "Session: logged out";
+      } else if (user?.slug || user?.name) {
+        els.sessionText.textContent = `Session: logged in as ${user.slug || user.name}`;
+      } else {
+        els.sessionText.textContent = "Session: logged in";
+      }
     }
   }
 
-  const fmtPhone = (s) => String(s ?? "").trim();
-
-  function setStatus(el, msg, cls) {
-    if (!el) return;
-    el.className = `statusline ${cls || ""}`.trim();
-    el.textContent = msg || "";
-  }
-
-  function setBadge(text, ok) {
-    if (!els.sessionText || !els.sessionDot) return;
-    els.sessionText.textContent = text || "";
-    els.sessionDot.classList.toggle("ok", !!ok);
-  }
-
-  async function fetchJson(url, opts) {
-    const r = await fetch(url, {
+  async function apiFetch(url, opts) {
+    const init = {
       method: opts?.method || "GET",
-      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         ...(opts?.headers || {})
       },
-      body: opts?.body
-    });
+      credentials: "include"
+    };
+    if (opts?.body !== undefined) init.body = JSON.stringify(opts.body);
 
-    const txt = await r.text();
+    const resp = await fetch(url, init);
+    const text = await resp.text();
     let data = null;
-    try {
-      data = txt ? JSON.parse(txt) : null;
-    } catch (_) {
-      data = txt;
+    try { data = text ? JSON.parse(text) : null; } catch (_) { data = text; }
+    return { resp, data };
+  }
+
+  // Remove meta_data before showing Raw JSON (but keep it in the actual response payload).
+  function stripMetaDataDeep(x) {
+    if (Array.isArray(x)) return x.map(stripMetaDataDeep);
+    if (x && typeof x === "object") {
+      const out = {};
+      for (const [k, v] of Object.entries(x)) {
+        if (k === "meta_data") continue;
+        out[k] = stripMetaDataDeep(v);
+      }
+      return out;
     }
-    return { ok: r.ok, status: r.status, data };
+    return x;
   }
 
-  function toggleRaw(show) {
-    els.rawWrap.style.display = show ? "" : "none";
+  function renderPill(text) {
+    return `<span class="pill">${esc(text || "—")}</span>`;
   }
 
-  function pickEmail(c) {
-    // We do NOT render email in Subscriber card per your spec,
-    // but it’s still useful as a fallback for billing/shipping blocks.
-    return c?.billing?.email || c?.email || null;
-  }
-
-  /* ========= RENDER ========= */
-
-  function renderAddressCard(title, a, fallbackEmail) {
-    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
-    const lines = [
-      a?.company,
-      a?.address_1,
-      a?.address_2,
-      [a?.city, a?.state, a?.postcode].filter(Boolean).join(" ").trim(),
-      a?.country
-    ].filter(Boolean);
-
-    const emailLine = a?.email || fallbackEmail || null;
-    const phoneLine = a?.phone ? fmtPhone(a.phone) : "";
-
+  function renderNotesToggle(label, count, isOpen, targetKind, id) {
+    const caretClass = isOpen ? "aa-caret open" : "aa-caret";
+    const safeLabel = label || "Notes";
+    const safeCount = Number.isFinite(count) ? count : 0;
     return `
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">${esc(title)}</div>
-          <div class="card-sub">Address</div>
-        </div>
-        <div class="card-bd">
-          <div class="aa-kv">
-            <div class="aa-k">Name</div>
-            <div class="aa-v">${esc(name)}</div>
-
-            <div class="aa-k">Address</div>
-            <div class="aa-v">${lines.length ? lines.map(esc).join("<br>") : "—"}</div>
-
-            <div class="aa-k">Email</div>
-            <div class="aa-v">${emailLine ? esc(emailLine) : "—"}</div>
-
-            <div class="aa-k">Phone</div>
-            <div class="aa-v">${phoneLine ? esc(phoneLine) : "—"}</div>
-          </div>
-        </div>
-      </section>
+      <span class="aa-notes-toggle" data-kind="${esc(targetKind)}" data-id="${esc(id)}" role="button" tabindex="0" aria-expanded="${isOpen ? "true" : "false"}">
+        <span>${esc(safeLabel)}${safeCount ? ` (${safeCount})` : ""}</span>
+        <span class="${caretClass}">▼</span>
+      </span>
     `;
   }
 
-  function renderSubscriber(c) {
-    if (!c) {
-      return `
-        <section class="card">
-          <div class="card-hd">
-            <div class="card-title">Subscriber</div>
-            <div class="card-sub">Not found</div>
+  function renderNotesList(notes) {
+    const arr = Array.isArray(notes) ? notes : [];
+    if (!arr.length) return `<div class="aa-notes empty">No notes.</div>`;
+
+    const items = arr
+      .slice(0, 200)
+      .map(n => {
+        const when = fmtDate(n?.date_created);
+        const who = (n?.author || n?.added_by) ? String(n.author || n.added_by) : "";
+        const raw = n?.note ?? "";
+        const clean = htmlToText(raw);
+        return `
+          <div class="aa-note">
+            <div class="aa-note-meta">
+              <span class="aa-note-date">${esc(when)}</span>
+              ${who ? `<span class="aa-note-author">${esc(who)}</span>` : ""}
+            </div>
+            <div class="aa-note-body">${esc(clean)}</div>
           </div>
-          <div class="card-bd">No subscriber found.</div>
-        </section>
-      `;
-    }
+        `;
+      })
+      .join("");
 
-    const id = c?.id ?? "—";
-    const username = c?.username ?? "—";
+    return `<div class="aa-notes">${items}</div>`;
+  }
 
-    const displayName =
-      [c?.first_name, c?.last_name].filter(Boolean).join(" ").trim() ||
-      c?.billing?.first_name ||
-      "—";
+  function renderAddressCard(title, addr) {
+    const a = addr || {};
+    const name = [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
 
-    const fallbackEmail = pickEmail(c);
+    // IMPORTANT: Per spec, email should NOT repeat on Subscriber header,
+    // BUT email stays inside Billing/Shipping cards.
+    return `
+      <div class="card mini">
+        <div class="mini-title">${esc(title)}</div>
+
+        ${name ? `<div class="aa-name-line">${esc(name)}</div>` : ""}
+
+        <div class="aa-kv">
+          <div class="aa-k">Address</div>
+          <div class="aa-v">
+            ${esc([a.address_1, a.address_2].filter(Boolean).join(" ").trim())}
+            ${a.city || a.state || a.postcode ? `<div>${esc([a.city, a.state, a.postcode].filter(Boolean).join(", "))}</div>` : ""}
+            ${a.country ? `<div>${esc(a.country)}</div>` : ""}
+          </div>
+
+          <div class="aa-k">Email</div>
+          <div class="aa-v">${a.email ? esc(a.email) : "—"}</div>
+
+          <div class="aa-k">Phone</div>
+          <div class="aa-v">${a.phone ? esc(a.phone) : "—"}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderSubscriber(contextCustomer) {
+    const c = contextCustomer || {};
+    const fullName = [c.first_name, c.last_name].filter(Boolean).join(" ").trim();
 
     return `
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">Subscriber</div>
-          <div class="card-sub">${esc(displayName)}</div>
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscriber</div>
+          <div class="aa-section-subtitle">${esc(fullName || "")}</div>
         </div>
-        <div class="card-bd">
-          <div class="aa-identity-row" style="margin-bottom:12px;">
-            <div><span class="aa-pill-k">Customer ID</span><span class="aa-pill-v">${esc(id)}</span></div>
-            <div><span class="aa-pill-k">Username</span><span class="aa-pill-v">${esc(username)}</span></div>
-          </div>
 
-          <div class="aa-grid-2">
-            ${renderAddressCard("Billing", c?.billing || null, fallbackEmail)}
-            ${renderAddressCard("Shipping", c?.shipping || null, fallbackEmail)}
+        <div class="aa-id-name-row">
+          <div class="aa-field">
+            <div class="aa-label">Customer ID</div>
+            <div class="aa-value">${c.id != null ? esc(c.id) : "—"}</div>
           </div>
+          <div class="aa-field">
+            <div class="aa-label">Username</div>
+            <div class="aa-value">${c.username ? esc(c.username) : "—"}</div>
+          </div>
+        </div>
+
+        <div class="aa-two">
+          ${renderAddressCard("Billing", c.billing)}
+          ${renderAddressCard("Shipping", c.shipping)}
         </div>
       </section>
     `;
@@ -210,137 +250,120 @@
 
   function renderSubscriptions(subs) {
     const arr = Array.isArray(subs) ? subs : [];
-    if (!arr.length) {
-      return `
-        <section class="card">
-          <div class="card-hd">
-            <div class="card-title">Subscriptions</div>
-            <div class="card-sub">None</div>
-          </div>
-          <div class="card-bd">No subscriptions found.</div>
-        </section>
-      `;
-    }
-
-    const rowHtml = (s) => {
-      const id = esc(s?.id ?? "—");
-      const status = esc(s?.status ?? "—");
+    const rows = arr.map(s => {
+      const id = String(s?.id ?? "");
+      const status = s?.status || "—";
       const total = fmtMoney(s?.total, s?.currency);
-      const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
+      const nextPay = s?.next_payment_date ? fmtDate(s.next_payment_date) : "—";
 
-      // Don’t invent values. If end_date is empty, show em dash.
-      const end = s?.end_date ? esc(fmtDate(s.end_date)) : "—";
+      // Spec: end_date null => Auto-renews
+      const end = s?.end_date ? fmtDate(s.end_date) : "Auto-renews";
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
-      const notesHtml = notes.length
-        ? `
-          <div class="aa-notes-wrap">
-            <div class="aa-notes-col">
-              ${notes.slice(0, 50).map(n => `
-                <div class="aa-note-card">
-                  <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
-                  <div class="aa-note-text">${esc(n?.note || "")}</div>
-                </div>
-              `).join("")}
-            </div>
-          </div>
-        `
-        : "";
+      const isOpen = state.openSubNotes.has(id);
 
       return `
-        <tr>
-          <td><span class="aa-mono">#${id}</span> <span class="aa-badge">${status}</span></td>
-          <td>${total}</td>
-          <td>${nextPay}</td>
-          <td>${end}</td>
+        <tr class="aa-sub-row" data-sub="${esc(id)}">
+          <td class="mono">#${esc(id)}</td>
+          <td>${renderPill(status)}</td>
+          <td>${esc(total)}</td>
+          <td>${esc(nextPay)}</td>
+          <td>${esc(end)}</td>
+          <td class="aa-notes-col">
+            ${renderNotesToggle("Notes", notes.length, isOpen, "sub", id)}
+          </td>
         </tr>
-        <tr class="aa-sub-notes-row">
-          <td colspan="4">${notesHtml}</td>
-        </tr>
+        ${isOpen ? `
+          <tr class="aa-sub-notes">
+            <td colspan="6">
+              ${renderNotesList(notes)}
+            </td>
+          </tr>
+        ` : ""}
       `;
-    };
+    }).join("");
 
     return `
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">Subscriptions</div>
-          <div class="card-sub">Schedule &amp; Notes</div>
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscriptions</div>
+          <div class="aa-section-subtitle">Schedule &amp; Notes</div>
         </div>
-        <div class="card-bd">
+
+        ${arr.length ? `
           <div class="aa-table-wrap">
             <table class="aa-table">
               <thead>
                 <tr>
                   <th>Subscription</th>
+                  <th>Status</th>
                   <th>Total</th>
                   <th>Next Payment</th>
                   <th>End</th>
+                  <th class="aa-notes-col">Notes</th>
                 </tr>
               </thead>
-              <tbody>
-                ${arr.map(rowHtml).join("")}
-              </tbody>
+              <tbody>${rows}</tbody>
             </table>
           </div>
-        </div>
+        ` : `<div class="aa-empty">No subscriptions found.</div>`}
       </section>
     `;
   }
 
+  function renderItems(lineItems) {
+    const arr = Array.isArray(lineItems) ? lineItems : [];
+    if (!arr.length) return "—";
+    return arr.slice(0, 4).map(li => {
+      const qty = li?.quantity ?? 0;
+      const name = li?.name ?? "";
+      return `${qty} × ${name}`;
+    }).join(", ");
+  }
+
   function renderOrders(orders) {
     const arr = Array.isArray(orders) ? orders : [];
-    if (!arr.length) {
-      return `
-        <section class="card">
-          <div class="card-hd">
-            <div class="card-title">Orders</div>
-            <div class="card-sub">None</div>
-          </div>
-          <div class="card-bd">No orders found.</div>
-        </section>
-      `;
-    }
 
-    const itemsSummary = (o) => {
-      const items = Array.isArray(o?.line_items) ? o.line_items : [];
-      if (!items.length) return "—";
-      const parts = items.slice(0, 6).map(li => {
-        const q = Number(li?.quantity || 0) || 0;
-        const nm = String(li?.name || "").trim();
-        if (!nm) return "";
-        return `${q} × ${nm}`;
-      }).filter(Boolean);
-      const more = items.length > 6 ? ` (+${items.length - 6} more)` : "";
-      return esc(parts.join(" • ") + more);
-    };
-
-    const rowHtml = (o) => {
-      const id = esc(o?.id ?? "—");
-      const status = esc(o?.status ?? "—");
+    const rows = arr.map(o => {
+      const id = String(o?.id ?? "");
+      const date = fmtDate(o?.date_created);
+      const status = o?.status || "—";
       const total = fmtMoney(o?.total, o?.currency);
-      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
-      const payment = esc(o?.payment_method_title || o?.payment_method || "—");
-      const items = itemsSummary(o);
+      const pay = o?.payment_method_title || o?.payment_method || "—";
+      const items = renderItems(o?.line_items);
+      const notes = Array.isArray(o?.notes) ? o.notes : [];
+      const isOpen = state.openOrderNotes.has(id);
 
       return `
-        <tr>
-          <td class="aa-mono">#${id}</td>
-          <td>${date}</td>
-          <td><span class="aa-badge">${status}</span></td>
-          <td>${total}</td>
-          <td>${payment}</td>
-          <td class="aa-items">${items}</td>
+        <tr class="aa-order-row" data-order="${esc(id)}">
+          <td class="mono">#${esc(id)}</td>
+          <td>${esc(date)}</td>
+          <td>${renderPill(status)}</td>
+          <td>${esc(total)}</td>
+          <td>${esc(pay)}</td>
+          <td>${esc(items)}</td>
+          <td class="aa-notes-col">
+            ${renderNotesToggle("Notes", notes.length, isOpen, "order", id)}
+          </td>
         </tr>
+        ${isOpen ? `
+          <tr class="aa-order-notes">
+            <td colspan="7">
+              ${renderNotesList(notes)}
+            </td>
+          </tr>
+        ` : ""}
       `;
-    };
+    }).join("");
 
     return `
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">Orders</div>
-          <div class="card-sub">Most recent first</div>
+      <section class="card aa-section aa-orders">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Orders</div>
+          <div class="aa-section-subtitle">Most recent first</div>
         </div>
-        <div class="card-bd">
+
+        ${arr.length ? `
           <div class="aa-table-wrap">
             <table class="aa-table">
               <thead>
@@ -351,153 +374,189 @@
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Items</th>
+                  <th class="aa-notes-col">Notes</th>
                 </tr>
               </thead>
-              <tbody>
-                ${arr.map(rowHtml).join("")}
-              </tbody>
+              <tbody>${rows}</tbody>
             </table>
           </div>
-        </div>
+        ` : `<div class="aa-empty">No orders found.</div>`}
       </section>
     `;
   }
 
-  function renderAll(context) {
-    const c = context?.customer || null;
-    const subs = context?.subscriptions || [];
-    const orders = context?.orders || [];
+  function renderAll(payload) {
+    const ctx = payload?.context || {};
+    const customer = ctx.customer || null;
+    const subs = ctx.subscriptions || [];
+    const orders = ctx.orders || [];
 
-    return `
-      ${renderSubscriber(c)}
-      <div style="height:14px;"></div>
-      ${renderSubscriptions(subs)}
-      <div style="height:14px;"></div>
-      ${renderOrders(orders)}
-    `;
+    const parts = [];
+    if (customer) parts.push(renderSubscriber(customer));
+    parts.push(renderSubscriptions(subs));
+    parts.push(renderOrders(orders));
+
+    if (els.results) els.results.innerHTML = parts.join("");
+
+    state.lastResponse = payload || null;
+    if (els.rawJson) {
+      const safe = stripMetaDataDeep(payload || {});
+      els.rawJson.textContent = JSON.stringify(safe, null, 2);
+    }
   }
 
-  /* ========= ACTIONS ========= */
+  /* ================== EVENTS ================== */
 
-  async function refreshStatus() {
-    const { ok, data } = await fetchJson(API.status, { method: "GET" });
-    if (ok && data && data.loggedIn) {
-      setBadge("Session: logged in", true);
-      setStatus(els.loginStatus, "Logged in (cookie session active).", "ok");
-      return true;
+  function onToggleNotesClick(e) {
+    const t = e.target.closest(".aa-notes-toggle");
+    if (!t) return;
+
+    const kind = t.getAttribute("data-kind");
+    const id = t.getAttribute("data-id");
+    if (!kind || !id) return;
+
+    if (kind === "sub") {
+      if (state.openSubNotes.has(id)) state.openSubNotes.delete(id);
+      else state.openSubNotes.add(id);
+    } else if (kind === "order") {
+      if (state.openOrderNotes.has(id)) state.openOrderNotes.delete(id);
+      else state.openOrderNotes.add(id);
     }
-    setBadge("Session: logged out", false);
-    setStatus(els.loginStatus, "Logged out.", "");
-    return false;
+
+    if (state.lastResponse) renderAll(state.lastResponse);
+  }
+
+  async function refreshSession() {
+    try {
+      const { resp, data } = await apiFetch(API.status, { method: "GET" });
+      if (!resp.ok) {
+        setSessionPill({ loggedIn: false, user: null });
+        return;
+      }
+      const loggedIn = !!data?.loggedIn;
+      setSessionPill({ loggedIn, user: data?.user || null });
+    } catch (err) {
+      console.warn("[ArnoldAdmin] status failed:", err?.message || err);
+      setSessionPill({ loggedIn: false, user: null });
+    }
   }
 
   async function doLogin() {
-    const username = String(els.wpUser.value || "").trim();
-    const password = String(els.wpPass.value || "").trim();
-    if (!username || !password) {
-      setStatus(els.loginStatus, "Username + password required.", "err");
+    if (!els.user || !els.pass) {
+      setStatusLine("Login inputs not found (DOM id mismatch).", "err");
       return;
     }
 
-    els.btnLogin.disabled = true;
-    try {
-      setStatus(els.loginStatus, "Logging in…", "");
-      const { ok, status, data } = await fetchJson(API.login, {
-        method: "POST",
-        body: JSON.stringify({ username, password })
-      });
+    const username = String(els.user.value || "").trim();
+    const password = String(els.pass.value || "").trim();
 
-      if (!ok) {
-        setStatus(els.loginStatus, `Login failed (${status}). ${data?.message || ""}`, "err");
-        await refreshStatus();
-        return;
-      }
-
-      setStatus(els.loginStatus, "Login successful.", "ok");
-      await refreshStatus();
-    } catch (e) {
-      setStatus(els.loginStatus, `Login error: ${e?.message || e}`, "err");
-      await refreshStatus();
-    } finally {
-      els.btnLogin.disabled = false;
+    if (!username || !password) {
+      setStatusLine("Username and password required.", "warn");
+      return;
     }
+
+    setStatusLine("Logging in…", "warn");
+
+    const { resp, data } = await apiFetch(API.login, {
+      method: "POST",
+      body: { username, password }
+    });
+
+    if (!resp.ok || !data?.success) {
+      const msg = data?.message || data?.error || `Login failed (${resp.status})`;
+      setStatusLine(msg, "err");
+      await refreshSession();
+      return;
+    }
+
+    setStatusLine("Logged in.", "ok");
+    await refreshSession();
   }
 
   async function doLogout() {
-    els.btnLogout.disabled = true;
-    try {
-      await fetchJson(API.logout, { method: "POST" });
-    } catch (_) {}
-    await refreshStatus();
-    els.btnLogout.disabled = false;
+    setStatusLine("Logging out…", "warn");
+    await apiFetch(API.logout, { method: "POST" }).catch(() => {});
+    setStatusLine("Logged out.", "ok");
+    await refreshSession();
   }
 
   async function doSearch() {
-    const q = String(els.query.value || "").trim();
-    if (!q) {
-      setStatus(els.searchStatus, "Enter a search (email, order #12345, etc.).", "err");
+    if (!els.query) {
+      setStatusLine("Search input not found.", "err");
       return;
     }
 
-    els.btnSearch.disabled = true;
-    try {
-      setStatus(els.searchStatus, "Searching…", "");
-      const { ok, status, data } = await fetchJson(API.search, {
-        method: "POST",
-        body: JSON.stringify({ query: q })
-      });
-
-      // Raw JSON panel: remove meta_data blocks per spec.
-      els.rawJson.textContent = JSON.stringify(sanitizeForRaw(data), null, 2);
-
-      if (!ok) {
-        setStatus(els.searchStatus, `Search failed (${status}).`, "err");
-        els.results.innerHTML = `
-          <section class="card">
-            <div class="card-hd"><div class="card-title">Error</div><div class="card-sub">Search</div></div>
-            <div class="card-bd">${esc(JSON.stringify(data))}</div>
-          </section>
-        `;
-        return;
-      }
-
-      const ctx = data?.context || null;
-      els.results.innerHTML = ctx
-        ? renderAll(ctx)
-        : `
-          <section class="card">
-            <div class="card-hd"><div class="card-title">Results</div><div class="card-sub">Empty</div></div>
-            <div class="card-bd">No context returned.</div>
-          </section>
-        `;
-      setStatus(els.searchStatus, "Search complete.", "ok");
-    } catch (e) {
-      setStatus(els.searchStatus, `Search error: ${e?.message || e}`, "err");
-    } finally {
-      els.btnSearch.disabled = false;
+    const q = String(els.query.value || "").trim();
+    if (!q) {
+      setStatusLine("Enter a search query.", "warn");
+      return;
     }
+
+    setStatusLine("Searching…", "warn");
+
+    const { resp, data } = await apiFetch(API.search, {
+      method: "POST",
+      body: { query: q }
+    });
+
+    if (!resp.ok || !data?.ok) {
+      setStatusLine(data?.error || `Search failed (${resp.status}).`, "err");
+      state.lastResponse = data || null;
+      if (els.rawJson) {
+        const safe = stripMetaDataDeep(data || {});
+        els.rawJson.textContent = JSON.stringify(safe, null, 2);
+      }
+      return;
+    }
+
+    setStatusLine("Search complete.", "ok");
+    renderAll(data);
   }
 
-  /* ========= WIRE UP ========= */
+  function toggleRaw() {
+    if (!els.rawWrap) return;
+    const isShown = els.rawWrap.style.display !== "none";
+    els.rawWrap.style.display = isShown ? "none" : "block";
+  }
 
-  els.btnLogin.addEventListener("click", doLogin);
-  els.btnLogout.addEventListener("click", doLogout);
-  els.btnSearch.addEventListener("click", doSearch);
+  function bind() {
+    if (els.results) {
+      els.results.addEventListener("click", onToggleNotesClick);
+      els.results.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        const t = e.target.closest(".aa-notes-toggle");
+        if (!t) return;
+        e.preventDefault();
+        onToggleNotesClick(e);
+      });
+    }
 
-  els.query.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") doSearch();
-  });
+    if (els.btnLogin) els.btnLogin.addEventListener("click", doLogin);
+    if (els.btnLogout) els.btnLogout.addEventListener("click", doLogout);
+    if (els.btnSearch) els.btnSearch.addEventListener("click", doSearch);
 
-  els.btnRaw.addEventListener("click", () => {
-    const show = els.rawWrap.style.display === "none";
-    toggleRaw(show);
-  });
+    if (els.query) {
+      els.query.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") doSearch();
+      });
+    }
 
-  // Init
-  toggleRaw(false);
-  refreshStatus().catch(() => {
-    setBadge("Session: error", false);
-  });
+    if (els.btnRaw) els.btnRaw.addEventListener("click", toggleRaw);
+  }
+
+  function init() {
+    must(els.query, "query");
+    must(els.btnSearch, "btnSearch");
+    must(els.results, "results");
+
+    bind();
+    refreshSession();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
 })();
-
 // 🔴 main.js
