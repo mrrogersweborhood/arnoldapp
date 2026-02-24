@@ -1,134 +1,176 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (widen orders + name fields above address 2026-02-24i)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-23)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
-
 (() => {
   "use strict";
 
-  const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+  /* ========= CONFIG ========= */
+
+  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+  const API = {
+    login: `${WORKER_BASE}/admin/login`,
+    status: `${WORKER_BASE}/admin/status`,
+    logout: `${WORKER_BASE}/admin/logout`,
+    search: `${WORKER_BASE}/admin/nl-search`
+  };
+
+  /* ========= DOM ========= */
 
   const els = {
-    msg: document.getElementById("msg"),
-
-    loginUser: document.getElementById("loginUser"),
-    loginPass: document.getElementById("loginPass"),
+    wpUser: document.getElementById("wpUser"),
+    wpPass: document.getElementById("wpPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
-
-    sessionPill: document.getElementById("sessionPill"),
-    sessionText: document.getElementById("sessionText"),
-    sessionState: document.getElementById("sessionState"),
+    loginStatus: document.getElementById("loginStatus"),
 
     query: document.getElementById("query"),
     btnSearch: document.getElementById("btnSearch"),
+    searchStatus: document.getElementById("searchStatus"),
 
-    customerOut: document.getElementById("customerOut"),
-    subsOut: document.getElementById("subsOut"),
-    ordersOut: document.getElementById("ordersOut"),
+    sessionPill: document.getElementById("sessionPill"),
+    sessionDot: document.getElementById("sessionDot"),
+    sessionText: document.getElementById("sessionText"),
 
+    results: document.getElementById("results"),
+
+    btnRaw: document.getElementById("btnRaw"),
     rawWrap: document.getElementById("rawWrap"),
     rawJson: document.getElementById("rawJson")
   };
 
-  function esc(s) {
-    return String(s ?? "")
+  /* ========= UTIL ========= */
+
+  const esc = (s) =>
+    String(s ?? "")
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
-  }
 
-  function toPlainText(html) {
-    const s = String(html ?? "");
-    if (!s) return "";
+  const fmtDate = (iso) => {
+    if (!iso) return "";
+    const s = String(iso);
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) {
+      // If server gave "YYYY-MM-DD", pass it through.
+      const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? `${m[2]}/${m[3]}/${m[1]}` : s;
+    }
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yyyy = String(d.getFullYear());
+    return `${mm}/${dd}/${yyyy}`;
+  };
+
+  const fmtMoney = (total, currency) => {
+    const n = Number(total);
+    const val = Number.isFinite(n) ? n : 0;
+    const sym = currency && String(currency).toUpperCase() === "USD" ? "$" : "$";
+    return `${sym}${val.toFixed(2)}`;
+  };
+
+  // For Raw JSON panel: remove Woo meta_data blocks (can be large and noisy).
+  function sanitizeForRaw(obj) {
     try {
-      const doc = new DOMParser().parseFromString(s, "text/html");
-      const txt = (doc && doc.body && typeof doc.body.textContent === "string") ? doc.body.textContent : "";
-      return txt.replace(/\s+/g, " ").trim();
+      return JSON.parse(JSON.stringify(obj ?? null, (k, v) => (k === "meta_data" ? undefined : v)));
     } catch (_) {
-      return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      return obj ?? null;
     }
   }
 
-  function setMsg(text, kind) {
-    if (!els.msg) return;
-    if (!text) {
-      els.msg.style.display = "none";
-      els.msg.className = "msg";
-      els.msg.textContent = "";
-      return;
-    }
-    els.msg.style.display = "block";
-    els.msg.className = `msg ${kind || ""}`.trim();
-    els.msg.textContent = text;
+  const fmtPhone = (s) => String(s ?? "").trim();
+
+  function setStatus(el, msg, cls) {
+    if (!el) return;
+    el.className = `statusline ${cls || ""}`.trim();
+    el.textContent = msg || "";
   }
 
   function setBadge(text, ok) {
-    if (!els.sessionState) return;
-    els.sessionState.textContent = text;
-    if (els.sessionPill) {
-      els.sessionPill.style.opacity = "1";
-      els.sessionPill.style.borderColor = ok
-        ? "rgba(16,185,129,0.45)"
-        : "rgba(255,255,255,0.22)";
-    }
+    if (!els.sessionText || !els.sessionDot) return;
+    els.sessionText.textContent = text || "";
+    els.sessionDot.classList.toggle("ok", !!ok);
   }
 
-  function fmtDate(iso) {
-    if (!iso) return "—";
-    const s = String(iso);
-    return s.split("T")[0].split(" ")[0] || "—";
-  }
+  async function fetchJson(url, opts) {
+    const r = await fetch(url, {
+      method: opts?.method || "GET",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        ...(opts?.headers || {})
+      },
+      body: opts?.body
+    });
 
-  function fmtMoney(total, currency) {
-    const n = Number(total);
-    const c = String(currency || "USD");
-    if (!isFinite(n)) return "—";
+    const txt = await r.text();
+    let data = null;
     try {
-      return new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: c,
-        minimumFractionDigits: 2
-      }).format(n);
+      data = txt ? JSON.parse(txt) : null;
     } catch (_) {
-      return `$${n.toFixed(2)}`;
+      data = txt;
     }
+    return { ok: r.ok, status: r.status, data };
   }
 
-  function renderNotesDetails(notes, labelText) {
-    const arr = Array.isArray(notes) ? notes : [];
-    if (!arr.length) return "";
+  function toggleRaw(show) {
+    els.rawWrap.style.display = show ? "" : "none";
+  }
 
-    const label = labelText || "Notes";
+  function pickEmail(c) {
+    // We do NOT render email in Subscriber card per your spec,
+    // but it’s still useful as a fallback for billing/shipping blocks.
+    return c?.billing?.email || c?.email || null;
+  }
+
+  /* ========= RENDER ========= */
+
+  function renderAddressCard(title, a, fallbackEmail) {
+    const name = [a?.first_name, a?.last_name].filter(Boolean).join(" ").trim() || "—";
+    const lines = [
+      a?.company,
+      a?.address_1,
+      a?.address_2,
+      [a?.city, a?.state, a?.postcode].filter(Boolean).join(" ").trim(),
+      a?.country
+    ].filter(Boolean);
+
+    const emailLine = a?.email || fallbackEmail || null;
+    const phoneLine = a?.phone ? fmtPhone(a.phone) : "";
+
     return `
-      <details class="aa-notes">
-        <summary class="aa-notes-summary">
-          <span class="aa-notes-label">${esc(label)}</span>
-          <span class="aa-notes-arrow" aria-hidden="true">▾</span>
-        </summary>
-        <div class="aa-notes-wrap">
-          <div class="aa-notes-col">
-            ${arr.slice(0, 50).map(n => `
-              <div class="aa-note-card">
-                <div class="aa-note-meta">${esc(fmtDate(n?.date_created))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
-                <div class="aa-note-text">${esc(toPlainText(n?.note || ""))}</div>
-              </div>
-            `).join("")}
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">${esc(title)}</div>
+          <div class="card-sub">Address</div>
+        </div>
+        <div class="card-bd">
+          <div class="aa-kv">
+            <div class="aa-k">Name</div>
+            <div class="aa-v">${esc(name)}</div>
+
+            <div class="aa-k">Address</div>
+            <div class="aa-v">${lines.length ? lines.map(esc).join("<br>") : "—"}</div>
+
+            <div class="aa-k">Email</div>
+            <div class="aa-v">${emailLine ? esc(emailLine) : "—"}</div>
+
+            <div class="aa-k">Phone</div>
+            <div class="aa-v">${phoneLine ? esc(phoneLine) : "—"}</div>
           </div>
         </div>
-      </details>
+      </section>
     `;
   }
 
-  function renderSubscriber(customer) {
-    const c = customer || null;
+  function renderSubscriber(c) {
     if (!c) {
       return `
         <section class="card">
           <div class="card-hd">
             <div class="card-title">Subscriber</div>
-            <div class="card-sub">None</div>
+            <div class="card-sub">Not found</div>
           </div>
           <div class="card-bd">No subscriber found.</div>
         </section>
@@ -136,85 +178,30 @@
     }
 
     const id = c?.id ?? "—";
-    const username = c?.username ? String(c.username) : "—";
-    const fullName =
-      [c?.first_name, c?.last_name].filter(Boolean).map(String).join(" ").trim() || "—";
+    const username = c?.username ?? "—";
 
-    const billing = c?.billing || null;
-    const shipping = c?.shipping || null;
+    const displayName =
+      [c?.first_name, c?.last_name].filter(Boolean).join(" ").trim() ||
+      c?.billing?.first_name ||
+      "—";
 
-    const renderAddressCard = (label, a) => {
-      const first = String(a?.first_name || "").trim();
-      const last = String(a?.last_name || "").trim();
-
-      const addrParts = [
-        a?.company,
-        a?.address_1,
-        a?.address_2,
-        [a?.city, a?.state, a?.postcode].filter(Boolean).join(", "),
-        a?.country
-      ]
-        .filter(Boolean)
-        .map(String);
-
-      const addr = addrParts.join(", ") || "—";
-      const email = a?.email ? String(a.email) : "—";
-      const phone = a?.phone ? String(a.phone) : "—";
-
-      // ✅ First/Last name labeled fields directly above Address (same card)
-      return `
-        <div class="aa-addr">
-          <div class="aa-addr-title">${esc(label)}</div>
-
-          <div class="aa-namegrid">
-            <div class="aa-nameitem">
-              <div class="aa-namelbl">First name</div>
-              <div class="aa-nameval">${esc(first || "—")}</div>
-            </div>
-            <div class="aa-nameitem">
-              <div class="aa-namelbl">Last name</div>
-              <div class="aa-nameval">${esc(last || "—")}</div>
-            </div>
-          </div>
-
-          <div class="aa-addr-row">
-            <div class="aa-lbl">Address</div>
-            <div class="aa-val">${esc(addr)}</div>
-          </div>
-          <div class="aa-addr-row">
-            <div class="aa-lbl">Email</div>
-            <div class="aa-val">${esc(email)}</div>
-          </div>
-          <div class="aa-addr-row">
-            <div class="aa-lbl">Phone</div>
-            <div class="aa-val">${esc(phone)}</div>
-          </div>
-        </div>
-      `;
-    };
+    const fallbackEmail = pickEmail(c);
 
     return `
       <section class="card">
         <div class="card-hd">
           <div class="card-title">Subscriber</div>
-          <div class="card-sub">${esc(fullName)}</div>
+          <div class="card-sub">${esc(displayName)}</div>
         </div>
         <div class="card-bd">
-
-          <div class="identity-grid">
-            <div class="identity-item">
-              <label>Customer ID</label>
-              <div class="val-mono">${esc(id)}</div>
-            </div>
-            <div class="identity-item">
-              <label>Username</label>
-              <div class="val-mono">${esc(username)}</div>
-            </div>
+          <div class="aa-identity-row" style="margin-bottom:12px;">
+            <div><span class="aa-pill-k">Customer ID</span><span class="aa-pill-v">${esc(id)}</span></div>
+            <div><span class="aa-pill-k">Username</span><span class="aa-pill-v">${esc(username)}</span></div>
           </div>
 
-          <div class="aa-split">
-            ${renderAddressCard("Billing", billing)}
-            ${renderAddressCard("Shipping", shipping)}
+          <div class="aa-grid-2">
+            ${renderAddressCard("Billing", c?.billing || null, fallbackEmail)}
+            ${renderAddressCard("Shipping", c?.shipping || null, fallbackEmail)}
           </div>
         </div>
       </section>
@@ -236,12 +223,29 @@
     }
 
     const rowHtml = (s) => {
-      const id = s?.id ?? "—";
+      const id = esc(s?.id ?? "—");
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
       const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
-      const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
-      const notesHtml = renderNotesDetails(s?.notes, "Notes");
+
+      // Don’t invent values. If end_date is empty, show em dash.
+      const end = s?.end_date ? esc(fmtDate(s.end_date)) : "—";
+
+      const notes = Array.isArray(s?.notes) ? s.notes : [];
+      const notesHtml = notes.length
+        ? `
+          <div class="aa-notes-wrap">
+            <div class="aa-notes-col">
+              ${notes.slice(0, 50).map(n => `
+                <div class="aa-note-card">
+                  <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
+                  <div class="aa-note-text">${esc(n?.note || "")}</div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `
+        : "";
 
       return `
         <tr>
@@ -249,7 +253,9 @@
           <td>${total}</td>
           <td>${nextPay}</td>
           <td>${end}</td>
-          <td class="aa-notes-cell">${notesHtml || ""}</td>
+        </tr>
+        <tr class="aa-sub-notes-row">
+          <td colspan="4">${notesHtml}</td>
         </tr>
       `;
     };
@@ -269,7 +275,6 @@
                   <th>Total</th>
                   <th>Next Payment</th>
                   <th>End</th>
-                  <th class="aa-notes-th">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,35 +307,33 @@
       const parts = items.slice(0, 6).map(li => {
         const q = Number(li?.quantity || 0) || 0;
         const nm = String(li?.name || "").trim();
-        if (!nm) return null;
-        return `${q ? `${q} × ` : ""}${nm}`;
+        if (!nm) return "";
+        return `${q} × ${nm}`;
       }).filter(Boolean);
-      return parts.length ? esc(parts.join(" • ")) : "—";
+      const more = items.length > 6 ? ` (+${items.length - 6} more)` : "";
+      return esc(parts.join(" • ") + more);
     };
 
     const rowHtml = (o) => {
-      const id = o?.id ?? "—";
-      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
+      const id = esc(o?.id ?? "—");
       const status = esc(o?.status ?? "—");
       const total = fmtMoney(o?.total, o?.currency);
-      const pay = esc(o?.payment_method_title || o?.payment_method || "—");
+      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
+      const payment = esc(o?.payment_method_title || o?.payment_method || "—");
       const items = itemsSummary(o);
-      const notesHtml = renderNotesDetails(o?.notes, "Notes");
 
       return `
         <tr>
-          <td><span class="aa-mono">#${id}</span></td>
+          <td class="aa-mono">#${id}</td>
           <td>${date}</td>
           <td><span class="aa-badge">${status}</span></td>
           <td>${total}</td>
-          <td>${pay}</td>
+          <td>${payment}</td>
           <td class="aa-items">${items}</td>
-          <td class="aa-notes-cell">${notesHtml || ""}</td>
         </tr>
       `;
     };
 
-    // ✅ table.aa-orders triggers wider min-width in CSS
     return `
       <section class="card">
         <div class="card-hd">
@@ -339,7 +342,7 @@
         </div>
         <div class="card-bd">
           <div class="aa-table-wrap">
-            <table class="aa-table aa-orders">
+            <table class="aa-table">
               <thead>
                 <tr>
                   <th>Order</th>
@@ -348,7 +351,6 @@
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Items</th>
-                  <th class="aa-notes-th">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,163 +363,141 @@
     `;
   }
 
-  async function api(path, init) {
-    const url = `${API_BASE}${path}`;
-    const opts = {
-      ...init,
-      credentials: "include",
-      headers: { ...(init && init.headers ? init.headers : {}) }
-    };
-    return fetch(url, opts);
+  function renderAll(context) {
+    const c = context?.customer || null;
+    const subs = context?.subscriptions || [];
+    const orders = context?.orders || [];
+
+    return `
+      ${renderSubscriber(c)}
+      <div style="height:14px;"></div>
+      ${renderSubscriptions(subs)}
+      <div style="height:14px;"></div>
+      ${renderOrders(orders)}
+    `;
   }
 
-  function clearOutputs() {
-    if (els.customerOut) els.customerOut.innerHTML = "";
-    if (els.subsOut) els.subsOut.innerHTML = "";
-    if (els.ordersOut) els.ordersOut.innerHTML = "";
-    toggleRaw(false);
-  }
-
-  function toggleRaw(show, obj) {
-    if (!els.rawWrap || !els.rawJson) return;
-    if (!show) {
-      els.rawWrap.style.display = "none";
-      els.rawJson.textContent = "";
-      return;
-    }
-    els.rawWrap.style.display = "block";
-    els.rawJson.textContent = JSON.stringify(obj || {}, null, 2);
-  }
+  /* ========= ACTIONS ========= */
 
   async function refreshStatus() {
-    const r = await api("/admin/status", { method: "GET" });
-    const data = await r.json().catch(() => null);
-
-    const loggedIn = !!data?.loggedIn;
-    if (loggedIn) {
-      const name = data?.user?.name || data?.user?.slug || "admin";
-      setBadge(`logged in as ${name}`, true);
-      setMsg("", "");
-    } else {
-      setBadge("logged out", false);
+    const { ok, data } = await fetchJson(API.status, { method: "GET" });
+    if (ok && data && data.loggedIn) {
+      setBadge("Session: logged in", true);
+      setStatus(els.loginStatus, "Logged in (cookie session active).", "ok");
+      return true;
     }
-
-    if (els.btnLogin) els.btnLogin.disabled = loggedIn;
-    if (els.btnLogout) els.btnLogout.disabled = !loggedIn;
-    if (els.btnSearch) els.btnSearch.disabled = !loggedIn;
-
-    return loggedIn;
+    setBadge("Session: logged out", false);
+    setStatus(els.loginStatus, "Logged out.", "");
+    return false;
   }
 
   async function doLogin() {
-    const u = String(els.loginUser?.value || "").trim();
-    const p = String(els.loginPass?.value || "").trim();
-
-    if (!u || !p) {
-      setMsg("Username and password required.", "err");
+    const username = String(els.wpUser.value || "").trim();
+    const password = String(els.wpPass.value || "").trim();
+    if (!username || !password) {
+      setStatus(els.loginStatus, "Username + password required.", "err");
       return;
     }
 
-    setMsg("Logging in…", "");
+    els.btnLogin.disabled = true;
+    try {
+      setStatus(els.loginStatus, "Logging in…", "");
+      const { ok, status, data } = await fetchJson(API.login, {
+        method: "POST",
+        body: JSON.stringify({ username, password })
+      });
 
-    const r = await api("/admin/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: u, password: p })
-    });
+      if (!ok) {
+        setStatus(els.loginStatus, `Login failed (${status}). ${data?.message || ""}`, "err");
+        await refreshStatus();
+        return;
+      }
 
-    const data = await r.json().catch(() => null);
-
-    if (!r.ok || !data?.success) {
-      console.log("[Login] status", r.status, data);
-      setMsg(data?.message || `Login failed (${r.status}).`, "err");
-      await refreshStatus().catch(() => {});
-      return;
+      setStatus(els.loginStatus, "Login successful.", "ok");
+      await refreshStatus();
+    } catch (e) {
+      setStatus(els.loginStatus, `Login error: ${e?.message || e}`, "err");
+      await refreshStatus();
+    } finally {
+      els.btnLogin.disabled = false;
     }
-
-    setMsg("Logged in.", "ok");
-    await refreshStatus().catch(() => {});
   }
 
   async function doLogout() {
-    setMsg("Logging out…", "");
-    const r = await api("/admin/logout", { method: "POST" });
-    const data = await r.json().catch(() => null);
-
-    if (!r.ok || !data?.success) {
-      console.log("[Logout] status", r.status, data);
-      setMsg(`Logout failed (${r.status}).`, "err");
-    } else {
-      setMsg("Logged out.", "ok");
-    }
-
-    clearOutputs();
-    await refreshStatus().catch(() => {});
+    els.btnLogout.disabled = true;
+    try {
+      await fetchJson(API.logout, { method: "POST" });
+    } catch (_) {}
+    await refreshStatus();
+    els.btnLogout.disabled = false;
   }
 
   async function doSearch() {
-    const q = String(els.query?.value || "").trim();
+    const q = String(els.query.value || "").trim();
     if (!q) {
-      setMsg("Enter a search query (email, order #, etc.).", "err");
+      setStatus(els.searchStatus, "Enter a search (email, order #12345, etc.).", "err");
       return;
     }
 
-    clearOutputs();
-    setMsg("Searching…", "");
+    els.btnSearch.disabled = true;
+    try {
+      setStatus(els.searchStatus, "Searching…", "");
+      const { ok, status, data } = await fetchJson(API.search, {
+        method: "POST",
+        body: JSON.stringify({ query: q })
+      });
 
-    const r = await api("/admin/nl-search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: q })
-    });
+      // Raw JSON panel: remove meta_data blocks per spec.
+      els.rawJson.textContent = JSON.stringify(sanitizeForRaw(data), null, 2);
 
-    const data = await r.json().catch(() => null);
+      if (!ok) {
+        setStatus(els.searchStatus, `Search failed (${status}).`, "err");
+        els.results.innerHTML = `
+          <section class="card">
+            <div class="card-hd"><div class="card-title">Error</div><div class="card-sub">Search</div></div>
+            <div class="card-bd">${esc(JSON.stringify(data))}</div>
+          </section>
+        `;
+        return;
+      }
 
-    if (!r.ok || !data?.ok) {
-      console.log("[Search] status", r.status, data);
-      const msg = data?.error || data?.message || `Search failed (${r.status}).`;
-      setMsg(msg, "err");
-      toggleRaw(true, data || { status: r.status });
-      return;
+      const ctx = data?.context || null;
+      els.results.innerHTML = ctx
+        ? renderAll(ctx)
+        : `
+          <section class="card">
+            <div class="card-hd"><div class="card-title">Results</div><div class="card-sub">Empty</div></div>
+            <div class="card-bd">No context returned.</div>
+          </section>
+        `;
+      setStatus(els.searchStatus, "Search complete.", "ok");
+    } catch (e) {
+      setStatus(els.searchStatus, `Search error: ${e?.message || e}`, "err");
+    } finally {
+      els.btnSearch.disabled = false;
     }
-
-    const ctx = data?.context || {};
-    const customer = ctx?.customer || null;
-    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
-    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
-
-    if (els.customerOut) els.customerOut.innerHTML = renderSubscriber(customer);
-    if (els.subsOut) els.subsOut.innerHTML = renderSubscriptions(subs);
-    if (els.ordersOut) els.ordersOut.innerHTML = renderOrders(orders);
-
-    setMsg(`Found ${subs.length} subscription(s) and ${orders.length} order(s).`, "ok");
-    toggleRaw(true, data);
   }
 
-  els.btnLogin?.addEventListener("click", () => doLogin().catch(err => {
-    console.log("[Login] error", err);
-    setMsg("Login failed (see console).", "err");
-  }));
+  /* ========= WIRE UP ========= */
 
-  els.btnLogout?.addEventListener("click", () => doLogout().catch(err => {
-    console.log("[Logout] error", err);
-    setMsg("Logout failed (see console).", "err");
-  }));
+  els.btnLogin.addEventListener("click", doLogin);
+  els.btnLogout.addEventListener("click", doLogout);
+  els.btnSearch.addEventListener("click", doSearch);
 
-  els.btnSearch?.addEventListener("click", () => doSearch().catch(err => {
-    console.log("[Search] error", err);
-    setMsg("Search failed (see console).", "err");
-  }));
-
-  els.loginPass?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") els.btnLogin?.click();
-  });
-  els.query?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") els.btnSearch?.click();
+  els.query.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") doSearch();
   });
 
+  els.btnRaw.addEventListener("click", () => {
+    const show = els.rawWrap.style.display === "none";
+    toggleRaw(show);
+  });
+
+  // Init
   toggleRaw(false);
-  refreshStatus().catch(() => setBadge("Session: error", false));
+  refreshStatus().catch(() => {
+    setBadge("Session: error", false);
+  });
 })();
 
 // 🔴 main.js
