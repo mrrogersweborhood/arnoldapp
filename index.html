@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24d: notes column rightmost + remove name duplication in addr blocks) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24e: bigger detail font, bigger notes arrow, subscriber ID+Name 2-col row, addr name line above address) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,6 +25,7 @@
       font-family:var(--font);
       color:var(--oo-text);
       background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
+      font-size:15px; /* slightly larger, OkObserver-friendly */
     }
     header{
       position:sticky;
@@ -143,7 +144,7 @@
       border-radius:12px;
       padding:10px 12px;
       outline:none;
-      font-size:14px;
+      font-size:15px;
       background:#fff;
     }
     input:focus{
@@ -234,17 +235,21 @@
     }
     .card-bd{ padding:14px; }
 
-    /* Subscriber layout */
-    .identity{
-      display:flex;
-      flex-wrap:wrap;
+    /* Subscriber identity row: 2 columns */
+    .identity-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
       gap:10px 16px;
-      font-weight:900;
       margin-bottom:12px;
       align-items:center;
     }
-    .identity .aa-k{ color:var(--oo-blue); text-transform:capitalize; font-size:12px; font-weight:900; }
-    .identity .aa-v{ font-weight:1000; }
+    .identity-item{
+      display:flex;
+      gap:10px;
+      align-items:baseline;
+      font-weight:900;
+      flex-wrap:wrap;
+    }
 
     .cols{
       display:grid;
@@ -259,8 +264,14 @@
     }
     .addr .ttl{
       font-weight:1000;
-      margin:0 0 10px;
+      margin:0 0 8px;
       font-size:13px;
+    }
+    .addr-name{
+      font-weight:900;
+      margin:0 0 10px;
+      font-size:14px;
+      color:var(--oo-text);
     }
     .kv{
       display:grid;
@@ -277,10 +288,10 @@
       white-space:nowrap;
     }
     .aa-v{
-      font-weight:600;
+      font-weight:650;
       color:var(--oo-text);
-      font-size:13px;
-      line-height:1.2;
+      font-size:14px; /* bigger detail font */
+      line-height:1.25;
       word-break:break-word;
     }
 
@@ -297,7 +308,7 @@
       padding:10px 10px;
       text-align:left;
       vertical-align:top;
-      font-size:13px;
+      font-size:14px; /* bigger */
     }
     .aa-table th{
       font-size:12px;
@@ -345,25 +356,25 @@
       box-shadow: 0 6px 16px rgba(2,6,23,0.06);
     }
     .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-    .aa-note-text { color: var(--oo-text); font-weight: 500; line-height: 1.25; white-space: pre-wrap; }
+    .aa-note-text { color: var(--oo-text); font-weight: 550; line-height: 1.3; white-space: pre-wrap; font-size:14px; }
 
-    /* Collapsible Notes toggle (arrow indicator) */
+    /* Collapsible Notes toggle (bigger arrow) */
     .aa-linkbtn{
       border:none;
       background:transparent;
       color:var(--oo-blue);
       font-weight:900;
-      font-size:12px;
+      font-size:13px;
       padding:0;
       cursor:pointer;
       text-decoration:none;
       display:inline-flex;
       align-items:center;
-      gap:6px;
+      gap:8px;
       white-space:nowrap;
     }
     .aa-linkbtn:hover{ opacity:0.85; }
-    .aa-linkbtn::after{ content:"▾"; font-size:12px; line-height:1; opacity:0.9; }
+    .aa-linkbtn::after{ content:"▾"; font-size:16px; line-height:1; opacity:0.95; }
     .aa-linkbtn[aria-expanded="true"]::after{ content:"▴"; }
 
     .aa-sub-notes-row td { border-bottom: none; padding-top: 0; }
@@ -372,6 +383,7 @@
     @media (max-width: 920px){
       .grid{ grid-template-columns: 1fr; }
       .cols{ grid-template-columns: 1fr; }
+      .identity-grid{ grid-template-columns: 1fr; }
       table.aa-table{ min-width: 900px; }
     }
   </style>

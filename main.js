@@ -1,14 +1,10 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24d: subscription notes in rightmost column + remove first/last from addr blocks)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24e: billing/shipping name line above address + subscriber ID+Name 2-col identity row)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
-  /* ========= CONFIG ========= */
-
   const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-
-  /* ========= DOM ========= */
 
   const els = {
     wpUser: document.getElementById("wpUser"),
@@ -21,15 +17,12 @@
     btnSearch: document.getElementById("btnSearch"),
     searchStatus: document.getElementById("searchStatus"),
 
-    sessionPill: document.getElementById("sessionPill"),
     sessionDot: document.getElementById("sessionDot"),
     sessionText: document.getElementById("sessionText"),
 
     msg: document.getElementById("msg"),
     results: document.getElementById("results")
   };
-
-  /* ========= UTILS ========= */
 
   function esc(s) {
     return String(s ?? "")
@@ -80,11 +73,7 @@
 
   async function api(path, init = {}) {
     const url = `${API_BASE}${path}`;
-    const resp = await fetch(url, {
-      ...init,
-      credentials: "include"
-    });
-    return resp;
+    return fetch(url, { ...init, credentials: "include" });
   }
 
   async function apiJson(path, init = {}) {
@@ -94,8 +83,6 @@
     try { data = text ? JSON.parse(text) : null; } catch (_) { data = { raw: text }; }
     return { resp, data, url: `${API_BASE}${path}` };
   }
-
-  /* ========= RENDER ========= */
 
   function pickEmail(contextCustomer, c, subs, orders) {
     const a = contextCustomer?.email || c?.email;
@@ -120,11 +107,11 @@
     const emailLine = addr.email || fallbackEmail || "";
     const phoneLine = addr.phone || "";
 
-    // Per request: remove duplication of first/last name from billing/shipping blocks.
-    // We keep company (if present) as the "Name" line; otherwise show "—".
-    const top = (addr.company && String(addr.company).trim()) ? String(addr.company).trim() : "—";
+    // Per request: show First+Last on a line ABOVE the address rows
+    const nameLine = `${addr.first_name || ""} ${addr.last_name || ""}`.trim();
 
     const lines = [
+      addr.company || "",
       addr.address_1 || "",
       addr.address_2 || "",
       addr.city || "",
@@ -136,10 +123,8 @@
     return `
       <div class="addr">
         <div class="ttl">${esc(title)}</div>
+        ${nameLine ? `<div class="addr-name">${esc(nameLine)}</div>` : ""}
         <div class="kv">
-          <div class="aa-k">Name</div>
-          <div class="aa-v">${top ? esc(top) : "—"}</div>
-
           <div class="aa-k">Address</div>
           <div class="aa-v">${lines.length ? esc(lines.join(", ")) : "—"}</div>
 
@@ -156,24 +141,35 @@
   function renderSubscriber(contextCustomer, customer, subs, orders) {
     const c = contextCustomer || customer || null;
     const customerId = c?.id ?? null;
+
+    const displayName = pickName(contextCustomer, customer);
     const username = c?.username ?? null;
 
     const fallbackEmail = pickEmail(contextCustomer, customer, subs, orders);
     const billing = c?.billing || subs?.[0]?.billing || orders?.[0]?.billing || null;
     const shipping = c?.shipping || subs?.[0]?.shipping || orders?.[0]?.shipping || null;
 
-    const identityPieces = [];
-    identityPieces.push(`<span class="aa-k">Customer ID</span> <span class="aa-v">${customerId ? esc(customerId) : "—"}</span>`);
-    identityPieces.push(`<span class="aa-k">Username</span> <span class="aa-v">${username ? esc(username) : "—"}</span>`);
-
     return `
       <section class="card">
         <div class="card-hd">
           <div class="card-title">Subscriber</div>
-          <div class="card-sub">${pickName(contextCustomer, customer) ? esc(pickName(contextCustomer, customer)) : "Identity"}</div>
+          <div class="card-sub">${displayName ? esc(displayName) : "Identity"}</div>
         </div>
         <div class="card-bd">
-          <div class="identity">${identityPieces.join(" ")}</div>
+          <!-- ID + Name in one row (2 columns) -->
+          <div class="identity-grid">
+            <div class="identity-item">
+              <span class="aa-k">Customer ID</span>
+              <span class="aa-v">${customerId ? esc(customerId) : "—"}</span>
+            </div>
+            <div class="identity-item">
+              <span class="aa-k">Name</span>
+              <span class="aa-v">${displayName ? esc(displayName) : "—"}</span>
+            </div>
+          </div>
+
+          ${username ? `<div style="margin:-4px 0 12px; color:#64748b; font-weight:800; font-size:12px;">Username: ${esc(username)}</div>` : ""}
+
           <div class="cols">
             ${renderAddressCard("Billing", billing, fallbackEmail)}
             ${renderAddressCard("Shipping", shipping, fallbackEmail)}
@@ -202,15 +198,12 @@
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
       const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
-
-      // Per spec: if end_date is empty/null, show Auto-renews
       const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
       const sid = String(s?.id ?? "").trim();
       const notesRowId = sid ? `aaSubNotesRow-${sid}` : "";
 
-      // Notes toggle now in its own right-most column
       const notesToggle = notes.length
         ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
         : "—";
@@ -408,14 +401,12 @@
             <div class="card-sub">Debug</div>
           </div>
           <div class="card-bd">
-            <pre id="rawJson" style="margin:0; white-space:pre-wrap;"></pre>
+            <pre id="rawJson" style="margin:0; white-space:pre-wrap; font-size:13px;"></pre>
           </div>
         </section>
       </div>
     `;
   }
-
-  /* ========= ACTIONS ========= */
 
   function toggleRaw(show) {
     const rawWrap = document.getElementById("rawWrap");
@@ -579,8 +570,6 @@
     }
   }
 
-  /* ========= WIRE UP ========= */
-
   els.btnLogin.addEventListener("click", doLogin);
   els.btnLogout.addEventListener("click", doLogout);
   els.btnSearch.addEventListener("click", doSearch);
@@ -607,11 +596,8 @@
     if (e.key === "Enter") doSearch();
   });
 
-  // Init
   toggleRaw(false);
-  refreshStatus().catch(() => {
-    setBadge("Session: error", false);
-  });
+  refreshStatus().catch(() => setBadge("Session: error", false));
 })();
 
 // 🔴 main.js
