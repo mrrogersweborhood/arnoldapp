@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24c: badge color + notes collapse arrow) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24d: notes column rightmost + remove name duplication in addr blocks) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -290,7 +290,7 @@
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      min-width:860px;
+      min-width:920px;
     }
     .aa-table th, .aa-table td{
       border-bottom:1px solid rgba(15,23,42,0.08);
@@ -347,8 +347,6 @@
     .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
     .aa-note-text { color: var(--oo-text); font-weight: 500; line-height: 1.25; white-space: pre-wrap; }
 
-    .aa-notes-toggle { margin-left: 10px; }
-
     /* Collapsible Notes toggle (arrow indicator) */
     .aa-linkbtn{
       border:none;
@@ -362,6 +360,7 @@
       display:inline-flex;
       align-items:center;
       gap:6px;
+      white-space:nowrap;
     }
     .aa-linkbtn:hover{ opacity:0.85; }
     .aa-linkbtn::after{ content:"▾"; font-size:12px; line-height:1; opacity:0.9; }
@@ -373,7 +372,7 @@
     @media (max-width: 920px){
       .grid{ grid-template-columns: 1fr; }
       .cols{ grid-template-columns: 1fr; }
-      table.aa-table{ min-width: 820px; }
+      table.aa-table{ min-width: 900px; }
     }
   </style>
 </head>
@@ -445,7 +444,7 @@
     <div id="msg" class="msg"></div>
     <div id="results" class="cards"></div>
 
-    <script src="./main.js?v=2026-02-24c"></script>
+    <script src="./main.js?v=2026-02-24e"></script>
   </div>
 </body>
 </html>

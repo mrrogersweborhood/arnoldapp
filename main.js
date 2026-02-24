@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24c: collapsible notes + Auto-renews + aria arrow)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24d: subscription notes in rightmost column + remove first/last from addr blocks)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -26,11 +26,7 @@
     sessionText: document.getElementById("sessionText"),
 
     msg: document.getElementById("msg"),
-    results: document.getElementById("results"),
-
-    btnRaw: document.getElementById("btnRaw"),
-    rawWrap: document.getElementById("rawWrap"),
-    rawJson: document.getElementById("rawJson")
+    results: document.getElementById("results")
   };
 
   /* ========= UTILS ========= */
@@ -124,10 +120,11 @@
     const emailLine = addr.email || fallbackEmail || "";
     const phoneLine = addr.phone || "";
 
+    // Per request: remove duplication of first/last name from billing/shipping blocks.
+    // We keep company (if present) as the "Name" line; otherwise show "—".
+    const top = (addr.company && String(addr.company).trim()) ? String(addr.company).trim() : "—";
+
     const lines = [
-      addr.first_name || "",
-      addr.last_name || "",
-      addr.company || "",
       addr.address_1 || "",
       addr.address_2 || "",
       addr.city || "",
@@ -135,9 +132,6 @@
       addr.postcode || "",
       addr.country || ""
     ].filter(Boolean);
-
-    const nameLine = `${addr.first_name || ""} ${addr.last_name || ""}`.trim();
-    const top = nameLine || addr.company || "—";
 
     return `
       <div class="addr">
@@ -213,6 +207,14 @@
       const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
 
       const notes = Array.isArray(s?.notes) ? s.notes : [];
+      const sid = String(s?.id ?? "").trim();
+      const notesRowId = sid ? `aaSubNotesRow-${sid}` : "";
+
+      // Notes toggle now in its own right-most column
+      const notesToggle = notes.length
+        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
+        : "—";
+
       const notesHtml = notes.length
         ? `
           <div class="aa-notes-wrap">
@@ -228,17 +230,10 @@
         `
         : "";
 
-      const sid = String(s?.id ?? "").trim();
-      const notesRowId = sid ? `aaSubNotesRow-${sid}` : "";
-
-      const notesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
-        : "";
-
       const notesRow = (notes.length && notesRowId)
         ? `
         <tr id="${esc(notesRowId)}" class="aa-sub-notes-row" style="display:none;">
-          <td colspan="4">${notesHtml}</td>
+          <td colspan="5">${notesHtml}</td>
         </tr>
         `
         : "";
@@ -247,11 +242,11 @@
         <tr>
           <td>
             <span class="aa-mono">#${id}</span> <span class="aa-badge">${status}</span>
-            ${notesToggle ? `<span class="aa-notes-toggle">${notesToggle}</span>` : ""}
           </td>
           <td>${total}</td>
           <td>${nextPay}</td>
           <td>${end}</td>
+          <td>${notesToggle}</td>
         </tr>
         ${notesRow}
       `;
@@ -272,6 +267,7 @@
                   <th>Total</th>
                   <th>Next Payment</th>
                   <th>End</th>
+                  <th>Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -351,7 +347,7 @@
           <td>${payment}</td>
           <td class="aa-items">
             ${items}
-            ${orderNotesToggle ? `<span class="aa-notes-toggle">${orderNotesToggle}</span>` : ""}
+            ${orderNotesToggle ? ` <span style="margin-left:10px">${orderNotesToggle}</span>` : ""}
           </td>
         </tr>
         ${
