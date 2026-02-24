@@ -1,28 +1,40 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username 2-col row, orders notes column rightmost + collapsible like subs)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24h)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
+
 (() => {
   "use strict";
 
+  /* ========= CONFIG ========= */
+
   const API_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
 
+  /* ========= DOM ========= */
+
   const els = {
-    wpUser: document.getElementById("wpUser"),
-    wpPass: document.getElementById("wpPass"),
+    msg: document.getElementById("msg"),
+
+    loginUser: document.getElementById("loginUser"),
+    loginPass: document.getElementById("loginPass"),
     btnLogin: document.getElementById("btnLogin"),
     btnLogout: document.getElementById("btnLogout"),
-    loginStatus: document.getElementById("loginStatus"),
+
+    sessionPill: document.getElementById("sessionPill"),
+    sessionText: document.getElementById("sessionText"),
+    sessionState: document.getElementById("sessionState"),
 
     query: document.getElementById("query"),
     btnSearch: document.getElementById("btnSearch"),
-    searchStatus: document.getElementById("searchStatus"),
 
-    sessionDot: document.getElementById("sessionDot"),
-    sessionText: document.getElementById("sessionText"),
+    customerOut: document.getElementById("customerOut"),
+    subsOut: document.getElementById("subsOut"),
+    ordersOut: document.getElementById("ordersOut"),
 
-    msg: document.getElementById("msg"),
-    results: document.getElementById("results")
+    rawWrap: document.getElementById("rawWrap"),
+    rawJson: document.getElementById("rawJson")
   };
+
+  /* ========= HELPERS ========= */
 
   function esc(s) {
     return String(s ?? "")
@@ -33,164 +45,196 @@
       .replaceAll("'", "&#039;");
   }
 
-  function showMsg(text, isErr = false) {
-    els.msg.textContent = text || "";
-    els.msg.style.display = text ? "block" : "none";
-    els.msg.classList.toggle("err", !!isErr);
+  // Convert Woo HTML notes -> plain text (so we don't display <span> etc.)
+  function toPlainText(html) {
+    const s = String(html ?? "");
+    if (!s) return "";
+    try {
+      const doc = new DOMParser().parseFromString(s, "text/html");
+      const txt =
+        (doc && doc.body && typeof doc.body.textContent === "string")
+          ? doc.body.textContent
+          : "";
+      return txt.replace(/\s+/g, " ").trim();
+    } catch (_) {
+      // Fallback: strip tags (best-effort)
+      return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+    }
   }
 
-  function setLoginStatus(text) {
-    els.loginStatus.textContent = text;
-  }
-
-  function setSearchStatus(text) {
-    els.searchStatus.textContent = text;
+  function setMsg(text, kind) {
+    if (!els.msg) return;
+    if (!text) {
+      els.msg.style.display = "none";
+      els.msg.className = "msg";
+      els.msg.textContent = "";
+      return;
+    }
+    els.msg.style.display = "block";
+    els.msg.className = `msg ${kind || ""}`.trim();
+    els.msg.textContent = text;
   }
 
   function setBadge(text, ok) {
-    els.sessionText.textContent = text;
-    els.sessionDot.classList.toggle("ok", !!ok);
-    els.sessionDot.classList.toggle("no", !ok);
+    if (!els.sessionState) return;
+    els.sessionState.textContent = text;
+    if (els.sessionPill) {
+      els.sessionPill.style.opacity = "1";
+      els.sessionPill.style.borderColor = ok
+        ? "rgba(16,185,129,0.45)"
+        : "rgba(255,255,255,0.22)";
+    }
   }
 
-  function fmtDate(d) {
-    const s = String(d || "").trim();
-    if (!s) return "";
-    const dt = new Date(s);
-    if (Number.isNaN(dt.getTime())) return s;
-    return dt.toLocaleDateString(undefined, { year: "numeric", month: "2-digit", day: "2-digit" });
+  function fmtDate(iso) {
+    if (!iso) return "—";
+    const s = String(iso);
+    // Keep date-only
+    return s.split("T")[0].split(" ")[0] || "—";
   }
 
-  function fmtMoney(amount, currency) {
-    const n = Number(amount || 0);
-    const cur = String(currency || "USD").toUpperCase();
+  function fmtMoney(total, currency) {
+    const n = Number(total);
+    const c = String(currency || "USD");
+    if (!isFinite(n)) return "—";
     try {
-      return new Intl.NumberFormat(undefined, { style: "currency", currency: cur }).format(n);
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: c,
+        minimumFractionDigits: 2
+      }).format(n);
     } catch (_) {
       return `$${n.toFixed(2)}`;
     }
   }
 
-  async function api(path, init = {}) {
-    const url = `${API_BASE}${path}`;
-    return fetch(url, { ...init, credentials: "include" });
-  }
-
-  async function apiJson(path, init = {}) {
-    const resp = await api(path, init);
-    const text = await resp.text();
-    let data = null;
-    try { data = text ? JSON.parse(text) : null; } catch (_) { data = { raw: text }; }
-    return { resp, data, url: `${API_BASE}${path}` };
-  }
-
-  function pickEmail(contextCustomer, c, subs, orders) {
-    const a = contextCustomer?.email || c?.email;
-    if (a) return a;
-
-    const sEmail = subs?.[0]?.billing?.email || subs?.[0]?.shipping?.email;
-    if (sEmail) return sEmail;
-
-    const oEmail = orders?.[0]?.billing?.email || orders?.[0]?.shipping?.email;
-    return oEmail || null;
-  }
-
-  function pickName(contextCustomer, c) {
-    const fn = contextCustomer?.first_name ?? c?.first_name ?? "";
-    const ln = contextCustomer?.last_name ?? c?.last_name ?? "";
-    const nm = `${fn} ${ln}`.trim();
-    return nm || null;
-  }
-
-  function renderAddressCard(title, a, fallbackEmail) {
-    const addr = a || {};
-    const emailLine = addr.email || fallbackEmail || "";
-    const phoneLine = addr.phone || "";
-
-    // Name goes above address (as requested)
-    const nameLine = `${addr.first_name || ""} ${addr.last_name || ""}`.trim();
-
-    const lines = [
-      addr.company || "",
-      addr.address_1 || "",
-      addr.address_2 || "",
-      addr.city || "",
-      addr.state || "",
-      addr.postcode || "",
-      addr.country || ""
-    ].filter(Boolean);
-
-    return `
-      <div class="addr">
-        <div class="ttl">${esc(title)}</div>
-        ${nameLine ? `<div class="addr-name">${esc(nameLine)}</div>` : ""}
-        <div class="kv">
-          <div class="aa-k">Address</div>
-          <div class="aa-v">${lines.length ? esc(lines.join(", ")) : "—"}</div>
-
-          <div class="aa-k">Email</div>
-          <div class="aa-v">${emailLine ? esc(emailLine) : "—"}</div>
-
-          <div class="aa-k">Phone</div>
-          <div class="aa-v">${phoneLine ? esc(phoneLine) : "—"}</div>
-        </div>
-      </div>
-    `;
-  }
-
-  function renderSubscriber(contextCustomer, customer, subs, orders) {
-    const c = contextCustomer || customer || null;
-    const customerId = c?.id ?? null;
-    const username = c?.username ?? null;
-
-    const displayName = pickName(contextCustomer, customer);
-
-    const fallbackEmail = pickEmail(contextCustomer, customer, subs, orders);
-    const billing = c?.billing || subs?.[0]?.billing || orders?.[0]?.billing || null;
-    const shipping = c?.shipping || subs?.[0]?.shipping || orders?.[0]?.shipping || null;
-
+  function okobserverCard(title, subtitle, bodyHtml) {
     return `
       <section class="card">
         <div class="card-hd">
-          <div class="card-title">Subscriber</div>
-          <div class="card-sub">${displayName ? esc(displayName) : "Identity"}</div>
-        </div>
-        <div class="card-bd">
-          <!-- Customer ID + Username in one row (2 columns) -->
-          <div class="identity-grid">
-            <div class="identity-item">
-              <span class="aa-k">Customer ID</span>
-              <span class="aa-v">${customerId ? esc(customerId) : "—"}</span>
-            </div>
-            <div class="identity-item">
-              <span class="aa-k">Username</span>
-              <span class="aa-v">${username ? esc(username) : "—"}</span>
-            </div>
-          </div>
-
-          <div class="cols">
-            ${renderAddressCard("Billing", billing, fallbackEmail)}
-            ${renderAddressCard("Shipping", shipping, fallbackEmail)}
+          <div>
+            <div class="card-title">${esc(title)}</div>
+            <div class="card-sub">${subtitle ? esc(subtitle) : ""}</div>
           </div>
         </div>
+        <div class="card-bd">${bodyHtml || ""}</div>
       </section>
     `;
   }
 
-  function renderNotesBlock(notes) {
+  // Render collapsible notes (Subscription Notes / Order Notes) as a right-justified details panel.
+  // Notes are shown only when user expands the chevron.
+  function renderNotesDetails(notes, labelText) {
     const arr = Array.isArray(notes) ? notes : [];
     if (!arr.length) return "";
+
+    const label = labelText || "Notes";
     return `
-      <div class="aa-notes-wrap">
-        <div class="aa-notes-col">
-          ${arr.slice(0, 50).map(n => `
-            <div class="aa-note-card">
-              <div class="aa-note-meta">${esc(fmtDate(n?.date_created || ""))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
-              <div class="aa-note-text">${esc(n?.note || "")}</div>
-            </div>
-          `).join("")}
+      <details class="aa-notes">
+        <summary class="aa-notes-summary">
+          <span class="aa-notes-label">${esc(label)}</span>
+          <span class="aa-notes-arrow" aria-hidden="true">▾</span>
+        </summary>
+        <div class="aa-notes-wrap">
+          <div class="aa-notes-col">
+            ${arr.slice(0, 50).map(n => `
+              <div class="aa-note-card">
+                <div class="aa-note-meta">${esc(fmtDate(n?.date_created))}${n?.author ? ` • ${esc(n.author)}` : ""}</div>
+                <div class="aa-note-text">${esc(toPlainText(n?.note || ""))}</div>
+              </div>
+            `).join("")}
+          </div>
         </div>
-      </div>
+      </details>
+    `;
+  }
+
+  /* ========= RENDERERS ========= */
+
+  function renderSubscriber(customer) {
+    const c = customer || null;
+    if (!c) {
+      return okobserverCard("Subscriber", "None", "No subscriber found.");
+    }
+
+    const id = c?.id ?? "—";
+    const username = c?.username ? String(c.username) : "—";
+    const fullName =
+      [c?.first_name, c?.last_name].filter(Boolean).map(String).join(" ").trim() ||
+      "—";
+
+    const billing = c?.billing || null;
+    const shipping = c?.shipping || null;
+
+    const renderAddressCard = (label, a) => {
+      const first = String(a?.first_name || "").trim();
+      const last = String(a?.last_name || "").trim();
+      const nameLine = [first, last].filter(Boolean).join(" ").trim();
+
+      const addrParts = [
+        a?.company,
+        a?.address_1,
+        a?.address_2,
+        [a?.city, a?.state, a?.postcode].filter(Boolean).join(", "),
+        a?.country
+      ]
+        .filter(Boolean)
+        .map(String);
+
+      const addr = addrParts.join(", ") || "—";
+
+      // Keep email/phone inside billing/shipping blocks (per your instruction)
+      const email = a?.email ? String(a.email) : "—";
+      const phone = a?.phone ? String(a.phone) : "—";
+
+      return `
+        <div class="aa-addr">
+          <div class="aa-addr-title">${esc(label)}</div>
+          ${nameLine ? `<div class="aa-addr-name">${esc(nameLine)}</div>` : ""}
+          <div class="aa-addr-grid">
+            <div class="aa-addr-row">
+              <div class="aa-lbl">Address</div>
+              <div class="aa-val">${esc(addr)}</div>
+            </div>
+            <div class="aa-addr-row">
+              <div class="aa-lbl">Email</div>
+              <div class="aa-val">${esc(email)}</div>
+            </div>
+            <div class="aa-addr-row">
+              <div class="aa-lbl">Phone</div>
+              <div class="aa-val">${esc(phone)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    };
+
+    // Do NOT repeat customer email in subscriber card (spec)
+    return `
+      <section class="card">
+        <div class="card-hd">
+          <div class="card-title">Subscriber</div>
+          <div class="card-sub">${esc(fullName)}</div>
+        </div>
+        <div class="card-bd">
+
+          <div class="identity-grid">
+            <div class="identity-item">
+              <label>Customer ID</label>
+              <div class="val-mono">${esc(id)}</div>
+            </div>
+            <div class="identity-item">
+              <label>Username</label>
+              <div class="val-mono">${esc(username)}</div>
+            </div>
+          </div>
+
+          <div class="aa-split">
+            ${renderAddressCard("Billing", billing)}
+            ${renderAddressCard("Shipping", shipping)}
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -209,39 +253,24 @@
     }
 
     const rowHtml = (s) => {
-      const id = esc(s?.id ?? "—");
+      const id = s?.id ?? "—";
       const status = esc(s?.status ?? "—");
       const total = fmtMoney(s?.total, s?.currency);
       const nextPay = s?.next_payment_date ? esc(fmtDate(s.next_payment_date)) : "—";
+
+      // If end_date is empty, show Auto-renews (spec)
       const end = s?.end_date ? esc(fmtDate(s.end_date)) : "Auto-renews";
 
-      const notes = Array.isArray(s?.notes) ? s.notes : [];
-      const sid = String(s?.id ?? "").trim();
-      const notesRowId = sid ? `aaSubNotesRow-${sid}` : "";
-
-      const notesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
-        : "—";
-
-      const notesRow = (notes.length && notesRowId)
-        ? `
-        <tr id="${esc(notesRowId)}" class="aa-sub-notes-row" style="display:none;">
-          <td colspan="5">${renderNotesBlock(notes)}</td>
-        </tr>
-        `
-        : "";
+      const notesHtml = renderNotesDetails(s?.notes, "Notes");
 
       return `
         <tr>
-          <td>
-            <span class="aa-mono">#${id}</span> <span class="aa-badge">${status}</span>
-          </td>
+          <td><span class="aa-mono">#${id}</span> <span class="aa-badge">${status}</span></td>
           <td>${total}</td>
           <td>${nextPay}</td>
           <td>${end}</td>
-          <td>${notesToggle}</td>
+          <td class="aa-notes-cell">${notesHtml || ""}</td>
         </tr>
-        ${notesRow}
       `;
     };
 
@@ -260,7 +289,7 @@
                   <th>Total</th>
                   <th>Next Payment</th>
                   <th>End</th>
-                  <th>Notes</th>
+                  <th class="aa-notes-th">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,49 +322,32 @@
       const parts = items.slice(0, 6).map(li => {
         const q = Number(li?.quantity || 0) || 0;
         const nm = String(li?.name || "").trim();
-        if (!nm) return "";
-        return `${q} × ${nm}`;
+        if (!nm) return null;
+        return `${q ? `${q} × ` : ""}${nm}`;
       }).filter(Boolean);
-      const more = items.length > 6 ? ` (+${items.length - 6} more)` : "";
-      return esc(parts.join(" • ") + more);
+      return parts.length ? esc(parts.join(" • ")) : "—";
     };
 
     const rowHtml = (o) => {
-      const id = esc(o?.id ?? "—");
+      const id = o?.id ?? "—";
+      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
       const status = esc(o?.status ?? "—");
       const total = fmtMoney(o?.total, o?.currency);
-      const date = o?.date_created ? esc(fmtDate(o.date_created)) : "—";
-      const payment = esc(o?.payment_method_title || o?.payment_method || "—");
+      const pay = esc(o?.payment_method_title || o?.payment_method || "—");
       const items = itemsSummary(o);
 
-      // Order notes: same behavior as subscription notes (right-most column + collapsible row)
-      const notes = Array.isArray(o?.notes) ? o.notes : [];
-      const oid = String(o?.id ?? "").trim();
-      const notesRowId = oid ? `aaOrderNotesRow-${oid}` : "";
-
-      const notesToggle = notes.length
-        ? `<button type="button" class="aa-linkbtn" aria-expanded="false" data-aa-toggle="row" data-aa-target="${esc(notesRowId)}">Notes (${notes.length})</button>`
-        : "—";
-
-      const notesRow = (notes.length && notesRowId)
-        ? `
-        <tr id="${esc(notesRowId)}" class="aa-sub-notes-row" style="display:none;">
-          <td colspan="7">${renderNotesBlock(notes)}</td>
-        </tr>
-        `
-        : "";
+      const notesHtml = renderNotesDetails(o?.notes, "Notes");
 
       return `
         <tr>
-          <td class="aa-mono">#${id}</td>
+          <td><span class="aa-mono">#${id}</span></td>
           <td>${date}</td>
           <td><span class="aa-badge">${status}</span></td>
           <td>${total}</td>
-          <td>${payment}</td>
-          <td class="aa-items">${items}</td>
-          <td>${notesToggle}</td>
+          <td>${pay}</td>
+          <td>${items}</td>
+          <td class="aa-notes-cell">${notesHtml || ""}</td>
         </tr>
-        ${notesRow}
       `;
     };
 
@@ -356,7 +368,7 @@
                   <th>Total</th>
                   <th>Payment</th>
                   <th>Items</th>
-                  <th>Notes</th>
+                  <th class="aa-notes-th">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -369,221 +381,176 @@
     `;
   }
 
-  function renderAll(context) {
-    const c = context?.customer || null;
-    const subs = context?.subscriptions || [];
-    const orders = context?.orders || [];
+  /* ========= ACTIONS ========= */
 
-    return `
-      ${renderSubscriber(c, c, subs, orders)}
-      ${renderSubscriptions(subs)}
-      ${renderOrders(orders)}
-      <div class="aa-raw-toggle-row">
-        <button class="btn secondary" id="btnRaw">Toggle Raw JSON</button>
-      </div>
-      <div id="rawWrap" style="display:none;">
-        <section class="card" style="margin-top:12px;">
-          <div class="card-hd">
-            <div class="card-title">Raw JSON</div>
-            <div class="card-sub">Debug</div>
-          </div>
-          <div class="card-bd">
-            <pre id="rawJson" style="margin:0; white-space:pre-wrap; font-size:13px;"></pre>
-          </div>
-        </section>
-      </div>
-    `;
+  async function api(path, init) {
+    const url = `${API_BASE}${path}`;
+    const opts = {
+      ...init,
+      credentials: "include",
+      headers: {
+        ...(init && init.headers ? init.headers : {})
+      }
+    };
+    const resp = await fetch(url, opts);
+    return resp;
   }
 
-  function toggleRaw(show) {
-    const rawWrap = document.getElementById("rawWrap");
-    if (!rawWrap) return;
-    rawWrap.style.display = show ? "" : "none";
+  function clearOutputs() {
+    if (els.customerOut) els.customerOut.innerHTML = "";
+    if (els.subsOut) els.subsOut.innerHTML = "";
+    if (els.ordersOut) els.ordersOut.innerHTML = "";
+    toggleRaw(false);
+  }
+
+  function toggleRaw(show, obj) {
+    if (!els.rawWrap || !els.rawJson) return;
+    if (!show) {
+      els.rawWrap.style.display = "none";
+      els.rawJson.textContent = "";
+      return;
+    }
+    els.rawWrap.style.display = "block";
+    els.rawJson.textContent = JSON.stringify(obj || {}, null, 2);
   }
 
   async function refreshStatus() {
-    try {
-      const { resp, data, url } = await apiJson("/admin/status", { method: "GET" });
-      console.log("[status]", url, resp.status, data);
+    const r = await api("/admin/status", { method: "GET" });
+    const data = await r.json().catch(() => null);
 
-      const loggedIn = !!data?.loggedIn;
-      if (loggedIn) {
-        setBadge("Session: logged in", true);
-        setLoginStatus("Logged in.");
-        document.getElementById("btnLogout").disabled = false;
-      } else {
-        setBadge("Session: logged out", false);
-        setLoginStatus("Not logged in.");
-        document.getElementById("btnLogout").disabled = true;
-      }
-      return loggedIn;
-    } catch (err) {
-      console.log("[status] error", err?.message || err);
-      setBadge("Session: error", false);
-      setLoginStatus("Status check failed.");
-      return false;
+    const loggedIn = !!data?.loggedIn;
+    if (loggedIn) {
+      const name = data?.user?.name || data?.user?.slug || "admin";
+      setBadge(`logged in as ${name}`, true);
+      setMsg("", "");
+    } else {
+      setBadge("logged out", false);
     }
+
+    // Enable/disable buttons based on session state
+    if (els.btnLogin) els.btnLogin.disabled = loggedIn;
+    if (els.btnLogout) els.btnLogout.disabled = !loggedIn;
+    if (els.btnSearch) els.btnSearch.disabled = !loggedIn;
+
+    return loggedIn;
   }
 
   async function doLogin() {
-    showMsg("", false);
-    setLoginStatus("Logging in…");
+    const u = String(els.loginUser?.value || "").trim();
+    const p = String(els.loginPass?.value || "").trim();
 
-    const username = String(els.wpUser.value || "").trim();
-    const password = String(els.wpPass.value || "").trim();
-
-    if (!username || !password) {
-      showMsg("Username and password required.", true);
-      setLoginStatus("Missing credentials.");
+    if (!u || !p) {
+      setMsg("Username and password required.", "err");
       return;
     }
 
-    els.btnLogin.disabled = true;
+    setMsg("Logging in…", "");
 
-    try {
-      const { resp, data, url } = await apiJson("/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password })
-      });
+    const r = await api("/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u, password: p })
+    });
 
-      console.log("[login]", url, resp.status, data);
+    const data = await r.json().catch(() => null);
 
-      if (!resp.ok) {
-        showMsg(`Login failed (${resp.status}). ${data?.message || data?.error || "See console."}`, true);
-        setLoginStatus("Login failed.");
-        return;
-      }
-
-      showMsg("Login successful.", false);
-      setLoginStatus("Logged in.");
-      await refreshStatus();
-    } catch (err) {
-      console.log("[login] error", err?.message || err);
-      showMsg("Login failed. See console for details.", true);
-      setLoginStatus("Login failed.");
-    } finally {
-      els.btnLogin.disabled = false;
+    if (!r.ok || !data?.success) {
+      console.log("[Login] status", r.status, data);
+      setMsg(data?.message || `Login failed (${r.status}).`, "err");
+      await refreshStatus().catch(() => {});
+      return;
     }
+
+    setMsg("Logged in.", "ok");
+    await refreshStatus().catch(() => {});
   }
 
   async function doLogout() {
-    showMsg("", false);
-    setLoginStatus("Logging out…");
+    setMsg("Logging out…", "");
+    const r = await api("/admin/logout", { method: "POST" });
+    const data = await r.json().catch(() => null);
 
-    els.btnLogout.disabled = true;
-
-    try {
-      const { resp, data, url } = await apiJson("/admin/logout", { method: "POST" });
-      console.log("[logout]", url, resp.status, data);
-
-      if (!resp.ok) {
-        showMsg(`Logout failed (${resp.status}). See console.`, true);
-        setLoginStatus("Logout failed.");
-        await refreshStatus();
-        return;
-      }
-
-      showMsg("Logged out.", false);
-      setLoginStatus("Not logged in.");
-      await refreshStatus();
-      els.results.innerHTML = "";
-    } catch (err) {
-      console.log("[logout] error", err?.message || err);
-      showMsg("Logout failed. See console.", true);
-      setLoginStatus("Logout failed.");
-      await refreshStatus();
+    if (!r.ok || !data?.success) {
+      console.log("[Logout] status", r.status, data);
+      setMsg(`Logout failed (${r.status}).`, "err");
+    } else {
+      setMsg("Logged out.", "ok");
     }
+
+    clearOutputs();
+    await refreshStatus().catch(() => {});
   }
 
   async function doSearch() {
-    showMsg("", false);
-    setSearchStatus("Searching…");
-
-    const q = String(els.query.value || "").trim();
+    const q = String(els.query?.value || "").trim();
     if (!q) {
-      showMsg("Enter a query.", true);
-      setSearchStatus("Missing query.");
+      setMsg("Enter a search query (email, order #, etc.).", "err");
       return;
     }
 
-    els.btnSearch.disabled = true;
+    clearOutputs();
+    setMsg("Searching…", "");
 
-    try {
-      const { resp, data, url } = await apiJson("/admin/nl-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q })
-      });
+    const r = await api("/admin/nl-search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: q })
+    });
 
-      console.log("[search]", url, resp.status, data);
+    const data = await r.json().catch(() => null);
 
-      if (!resp.ok) {
-        showMsg(`Search failed (${resp.status}). ${data?.error || data?.message || "See console."}`, true);
-        setSearchStatus("Search failed.");
-        return;
-      }
-
-      const ctx = data?.context || null;
-      if (!ctx) {
-        showMsg("Search succeeded but returned no context payload. See console.", true);
-        setSearchStatus("No context.");
-        return;
-      }
-
-      els.results.innerHTML = renderAll(ctx);
-
-      const btnRaw = document.getElementById("btnRaw");
-      const rawJson = document.getElementById("rawJson");
-      const rawWrap = document.getElementById("rawWrap");
-      if (rawJson) rawJson.textContent = JSON.stringify(data, null, 2);
-      if (rawWrap) rawWrap.style.display = "none";
-      if (btnRaw) {
-        btnRaw.addEventListener("click", () => {
-          const show = rawWrap && rawWrap.style.display === "none";
-          toggleRaw(show);
-        });
-      }
-
-      showMsg("Search complete.", false);
-      setSearchStatus("Done.");
-    } catch (err) {
-      console.log("[search] error", err?.message || err);
-      showMsg("Search failed. See console for details.", true);
-      setSearchStatus("Search failed.");
-    } finally {
-      els.btnSearch.disabled = false;
+    if (!r.ok || !data?.ok) {
+      console.log("[Search] status", r.status, data);
+      const msg = data?.error || data?.message || `Search failed (${r.status}).`;
+      setMsg(msg, "err");
+      toggleRaw(true, data || { status: r.status });
+      return;
     }
+
+    const ctx = data?.context || {};
+    const customer = ctx?.customer || null;
+    const subs = Array.isArray(ctx?.subscriptions) ? ctx.subscriptions : [];
+    const orders = Array.isArray(ctx?.orders) ? ctx.orders : [];
+
+    if (els.customerOut) els.customerOut.innerHTML = renderSubscriber(customer);
+    if (els.subsOut) els.subsOut.innerHTML = renderSubscriptions(subs);
+    if (els.ordersOut) els.ordersOut.innerHTML = renderOrders(orders);
+
+    setMsg(`Found ${subs.length} subscription(s) and ${orders.length} order(s).`, "ok");
+    toggleRaw(true, data);
   }
 
-  els.btnLogin.addEventListener("click", doLogin);
-  els.btnLogout.addEventListener("click", doLogout);
-  els.btnSearch.addEventListener("click", doSearch);
+  /* ========= WIRE UP ========= */
 
-  // Collapsible notes toggles (delegated)
-  els.results.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-aa-toggle='row']");
-    if (!btn) return;
+  els.btnLogin?.addEventListener("click", () => doLogin().catch(err => {
+    console.log("[Login] error", err);
+    setMsg("Login failed (see console).", "err");
+  }));
 
-    const targetId = btn.getAttribute("data-aa-target") || "";
-    if (!targetId) return;
+  els.btnLogout?.addEventListener("click", () => doLogout().catch(err => {
+    console.log("[Logout] error", err);
+    setMsg("Logout failed (see console).", "err");
+  }));
 
-    const row = document.getElementById(targetId);
-    if (!row) return;
+  els.btnSearch?.addEventListener("click", () => doSearch().catch(err => {
+    console.log("[Search] error", err);
+    setMsg("Search failed (see console).", "err");
+  }));
 
-    const showing = row.style.display !== "none";
-    const willShow = !showing;
-
-    row.style.display = willShow ? "" : "none";
-    btn.setAttribute("aria-expanded", willShow ? "true" : "false");
+  // Enter key behavior
+  els.loginPass?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") els.btnLogin?.click();
+  });
+  els.query?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") els.btnSearch?.click();
   });
 
-  els.query.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") doSearch();
-  });
+  /* ========= INIT ========= */
 
   toggleRaw(false);
-  refreshStatus().catch(() => setBadge("Session: error", false));
+  refreshStatus().catch(() => {
+    setBadge("Session: error", false);
+  });
 })();
 
 // 🔴 main.js

@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24h) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -25,7 +25,7 @@
       font-family:var(--font);
       color:var(--oo-text);
       background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
-      font-size:15px;
+      font-size:16px;
     }
     header{
       position:sticky;
@@ -74,163 +74,106 @@
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .session-pill{
+    .badge{
       display:inline-flex;
       align-items:center;
       gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      background:rgba(255,255,255,0.18);
-      border:1px solid rgba(255,255,255,0.22);
       font-weight:800;
       font-size:12px;
+      background:rgba(255,255,255,0.16);
+      border:1px solid rgba(255,255,255,0.22);
+      padding:8px 12px;
+      border-radius:999px;
       white-space:nowrap;
     }
-    .dot{
-      width:10px;
-      height:10px;
-      border-radius:999px;
-      background:rgba(255,255,255,0.65);
-    }
-    .dot.ok{background:#34d399}
-    .dot.no{background:#f87171}
-
-    .wrap{
+    .badge b{font-weight:900}
+    main{
       max-width:1200px;
       margin:0 auto;
       padding:18px;
     }
-
+    .stack{display:flex; flex-direction:column; gap:14px;}
     .row{
-      background:var(--oo-card);
-      border:1px solid var(--oo-border);
-      border-radius:var(--radius);
-      box-shadow:var(--oo-shadow);
-      padding:var(--pad);
-      margin-top:14px;
-    }
-    .row-title{
-      font-weight:900;
-      margin:0 0 10px;
       display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .row-title small{
-      color:var(--oo-muted);
-      font-weight:700;
-      font-size:12px;
-    }
-
-    .grid{
-      display:grid;
+      flex-wrap:wrap;
       gap:10px;
-      grid-template-columns: 1fr 1fr auto auto;
-      align-items:end;
+      align-items:flex-end;
     }
+    .row .grow{flex:1 1 300px; min-width:260px;}
     label{
       display:block;
       font-size:12px;
       font-weight:900;
+      letter-spacing:0.02em;
       color:var(--oo-blue);
       margin:0 0 6px;
-      text-transform:capitalize;
-      letter-spacing:0.02em;
     }
     input{
       width:100%;
+      border-radius:14px;
       border:1px solid var(--oo-border);
-      border-radius:12px;
-      padding:10px 12px;
-      outline:none;
+      padding:12px 12px;
       font-size:15px;
       background:#fff;
+      box-shadow:0 6px 18px rgba(2,6,23,0.06);
+      outline:none;
     }
-    input:focus{
-      border-color:rgba(30,144,255,0.65);
-      box-shadow:0 0 0 4px rgba(30,144,255,0.18);
-    }
-
-    .btn{
-      appearance:none;
-      border:none;
-      border-radius:12px;
-      padding:10px 14px;
+    input:focus{border-color:rgba(30,144,255,0.55); box-shadow:0 0 0 4px rgba(30,144,255,0.12), 0 8px 22px rgba(2,6,23,0.08);}
+    button{
+      border:0;
+      border-radius:14px;
+      padding:12px 14px;
+      font-size:14px;
       font-weight:900;
-      cursor:pointer;
-      background:var(--oo-blue);
-      color:#fff;
       letter-spacing:0.01em;
-      box-shadow:0 8px 18px rgba(30,144,255,0.22);
-      transition:transform 120ms ease, opacity 120ms ease;
-      height:40px;
+      cursor:pointer;
+      box-shadow:0 10px 24px rgba(2,6,23,0.12);
+      transition:transform .05s ease;
     }
-    .btn:hover{ transform:translateY(-1px); }
-    .btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
-    .btn.secondary{
-      background:#0f172a;
-      box-shadow:0 8px 18px rgba(2,6,23,0.16);
+    button:active{transform:translateY(1px)}
+    .btn-blue{background:var(--oo-blue); color:#fff;}
+    .btn-ghost{
+      background:#fff;
+      color:var(--oo-blue);
+      border:1px solid rgba(30,144,255,0.35);
     }
-
-    .statusline{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-top:10px;
-      font-size:12px;
-      color:var(--oo-muted);
-      font-weight:700;
-    }
-
     .msg{
-      margin-top:14px;
       padding:12px 14px;
       border-radius:14px;
-      font-weight:800;
+      background:#fff;
+      border:1px solid var(--oo-border);
+      box-shadow:0 8px 20px rgba(2,6,23,0.06);
+      font-weight:700;
       color:var(--oo-text);
-      background:rgba(30,144,255,0.10);
-      border:1px solid rgba(30,144,255,0.22);
-      display:none;
     }
-    .msg.err{
-      background:rgba(248,113,113,0.10);
-      border-color:rgba(248,113,113,0.25);
-    }
-
-    .cards{
-      margin-top:14px;
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
+    .msg.ok{border-color:rgba(16,185,129,0.35)}
+    .msg.err{border-color:rgba(239,68,68,0.35); color:#7f1d1d}
     .card{
       background:var(--oo-card);
-      border:1px solid var(--oo-border);
       border-radius:var(--radius);
+      border:1px solid var(--oo-border);
       box-shadow:var(--oo-shadow);
       overflow:hidden;
     }
     .card-hd{
-      padding:14px;
       display:flex;
-      align-items:flex-end;
+      align-items:flex-start;
       justify-content:space-between;
-      gap:10px;
-      border-bottom:1px solid rgba(15,23,42,0.06);
-      background:linear-gradient(180deg, rgba(30,144,255,0.06), rgba(255,255,255,1) 72px);
+      gap:12px;
+      padding:14px 14px 0 14px;
     }
     .card-title{
       font-weight:1000;
-      font-size:15px;
-      letter-spacing:0.02em;
+      letter-spacing:0.01em;
+      font-size:16px;
+      margin:0;
+      line-height:1.1;
     }
     .card-sub{
-      font-size:12px;
       color:var(--oo-muted);
       font-weight:800;
-      text-align:right;
+      font-size:12px;
+      margin-top:2px;
     }
     .card-bd{ padding:14px; }
 
@@ -244,77 +187,90 @@
     }
     .identity-item{
       display:flex;
-      gap:10px;
-      align-items:baseline;
+      flex-direction:column;
+      gap:4px;
+      min-width:0;
+    }
+    .val-mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       font-weight:900;
-      flex-wrap:wrap;
-    }
-
-    .cols{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:12px;
-    }
-    .addr{
-      border:1px solid rgba(15,23,42,0.08);
-      border-radius:14px;
-      padding:12px;
-      background:rgba(244,246,251,0.55);
-    }
-    .addr .ttl{
-      font-weight:1000;
-      margin:0 0 8px;
       font-size:13px;
-    }
-    .addr-name{
-      font-weight:900;
-      margin:0 0 10px;
-      font-size:14px;
-      color:var(--oo-text);
-    }
-    .kv{
-      display:grid;
-      grid-template-columns: 120px 1fr;
-      gap:6px 10px;
-      align-items:start;
-    }
-    .aa-k{
-      color:var(--oo-blue);
-      font-weight:900;
-      font-size:12px;
-      text-transform:capitalize;
-      letter-spacing:0.02em;
-      white-space:nowrap;
-    }
-    .aa-v{
-      font-weight:650;
-      color:var(--oo-text);
-      font-size:14px;
-      line-height:1.25;
       word-break:break-word;
     }
 
-    .aa-table-wrap{ overflow:auto; }
-    table.aa-table{
-      width:100%;
-      border-collapse:separate;
-      border-spacing:0;
-      min-width:980px;
+    /* Subscriber split */
+    .aa-split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
     }
-    .aa-table th, .aa-table td{
-      border-bottom:1px solid rgba(15,23,42,0.08);
+    @media (max-width: 860px){
+      .aa-split{grid-template-columns: 1fr;}
+    }
+    .aa-addr{
+      border:1px solid rgba(15,23,42,0.10);
+      border-radius:14px;
+      padding:12px;
+      background:linear-gradient(180deg, #ffffff, #fbfdff);
+      box-shadow:0 8px 18px rgba(2,6,23,0.05);
+    }
+    .aa-addr-title{font-weight:1000; margin-bottom:6px;}
+    .aa-addr-name{font-weight:900; color:var(--oo-text); margin-bottom:8px;}
+    .aa-addr-row{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:6px 0;
+      border-top:1px solid rgba(15,23,42,0.08);
+    }
+    .aa-addr-row:first-child{border-top:0}
+    .aa-lbl{
+      flex:0 0 92px;
+      font-weight:1000;
+      color:var(--oo-blue);
+      font-size:12px;
+      letter-spacing:0.02em;
+      text-transform:capitalize;
+    }
+    .aa-val{
+      flex:1 1 auto;
+      font-weight:750;
+      color:var(--oo-text);
+      line-height:1.25;
+      min-width:0;
+      word-break:break-word;
+    }
+
+    /* Tables */
+    .aa-table-wrap{
+      width:100%;
+      overflow:auto;
+      border-radius:14px;
+      border:1px solid rgba(15,23,42,0.10);
+      box-shadow:0 8px 18px rgba(2,6,23,0.05);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      min-width:860px;
+    }
+    th, td{
       padding:10px 10px;
+      border-top:1px solid rgba(15,23,42,0.08);
       text-align:left;
       vertical-align:top;
-      font-size:14px;
+      font-weight:750;
+      white-space:nowrap;
     }
-    .aa-table th{
+    th{
       font-size:12px;
-      text-transform:uppercase;
-      letter-spacing:0.08em;
-      color:var(--oo-muted);
-      font-weight:900;
-      background:rgba(244,246,251,0.55);
+      font-weight:1000;
+      letter-spacing:0.02em;
+      color:var(--oo-blue);
+      background:rgba(30,144,255,0.06);
+      border-top:0;
+      box-shadow:inset 0 -1px 0 rgba(15,23,42,0.10);
       position:sticky;
       top:0;
       z-index:1;
@@ -333,8 +289,9 @@
       text-transform: lowercase;
       white-space:nowrap;
     }
+
     .aa-mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
       font-weight:900;
     }
     .aa-items{
@@ -343,6 +300,32 @@
     }
 
     /* Notes (right-justified, narrow, not bold) */
+    /* Collapsible notes control */
+    .aa-notes { width: 100%; }
+    .aa-notes-summary{
+      list-style:none;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      cursor:pointer;
+      user-select:none;
+      color: var(--oo-blue);
+      font-weight: 900;
+      padding: 4px 0;
+    }
+    .aa-notes-summary::-webkit-details-marker{ display:none; }
+    .aa-notes-label{ letter-spacing:0.01em; }
+    .aa-notes-arrow{
+      font-size: 20px;
+      line-height: 1;
+      transform: translateY(-1px);
+    }
+    .aa-notes[open] .aa-notes-arrow{ transform: rotate(180deg) translateY(1px); }
+
+    /* Notes column sizing + alignment */
+    .aa-notes-th{ width: 1%; white-space: nowrap; text-align: right; }
+    .aa-notes-cell{ text-align:right; vertical-align: top; }
     .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
     .aa-notes-col { width: min(520px, 100%); display:flex; flex-direction:column; gap: 10px; }
     .aa-note-card {
@@ -353,108 +336,75 @@
       box-shadow: 0 6px 16px rgba(2,6,23,0.06);
     }
     .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
-    .aa-note-text { color: var(--oo-text); font-weight: 550; line-height: 1.3; white-space: pre-wrap; font-size:14px; }
-
-    /* Collapsible Notes toggle (bigger arrow) */
-    .aa-linkbtn{
-      border:none;
-      background:transparent;
-      color:var(--oo-blue);
-      font-weight:900;
-      font-size:13px;
-      padding:0;
-      cursor:pointer;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      white-space:nowrap;
-    }
-    .aa-linkbtn:hover{ opacity:0.85; }
-    .aa-linkbtn::after{ content:"▾"; font-size:16px; line-height:1; opacity:0.95; }
-    .aa-linkbtn[aria-expanded="true"]::after{ content:"▴"; }
-
-    .aa-sub-notes-row td { border-bottom: none; padding-top: 0; }
-    .aa-raw-toggle-row { display:flex; justify-content:flex-end; margin: 12px 0 0; }
-
-    @media (max-width: 920px){
-      .grid{ grid-template-columns: 1fr; }
-      .cols{ grid-template-columns: 1fr; }
-      .identity-grid{ grid-template-columns: 1fr; }
-      table.aa-table{ min-width: 980px; }
-    }
+    .aa-note-text { color: var(--oo-text); font-weight: 600; line-height: 1.35; font-size: 14px;
   </style>
 </head>
 <body>
   <header>
     <div class="header-inner">
       <div class="brand">
-        <img src="./logo.png" alt="Arnold Admin" />
+        <img src="./logo.png" alt="Arnold Admin logo" />
         <div class="brand-text">
           <div class="brand-title">Arnold Admin</div>
-          <div class="brand-sub">To Comfort The Afflicted And Afflict The Comfortable</div>
+          <div class="brand-sub">OkObserver admin lookups (cookie session)</div>
         </div>
       </div>
-
-      <div class="session-pill" id="sessionPill">
-        <span class="dot no" id="sessionDot"></span>
-        <span id="sessionText">Session: unknown</span>
-      </div>
+      <div class="badge" id="sessionPill"><b id="sessionText">Session:</b> <span id="sessionState">unknown</span></div>
     </div>
   </header>
 
-  <div class="wrap">
+  <main>
+    <div class="stack">
 
-    <div class="row">
-      <div class="row-title">
-        <span>Login</span>
-        <small>WordPress admin users only</small>
-      </div>
-
-      <div class="grid">
-        <div>
-          <label for="wpUser">Username</label>
-          <input id="wpUser" autocomplete="username" placeholder="WordPress username" />
+      <div class="row">
+        <div class="grow">
+          <label for="loginUser">Username</label>
+          <input id="loginUser" autocomplete="username" />
+        </div>
+        <div class="grow">
+          <label for="loginPass">Password</label>
+          <input id="loginPass" type="password" autocomplete="current-password" />
         </div>
         <div>
-          <label for="wpPass">Password</label>
-          <input id="wpPass" type="password" autocomplete="current-password" placeholder="WordPress password" />
+          <button class="btn-blue" id="btnLogin">Login</button>
         </div>
-        <button class="btn" id="btnLogin">Login</button>
-        <button class="btn secondary" id="btnLogout" disabled>Logout</button>
+        <div>
+          <button class="btn-ghost" id="btnLogout">Logout</button>
+        </div>
       </div>
 
-      <div class="statusline">
-        <div id="loginStatus">Not logged in.</div>
-        <div style="opacity:0.85">Cookie session persists on refresh</div>
+      <div class="row">
+        <div class="grow">
+          <label for="query">Search</label>
+          <input id="query" placeholder="Find subscription for email, find order #12345, etc." />
+        </div>
+        <div>
+          <button class="btn-blue" id="btnSearch">Search</button>
+        </div>
       </div>
+
+      <div id="msg" class="msg" style="display:none;"></div>
+
+      <div id="customerOut"></div>
+      <div id="subsOut"></div>
+      <div id="ordersOut"></div>
+
+      <details id="rawWrap" class="card" style="display:none;">
+        <summary class="card-hd" style="cursor:pointer; padding-bottom:14px;">
+          <div>
+            <div class="card-title">Raw JSON</div>
+            <div class="card-sub">Debug payload from Worker</div>
+          </div>
+        </summary>
+        <div class="card-bd">
+          <pre id="rawJson" style="white-space:pre-wrap; margin:0;"></pre>
+        </div>
+      </details>
+
     </div>
+  </main>
 
-    <div class="row">
-      <div class="row-title">
-        <span>Search</span>
-        <small>Email, order #, subscription</small>
-      </div>
-
-      <div class="grid" style="grid-template-columns: 1fr auto;">
-        <div>
-          <label for="query">Query</label>
-          <input id="query" placeholder="e.g. subscription for joe@abc.com, order #12997, orders for bob@x.com" />
-        </div>
-        <button class="btn" id="btnSearch">Search</button>
-      </div>
-
-      <div class="statusline">
-        <div id="searchStatus">Ready.</div>
-        <div style="opacity:0.85">Shows Subscriber • Subscriptions • Orders</div>
-      </div>
-    </div>
-
-    <div id="msg" class="msg"></div>
-    <div id="results" class="cards"></div>
-
-    <script src="./main.js?v=2026-02-24g"></script>
-  </div>
+  <script src="./main.js?v=2026-02-24h"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
