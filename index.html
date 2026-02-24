@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-23) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24 (notes toggles + cache-bust)) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -9,39 +9,44 @@
   <style>
     :root{
       --oo-blue:#1E90FF;
-      --oo-bg:#f3f6fb;
+      --oo-bg:#f4f6fb;
       --oo-card:#ffffff;
       --oo-text:#0f172a;
-      --oo-muted:#64748b;
+      --oo-muted:#475569;
       --oo-border:rgba(15,23,42,0.10);
-      --oo-shadow:0 10px 30px rgba(2,6,23,0.10);
-      --radius:16px;
-      --pad:16px;
-      --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      --oo-shadow:0 10px 28px rgba(2,6,23,0.08);
+      --oo-radius:16px;
+      --oo-radius-sm:12px;
+      --oo-font: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      --max: 1120px;
     }
-    *{box-sizing:border-box}
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
     body{
       margin:0;
-      font-family:var(--font);
+      font-family:var(--oo-font);
       color:var(--oo-text);
-      background:linear-gradient(180deg, #eaf2ff, var(--oo-bg) 40%, var(--oo-bg));
+      background:linear-gradient(180deg, rgba(30,144,255,0.12), rgba(244,246,251,1) 180px);
     }
+
     header{
       position:sticky;
       top:0;
-      z-index:50;
+      z-index:10;
       background:var(--oo-blue);
       color:#fff;
-      padding:12px 18px;
-      box-shadow:0 6px 18px rgba(2,6,23,0.20);
+      box-shadow:0 8px 20px rgba(2,6,23,0.18);
     }
-    .header-inner{
+
+    .hd-inner{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:14px 16px;
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
-      max-width:1200px;
-      margin:0 auto;
+      gap:12px;
     }
     .brand{
       display:flex;
@@ -49,247 +54,308 @@
       gap:12px;
       min-width:0;
     }
-    .brand-text{min-width:0}
-    .brand-title{
+    .brand img{
+      width:38px;
+      height:38px;
+      border-radius:10px;
+      background:#fff;
+      padding:4px;
+      flex:0 0 auto;
+    }
+    .brand .t1{
       font-weight:900;
-      letter-spacing:0.02em;
+      letter-spacing:0.2px;
+      font-size:18px;
       line-height:1.05;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      max-width:560px;
     }
-    .brand-sub{
+    .brand .t2{
       font-size:12px;
+      font-weight:700;
       opacity:0.92;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
+      max-width:560px;
     }
-    .session-pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:8px 12px;
-      border-radius:999px;
-      background:rgba(255,255,255,0.18);
-      border:1px solid rgba(255,255,255,0.22);
-      font-weight:800;
-      font-size:12px;
-      white-space:nowrap;
-    }
-    .dot{
-      width:10px;height:10px;border-radius:50%;
-      background:#f97316;
-      box-shadow:0 0 0 4px rgba(249,115,22,0.18);
-    }
-    .dot.ok{background:#22c55e; box-shadow:0 0 0 4px rgba(34,197,94,0.18);}
 
-    /* Logo (restored + hardened) */
-    .logo{
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+      padding:18px 16px 34px;
+    }
+
+    /* Top rows */
+    .top{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-top:14px;
+    }
+
+    .row{
+      background:var(--oo-card);
+      border:1px solid var(--oo-border);
+      box-shadow:var(--oo-shadow);
+      border-radius:var(--oo-radius);
+      padding:14px;
+    }
+
+    .row-hd{
       display:flex;
       align-items:center;
-      justify-content:center;
-      width:40px;
-      height:40px;
-      border-radius:12px;
-      background:rgba(255,255,255,0.18);
-      border:1px solid rgba(255,255,255,0.22);
-      flex:0 0 auto;
-      overflow:hidden;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:10px;
     }
-    .logo-img{
-      width:34px;
-      height:34px;
-      object-fit:contain;
-      border-radius:8px;
-      background:#fff;
-      padding:4px;
-      box-shadow: 0 2px 10px rgba(2,6,23,0.12);
-    }
-    .logo-fallback{
-      display:none;
-      width:34px;
-      height:34px;
-      align-items:center;
-      justify-content:center;
-      border-radius:10px;
-      background: rgba(255,255,255,0.20);
-      color:#fff;
+    .row-title{
       font-weight:900;
-      letter-spacing:0.02em;
+      font-size:14px;
+      letter-spacing:0.2px;
     }
-    .logo.noimg .logo-fallback{display:flex;}
-
-    main{
-      max-width:1200px;
-      margin:18px auto 48px;
-      padding:0 16px;
+    .row-sub{
+      font-size:12px;
+      color:var(--oo-muted);
+      font-weight:700;
     }
 
     .grid{
       display:grid;
-      grid-template-columns: 1fr;
-      gap:18px;
-      align-items:start;
+      grid-template-columns: 1fr 1fr auto auto;
+      gap:10px;
+      align-items:end;
     }
 
-    .card{
-      background:var(--oo-card);
-      border-radius:var(--radius);
-      box-shadow:var(--oo-shadow);
-      border:1px solid var(--oo-border);
-      overflow:hidden;
-    }
-    .card-hd{
-      padding:14px 16px;
-      border-bottom:1px solid var(--oo-border);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .card-title{
-      font-weight:900;
-      letter-spacing:0.01em;
-      font-size:18px;
-    }
-    .card-sub{
-      color:var(--oo-muted);
-      font-weight:700;
-      font-size:12px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .card-bd{
-      padding:16px;
-      overflow:visible;
-    }
-
-    .row{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:flex-end;
-    }
-    .row > .field{flex:1 1 240px;}
-
-    /* Field labels: OkObserver blue, Title Case (no ALL CAPS) */
-    .field label{
+    label{
       display:block;
       font-size:12px;
       font-weight:900;
-      letter-spacing:0.01em;
       color:var(--oo-blue);
       margin:0 0 6px;
-      text-transform:none;
+      text-transform:capitalize;
+      letter-spacing:0.2px;
     }
-
     input{
       width:100%;
-      padding:12px 12px;
+      border:1px solid var(--oo-border);
       border-radius:12px;
-      border:1px solid rgba(15,23,42,0.18);
-      background:#f2f6ff;
+      padding:10px 12px;
       outline:none;
-      font-weight:700;
+      font-size:14px;
+      background:#fff;
     }
     input:focus{
-      border-color: rgba(30,144,255,0.55);
-      box-shadow:0 0 0 4px rgba(30,144,255,0.14);
+      border-color:rgba(30,144,255,0.65);
+      box-shadow:0 0 0 4px rgba(30,144,255,0.18);
     }
-    .btns{display:flex; gap:10px; flex-wrap:wrap;}
+
     .btn{
-      padding:11px 14px;
+      appearance:none;
+      border:none;
       border-radius:12px;
-      border:1px solid rgba(15,23,42,0.18);
-      background:#0f172a;
-      color:#fff;
+      padding:10px 14px;
       font-weight:900;
       cursor:pointer;
+      background:var(--oo-blue);
+      color:#fff;
+      letter-spacing:0.1px;
+      box-shadow:0 8px 18px rgba(30,144,255,0.22);
+      transition:transform 120ms ease, opacity 120ms ease;
     }
-    .btn.primary{background:var(--oo-blue); border-color:rgba(30,144,255,0.7);}
-    .btn.secondary{background:#f8fafc; color:#0f172a;}
-    .btn:disabled{opacity:0.55; cursor:not-allowed;}
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:disabled{ opacity:0.6; cursor:not-allowed; transform:none; }
+
+    .btn.secondary{
+      background:#0f172a;
+      box-shadow:0 8px 18px rgba(2,6,23,0.16);
+    }
 
     .statusline{
-      margin-top:10px;
-      font-weight:800;
-      font-size:13px;
-      color:var(--oo-muted);
-    }
-    .statusline.ok{color:#166534;}
-    .statusline.err{color:#991b1b;}
-
-    details.card{overflow:hidden;}
-    details summary{
-      list-style:none;
-      cursor:pointer;
-      user-select:none;
-      padding:14px 16px;
-      font-weight:900;
-      border-bottom:1px solid var(--oo-border);
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-    }
-    details summary::-webkit-details-marker{display:none;}
-    pre{
-      margin:0;
-      padding:16px;
-      overflow:auto;
-      background:#0b1220;
-      color:#e2e8f0;
+      margin-top:10px;
       font-size:12px;
-      line-height:1.35;
+      color:var(--oo-muted);
+      font-weight:700;
     }
 
-    /* ---- Results layout helpers ---- */
-    .aa-grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    @media (max-width: 980px) { .aa-grid-2 { grid-template-columns: 1fr; } }
+    /* Session pill */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      background:rgba(255,255,255,0.18);
+      padding:8px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.65);
+      box-shadow:0 0 0 4px rgba(255,255,255,0.14);
+    }
+    .dot.ok{ background:#34d399; box-shadow:0 0 0 4px rgba(52,211,153,0.18); }
+    .dot.no{ background:#f87171; box-shadow:0 0 0 4px rgba(248,113,113,0.18); }
 
-    .aa-kv { display:grid; grid-template-columns: 120px 1fr; gap: 10px 14px; align-items:start; }
-    .aa-k { color: var(--oo-blue); font-weight: 900; letter-spacing: 0.01em; font-size: 12px; text-transform:none; }
-    .aa-v { font-weight: 550; color: var(--oo-text); line-height: 1.25; word-break: break-word; }
-
-    /* Subscriber identity row: prefer single line on desktop */
-    .aa-identity-row { display:flex; flex-wrap:wrap; gap: 10px 14px; align-items:center; }
-    .aa-identity-row > div { display:flex; gap: 8px; align-items:baseline; }
-    .aa-pill-k { color: var(--oo-blue); font-weight: 900; letter-spacing: 0.01em; font-size: 12px; text-transform:none; }
-    .aa-pill-v { font-weight: 750; color: var(--oo-text); }
-    @media (min-width: 980px) {
-      .aa-identity-row { flex-wrap:nowrap; }
+    /* Results cards */
+    .cards{
+      margin-top:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
 
-    .aa-table { width:100%; border-collapse: collapse; }
-    .aa-table thead th {
-      letter-spacing: 0.01em;
-      color: var(--oo-blue);
-      font-weight: 900;
-      font-size: 12px;
-      border-bottom: 1px solid var(--oo-border);
-      padding: 10px 8px;
+    .card{
+      background:var(--oo-card);
+      border:1px solid var(--oo-border);
+      box-shadow:var(--oo-shadow);
+      border-radius:var(--oo-radius);
+      overflow:hidden;
+    }
+    .card-hd{
+      padding:14px 14px 10px;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid rgba(15,23,42,0.06);
+      background:linear-gradient(180deg, rgba(30,144,255,0.06), rgba(255,255,255,1) 72px);
+    }
+    .card-title{
+      font-weight:1000;
+      font-size:15px;
+      letter-spacing:0.2px;
+    }
+    .card-sub{
+      font-size:12px;
+      color:var(--oo-muted);
+      font-weight:800;
+      text-align:right;
+    }
+    .card-bd{
+      padding:14px;
+    }
+
+    .msg{
+      margin-top:12px;
+      padding:12px 14px;
+      border-radius:14px;
+      font-weight:800;
+      color:var(--oo-text);
+      background:rgba(30,144,255,0.10);
+      border:1px solid rgba(30,144,255,0.22);
+      display:none;
+    }
+    .msg.err{
+      background:rgba(248,113,113,0.10);
+      border-color:rgba(248,113,113,0.25);
+    }
+
+    /* Subscriber layout */
+    .identity{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 16px;
+      font-weight:900;
+      margin-bottom:12px;
+      align-items:center;
+    }
+    .identity .aa-k{ color:var(--oo-blue); text-transform:capitalize; font-size:12px; font-weight:900; }
+    .identity .aa-v{ font-weight:1000; }
+
+    .cols{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    .addr{
+      border:1px solid rgba(15,23,42,0.08);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(244,246,251,0.55);
+    }
+    .addr .ttl{
+      font-weight:1000;
+      margin:0 0 10px;
+      font-size:13px;
+    }
+    .kv{
+      display:grid;
+      grid-template-columns: 120px 1fr;
+      gap:6px 10px;
+      align-items:start;
+    }
+    .aa-k{
+      color:var(--oo-blue);
+      font-weight:900;
+      font-size:12px;
+      text-transform:capitalize;
+      letter-spacing:0.2px;
+      white-space:nowrap;
+    }
+    .aa-v{
+      font-weight:600;
+      color:var(--oo-text);
+      font-size:13px;
+      line-height:1.2;
+      word-break:break-word;
+    }
+
+    /* Tables */
+    .aa-table-wrap{ overflow:auto; }
+    table.aa-table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      min-width:860px;
+    }
+    .aa-table th, .aa-table td{
+      border-bottom:1px solid rgba(15,23,42,0.08);
+      padding:10px 10px;
       text-align:left;
-      text-transform:none;
-      white-space:nowrap;
+      vertical-align:top;
+      font-size:13px;
     }
-    .aa-table tbody td { border-bottom: 1px solid rgba(15,23,42,0.08); padding: 10px 8px; vertical-align: top; }
-    .aa-table-wrap { overflow-x:auto; }
+    .aa-table th{
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.08em;
+      color:var(--oo-muted);
+      font-weight:900;
+      background:rgba(244,246,251,0.55);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
 
-    .aa-badge {
-      display:inline-block;
-      padding: 4px 10px;
-      border-radius: 999px;
-      background: rgba(30,144,255,0.10);
-      color: var(--oo-blue);
-      font-weight: 800;
-      font-size: 12px;
-      margin-left: 8px;
-      text-transform: lowercase;
-      white-space:nowrap;
+    .aa-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 8px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:11px;
+      border:1px solid rgba(15,23,42,0.10);
+      background:#fff;
     }
-    .aa-items { min-width: 260px; white-space: normal; }
+    .aa-mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      font-weight:900;
+    }
+
+    .aa-items{
+      min-width: 320px;
+      white-space: normal;
+    }
 
     /* Notes: right-justified, narrower cards, no bold text */
     .aa-notes-wrap { display:flex; justify-content:flex-end; padding: 8px 0 2px; }
@@ -301,102 +367,109 @@
       padding: 10px 12px;
       box-shadow: 0 6px 16px rgba(2,6,23,0.06);
     }
-    .aa-note-meta { color: var(--oo-muted); font-weight: 700; font-size: 12px; margin-bottom: 6px; }
+    .aa-note-meta { color: var(--oo-muted); font-weight: 800; font-size: 12px; margin-bottom: 6px; }
     .aa-note-text { color: var(--oo-text); font-weight: 500; line-height: 1.25; white-space: pre-wrap; }
+
+    .aa-notes-toggle { margin-left: 10px; }
+    .aa-linkbtn {
+      border: none;
+      background: transparent;
+      color: var(--oo-blue);
+      font-weight: 900;
+      font-size: 12px;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .aa-linkbtn:hover { opacity: 0.85; }
 
     .aa-sub-notes-row td { border-bottom: none; padding-top: 0; }
     .aa-raw-toggle-row { display:flex; justify-content:flex-end; margin: 12px 0 0; }
+
+    @media (max-width: 920px){
+      .brand .t1, .brand .t2{ max-width: 360px; }
+      .grid{ grid-template-columns: 1fr; }
+      .cols{ grid-template-columns: 1fr; }
+      table.aa-table{ min-width: 820px; }
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="header-inner">
+    <div class="hd-inner">
       <div class="brand">
-        <div class="logo" aria-label="The Oklahoma Observer">
-          <img class="logo-img" src="logo.png" alt="The Oklahoma Observer" onerror="this.style.display='none'; this.parentElement.classList.add('noimg');">
-          <span class="logo-fallback" aria-hidden="true">OO</span>
-        </div>
-        <div class="brand-text">
-          <div class="brand-title">Arnold Admin</div>
-          <div class="brand-sub">WooCommerce lookups for okobserver.org</div>
+        <img src="./logo.png" alt="Arnold Admin" />
+        <div style="min-width:0">
+          <div class="t1">Arnold Admin</div>
+          <div class="t2">To Comfort The Afflicted And Afflict The Comfortable</div>
         </div>
       </div>
-      <div id="sessionPill" class="session-pill">
-        <span id="sessionDot" class="dot"></span>
+
+      <div class="pill" id="sessionPill">
+        <span class="dot no" id="sessionDot"></span>
         <span id="sessionText">Session: unknown</span>
       </div>
     </div>
   </header>
 
-  <main>
-    <div class="grid">
+  <div class="wrap">
 
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">Login &amp; Search</div>
-          <div class="card-sub">Worker cookie session</div>
+    <div class="top">
+      <!-- LOGIN -->
+      <div class="row">
+        <div class="row-hd">
+          <div class="row-title">Login</div>
+          <div class="row-sub">WordPress admin users only</div>
         </div>
-        <div class="card-bd">
-          <div class="row">
-            <div class="field">
-              <label for="wpUser">WordPress Username</label>
-              <input id="wpUser" autocomplete="username" placeholder="admin@okobserver.org" />
-            </div>
-            <div class="field">
-              <label for="wpPass">WordPress Password</label>
-              <input id="wpPass" type="password" autocomplete="current-password" />
-            </div>
-            <div class="btns">
-              <button id="btnLogin" class="btn primary">Log in</button>
-              <button id="btnLogout" class="btn secondary">Log out</button>
-            </div>
+
+        <div class="grid">
+          <div>
+            <label for="wpUser">Username</label>
+            <input id="wpUser" autocomplete="username" placeholder="WordPress username" />
           </div>
-
-          <div class="statusline" id="loginStatus">—</div>
-
-          <hr style="border:none;border-top:1px solid var(--oo-border); margin:14px 0;">
-
-          <div class="row">
-            <div class="field" style="flex:2 1 420px;">
-              <label for="query">Search</label>
-              <input id="query" placeholder="email, order #12345, subscriptions for email..." />
-            </div>
-            <div class="btns">
-              <button id="btnSearch" class="btn primary">Search</button>
-            </div>
+          <div>
+            <label for="wpPass">Password</label>
+            <input id="wpPass" type="password" autocomplete="current-password" placeholder="WordPress password" />
           </div>
-
-          <div class="statusline" id="searchStatus">—</div>
+          <button class="btn" id="btnLogin">Login</button>
+          <button class="btn secondary" id="btnLogout" disabled>Logout</button>
         </div>
-      </section>
 
-      <section class="card">
-        <div class="card-hd">
-          <div class="card-title">Results</div>
-          <div class="card-sub">Subscriber → Subscriptions → Orders</div>
+        <div class="statusline">
+          <div id="loginStatus">Not logged in.</div>
+          <div style="opacity:0.85">Cookie session persists on refresh</div>
         </div>
-        <div class="card-bd">
-          <div id="results"></div>
-        </div>
-      </section>
-
-      <!-- Raw JSON toggle goes LAST (per UI spec) -->
-      <div class="aa-raw-toggle-row">
-        <button id="btnRaw" class="btn secondary">Toggle Raw JSON</button>
       </div>
 
-      <details id="rawWrap" class="card" style="display:none;">
-        <summary>
-          <span>Raw JSON</span>
-          <span style="color:var(--oo-muted); font-weight:800; font-size:12px;">(for debugging)</span>
-        </summary>
-        <pre id="rawJson">{}</pre>
-      </details>
+      <!-- SEARCH -->
+      <div class="row">
+        <div class="row-hd">
+          <div class="row-title">Search</div>
+          <div class="row-sub">Email, order #, subscription</div>
+        </div>
 
+        <div class="grid" style="grid-template-columns: 1fr auto;">
+          <div>
+            <label for="query">Query</label>
+            <input id="query" placeholder="e.g. subscription for joe@abc.com, order #12997, orders for bob@x.com" />
+          </div>
+          <button class="btn" id="btnSearch">Search</button>
+        </div>
+
+        <div class="statusline">
+          <div id="searchStatus">Ready.</div>
+          <div style="opacity:0.85">Shows Subscriber • Subscriptions • Orders</div>
+        </div>
+      </div>
     </div>
-  </main>
 
-  <script src="./main.js?v=2026-02-24a"></script>
+    <div id="msg" class="msg"></div>
+
+    <div id="results" class="cards"></div>
+
+    <script src="./main.js?v=2026-02-24b"></script>
+  </div>
 </body>
 </html>
 <!-- 🔴 index.html -->
