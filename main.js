@@ -229,16 +229,13 @@
           <div class="aa-section-subtitle">${esc(fullName || "")}</div>
         </div>
 
-        <div class="aa-id-name-row">
-          <div class="aa-field">
-            <div class="aa-label">Customer ID</div>
-            <div class="aa-value">${c.id != null ? esc(c.id) : "—"}</div>
-          </div>
-          <div class="aa-field">
-            <div class="aa-label">Username</div>
-            <div class="aa-value">${c.username ? esc(c.username) : "—"}</div>
-          </div>
-        </div>
+        <div class="aa-kv aa-subscriber-kv">
+  <div class="aa-k">Customer ID</div>
+  <div class="aa-v">${c.id != null ? esc(c.id) : "—"}</div>
+
+  <div class="aa-k">Username</div>
+  <div class="aa-v">${c.username ? esc(c.username) : "—"}</div>
+</div>
 
         <div class="aa-two">
           ${renderAddressCard("Billing", c.billing)}
