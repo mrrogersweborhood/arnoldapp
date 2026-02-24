@@ -1,458 +1,468 @@
 <!-- 🟢 index.html -->
-<!-- Arnold Admin — FULL REPLACEMENT (v2026-02-24b). Markers are comments only. -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Arnold Admin</title>
-
   <style>
     :root{
-      --oo-blue:#1E90FF;
-      --bg:#f3f6fb;
+      --brand:#1E90FF;
+      --bg:#f4f6fb;
       --card:#ffffff;
-      --line:#e7edf6;
-      --text:#0b1320;
-      --muted:#5e6a7a;
-      --shadow:0 8px 24px rgba(13,28,54,.12);
+      --muted:#6b7280;
+      --text:#0f172a;
+      --border:rgba(15,23,42,.10);
+      --shadow:0 10px 26px rgba(15,23,42,.08);
+      --radius:16px;
     }
-
-    *{box-sizing:border-box}
+    html,body{height:100%}
     body{
       margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      color:var(--text);
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      font-size:16px;
       background:var(--bg);
+      color:var(--text);
     }
+    a{color:var(--brand); text-decoration:none}
+    a:hover{text-decoration:underline}
 
-    header{
-      position:sticky; top:0; z-index:50;
-      background:var(--oo-blue);
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:5;
+      background:var(--brand);
       color:#fff;
-      box-shadow:0 6px 18px rgba(0,0,0,.15);
+      box-shadow:0 8px 22px rgba(0,0,0,.12);
+      padding:12px 16px;
     }
-
-    .wrap{
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 12px 16px;
+    .topbar-inner{
+      max-width:1500px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-
-    .mast{
+    .brand{
       display:flex;
       align-items:center;
       gap:12px;
+      min-width:220px;
     }
-
-    .logo{
-      width:44px; height:44px;
+    .brand img{
+      width:44px;
+      height:44px;
       border-radius:10px;
+      object-fit:cover;
       background:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      flex:0 0 auto;
-      box-shadow:0 4px 14px rgba(0,0,0,.15);
-    }
-    .logo img{width:100%; height:100%; object-fit:contain}
-
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-      min-width:0;
     }
     .brand .title{
-      font-weight:800;
-      letter-spacing:.2px;
-      font-size:18px;
-      line-height:1.1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      display:flex;
+      flex-direction:column;
+      line-height:1.15;
     }
-    .brand .tag{
-      font-weight:600;
-      opacity:.95;
+    .brand .title b{
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .brand .title span{
       font-size:12px;
-      line-height:1.1;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
+      opacity:.95;
+      margin-top:2px;
     }
 
     .session-pill{
-      margin-left:auto;
+      background:rgba(255,255,255,.20);
+      border:1px solid rgba(255,255,255,.26);
+      color:#fff;
+      padding:8px 12px;
+      border-radius:999px;
+      font-weight:650;
+      font-size:13px;
       display:flex;
       align-items:center;
-      gap:10px;
-      background:rgba(255,255,255,.16);
-      border:1px solid rgba(255,255,255,.25);
-      border-radius:999px;
-      padding:8px 12px;
-      font-weight:700;
-      font-size:12px;
+      gap:8px;
       white-space:nowrap;
     }
     .dot{
-      width:10px; height:10px;
-      border-radius:999px;
-      background:#9aa7b7;
-      box-shadow:0 0 0 3px rgba(255,255,255,.15);
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:#86efac;
+      box-shadow:0 0 0 3px rgba(134,239,172,.25);
+      flex:0 0 auto;
     }
-    .dot.on{ background:#79e27d; }
-    .dot.off{ background:#ffb3b3; }
 
-    main .wrap{ padding-top: 14px; padding-bottom: 24px; }
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap:14px;
+    .wrap{
+      max-width:1500px;
+      margin:18px auto 44px;
+      padding:0 16px;
     }
 
     .card{
       background:var(--card);
-      border:1px solid var(--line);
-      border-radius:16px;
+      border:1px solid var(--border);
+      border-radius:var(--radius);
       box-shadow:var(--shadow);
-      overflow:hidden;
     }
 
-    .card.pad{ padding:14px; }
-
-    .row{
+    .search-card{
+      padding:14px 14px 10px;
+      margin-bottom:14px;
+    }
+    .grid{
       display:grid;
-      grid-template-columns: 1fr 1fr auto auto;
+      grid-template-columns:1fr 1fr auto;
       gap:12px;
       align-items:end;
     }
-    @media (max-width: 900px){
-      .row{ grid-template-columns:1fr; align-items:stretch; }
-    }
-
-    label{
+    .field label{
       display:block;
-      font-weight:800;
-      color:var(--oo-blue);
       font-size:12px;
-      margin-bottom:6px;
+      font-weight:700;
+      color:rgba(255,255,255,.90);
+      margin:0 0 6px;
+      letter-spacing:.2px;
     }
-    input{
+    .field input{
       width:100%;
-      padding:12px 12px;
-      border-radius:12px;
-      border:1px solid var(--line);
+      box-sizing:border-box;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.32);
+      background:rgba(255,255,255,.92);
       outline:none;
       font-size:14px;
-      background:#fff;
     }
-
+    .field input:focus{border-color:#fff}
     .btn{
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid rgba(30,144,255,.45);
-      background:var(--oo-blue);
-      color:#fff;
-      font-weight:800;
       cursor:pointer;
-      box-shadow:0 10px 18px rgba(30,144,255,.18);
-      white-space:nowrap;
-    }
-    .btn.secondary{
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:800;
       background:#fff;
-      color:var(--oo-blue);
+      color:var(--brand);
+      box-shadow:0 8px 18px rgba(0,0,0,.10);
+    }
+    .btn.primary{
+      background:#fff;
+      color:var(--brand);
+    }
+    .btn.ghost{
+      background:rgba(255,255,255,.18);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.26);
+      box-shadow:none;
     }
 
-    .status{
-      margin-top:10px;
+    .msg{
+      margin-top:12px;
       padding:12px 14px;
       border-radius:12px;
-      border:1px solid rgba(30,144,255,.25);
-      background:rgba(30,144,255,.08);
-      font-weight:800;
+      border:1px solid rgba(30,144,255,.22);
+      background:rgba(30,144,255,.10);
+      color:#0b3b7a;
+      font-weight:750;
     }
-    .status.ok{ border-color: rgba(121,226,125,.35); background: rgba(121,226,125,.12); }
-    .status.warn{ border-color: rgba(255,200,90,.45); background: rgba(255,200,90,.16); }
-    .status.err{ border-color: rgba(255,120,120,.45); background: rgba(255,120,120,.16); }
+    .msg.warn{
+      border-color:rgba(251,191,36,.40);
+      background:rgba(251,191,36,.16);
+      color:#6b4a00;
+    }
 
-    /* section styles (rendered by main.js) */
-    .aa-section{ padding: 14px; }
+    /* ✅ Searching state: OkObserver blue + spinner */
+    .msg.busy{
+      background: var(--brand);
+      border-color: rgba(30,144,255,.55);
+      color: #fff;
+      position: relative;
+      padding-left: 44px;
+    }
+    .msg.busy::before{
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      margin-top: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.55);
+      border-top-color: #fff;
+      animation: aaSpin 0.9s linear infinite;
+    }
+    @keyframes aaSpin { to { transform: rotate(360deg); } }
+
+    .results{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+    }
+
+    .aa-section{padding:14px}
     .aa-section-head{
       display:flex;
       align-items:baseline;
       justify-content:space-between;
-      gap:12px;
+      gap:10px;
       padding-bottom:10px;
-      border-bottom:1px solid var(--line);
+      border-bottom:1px solid var(--border);
       margin-bottom:12px;
     }
     .aa-section-title{
       font-size:16px;
       font-weight:900;
-      letter-spacing:.2px;
     }
     .aa-section-subtitle{
       font-size:12px;
-      font-weight:800;
+      font-weight:700;
       color:var(--muted);
     }
 
-    .aa-two{
+    .aa-grid-2{
       display:grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns:1fr 1fr;
       gap:12px;
-      margin-top:12px;
+      align-items:start;
     }
-    @media (max-width: 900px){
-      .aa-two{ grid-template-columns:1fr; }
-    }
-
     .mini{
       padding:12px;
       border-radius:14px;
-      border:1px solid var(--line);
-      background:#fbfcff;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.02);
       box-shadow:none;
     }
     .mini-title{
       font-weight:900;
-      margin-bottom:8px;
+      margin-bottom:10px;
+      font-size:14px;
     }
 
     .aa-kv{
       display:grid;
-      grid-template-columns: 120px 1fr;
-      gap:8px 10px;
+      grid-template-columns:120px 1fr;
+      gap:6px 10px;
       align-items:start;
-      font-size:15px;
     }
     .aa-k{
+      font-size:12px;
       font-weight:900;
-      color:var(--oo-blue);
+      color:var(--brand);
     }
     .aa-v{
-      font-weight:700;
-      color:var(--text);
-      line-height:1.25;
+      font-size:14px;
+      font-weight:800;
+      color:#0b1220;
+      word-break:break-word;
     }
-    .aa-name-line{
-      font-weight:900;
-      margin: 2px 0 8px 0;
-    }
-
-    .aa-id-name-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:14px;
-      align-items:baseline;
-      margin-top:6px;
-    }
-    .aa-field{ margin:0; }
-    .aa-label{ font-weight:900; color:var(--oo-blue); font-size:12px; }
-    .aa-value{ font-weight:900; margin-top:4px; }
+    .aa-addr-lines div{line-height:1.25}
 
     .aa-table-wrap{
       overflow-x:auto;
-      padding-bottom:6px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#fff;
     }
     table{
       width:100%;
       border-collapse:collapse;
+      min-width:900px;
+      font-size:14px;
     }
-    .aa-table{
-      min-width: 1100px;
-      font-size:15px;
-    }
-    .aa-orders .aa-table{
-      min-width: 1280px;
-    }
-    th, td{
-      padding:10px 10px;
-      border-bottom:1px solid var(--line);
+    th,td{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
       text-align:left;
       vertical-align:top;
       white-space:nowrap;
     }
     th{
       font-size:12px;
-      letter-spacing:.8px;
+      font-weight:950;
+      letter-spacing:.08em;
       text-transform:uppercase;
-      color:var(--muted);
-      font-weight:900;
-      background:#f7faff;
+      color:#334155;
+      background:rgba(15,23,42,.03);
     }
-
-    .mono{ font-variant-numeric: tabular-nums; font-feature-settings:"tnum"; font-weight:900; }
+    td.items{
+      white-space:normal;
+      min-width:360px;
+      font-weight:800;
+      color:#0b1220;
+    }
 
     .pill{
       display:inline-flex;
       align-items:center;
-      padding:4px 10px;
+      gap:6px;
       border-radius:999px;
+      padding:4px 10px;
       font-weight:900;
       font-size:12px;
-      background: rgba(30,144,255,0.14);
-      border: 1px solid rgba(30,144,255,0.35);
-      color:#0b3d73;
-    }
-
-    .aa-empty{
-      padding:12px 2px;
-      color:var(--muted);
-      font-weight:800;
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
+      color:rgba(30,144,255,.98);
     }
 
     .aa-notes-col{
       text-align:right;
-      white-space:nowrap;
+      min-width:180px;
     }
-
-    .aa-notes-toggle{
+    .aa-linkbtn{
+      cursor:pointer;
+      border:0;
+      background:transparent;
+      color:var(--brand);
+      font-weight:950;
+      font-size:15px;
       display:inline-flex;
       align-items:center;
-      gap:6px;
-      cursor:pointer;
-      user-select:none;
-      font-weight:900;
-      color:var(--oo-blue);
+      gap:8px;
+      padding:6px 8px;
     }
-    .aa-notes-toggle .aa-caret{
-      font-size:18px;
+    .aa-linkbtn::after{
+      content:"▾";
+      font-size:20px;
       line-height:1;
-      transform: translateY(1px);
+      transform:translateY(1px);
     }
-    .aa-notes-toggle .aa-caret.open{
-      transform: rotate(180deg) translateY(-1px);
-    }
+    .aa-linkbtn[aria-expanded="true"]::after{content:"▴"}
 
-    .aa-notes{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      padding:12px 0 4px 0;
+    .aa-notes-panel{
+      margin:10px 0 0;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.02);
       white-space:normal;
     }
     .aa-note{
-      border:1px solid var(--line);
-      background:#fff;
+      padding:10px 10px;
       border-radius:12px;
-      padding:10px 12px;
-      box-shadow:0 6px 14px rgba(13,28,54,.06);
+      border:1px solid var(--border);
+      background:#fff;
+      margin-bottom:10px;
     }
+    .aa-note:last-child{margin-bottom:0}
     .aa-note-meta{
-      display:flex;
-      gap:10px;
-      align-items:baseline;
-      color:var(--muted);
-      font-weight:900;
       font-size:12px;
+      font-weight:950;
+      color:#334155;
       margin-bottom:6px;
     }
     .aa-note-body{
-      font-weight:800;
-      font-size:14px;
-      line-height:1.25;
-      color:var(--text);
+      font-size:13px;
+      font-weight:750;
+      color:#0b1220;
+      line-height:1.35;
+      white-space:pre-wrap;
     }
 
-    /* Raw JSON */
-    #rawWrap{
-      display:none;
+    .rawjson-wrap{
       margin-top:14px;
     }
-    pre{
-      margin:0;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid var(--line);
-      background:#0b1320;
-      color:#d9e7ff;
-      overflow:auto;
-      max-height: 340px;
-      font-size:12px;
-      line-height:1.35;
-    }
-    .raw-head{
+    .rawjson-title{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .raw-head strong{
+      gap:12px;
+      margin-bottom:8px;
       font-weight:900;
-      color:var(--text);
+    }
+    .rawjson-toggle{
+      position:fixed;
+      right:18px;
+      bottom:16px;
+      z-index:20;
+      padding:10px 14px;
+      border-radius:999px;
+      border:0;
+      cursor:pointer;
+      font-weight:950;
+      background:#0b1220;
+      color:#fff;
+      box-shadow:0 12px 26px rgba(0,0,0,.20);
+    }
+    pre{
+      background:#0b1220;
+      color:#e5e7eb;
+      border-radius:14px;
+      padding:12px;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.08);
+      font-size:12px;
+      line-height:1.35;
+      max-height:46vh;
+    }
+
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr 1fr; }
+      .grid .btn{grid-column:1 / -1}
+      .aa-grid-2{grid-template-columns:1fr}
     }
   </style>
 </head>
 
 <body>
-  <header>
-    <div class="wrap">
-      <div class="mast">
-        <div class="logo"><img src="./logo.png" alt="Arnold Admin"></div>
-        <div class="brand">
-          <div class="title">Arnold Admin</div>
-          <div class="tag">OkObserver admin lookups (cookie session)</div>
-        </div>
-
-        <div class="session-pill">
-          <span id="sessionDot" class="dot off"></span>
-          <span id="sessionText">Session: unknown</span>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="./logo.png" alt="Arnold Admin logo" />
+        <div class="title">
+          <b>Arnold Admin</b>
+          <span>OkObserver admin lookups (cookie session)</span>
         </div>
       </div>
-    </div>
-  </header>
 
-  <main>
-    <div class="wrap">
+      <div id="sessionPill" class="session-pill">
+        <span class="dot"></span>
+        <span id="sessionText">Session: unknown</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card search-card" style="background:var(--brand); border:0;">
       <div class="grid">
-
-        <div class="card pad">
-          <div class="row">
-            <div>
-              <label for="loginUser">Username</label>
-              <input id="loginUser" autocomplete="username" placeholder="admin user" />
-            </div>
-            <div>
-              <label for="loginPass">Password</label>
-              <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
-            </div>
-            <button id="btnLogin" class="btn">Login</button>
-            <button id="btnLogout" class="btn secondary">Logout</button>
-          </div>
-
-          <div style="margin-top:12px; display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
-            <div style="flex:1 1 520px; min-width: 260px;">
-              <label for="query">Search</label>
-              <input id="query" placeholder="Find subscription for email, find order #12345, etc." />
-            </div>
-            <button id="btnSearch" class="btn">Search</button>
-          </div>
-
-          <div id="statusLine" class="status">No search results</div>
+        <div class="field">
+          <label for="loginUser">Username</label>
+          <input id="loginUser" autocomplete="username" placeholder="admin username" />
         </div>
 
-        <div id="results"></div>
-
-        <div class="card pad">
-          <div class="raw-head">
-            <strong>Raw JSON</strong>
-            <button id="btnRaw" class="btn secondary">Toggle Raw JSON</button>
-          </div>
-          <div id="rawWrap">
-            <pre id="rawJson">{}</pre>
-          </div>
+        <div class="field">
+          <label for="loginPass">Password</label>
+          <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
         </div>
 
+        <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end;">
+          <button id="btnLogin" class="btn primary">Login</button>
+          <button id="btnLogout" class="btn ghost">Logout</button>
+        </div>
+
+        <div class="field" style="grid-column:1 / span 2;">
+          <label for="q">Search</label>
+          <input id="q" placeholder="Find subscription for email, find order #12345, etc." />
+        </div>
+
+        <div style="display:flex; align-items:end; justify-content:flex-end;">
+          <button id="btnSearch" class="btn primary">Search</button>
+        </div>
+
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-end; gap:10px;">
+          <div id="statusLine" class="msg" style="display:none;"></div>
+        </div>
       </div>
     </div>
-  </main>
 
-  <script src="./main.js?v=2026-02-24z"></script>
+    <div id="results" class="results"></div>
+
+    <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
+  </div>
+
+  <script src="./main.js?v=2026-02-24g"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
