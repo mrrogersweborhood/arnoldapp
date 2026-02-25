@@ -595,7 +595,11 @@
       return;
     }
 
-    $("statusLine").textContent = "Searching…";
+    const sl = $("statusLine");
+if (sl) {
+  sl.className = "msg busy";
+  sl.textContent = "Searching…";
+}
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
@@ -609,12 +613,20 @@
     lastRaw = j;
 
     if (!r.ok || !j?.ok) {
-      $("statusLine").textContent = j?.error || `Search failed (${r.status})`;
+      const sl2 = $("statusLine");
+if (sl2) {
+  sl2.className = "msg warn";
+  sl2.textContent = j?.error || `Search failed (${r.status})`;
+}
       renderRawJson();
       return;
     }
 
-    $("statusLine").textContent = "Search complete.";
+    const sl2 = $("statusLine");
+if (sl2) {
+  sl2.className = "msg";
+  sl2.textContent = "Search complete.";
+}
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
@@ -622,7 +634,11 @@
   }
 
   async function doTotals() {
-    $("statusLine").textContent = "Loading totals…";
+    const sl = $("statusLine");
+if (sl) {
+  sl.className = "msg busy";
+  sl.textContent = "Loading totals…";
+}
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/stats`, {
