@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — one-line rows + notes-right + status left) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-nt1 — Notes tables with headers) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -370,8 +370,6 @@
       vertical-align:bottom;
     }
 
-    .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
-
     .aa-pill{
       display:inline-flex;
       align-items:center;
@@ -390,7 +388,8 @@
       color:rgba(30,144,255,.98);
     }
 
-    /* Notes toggle + panel */
+    /* Notes toggle (renderer uses .aa-notes-toggle/.aa-notes-body/.aa-notes-table) */
+    .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
     .aa-notes-empty{ color:var(--muted); font-weight:850; }
 
     .aa-notes-toggle{
@@ -438,26 +437,48 @@
       white-space:normal;
       text-align:left;
     }
-    .aa-note{
-      padding:10px 10px;
-      border-radius:12px;
+
+    /* Notes table (headers + values under titles) */
+    .aa-notes-table-wrap{
+      overflow:auto;
+      border-radius:10px;
       border:1px solid var(--border);
       background:#fff;
-      margin-bottom:10px;
     }
-    .aa-note:last-child{ margin-bottom:0 }
-    .aa-note-meta{
-      font-size:12px;
-      font-weight:950;
-      color:#334155;
-      margin-bottom:6px;
-    }
-    .aa-note-text{
+    .aa-notes-table{
+      width:100%;
+      border-collapse:collapse;
       font-size:13px;
+      min-width:560px;
+    }
+    .aa-notes-table th{
+      font-size:11px;
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#334155;
+      background:rgba(15,23,42,.03);
+      padding:8px 10px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      white-space:nowrap;
+    }
+    .aa-notes-table td{
+      padding:8px 10px;
+      border-bottom:1px solid var(--border);
+      vertical-align:top;
+    }
+    .aa-notes-table tr:last-child td{ border-bottom:0; }
+    .aa-notes-td-date, .aa-notes-td-who{
+      white-space:nowrap;
+      font-weight:850;
+      color:#0b1220;
+    }
+    .aa-notes-td-note{
+      white-space:normal;
       font-weight:750;
       color:#0b1220;
       line-height:1.35;
-      white-space:pre-wrap;
     }
 
     @media (max-width: 980px){
@@ -470,6 +491,7 @@
       .aa-row-notes{ min-width:unset; text-align:left; }
       .aa-row-sub{ white-space:normal; flex-wrap:wrap; overflow:visible; }
       .aa-items{ max-width:unset; }
+      .aa-notes-table{ min-width:520px; }
     }
   </style>
 </head>
@@ -529,10 +551,12 @@
     <div id="results" class="results"></div>
 
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
+
+    <pre id="rawJsonBox" style="display:none;"></pre>
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-25c"></script>
+  <script src="./main.js?v=2026-02-27-nt1"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — Totals screen + pretty formatting + shipping fallback)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-nt1 — Notes tables with headers)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -270,17 +270,36 @@
     if (!safeNotes.length) return `<div class="aa-notes-empty">—</div>`;
 
     const arrow = isOpen ? "▾" : "▸";
-    const rows = safeNotes
+
+    const tableRows = safeNotes
       .map((n) => {
         const when = fmtDate(n?.date_created);
-        const who = n?.author || n?.added_by || "";
+        const who = (n?.author || n?.added_by || "").trim();
         const text = stripHtml(n?.note || "");
-        return `<div class="aa-note">
-          <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(who)}` : ""}</div>
-          <div class="aa-note-text">${esc(text || "—")}</div>
-        </div>`;
+        return `<tr>
+          <td class="aa-notes-td-date">${esc(when)}</td>
+          <td class="aa-notes-td-who">${esc(who || "—")}</td>
+          <td class="aa-notes-td-note">${esc(text || "—")}</td>
+        </tr>`;
       })
       .join("");
+
+    const tableHtml = `
+      <div class="aa-notes-table-wrap">
+        <table class="aa-notes-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Added By</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+    `;
 
     return `
       <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
@@ -288,7 +307,7 @@
         <span class="aa-notes-label">Notes</span>
         <span class="aa-notes-count">${esc(String(safeNotes.length))}</span>
       </button>
-      <div class="aa-notes-body" style="${isOpen ? "" : "display:none;"}">${rows}</div>
+      <div class="aa-notes-body" style="${isOpen ? "" : "display:none;"}">${tableHtml}</div>
     `;
   }
 
