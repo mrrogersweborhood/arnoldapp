@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k: fix DOM binding crash, Customer card placement, Raw JSON button non-blocking, widen notes col) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -469,6 +469,7 @@
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
   </div>
 
+  <!-- IMPORTANT: cache-bust to ensure latest main.js loads -->
   <script src="./main.js?v=2026-02-24k"></script>
 </body>
 </html>

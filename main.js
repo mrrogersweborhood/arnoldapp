@@ -73,24 +73,40 @@
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
+  // ✅ Pretty currency formatting (user requirement): $0.00 (with commas)
+  const USD_FMT = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+
   function fmtMoney(total, currency) {
     if (total == null) return "—";
-    const t = String(total);
-    const cur = currency ? String(currency) : "";
-    if (!cur) return `$${t}`;
-    return `${t} ${cur}`;
+    const raw = String(total).trim();
+    const n = parseFloat(raw.replace(/[^0-9.-]/g, ""));
+    if (!Number.isFinite(n)) return "—";
+
+    const formatted = USD_FMT.format(n);
+    const cur = currency ? String(currency).trim().toUpperCase() : "";
+
+    // User requirement: $0.00 style. If Woo currency isn't USD, preserve currency code.
+    if (cur && cur !== "USD") return `${formatted} ${cur}`;
+    return formatted;
   }
 
+  // ✅ Pretty date formatting (user requirement): MM/DD/YYYY
   function fmtDate(val) {
     if (!val) return "—";
     const s = String(val);
     // allow ISO date or datetime
     const d = new Date(s);
     if (!Number.isFinite(d.getTime())) return s;
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
+
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${dd}`;
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
   }
 
   function normalizeNullableDate(val) {
