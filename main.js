@@ -1,10 +1,12 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k)
-// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-24k2)
+// - Dates: MM/DD/YYYY
+// - Money: $0.00
+// - Phones: (XXX) XXX-XXXX
+// - Shipping missing: "Same as billing"
+// - Raw JSON hides meta_data
 (() => {
   "use strict";
-
-  /* ========= CONFIG ========= */
 
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const API = {
@@ -14,11 +16,9 @@
     nlSearch: `${WORKER_BASE}/admin/nl-search`,
   };
 
-  /* ========= DOM ========= */
-
-  // FIX: main.js was calling $("#loginUser") etc, but $ used querySelector(sel).
-  // Without "#" that returns null and crashes (addEventListener/value).
-  // This $ helper treats a plain string as an ID lookup, and CSS selectors still work.
+  // Selector helper:
+  // - "loginUser" -> getElementById("loginUser")
+  // - "#loginUser" / ".class" / "div > span" -> querySelector(...)
   const $ = (sel) => {
     const s = String(sel || "").trim();
     if (!s) return null;
@@ -40,6 +40,7 @@
     return true;
   };
 
+  // DOM (must match index.html IDs)
   const elLoginUser = $("#loginUser");
   const elLoginPass = $("#loginPass");
   const btnLogin = $("#btnLogin");
@@ -52,19 +53,13 @@
 
   const sessionText = $("#sessionText");
   const sessionPill = $("#sessionPill");
-
   const btnRawJson = $("#btnRawJson");
-
-  /* ========= STATE ========= */
 
   let lastRaw = null;
   let rawJsonVisible = false;
 
-  // Collapsible notes
-  const openSubNotes = new Set();   // subscription IDs expanded
-  const openOrderNotes = new Set(); // order IDs expanded
-
-  /* ========= HELPERS ========= */
+  const openSubNotes = new Set();
+  const openOrderNotes = new Set();
 
   const esc = (s) => String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -73,7 +68,6 @@
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-  // ✅ Pretty currency formatting (user requirement): $0.00 (with commas)
   const USD_FMT = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -89,17 +83,13 @@
 
     const formatted = USD_FMT.format(n);
     const cur = currency ? String(currency).trim().toUpperCase() : "";
-
-    // User requirement: $0.00 style. If Woo currency isn't USD, preserve currency code.
     if (cur && cur !== "USD") return `${formatted} ${cur}`;
     return formatted;
   }
 
-  // ✅ Pretty date formatting (user requirement): MM/DD/YYYY
   function fmtDate(val) {
     if (!val) return "—";
     const s = String(val);
-    // allow ISO date or datetime
     const d = new Date(s);
     if (!Number.isFinite(d.getTime())) return s;
 
@@ -107,6 +97,25 @@
     const dd = String(d.getDate()).padStart(2, "0");
     const yyyy = d.getFullYear();
     return `${mm}/${dd}/${yyyy}`;
+  }
+
+  function fmtPhone(val) {
+    if (!val) return "—";
+    const raw = String(val).trim();
+    if (!raw) return "—";
+
+    const extMatch = raw.match(/\b(?:ext\.?|x|#)\s*(\d+)\b/i);
+    const ext = extMatch ? extMatch[1] : null;
+
+    let digits = raw.replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+
+    if (digits.length === 10) {
+      const pretty = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+      return ext ? `${pretty} x${ext}` : pretty;
+    }
+
+    return raw;
   }
 
   function normalizeNullableDate(val) {
@@ -126,8 +135,6 @@
   }
 
   function stripMetaData(obj) {
-    // Remove meta_data fields from Raw JSON display (per request)
-    // (We keep them in runtime objects if present; we just don’t show them.)
     const seen = new WeakSet();
     const walk = (x) => {
       if (x == null) return x;
@@ -175,10 +182,16 @@
 
     if (loggedIn) {
       sessionText.textContent = `Session: logged in as ${label}`;
-      if (dot) dot.style.background = "#86efac";
+      if (dot) {
+        dot.style.background = "#86efac";
+        dot.style.boxShadow = "0 0 0 3px rgba(134,239,172,.25)";
+      }
     } else {
       sessionText.textContent = "Session: unknown";
-      if (dot) dot.style.background = "#fca5a5";
+      if (dot) {
+        dot.style.background = "#fca5a5";
+        dot.style.boxShadow = "0 0 0 3px rgba(252,165,165,.20)";
+      }
     }
   }
 
@@ -196,8 +209,6 @@
     try { data = txt ? JSON.parse(txt) : null; } catch (_) { data = txt; }
     return { ok: r.ok, status: r.status, data };
   }
-
-  /* ========= RENDER ========= */
 
   function renderPill(status) {
     const s = String(status ?? "—").toLowerCase();
@@ -224,10 +235,18 @@
     const a = addr || {};
     const o = opts || {};
     const name = [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
-
     const extraPairs = Array.isArray(o.extraPairs) ? o.extraPairs : [];
 
-    // We render a consistent "fieldname : fieldvalue" grid
+    // Shipping fallback: if shipping has no address content, show "Same as billing"
+    const isShipping = String(title || "").toLowerCase() === "shipping";
+    const hasShippingData =
+      a &&
+      (a.address_1 || a.address_2 || a.city || a.postcode || a.country || a.first_name || a.last_name);
+
+    if (isShipping && !hasShippingData) {
+      return renderMiniCard("Shipping", [{ k: "Address", v: "Same as billing" }]);
+    }
+
     const pairs = [];
 
     for (const p of extraPairs) {
@@ -253,9 +272,9 @@
       isHtml: true
     });
 
-    // Keep email/phone in Billing/Shipping (do NOT remove per requirement)
+    // Keep email/phone in Billing/Shipping blocks
     pairs.push({ k: "Email", v: (a.email || "—") });
-    pairs.push({ k: "Phone", v: (a.phone || "—") });
+    pairs.push({ k: "Phone", v: fmtPhone(a.phone) });
 
     return renderMiniCard(title, pairs);
   }
@@ -269,10 +288,9 @@
       { k: "Customer ID", v: (c?.id != null ? String(c.id) : "—") },
       { k: "Username", v: (c?.username ? String(c.username) : "—") },
     ];
-
     if (name) pairs.push({ k: "Name", v: name });
 
-    // IMPORTANT: do NOT show email here (avoid duplication)
+    // Do NOT include email here (avoid duplication)
     return renderMiniCard("Customer", pairs, "aa-span-all");
   }
 
@@ -303,7 +321,7 @@
     return arr.slice(0, 200).map((n) => {
       const when = n?.date_created ? fmtDate(n.date_created) : "—";
       const who = n?.author || n?.added_by || "—";
-      const body = htmlToText(n?.note || ""); // strips HTML tags safely
+      const body = htmlToText(n?.note || "");
       return `
         <div class="aa-note">
           <div class="aa-note-meta">${esc(when)} • ${esc(who)}</div>
@@ -485,7 +503,6 @@
           else openOrderNotes.add(key);
         }
 
-        // Re-render with current context
         if (lastRaw?.context) {
           results.innerHTML = renderAll(lastRaw.context);
           bindNotesToggles();
@@ -493,8 +510,6 @@
       });
     });
   }
-
-  /* ========= ACTIONS ========= */
 
   async function refreshSession() {
     const r = await jsonFetch(API.status, { method: "GET" });
@@ -564,14 +579,16 @@
     if (!r.ok) {
       lastRaw = r.data;
       if (results) {
-        results.innerHTML = `<div class="card aa-section"><b>Search failed (${r.status}).</b><div style="margin-top:8px;">See Raw JSON for details.</div></div>${renderRawJson(lastRaw)}`;
+        results.innerHTML =
+          `<div class="card aa-section"><b>Search failed (${r.status}).</b><div style="margin-top:8px;">See Raw JSON for details.</div></div>` +
+          renderRawJson(lastRaw);
       }
       setStatusLine("Search failed.", "warn");
       return;
     }
 
     lastRaw = r.data;
-    const context = r.data?.context || r.data?.contextual || r.data?.contextData || r.data?.contextual_data || r.data?.context || null;
+    const context = r.data?.context || null;
 
     if (!context) {
       if (results) results.innerHTML = `<div class="card aa-section"><b>No context returned.</b></div>${renderRawJson(lastRaw)}`;
@@ -595,8 +612,6 @@
       results.innerHTML = renderRawJson(lastRaw);
     }
   }
-
-  /* ========= INIT ========= */
 
   function init() {
     if (btnLogin) btnLogin.addEventListener("click", doLogin);

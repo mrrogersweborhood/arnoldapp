@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
+<!-- Arnold Admin — FULL REPLACEMENT (Build 2026-02-24k2) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -90,8 +90,8 @@
       width:10px;
       height:10px;
       border-radius:50%;
-      background:#86efac;
-      box-shadow:0 0 0 3px rgba(134,239,172,.25);
+      background:#fca5a5;
+      box-shadow:0 0 0 3px rgba(252,165,165,.20);
       flex:0 0 auto;
     }
 
@@ -147,10 +147,7 @@
       color:var(--brand);
       box-shadow:0 8px 18px rgba(0,0,0,.10);
     }
-    .btn.primary{
-      background:#fff;
-      color:var(--brand);
-    }
+    .btn.primary{ background:#fff; color:var(--brand); }
     .btn.ghost{
       background:rgba(255,255,255,.18);
       color:#fff;
@@ -172,8 +169,6 @@
       background:rgba(251,191,36,.16);
       color:#6b4a00;
     }
-
-    /* ✅ Searching state: OkObserver blue + spinner */
     .msg.busy{
       background: var(--brand);
       border-color: rgba(30,144,255,.55);
@@ -196,13 +191,9 @@
     }
     @keyframes aaSpin { to { transform: rotate(360deg); } }
 
-    .results{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
-    }
+    .results{ display:flex; flex-direction:column; gap:14px; }
 
-    .aa-section{padding:14px}
+    .aa-section{ padding:14px }
     .aa-section-head{
       display:flex;
       align-items:baseline;
@@ -212,15 +203,8 @@
       border-bottom:1px solid var(--border);
       margin-bottom:12px;
     }
-    .aa-section-title{
-      font-size:16px;
-      font-weight:900;
-    }
-    .aa-section-subtitle{
-      font-size:12px;
-      font-weight:700;
-      color:var(--muted);
-    }
+    .aa-section-title{ font-size:16px; font-weight:900; }
+    .aa-section-subtitle{ font-size:12px; font-weight:700; color:var(--muted); }
 
     .aa-grid-2{
       display:grid;
@@ -237,11 +221,7 @@
       background:rgba(15,23,42,.02);
       box-shadow:none;
     }
-    .mini-title{
-      font-weight:900;
-      margin-bottom:10px;
-      font-size:14px;
-    }
+    .mini-title{ font-weight:900; margin-bottom:10px; font-size:14px; }
 
     .aa-kv{
       display:grid;
@@ -249,18 +229,9 @@
       gap:6px 10px;
       align-items:start;
     }
-    .aa-k{
-      font-size:12px;
-      font-weight:900;
-      color:var(--brand);
-    }
-    .aa-v{
-      font-size:14px;
-      font-weight:800;
-      color:#0b1220;
-      word-break:break-word;
-    }
-    .aa-addr-lines div{line-height:1.25}
+    .aa-k{ font-size:12px; font-weight:900; color:var(--brand); }
+    .aa-v{ font-size:14px; font-weight:800; color:#0b1220; word-break:break-word; }
+    .aa-addr-lines div{ line-height:1.25 }
 
     .aa-table-wrap{
       overflow-x:auto;
@@ -271,7 +242,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:1100px; /* widened to keep notes arrow visible */
+      min-width:1100px;
       font-size:14px;
     }
     th,td{
@@ -309,10 +280,7 @@
       color:rgba(30,144,255,.98);
     }
 
-    .aa-notes-col{
-      text-align:right;
-      min-width:220px; /* widened */
-    }
+    .aa-notes-col{ text-align:right; min-width:220px; }
     .aa-linkbtn{
       cursor:pointer;
       border:0;
@@ -331,7 +299,7 @@
       line-height:1;
       transform:translateY(1px);
     }
-    .aa-linkbtn[aria-expanded="true"]::after{content:"▴"}
+    .aa-linkbtn[aria-expanded="true"]::after{ content:"▴" }
 
     .aa-notes-panel{
       margin:10px 0 0;
@@ -348,7 +316,7 @@
       background:#fff;
       margin-bottom:10px;
     }
-    .aa-note:last-child{margin-bottom:0}
+    .aa-note:last-child{ margin-bottom:0 }
     .aa-note-meta{
       font-size:12px;
       font-weight:950;
@@ -363,19 +331,6 @@
       white-space:pre-wrap;
     }
 
-    .rawjson-wrap{
-      margin-top:14px;
-    }
-    .rawjson-title{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      margin-bottom:8px;
-      font-weight:900;
-    }
-
-    /* ✅ Raw JSON button should NOT block UI */
     .rawjson-toggle{
       position:static;
       display:inline-flex;
@@ -405,9 +360,9 @@
     }
 
     @media (max-width: 980px){
-      .grid{grid-template-columns:1fr 1fr; }
-      .grid .btn{grid-column:1 / -1}
-      .aa-grid-2{grid-template-columns:1fr}
+      .grid{ grid-template-columns:1fr 1fr; }
+      .grid .btn{ grid-column:1 / -1 }
+      .aa-grid-2{ grid-template-columns:1fr }
       table{ min-width: 980px; }
     }
   </style>
@@ -469,8 +424,8 @@
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
   </div>
 
-  <!-- IMPORTANT: cache-bust to ensure latest main.js loads -->
-  <script src="./main.js?v=2026-02-24k"></script>
+  <!-- Cache-bust MUST match main.js build -->
+  <script src="./main.js?v=2026-02-24k2"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
