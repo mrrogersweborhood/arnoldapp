@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24f: subscriber ID+Username row, orders notes column + collapsible, keep addr name above address) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k: fix DOM binding crash, Customer card placement, Raw JSON button non-blocking, widen notes col) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -228,6 +228,8 @@
       gap:12px;
       align-items:start;
     }
+    .aa-span-all{ grid-column: 1 / -1; }
+
     .mini{
       padding:12px;
       border-radius:14px;
@@ -269,7 +271,7 @@
     table{
       width:100%;
       border-collapse:collapse;
-      min-width:900px;
+      min-width:1100px; /* widened to keep notes arrow visible */
       font-size:14px;
     }
     th,td{
@@ -309,7 +311,7 @@
 
     .aa-notes-col{
       text-align:right;
-      min-width:180px;
+      min-width:220px; /* widened */
     }
     .aa-linkbtn{
       cursor:pointer;
@@ -372,11 +374,14 @@
       margin-bottom:8px;
       font-weight:900;
     }
+
+    /* ✅ Raw JSON button should NOT block UI */
     .rawjson-toggle{
-      position:fixed;
-      right:18px;
-      bottom:16px;
-      z-index:20;
+      position:static;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:14px;
       padding:10px 14px;
       border-radius:999px;
       border:0;
@@ -386,6 +391,7 @@
       color:#fff;
       box-shadow:0 12px 26px rgba(0,0,0,.20);
     }
+
     pre{
       background:#0b1220;
       color:#e5e7eb;
@@ -402,6 +408,7 @@
       .grid{grid-template-columns:1fr 1fr; }
       .grid .btn{grid-column:1 / -1}
       .aa-grid-2{grid-template-columns:1fr}
+      table{ min-width: 980px; }
     }
   </style>
 </head>
@@ -462,7 +469,7 @@
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
   </div>
 
-  <script src="./main.js?v=2026-02-24g"></script>
+  <script src="./main.js?v=2026-02-24k"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

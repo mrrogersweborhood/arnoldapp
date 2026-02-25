@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24j)
+// Arnold Admin — FULL REPLACEMENT (UI stabilization pass 2026-02-24k)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -16,7 +16,22 @@
 
   /* ========= DOM ========= */
 
-  const $ = (sel) => document.querySelector(sel);
+  // FIX: main.js was calling $("#loginUser") etc, but $ used querySelector(sel).
+  // Without "#" that returns null and crashes (addEventListener/value).
+  // This $ helper treats a plain string as an ID lookup, and CSS selectors still work.
+  const $ = (sel) => {
+    const s = String(sel || "").trim();
+    if (!s) return null;
+    const looksLikeCss =
+      s.startsWith("#") ||
+      s.startsWith(".") ||
+      s.includes(" ") ||
+      s.includes("[") ||
+      s.includes(">") ||
+      s.includes(":");
+    return looksLikeCss ? document.querySelector(s) : document.getElementById(s);
+  };
+
   const must = (el, name) => {
     if (!el) {
       console.error(`[ArnoldAdmin] Missing required element: ${name}`);
@@ -140,12 +155,14 @@
     if (!must(sessionText, "#sessionText") || !must(sessionPill, "#sessionPill")) return;
 
     const label = userLabel ? String(userLabel) : "unknown";
+    const dot = sessionPill.querySelector(".dot");
+
     if (loggedIn) {
       sessionText.textContent = `Session: logged in as ${label}`;
-      sessionPill.querySelector(".dot").style.background = "#86efac";
+      if (dot) dot.style.background = "#86efac";
     } else {
       sessionText.textContent = "Session: unknown";
-      sessionPill.querySelector(".dot").style.background = "#fca5a5";
+      if (dot) dot.style.background = "#fca5a5";
     }
   }
 
@@ -171,6 +188,22 @@
     return `<span class="pill">${esc(s)}</span>`;
   }
 
+  function renderMiniCard(title, pairs, extraClass) {
+    const cls = `card mini${extraClass ? ` ${extraClass}` : ""}`;
+    const safePairs = Array.isArray(pairs) ? pairs : [];
+    return `
+      <div class="${cls}">
+        <div class="mini-title">${esc(title)}</div>
+        <div class="aa-kv">
+          ${safePairs.map((p) => `
+            <div class="aa-k">${esc(String(p?.k ?? ""))}</div>
+            <div class="aa-v">${p?.isHtml ? String(p?.v ?? "") : esc(String(p?.v ?? "—"))}</div>
+          `).join("")}
+        </div>
+      </div>
+    `;
+  }
+
   function renderAddressCard(title, addr, opts) {
     const a = addr || {};
     const o = opts || {};
@@ -178,8 +211,7 @@
 
     const extraPairs = Array.isArray(o.extraPairs) ? o.extraPairs : [];
 
-    // We render a consistent "fieldname : fieldvalue" grid (same fonts/weights)
-    // so Customer ID / Username can line up with Billing/Shipping fields.
+    // We render a consistent "fieldname : fieldvalue" grid
     const pairs = [];
 
     for (const p of extraPairs) {
@@ -205,20 +237,27 @@
       isHtml: true
     });
 
+    // Keep email/phone in Billing/Shipping (do NOT remove per requirement)
     pairs.push({ k: "Email", v: (a.email || "—") });
     pairs.push({ k: "Phone", v: (a.phone || "—") });
 
-    return `
-      <div class="card mini">
-        <div class="mini-title">${esc(title)}</div>
-        <div class="aa-kv">
-          ${pairs.map((p) => `
-            <div class="aa-k">${esc(p.k)}</div>
-            <div class="aa-v">${p.isHtml ? p.v : esc(p.v)}</div>
-          `).join("")}
-        </div>
-      </div>
-    `;
+    return renderMiniCard(title, pairs);
+  }
+
+  function renderCustomerCard(c) {
+    const first = c?.first_name ?? null;
+    const last = c?.last_name ?? null;
+    const name = [first, last].filter(Boolean).join(" ").trim();
+
+    const pairs = [
+      { k: "Customer ID", v: (c?.id != null ? String(c.id) : "—") },
+      { k: "Username", v: (c?.username ? String(c.username) : "—") },
+    ];
+
+    if (name) pairs.push({ k: "Name", v: name });
+
+    // IMPORTANT: do NOT show email here (avoid duplication)
+    return renderMiniCard("Customer", pairs, "aa-span-all");
   }
 
   function renderSubscriber(contextCustomer) {
@@ -233,12 +272,9 @@
         </div>
 
         <div class="aa-grid-2">
-          ${renderAddressCard("Billing", billing, {
-            extraPairs: [{ k: "Customer ID", v: (c.id != null ? String(c.id) : "—") }]
-          })}
-          ${renderAddressCard("Shipping", shipping, {
-            extraPairs: [{ k: "Username", v: (c.username ? String(c.username) : "—") }]
-          })}
+          ${renderCustomerCard(c)}
+          ${renderAddressCard("Billing", billing)}
+          ${renderAddressCard("Shipping", shipping)}
         </div>
       </section>
     `;
@@ -251,7 +287,7 @@
     return arr.slice(0, 200).map((n) => {
       const when = n?.date_created ? fmtDate(n.date_created) : "—";
       const who = n?.author || n?.added_by || "—";
-      const body = htmlToText(n?.note || "");
+      const body = htmlToText(n?.note || ""); // strips HTML tags safely
       return `
         <div class="aa-note">
           <div class="aa-note-meta">${esc(when)} • ${esc(who)}</div>
@@ -417,6 +453,7 @@
   }
 
   function bindNotesToggles() {
+    if (!results) return;
     results.querySelectorAll(".aa-linkbtn[data-notes-kind]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const kind = btn.getAttribute("data-notes-kind");
@@ -501,7 +538,7 @@
     }
 
     setStatusLine("Searching…", "busy");
-    results.innerHTML = "";
+    if (results) results.innerHTML = "";
 
     const r = await jsonFetch(API.nlSearch, {
       method: "POST",
@@ -510,7 +547,9 @@
 
     if (!r.ok) {
       lastRaw = r.data;
-      results.innerHTML = `<div class="card aa-section"><b>Search failed (${r.status}).</b><div style="margin-top:8px;">See Raw JSON for details.</div></div>${renderRawJson(lastRaw)}`;
+      if (results) {
+        results.innerHTML = `<div class="card aa-section"><b>Search failed (${r.status}).</b><div style="margin-top:8px;">See Raw JSON for details.</div></div>${renderRawJson(lastRaw)}`;
+      }
       setStatusLine("Search failed.", "warn");
       return;
     }
@@ -519,18 +558,20 @@
     const context = r.data?.context || r.data?.contextual || r.data?.contextData || r.data?.contextual_data || r.data?.context || null;
 
     if (!context) {
-      results.innerHTML = `<div class="card aa-section"><b>No context returned.</b></div>${renderRawJson(lastRaw)}`;
+      if (results) results.innerHTML = `<div class="card aa-section"><b>No context returned.</b></div>${renderRawJson(lastRaw)}`;
       setStatusLine("No results.", "warn");
       return;
     }
 
-    results.innerHTML = renderAll(context);
+    if (results) results.innerHTML = renderAll(context);
     bindNotesToggles();
     setStatusLine("Search complete.", "");
   }
 
   function toggleRawJson() {
     rawJsonVisible = !rawJsonVisible;
+    if (!results) return;
+
     if (lastRaw?.context) {
       results.innerHTML = renderAll(lastRaw.context);
       bindNotesToggles();
