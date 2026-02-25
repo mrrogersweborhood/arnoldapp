@@ -337,7 +337,170 @@
       line-height:1.35;
       white-space:pre-wrap;
     }
+    /* Arnold Admin renderer contract (aa-*) — card/field/row styling */
+.aa-card{
+  margin-top:12px;
+  padding:12px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.02);
+}
+.aa-card-title{
+  font-weight:950;
+  font-size:14px;
+  margin-bottom:10px;
+}
 
+.aa-fields{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px 12px;
+  align-items:start;
+}
+.aa-field{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px 10px;
+}
+.aa-label{
+  font-size:12px;
+  font-weight:950;
+  color:var(--brand);
+  margin-bottom:6px;
+}
+.aa-value{
+  font-size:14px;
+  font-weight:800;
+  color:#0b1220;
+  line-height:1.25;
+  word-break:break-word;
+}
+
+.aa-row{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px 12px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:#fff;
+  margin-bottom:10px;
+}
+.aa-row:last-child{ margin-bottom:0; }
+.aa-row-main{ flex:1 1 auto; min-width:0; }
+.aa-row-title{ font-weight:950; font-size:14px; margin-bottom:6px; }
+.aa-row-sub{
+  font-size:13px;
+  font-weight:800;
+  color:#0b1220;
+  line-height:1.35;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 10px;
+}
+.aa-muted{ color:var(--muted); font-weight:800; }
+
+.aa-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  border-radius:999px;
+  padding:4px 10px;
+  font-weight:950;
+  font-size:12px;
+  border:1px solid rgba(30,144,255,.35);
+  background:rgba(30,144,255,.12);
+  color:rgba(30,144,255,.98);
+}
+.aa-pill-blue{ /* renderer expects this name */
+  border:1px solid rgba(30,144,255,.35);
+  background:rgba(30,144,255,.12);
+  color:rgba(30,144,255,.98);
+}
+
+.aa-empty{
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.02);
+  font-weight:850;
+  color:var(--muted);
+}
+
+/* Notes toggle (used by subscriptions/orders rows) */
+.aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
+.aa-notes-empty{ color:var(--muted); font-weight:850; }
+
+.aa-notes-toggle{
+  cursor:pointer;
+  border:0;
+  background:transparent;
+  color:var(--brand);
+  font-weight:950;
+  font-size:15px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+}
+.aa-notes-arrow{
+  font-size:18px;
+  line-height:1;
+  transform:translateY(1px);
+}
+.aa-notes-count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:22px;
+  height:20px;
+  padding:0 8px;
+  border-radius:999px;
+  border:1px solid rgba(30,144,255,.35);
+  background:rgba(30,144,255,.12);
+  color:rgba(30,144,255,.98);
+  font-size:12px;
+  font-weight:950;
+}
+
+.aa-notes-body{
+  margin:10px 0 0;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:rgba(15,23,42,.02);
+  white-space:normal;
+}
+.aa-note{
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:#fff;
+  margin-bottom:10px;
+}
+.aa-note:last-child{ margin-bottom:0; }
+.aa-note-meta{
+  font-size:12px;
+  font-weight:950;
+  color:#334155;
+  margin-bottom:6px;
+}
+.aa-note-text{
+  font-size:13px;
+  font-weight:750;
+  color:#0b1220;
+  line-height:1.35;
+  white-space:pre-wrap;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .aa-fields{ grid-template-columns:1fr; }
+  .aa-row{ flex-direction:column; }
+  .aa-row-notes{ min-width:unset; text-align:left; }
+} 
     .rawjson-toggle{
       position:static;
       display:inline-flex;
@@ -433,7 +596,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-25g"></script>
+  <script src="./main.js?v=2026-02-25h"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
