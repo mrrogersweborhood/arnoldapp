@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — Totals screen + pretty formatting + shipping fallback)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-003 — deterministic spinner + orders items)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -22,6 +22,17 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
+  }
+
+  // -----------------------------
+  // STATUS LINE (deterministic: controls display + classes)
+  // -----------------------------
+  function setStatus(kind, text) {
+    const sl = $("statusLine");
+    if (!sl) return;
+    sl.style.display = "block";
+    sl.className = "msg" + (kind ? ` ${kind}` : "");
+    sl.textContent = String(text ?? "");
   }
 
   // -----------------------------
@@ -293,7 +304,6 @@
         if (set.has(id)) set.delete(id);
         else set.add(id);
 
-        // Re-render by triggering a cheap reflow: toggle the next sibling
         const body = btn.nextElementSibling;
         const arrow = btn.querySelector(".aa-notes-arrow");
         if (body) {
@@ -314,7 +324,6 @@
     const orders = d.orders_last_30d || {};
     const gen = d.generated_at ? fmtDate(d.generated_at) : "";
 
-    // Subscriptions: show user-friendly labels in required order (works with slug or label keys)
     const SUB_STATUS_ORDER = [
       "Trash",
       "Active",
@@ -337,14 +346,12 @@
 
     const subRows = SUB_STATUS_ORDER
       .map((label) => {
-        // Accept either label keys or slug keys from the worker
         const slug = Object.keys(SUB_STATUS_LABELS).find((k) => SUB_STATUS_LABELS[k] === label) || null;
         const count = (subs[label] != null) ? subs[label] : (slug && subs[slug] != null) ? subs[slug] : 0;
         return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
       })
       .join("") || `<tr><td colspan="2">—</td></tr>`;
 
-    // Orders: keep a predictable order and nicer labels
     const ORDER_STATUS_ORDER = [
       "pending",
       "processing",
@@ -469,6 +476,17 @@
     `;
   }
 
+  // ✅ Render purchased items from Woo order line_items (Name xQty)
+  function renderOrderItems(o) {
+    const items = Array.isArray(o?.line_items) ? o.line_items : [];
+    if (!items.length) return "—";
+    return items.map((li) => {
+      const name = (li?.name ?? "").trim() || "Item";
+      const qty = (li?.quantity != null) ? ` x${String(li.quantity)}` : "";
+      return esc(name + qty);
+    }).join(", ");
+  }
+
   function renderOrderRow(o) {
     const id = o?.id ?? "—";
     const status = o?.status ?? "—";
@@ -485,6 +503,7 @@
             <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
             <span class="aa-muted">Date</span> ${esc(created)}
             <span class="aa-muted">Total</span> ${esc(total)}
+            <span class="aa-muted">Items</span> <span class="aa-items">${renderOrderItems(o)}</span>
           </div>
         </div>
         <div class="aa-row-notes">${notesHtml}</div>
@@ -553,11 +572,11 @@
     const p = $("loginPass")?.value?.trim() || "";
 
     if (!u || !p) {
-      $("statusLine").textContent = "Username and password required.";
+      setStatus("warn", "Username and password required.");
       return;
     }
 
-    $("statusLine").textContent = "Logging in…";
+    setStatus("busy", "Logging in…");
 
     const r = await fetch(`${WORKER_BASE}/admin/login`, {
       method: "POST",
@@ -568,38 +587,35 @@
 
     const j = await r.json().catch(() => null);
     if (!r.ok || !j?.success) {
-      $("statusLine").textContent = j?.message || `Login failed (${r.status})`;
+      setStatus("warn", j?.message || `Login failed (${r.status})`);
       setSessionPill(false, null);
       return;
     }
 
-    $("statusLine").textContent = "Logged in.";
+    setStatus("", "Logged in.");
     await refreshSession();
   }
 
   async function doLogout() {
-    $("statusLine").textContent = "Logging out…";
+    setStatus("busy", "Logging out…");
     await fetch(`${WORKER_BASE}/admin/logout`, {
       method: "POST",
       credentials: "include"
     }).catch(() => null);
 
-    $("statusLine").textContent = "Logged out.";
+    setStatus("", "Logged out.");
     setSessionPill(false, null);
   }
 
   async function doSearch() {
     const q = $("q")?.value?.trim() || "";
     if (!q) {
-      $("statusLine").textContent = "Enter a query (email or order #).";
+      setStatus("warn", "Enter a query (email or order #).");
       return;
     }
 
-    const sl = $("statusLine");
-if (sl) {
-  sl.className = "msg busy";
-  sl.textContent = "Searching…";
-}
+    // Ensure spinner + visibility
+    setStatus("busy", "Searching…");
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
@@ -613,20 +629,12 @@ if (sl) {
     lastRaw = j;
 
     if (!r.ok || !j?.ok) {
-      const sl2 = $("statusLine");
-if (sl2) {
-  sl2.className = "msg warn";
-  sl2.textContent = j?.error || `Search failed (${r.status})`;
-}
+      setStatus("warn", j?.error || `Search failed (${r.status})`);
       renderRawJson();
       return;
     }
 
-    const sl2 = $("statusLine");
-if (sl2) {
-  sl2.className = "msg";
-  sl2.textContent = "Search complete.";
-}
+    setStatus("", "Search complete.");
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
@@ -634,11 +642,7 @@ if (sl2) {
   }
 
   async function doTotals() {
-    const sl = $("statusLine");
-if (sl) {
-  sl.className = "msg busy";
-  sl.textContent = "Loading totals…";
-}
+    setStatus("busy", "Loading totals…");
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/stats`, {
@@ -650,12 +654,12 @@ if (sl) {
     lastRaw = j;
 
     if (!r.ok || !j?.ok) {
-      $("statusLine").textContent = j?.error || `Totals failed (${r.status})`;
+      setStatus("warn", j?.error || `Totals failed (${r.status})`);
       renderRawJson();
       return;
     }
 
-    $("statusLine").textContent = "Totals loaded.";
+    setStatus("", "Totals loaded.");
     $("results").innerHTML = renderTotals(j);
     renderRawJson();
   }

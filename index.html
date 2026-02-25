@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26b — Restore statusLine+spinner + row/notes styling + rawJsonBox) -->
+<!-- Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-003) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -93,15 +93,13 @@
       background:#fca5a5;
       box-shadow:0 0 0 3px rgba(252,165,165,.20);
       flex:0 0 auto;
+      transition: background .15s ease, box-shadow .15s ease;
     }
-/* Session dot: red by default, green when logged in */
-.dot{
-  transition: background .15s ease, box-shadow .15s ease;
-}
-.session-pill.ok .dot{
-  background:#22c55e;
-  box-shadow:0 0 0 3px rgba(34,197,94,.22);
-}
+    .session-pill.ok .dot{
+      background:#22c55e;
+      box-shadow:0 0 0 3px rgba(34,197,94,.22);
+    }
+
     .wrap{
       max-width:1500px;
       margin:18px auto 44px;
@@ -177,7 +175,7 @@
       color:#6b4a00;
     }
 
-    /* ✅ Restore searching spinner */
+    /* Searching spinner: shown only when `.busy` is present */
     .msg.busy{
       background: var(--brand);
       border-color: rgba(30,144,255,.55);
@@ -199,10 +197,6 @@
       animation: aaSpin 0.9s linear infinite;
     }
     @keyframes aaSpin { to { transform: rotate(360deg); } }
-
-    /* ✅ Make status line actually appear when it has text (main.js never toggles display) */
-    #statusLine{ display:none !important; }
-    #statusLine:not(:empty){ display:block !important; }
 
     .results{ display:flex; flex-direction:column; gap:14px; }
 
@@ -372,9 +366,6 @@
       max-height:46vh;
     }
 
-    /* ----------------------------------------------------
-       ✅ Arnold Admin renderer contract (aa-*) — pretty rows
-       ---------------------------------------------------- */
     .aa-card{
       margin-top:12px;
       padding:12px;
@@ -389,7 +380,6 @@
       margin-bottom:10px;
     }
 
-    /* Pretty rows (label/value), not tiles */
     .aa-fields{
       display:grid;
       grid-template-columns:140px 1fr;
@@ -412,7 +402,6 @@
       word-break:break-word;
     }
 
-    /* Subscriptions / Orders rows */
     .aa-row{
       display:flex;
       align-items:center;
@@ -442,7 +431,13 @@
     }
     .aa-muted{ color:var(--muted); font-weight:800; }
 
-    /* Pill used by renderer (status) */
+    /* Items: allow wrapping for long product names */
+    .aa-items{
+      white-space:normal;
+      word-break:break-word;
+      max-width:980px;
+    }
+
     .aa-pill{
       display:inline-flex;
       align-items:center;
@@ -461,7 +456,6 @@
       color:rgba(30,144,255,.98);
     }
 
-    /* Notes toggle (renderer uses .aa-notes-toggle/.aa-notes-body/.aa-note-text) */
     .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
     .aa-notes-empty{ color:var(--muted); font-weight:850; }
 
@@ -526,6 +520,7 @@
       .aa-fields{ grid-template-columns:1fr; }
       .aa-row{ flex-direction:column; align-items:flex-start; }
       .aa-row-notes{ min-width:unset; text-align:left; }
+      .aa-items{ max-width:unset; }
     }
   </style>
 </head>
@@ -586,12 +581,10 @@
 
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
 
-    <!-- ✅ main.js expects this element -->
     <pre id="rawJsonBox" style="display:none;"></pre>
   </div>
 
-  <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-27-001"></script>
+  <script src="./main.js?v=2026-02-27-004"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
