@@ -1,12 +1,10 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-24k2)
-// - Dates: MM/DD/YYYY
-// - Money: $0.00
-// - Phones: (XXX) XXX-XXXX
-// - Shipping missing: "Same as billing"
-// - Raw JSON hides meta_data
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25b — Totals screen + pretty formatting + shipping fallback)
+// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
+
+  /* ========= CONFIG ========= */
 
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const API = {
@@ -14,7 +12,10 @@
     status: `${WORKER_BASE}/admin/status`,
     logout: `${WORKER_BASE}/admin/logout`,
     nlSearch: `${WORKER_BASE}/admin/nl-search`,
+    stats: `${WORKER_BASE}/admin/stats`,
   };
+
+  /* ========= DOM ========= */
 
   // Selector helper:
   // - "loginUser" -> getElementById("loginUser")
@@ -40,26 +41,29 @@
     return true;
   };
 
-  // DOM (must match index.html IDs)
-  const elLoginUser = $("#loginUser");
-  const elLoginPass = $("#loginPass");
-  const btnLogin = $("#btnLogin");
-  const btnLogout = $("#btnLogout");
+  const elLoginUser = $("loginUser");
+  const elLoginPass = $("loginPass");
+  const btnLogin = $("btnLogin");
+  const btnLogout = $("btnLogout");
 
-  const elQuery = $("#q");
-  const btnSearch = $("#btnSearch");
-  const statusLine = $("#statusLine");
-  const results = $("#results");
+  const elQuery = $("q");
+  const btnSearch = $("btnSearch");
+  const btnTotals = $("btnTotals");
 
-  const sessionText = $("#sessionText");
-  const sessionPill = $("#sessionPill");
-  const btnRawJson = $("#btnRawJson");
+  const statusLine = $("statusLine");
+  const results = $("results");
+
+  const sessionText = $("sessionText");
+  const sessionPill = $("sessionPill");
+  const btnRawJson = $("btnRawJson");
 
   let lastRaw = null;
   let rawJsonVisible = false;
 
   const openSubNotes = new Set();
   const openOrderNotes = new Set();
+
+  /* ========= UTILS ========= */
 
   const esc = (s) => String(s ?? "")
     .replaceAll("&", "&amp;")
@@ -68,12 +72,16 @@
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 
-  const USD_FMT = new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+  function fmtDate(val) {
+    if (!val) return "—";
+    const s = String(val);
+    const d = new Date(s);
+    if (!Number.isFinite(d.getTime())) return s;
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${mm}/${dd}/${yyyy}`;
+  }
 
   function fmtMoney(total, currency) {
     if (total == null) return "—";
@@ -81,22 +89,16 @@
     const n = parseFloat(raw.replace(/[^0-9.-]/g, ""));
     if (!Number.isFinite(n)) return "—";
 
-    const formatted = USD_FMT.format(n);
+    const usd = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(n);
+
     const cur = currency ? String(currency).trim().toUpperCase() : "";
-    if (cur && cur !== "USD") return `${formatted} ${cur}`;
-    return formatted;
-  }
-
-  function fmtDate(val) {
-    if (!val) return "—";
-    const s = String(val);
-    const d = new Date(s);
-    if (!Number.isFinite(d.getTime())) return s;
-
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    const yyyy = d.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
+    if (cur && cur !== "USD") return `${usd} ${cur}`;
+    return usd;
   }
 
   function fmtPhone(val) {
@@ -111,7 +113,7 @@
     if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
 
     if (digits.length === 10) {
-      const pretty = `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+      const pretty = `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
       return ext ? `${pretty} x${ext}` : pretty;
     }
 
@@ -215,36 +217,28 @@
     return `<span class="pill">${esc(s)}</span>`;
   }
 
-  function renderMiniCard(title, pairs, extraClass) {
-    const cls = `card mini${extraClass ? ` ${extraClass}` : ""}`;
-    const safePairs = Array.isArray(pairs) ? pairs : [];
-    return `
-      <div class="${cls}">
-        <div class="mini-title">${esc(title)}</div>
-        <div class="aa-kv">
-          ${safePairs.map((p) => `
-            <div class="aa-k">${esc(String(p?.k ?? ""))}</div>
-            <div class="aa-v">${p?.isHtml ? String(p?.v ?? "") : esc(String(p?.v ?? "—"))}</div>
-          `).join("")}
-        </div>
-      </div>
-    `;
-  }
+  /* ========= RENDER ========= */
 
   function renderAddressCard(title, addr, opts) {
     const a = addr || {};
     const o = opts || {};
     const name = [a.first_name, a.last_name].filter(Boolean).join(" ").trim();
+
     const extraPairs = Array.isArray(o.extraPairs) ? o.extraPairs : [];
 
-    // Shipping fallback: if shipping has no address content, show "Same as billing"
+    // Shipping fallback: if shipping address is missing, show "Same as billing"
     const isShipping = String(title || "").toLowerCase() === "shipping";
-    const hasShippingData =
-      a &&
-      (a.address_1 || a.address_2 || a.city || a.postcode || a.country || a.first_name || a.last_name);
-
-    if (isShipping && !hasShippingData) {
-      return renderMiniCard("Shipping", [{ k: "Address", v: "Same as billing" }]);
+    const hasAny = !!(a && (a.address_1 || a.address_2 || a.city || a.state || a.postcode || a.country || a.first_name || a.last_name || a.company));
+    if (isShipping && !hasAny) {
+      return `
+        <div class="card mini">
+          <div class="mini-title">${esc(title)}</div>
+          <div class="aa-kv">
+            <div class="aa-k">Address</div>
+            <div class="aa-v">Same as billing</div>
+          </div>
+        </div>
+      `;
     }
 
     const pairs = [];
@@ -272,32 +266,33 @@
       isHtml: true
     });
 
-    // Keep email/phone in Billing/Shipping blocks
     pairs.push({ k: "Email", v: (a.email || "—") });
     pairs.push({ k: "Phone", v: fmtPhone(a.phone) });
 
-    return renderMiniCard(title, pairs);
-  }
-
-  function renderCustomerCard(c) {
-    const first = c?.first_name ?? null;
-    const last = c?.last_name ?? null;
-    const name = [first, last].filter(Boolean).join(" ").trim();
-
-    const pairs = [
-      { k: "Customer ID", v: (c?.id != null ? String(c.id) : "—") },
-      { k: "Username", v: (c?.username ? String(c.username) : "—") },
-    ];
-    if (name) pairs.push({ k: "Name", v: name });
-
-    // Do NOT include email here (avoid duplication)
-    return renderMiniCard("Customer", pairs, "aa-span-all");
+    return `
+      <div class="card mini">
+        <div class="mini-title">${esc(title)}</div>
+        <div class="aa-kv">
+          ${pairs.map((p) => `
+            <div class="aa-k">${esc(p.k)}</div>
+            <div class="aa-v">${p.isHtml ? p.v : esc(p.v)}</div>
+          `).join("")}
+        </div>
+      </div>
+    `;
   }
 
   function renderSubscriber(contextCustomer) {
     const c = contextCustomer || {};
-    const billing = c.billing || {};
-    const shipping = c.shipping || {};
+    const first = c?.first_name ?? null;
+    const last = c?.last_name ?? null;
+    const displayName = [first, last].filter(Boolean).join(" ").trim();
+
+    const customerPairs = [
+      { k: "Customer ID", v: (c?.id != null ? String(c.id) : "—") },
+      { k: "Username", v: (c?.username ? String(c.username) : "—") },
+    ];
+    if (displayName) customerPairs.push({ k: "Name", v: displayName });
 
     return `
       <section class="card aa-section">
@@ -306,9 +301,18 @@
         </div>
 
         <div class="aa-grid-2">
-          ${renderCustomerCard(c)}
-          ${renderAddressCard("Billing", billing)}
-          ${renderAddressCard("Shipping", shipping)}
+          <div class="card mini aa-span-all">
+            <div class="mini-title">Customer</div>
+            <div class="aa-kv">
+              ${customerPairs.map((p) => `
+                <div class="aa-k">${esc(p.k)}</div>
+                <div class="aa-v">${esc(p.v)}</div>
+              `).join("")}
+            </div>
+          </div>
+
+          ${renderAddressCard("Billing", c.billing || {})}
+          ${renderAddressCard("Shipping", c.shipping || {})}
         </div>
       </section>
     `;
@@ -511,6 +515,8 @@
     });
   }
 
+  /* ========= API FLOW ========= */
+
   async function refreshSession() {
     const r = await jsonFetch(API.status, { method: "GET" });
     const loggedIn = !!(r.ok && r.data && r.data.loggedIn);
@@ -601,10 +607,92 @@
     setStatusLine("Search complete.", "");
   }
 
+  function renderTotals(data) {
+    const d = data || {};
+    const subs = d.subscriptions_by_status || {};
+    const orders = d.orders_last_30d || {};
+    const gen = d.generated_at ? fmtDate(d.generated_at) : "";
+
+    const subRows = Object.entries(subs)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td style="text-align:right;"><b>${esc(String(v))}</b></td></tr>`)
+      .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+    const orderRows = Object.entries(orders.by_status || {})
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([k, v]) => `<tr><td><b>${esc(k)}</b></td><td style="text-align:right;"><b>${esc(String(v))}</b></td></tr>`)
+      .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Totals</div>
+          <div class="aa-section-subtitle">${esc(gen ? `Generated ${gen}` : "")}</div>
+        </div>
+
+        <div class="aa-grid-2">
+          <div class="card mini">
+            <div class="mini-title">Subscriptions by status</div>
+            <div class="aa-table-wrap" style="min-width:unset;">
+              <table style="min-width:unset;">
+                <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
+                <tbody>${subRows}</tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card mini">
+            <div class="mini-title">Orders (last 30 days)</div>
+            <div class="aa-kv" style="margin-bottom:10px;">
+              <div class="aa-k">Total</div>
+              <div class="aa-v" style="font-size:22px;">${esc(String(orders.total ?? "—"))}</div>
+              <div class="aa-k">Failed</div>
+              <div class="aa-v">${esc(String(orders.failed ?? "—"))}</div>
+              <div class="aa-k">Pending</div>
+              <div class="aa-v">${esc(String(orders.pending ?? "—"))}</div>
+            </div>
+
+            <div class="aa-table-wrap" style="min-width:unset;">
+              <table style="min-width:unset;">
+                <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
+                <tbody>${orderRows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  async function doTotals() {
+    const ok = await refreshSession();
+    if (!ok) {
+      setStatusLine("Please login first.", "warn");
+      return;
+    }
+
+    setStatusLine("Loading totals…", "busy");
+    if (results) results.innerHTML = "";
+
+    const r = await jsonFetch(API.stats, { method: "GET" });
+    if (!r.ok) {
+      lastRaw = r.data;
+      if (results) {
+        results.innerHTML =
+          `<div class="card aa-section"><b>Totals failed (${r.status}).</b><div style="margin-top:8px;">See Raw JSON for details.</div></div>` +
+          renderRawJson(lastRaw);
+      }
+      setStatusLine("Totals failed.", "warn");
+      return;
+    }
+
+    lastRaw = r.data;
+    if (results) results.innerHTML = renderTotals(r.data) + renderRawJson(lastRaw);
+    setStatusLine("Totals loaded.", "");
+  }
+
   function toggleRawJson() {
     rawJsonVisible = !rawJsonVisible;
-    if (!results) return;
-
     if (lastRaw?.context) {
       results.innerHTML = renderAll(lastRaw.context);
       bindNotesToggles();
@@ -617,6 +705,7 @@
     if (btnLogin) btnLogin.addEventListener("click", doLogin);
     if (btnLogout) btnLogout.addEventListener("click", doLogout);
     if (btnSearch) btnSearch.addEventListener("click", doSearch);
+    if (btnTotals) btnTotals.addEventListener("click", doTotals);
 
     if (elQuery) {
       elQuery.addEventListener("keydown", (e) => {
