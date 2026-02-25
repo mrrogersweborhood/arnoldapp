@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-003 — deterministic spinner + orders items)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — Totals screen + pretty formatting + shipping fallback)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -388,8 +388,8 @@
         </div>
 
         <div class="aa-grid-2">
-          <div class="card mini">
-            <div class="mini-title">Subscriptions by status</div>
+          <div class="card mini" style="padding:12px; border-radius:14px; border:1px solid var(--border); background:rgba(15,23,42,.02); box-shadow:none;">
+            <div style="font-weight:900; margin-bottom:10px; font-size:14px;">Subscriptions by status</div>
             <div class="aa-table-wrap" style="min-width:unset;">
               <table style="min-width:unset;">
                 <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
@@ -398,8 +398,8 @@
             </div>
           </div>
 
-          <div class="card mini">
-            <div class="mini-title">Orders (last 30 days)</div>
+          <div class="card mini" style="padding:12px; border-radius:14px; border:1px solid var(--border); background:rgba(15,23,42,.02); box-shadow:none;">
+            <div style="font-weight:900; margin-bottom:10px; font-size:14px;">Orders (last 30 days)</div>
             <div class="aa-kv" style="margin-bottom:10px;">
               <div class="aa-k">Total</div>
               <div class="aa-v" style="font-size:22px;">${esc(String(orders.total ?? "—"))}</div>
@@ -421,9 +421,6 @@
     `;
   }
 
-  // -----------------------------
-  // RENDER: CUSTOMER / SUBS / ORDERS
-  // -----------------------------
   function renderCustomerCard(customer) {
     const c = customer || {};
     const name = [c.first_name, c.last_name].filter(Boolean).join(" ").trim() || c.name || "—";
@@ -476,15 +473,17 @@
     `;
   }
 
-  // ✅ Render purchased items from Woo order line_items (Name xQty)
+  // ✅ Purchased items from Woo order line_items (Name xQty)
   function renderOrderItems(o) {
     const items = Array.isArray(o?.line_items) ? o.line_items : [];
     if (!items.length) return "—";
-    return items.map((li) => {
-      const name = (li?.name ?? "").trim() || "Item";
-      const qty = (li?.quantity != null) ? ` x${String(li.quantity)}` : "";
-      return esc(name + qty);
-    }).join(", ");
+    return items
+      .map((li) => {
+        const name = (li?.name ?? "").trim() || "Item";
+        const qty = li?.quantity != null ? ` x${String(li.quantity)}` : "";
+        return esc(name + qty);
+      })
+      .join(", ");
   }
 
   function renderOrderRow(o) {
@@ -564,9 +563,6 @@
     `;
   }
 
-  // -----------------------------
-  // ACTIONS: LOGIN / LOGOUT / SEARCH / TOTALS
-  // -----------------------------
   async function doLogin() {
     const u = $("loginUser")?.value?.trim() || "";
     const p = $("loginPass")?.value?.trim() || "";
@@ -614,7 +610,6 @@
       return;
     }
 
-    // Ensure spinner + visibility
     setStatus("busy", "Searching…");
     $("results").innerHTML = "";
 
@@ -664,9 +659,6 @@
     renderRawJson();
   }
 
-  // -----------------------------
-  // INIT
-  // -----------------------------
   function init() {
     const bLogin = $("btnLogin");
     const bLogout = $("btnLogout");
