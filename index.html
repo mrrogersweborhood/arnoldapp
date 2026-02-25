@@ -94,7 +94,14 @@
       box-shadow:0 0 0 3px rgba(252,165,165,.20);
       flex:0 0 auto;
     }
-
+/* Session dot: red by default, green when logged in */
+.dot{
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.session-pill.ok .dot{
+  background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.22);
+}
     .wrap{
       max-width:1500px;
       margin:18px auto 44px;
@@ -426,7 +433,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-25f"></script>
+  <script src="./main.js?v=2026-02-25g"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
