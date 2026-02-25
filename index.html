@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26a — Pretty rows fix, no regressions) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26b — Restore statusLine+spinner + row/notes styling + rawJsonBox) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -93,13 +93,15 @@
       background:#fca5a5;
       box-shadow:0 0 0 3px rgba(252,165,165,.20);
       flex:0 0 auto;
-      transition: background .15s ease, box-shadow .15s ease;
     }
-    .session-pill.ok .dot{
-      background:#22c55e;
-      box-shadow:0 0 0 3px rgba(34,197,94,.22);
-    }
-
+/* Session dot: red by default, green when logged in */
+.dot{
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.session-pill.ok .dot{
+  background:#22c55e;
+  box-shadow:0 0 0 3px rgba(34,197,94,.22);
+}
     .wrap{
       max-width:1500px;
       margin:18px auto 44px;
@@ -117,14 +119,12 @@
       padding:14px 14px 10px;
       margin-bottom:14px;
     }
-
     .grid{
       display:grid;
       grid-template-columns:1fr 1fr auto;
       gap:12px;
       align-items:end;
     }
-
     .field label{
       display:block;
       font-size:12px;
@@ -144,7 +144,6 @@
       font-size:14px;
     }
     .field input:focus{border-color:#fff}
-
     .btn{
       cursor:pointer;
       border:0;
@@ -172,6 +171,38 @@
       color:#0b3b7a;
       font-weight:750;
     }
+    .msg.warn{
+      border-color:rgba(251,191,36,.40);
+      background:rgba(251,191,36,.16);
+      color:#6b4a00;
+    }
+
+    /* ✅ Restore searching spinner */
+    .msg.busy{
+      background: var(--brand);
+      border-color: rgba(30,144,255,.55);
+      color: #fff;
+      position: relative;
+      padding-left: 44px;
+    }
+    .msg.busy::before{
+      content: "";
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      width: 16px;
+      height: 16px;
+      margin-top: -8px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.55);
+      border-top-color: #fff;
+      animation: aaSpin 0.9s linear infinite;
+    }
+    @keyframes aaSpin { to { transform: rotate(360deg); } }
+
+    /* ✅ Make status line actually appear when it has text (main.js never toggles display) */
+    #statusLine{ display:none !important; }
+    #statusLine:not(:empty){ display:block !important; }
 
     .results{ display:flex; flex-direction:column; gap:14px; }
 
@@ -194,8 +225,156 @@
       gap:12px;
       align-items:start;
     }
+    .aa-span-all{ grid-column: 1 / -1; }
 
-    /* 🔧 FIX — restore pretty rows (NOT tiles) */
+    .mini{
+      padding:12px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.02);
+      box-shadow:none;
+    }
+    .mini-title{ font-weight:900; margin-bottom:10px; font-size:14px; }
+
+    .aa-kv{
+      display:grid;
+      grid-template-columns:120px 1fr;
+      gap:6px 10px;
+      align-items:start;
+    }
+    .aa-k{ font-size:12px; font-weight:900; color:var(--brand); }
+    .aa-v{ font-size:14px; font-weight:800; color:#0b1220; word-break:break-word; }
+    .aa-addr-lines div{ line-height:1.25 }
+
+    .aa-table-wrap{
+      overflow-x:auto;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#fff;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:1100px;
+      font-size:14px;
+    }
+    th,td{
+      padding:10px 12px;
+      border-bottom:1px solid var(--border);
+      text-align:left;
+      vertical-align:top;
+      white-space:nowrap;
+    }
+    th{
+      font-size:12px;
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#334155;
+      background:rgba(15,23,42,.03);
+    }
+    td.items{
+      white-space:normal;
+      min-width:360px;
+      font-weight:800;
+      color:#0b1220;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border-radius:999px;
+      padding:4px 10px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
+      color:rgba(30,144,255,.98);
+    }
+
+    .aa-notes-col{ text-align:right; min-width:220px; }
+    .aa-linkbtn{
+      cursor:pointer;
+      border:0;
+      background:transparent;
+      color:var(--brand);
+      font-weight:950;
+      font-size:15px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 8px;
+    }
+    .aa-linkbtn::after{
+      content:"▾";
+      font-size:20px;
+      line-height:1;
+      transform:translateY(1px);
+    }
+    .aa-linkbtn[aria-expanded="true"]::after{ content:"▴" }
+
+    .aa-notes-panel{
+      margin:10px 0 0;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.02);
+      white-space:normal;
+    }
+    .aa-note{
+      padding:10px 10px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:#fff;
+      margin-bottom:10px;
+    }
+    .aa-note:last-child{ margin-bottom:0 }
+    .aa-note-meta{
+      font-size:12px;
+      font-weight:950;
+      color:#334155;
+      margin-bottom:6px;
+    }
+    .aa-note-body{
+      font-size:13px;
+      font-weight:750;
+      color:#0b1220;
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+
+    .rawjson-toggle{
+      position:static;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:14px;
+      padding:10px 14px;
+      border-radius:999px;
+      border:0;
+      cursor:pointer;
+      font-weight:950;
+      background:#0b1220;
+      color:#fff;
+      box-shadow:0 12px 26px rgba(0,0,0,.20);
+    }
+
+    pre{
+      background:#0b1220;
+      color:#e5e7eb;
+      border-radius:14px;
+      padding:12px;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.08);
+      font-size:12px;
+      line-height:1.35;
+      max-height:46vh;
+    }
+
+    /* ----------------------------------------------------
+       ✅ Arnold Admin renderer contract (aa-*) — pretty rows
+       ---------------------------------------------------- */
     .aa-card{
       margin-top:12px;
       padding:12px;
@@ -209,6 +388,8 @@
       font-size:14px;
       margin-bottom:10px;
     }
+
+    /* Pretty rows (label/value), not tiles */
     .aa-fields{
       display:grid;
       grid-template-columns:140px 1fr;
@@ -231,9 +412,10 @@
       word-break:break-word;
     }
 
+    /* Subscriptions / Orders rows */
     .aa-row{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
       gap:12px;
       padding:12px 12px;
@@ -242,11 +424,16 @@
       background:#fff;
       margin-bottom:10px;
     }
+    .aa-row:last-child{ margin-bottom:0; }
     .aa-row-main{ flex:1 1 auto; min-width:0; }
-    .aa-row-title{ font-weight:950; font-size:14px; margin-bottom:6px; }
+    .aa-row-title{
+      font-weight:950;
+      font-size:14px;
+      margin-bottom:6px;
+    }
     .aa-row-sub{
       font-size:13px;
-      font-weight:800;
+      font-weight:850;
       color:#0b1220;
       line-height:1.35;
       display:flex;
@@ -255,12 +442,90 @@
     }
     .aa-muted{ color:var(--muted); font-weight:800; }
 
+    /* Pill used by renderer (status) */
+    .aa-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      border-radius:999px;
+      padding:4px 10px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
+      color:rgba(30,144,255,.98);
+    }
+    .aa-pill-blue{
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
+      color:rgba(30,144,255,.98);
+    }
+
+    /* Notes toggle (renderer uses .aa-notes-toggle/.aa-notes-body/.aa-note-text) */
+    .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
+    .aa-notes-empty{ color:var(--muted); font-weight:850; }
+
+    .aa-notes-toggle{
+      cursor:pointer;
+      border:1px solid rgba(15,23,42,.18);
+      background:#fff;
+      color:#0b1220;
+      font-weight:950;
+      font-size:13px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 10px;
+      border-radius:999px;
+      box-shadow:0 8px 18px rgba(15,23,42,.06);
+    }
+    .aa-notes-arrow{
+      font-size:16px;
+      line-height:1;
+      transform:translateY(1px);
+      color:#334155;
+    }
+    .aa-notes-label{ font-weight:950; }
+    .aa-notes-count{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:22px;
+      height:18px;
+      padding:0 7px;
+      border-radius:999px;
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
+      color:rgba(30,144,255,.98);
+      font-size:12px;
+      font-weight:950;
+    }
+
+    .aa-notes-body{
+      margin:10px 0 0;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:rgba(15,23,42,.02);
+      white-space:normal;
+      text-align:left;
+    }
+    .aa-note-text{
+      font-size:13px;
+      font-weight:750;
+      color:#0b1220;
+      line-height:1.35;
+      white-space:pre-wrap;
+    }
+
     @media (max-width: 980px){
       .grid{ grid-template-columns:1fr 1fr; }
       .grid .btn{ grid-column:1 / -1 }
       .aa-grid-2{ grid-template-columns:1fr }
+      table{ min-width: 980px; }
       .aa-fields{ grid-template-columns:1fr; }
-      .aa-row{ flex-direction:column; }
+      .aa-row{ flex-direction:column; align-items:flex-start; }
+      .aa-row-notes{ min-width:unset; text-align:left; }
     }
   </style>
 </head>
@@ -320,9 +585,13 @@
     <div id="results" class="results"></div>
 
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
+
+    <!-- ✅ main.js expects this element -->
+    <pre id="rawJsonBox" style="display:none;"></pre>
   </div>
 
-  <script src="./main.js?v=2026-02-26a"></script>
+  <!-- Cache-bust MUST match main.js build -->
+  <script src="./main.js?v=2026-02-26z"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
