@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-26c — One-line Subscriptions/Orders + single headers + notes right (no subscriber regressions))
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Totals screen + pretty formatting + shipping fallback)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -21,6 +21,16 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
+  }
+
+  // -----------------------------
+  // STATUS LINE
+  // -----------------------------
+  function setStatus(kind, text) {
+    const sl = $("statusLine");
+    if (!sl) return;
+    sl.className = "msg" + (kind ? ` ${kind}` : "");
+    sl.textContent = String(text ?? "");
   }
 
   // -----------------------------
@@ -323,9 +333,6 @@
     });
   }
 
-  // -----------------------------
-  // ROW RENDERERS (ONE-LINERS)
-  // -----------------------------
   function renderSubscriptionRow(s) {
     const id = s?.id ?? "—";
     const status = s?.status ?? "—";
@@ -337,18 +344,57 @@
     const notesHtml = renderNotesToggle("sub", String(id), s?.notes || []);
 
     return `
-      <div class="aa-row aa-sub-row">
-        <div class="aa-row-main aa-sub-grid">
-          <div class="aa-val">#${esc(String(id))}</div>
-          <div class="aa-val"><span class="aa-pill aa-pill-blue">${esc(String(status))}</span></div>
-          <div class="aa-val">${esc(start)}</div>
-          <div class="aa-val">${esc(nextPay)}</div>
-          <div class="aa-val">${esc(end)}</div>
-          <div class="aa-val">${esc(total)}</div>
+      <div class="aa-row">
+        <div class="aa-row-main">
+          <div class="aa-row-title">#${esc(String(id))}</div>
+          <div class="aa-row-sub">
+            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
+            <span class="aa-muted">Start</span> ${esc(start)}
+            <span class="aa-muted">Next</span> ${esc(nextPay)}
+            <span class="aa-muted">End</span> ${esc(end)}
+            <span class="aa-muted">Total</span> ${esc(total)}
+          </div>
         </div>
         <div class="aa-row-notes">${notesHtml}</div>
       </div>
     `;
+  }
+
+  function getOrderItemsSummary(o) {
+    // Prefer Woo standard field: line_items[]
+    const li = Array.isArray(o?.line_items) ? o.line_items : null;
+    if (li && li.length) {
+      const parts = li
+        .map((x) => {
+          const name = String(x?.name ?? "").trim();
+          const qty = x?.quantity ?? x?.qty ?? null;
+          if (!name) return null;
+          const qn = Number(qty);
+          return Number.isFinite(qn) && qn > 1 ? `${name} ×${qn}` : name;
+        })
+        .filter(Boolean);
+
+      if (!parts.length) return "—";
+      if (parts.length <= 2) return parts.join(", ");
+      return `${parts.slice(0, 2).join(", ")} +${parts.length - 2} more`;
+    }
+
+    // Fallbacks if worker ever provides a summary string/array
+    if (typeof o?.items_summary === "string" && o.items_summary.trim()) return o.items_summary.trim();
+    if (typeof o?.item_names === "string" && o.item_names.trim()) return o.item_names.trim();
+
+    const itemsArr = Array.isArray(o?.items) ? o.items : null;
+    if (itemsArr && itemsArr.length) {
+      const parts = itemsArr
+        .map((x) => String(x?.name ?? x?.title ?? "").trim())
+        .filter(Boolean);
+
+      if (!parts.length) return "—";
+      if (parts.length <= 2) return parts.join(", ");
+      return `${parts.slice(0, 2).join(", ")} +${parts.length - 2} more`;
+    }
+
+    return "—";
   }
 
   function renderOrderRow(o) {
@@ -357,24 +403,26 @@
     const total = fmtMoney(o?.total, o?.currency);
     const created = fmtDate(o?.date_created);
 
+    const items = getOrderItemsSummary(o);
+
     const notesHtml = renderNotesToggle("order", String(id), o?.notes || []);
 
     return `
-      <div class="aa-row aa-order-row">
-        <div class="aa-row-main aa-order-grid">
-          <div class="aa-val">#${esc(String(id))}</div>
-          <div class="aa-val"><span class="aa-pill aa-pill-blue">${esc(String(status))}</span></div>
-          <div class="aa-val">${esc(created)}</div>
-          <div class="aa-val">${esc(total)}</div>
+      <div class="aa-row">
+        <div class="aa-row-main">
+          <div class="aa-row-title">#${esc(String(id))}</div>
+          <div class="aa-row-sub">
+            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
+            <span class="aa-muted">Date</span> ${esc(created)}
+            <span class="aa-muted">Items</span> ${esc(items)}
+            <span class="aa-muted">Total</span> ${esc(total)}
+          </div>
         </div>
         <div class="aa-row-notes">${notesHtml}</div>
       </div>
     `;
   }
 
-  // -----------------------------
-  // RENDER: RESULTS
-  // -----------------------------
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
@@ -387,30 +435,6 @@
     const customerCard = customer ? renderCustomerCard(customer) : "";
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
-
-    const subHeader = subs.length ? `
-      <div class="aa-list-head">
-        <div class="aa-sub-grid" aria-hidden="true">
-          <div class="aa-head-col">ID</div>
-          <div class="aa-head-col">Status</div>
-          <div class="aa-head-col">Start</div>
-          <div class="aa-head-col">Next</div>
-          <div class="aa-head-col">End</div>
-          <div class="aa-head-col">Total</div>
-        </div>
-        <div class="aa-row-notes-head" aria-hidden="true">Notes</div>
-      </div>` : "";
-
-    const orderHeader = orders.length ? `
-      <div class="aa-list-head">
-        <div class="aa-order-grid" aria-hidden="true">
-          <div class="aa-head-col">ID</div>
-          <div class="aa-head-col">Status</div>
-          <div class="aa-head-col">Date</div>
-          <div class="aa-head-col">Total</div>
-        </div>
-        <div class="aa-row-notes-head" aria-hidden="true">Notes</div>
-      </div>` : "";
 
     const subList = subs.length
       ? subs.map(renderSubscriptionRow).join("")
@@ -439,7 +463,6 @@
           <div class="aa-section-title">Subscriptions</div>
           <div class="aa-section-subtitle">Schedule & Notes</div>
         </div>
-        ${subHeader}
         ${subList}
       </section>
 
@@ -448,27 +471,60 @@
           <div class="aa-section-title">Orders</div>
           <div class="aa-section-subtitle">Payment & Notes</div>
         </div>
-        ${orderHeader}
         ${orderList}
       </section>
     `;
   }
 
   // -----------------------------
-  // ACTIONS: LOGIN / LOGOUT / SEARCH / TOTALS
+  // TOTALS
+  // -----------------------------
+  function renderTotals(data) {
+    const d = data || {};
+    const subs = d.subscriptions_by_status || {};
+    const gen = d.generated_at ? fmtDate(d.generated_at) : "";
+
+    const SUB_STATUS_ORDER = [
+      "Trash","Active","Expired","On hold","Pending payment","Pending cancellation","Cancelled"
+    ];
+
+    const subRows = SUB_STATUS_ORDER
+      .map((label) => {
+        const count = (subs[label] != null) ? subs[label] : 0;
+        return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
+      })
+      .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Totals</div>
+          <div class="aa-section-subtitle">${esc(gen ? `Generated ${gen}` : "")}</div>
+        </div>
+
+        <div class="aa-table-wrap">
+          <table>
+            <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
+            <tbody>${subRows}</tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  }
+
+  // -----------------------------
+  // API ACTIONS
   // -----------------------------
   async function doLogin() {
     const u = $("loginUser")?.value?.trim() || "";
     const p = $("loginPass")?.value?.trim() || "";
 
     if (!u || !p) {
-      $("statusLine").className = "msg warn";
-      $("statusLine").textContent = "Username and password required.";
+      setStatus("warn", "Username and password required.");
       return;
     }
 
-    $("statusLine").className = "msg busy";
-    $("statusLine").textContent = "Logging in…";
+    setStatus("busy", "Logging in…");
 
     const r = await fetch(`${WORKER_BASE}/admin/login`, {
       method: "POST",
@@ -479,41 +535,35 @@
 
     const j = await r.json().catch(() => null);
     if (!r.ok || !j?.success) {
-      $("statusLine").className = "msg warn";
-      $("statusLine").textContent = j?.message || `Login failed (${r.status})`;
+      setStatus("warn", j?.message || `Login failed (${r.status})`);
       setSessionPill(false, null);
       return;
     }
 
-    $("statusLine").className = "msg";
-    $("statusLine").textContent = "Logged in.";
+    setStatus("", "Logged in.");
     await refreshSession();
   }
 
   async function doLogout() {
-    $("statusLine").className = "msg busy";
-    $("statusLine").textContent = "Logging out…";
+    setStatus("busy", "Logging out…");
 
     await fetch(`${WORKER_BASE}/admin/logout`, {
       method: "POST",
       credentials: "include"
     }).catch(() => null);
 
-    $("statusLine").className = "msg";
-    $("statusLine").textContent = "Logged out.";
+    setStatus("", "Logged out.");
     setSessionPill(false, null);
   }
 
   async function doSearch() {
     const q = $("q")?.value?.trim() || "";
     if (!q) {
-      $("statusLine").className = "msg warn";
-      $("statusLine").textContent = "Enter a query (email or order #).";
+      setStatus("warn", "Enter a query (email or order #).");
       return;
     }
 
-    $("statusLine").className = "msg busy";
-    $("statusLine").textContent = "Searching…";
+    setStatus("busy", "Searching…");
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
@@ -527,14 +577,12 @@
     lastRaw = j;
 
     if (!r.ok || !j?.ok) {
-      $("statusLine").className = "msg warn";
-      $("statusLine").textContent = j?.error || `Search failed (${r.status})`;
+      setStatus("warn", j?.error || `Search failed (${r.status})`);
       renderRawJson();
       return;
     }
 
-    $("statusLine").className = "msg";
-    $("statusLine").textContent = "Search complete.";
+    setStatus("", "Search complete.");
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
@@ -542,8 +590,7 @@
   }
 
   async function doTotals() {
-    $("statusLine").className = "msg busy";
-    $("statusLine").textContent = "Loading totals…";
+    setStatus("busy", "Loading totals…");
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/stats`, {
@@ -555,18 +602,13 @@
     lastRaw = j;
 
     if (!r.ok || !j?.ok) {
-      $("statusLine").className = "msg warn";
-      $("statusLine").textContent = j?.error || `Totals failed (${r.status})`;
+      setStatus("warn", j?.error || `Totals failed (${r.status})`);
       renderRawJson();
       return;
     }
 
-    $("statusLine").className = "msg";
-    $("statusLine").textContent = "Totals loaded.";
-
-    // Totals renderer lives in your existing file; leaving as-is to avoid payload/field regressions.
-    // If you want totals displayed here, we can wire it in after confirming current totals UI expectations.
-    $("results").innerHTML = "";
+    setStatus("", "Totals loaded.");
+    $("results").innerHTML = renderTotals(j);
     renderRawJson();
   }
 

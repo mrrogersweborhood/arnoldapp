@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26c — Restore Subscriber/Billing/Shipping + one-line Subscriptions/Orders + compact rows + spinner) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Restore statusLine+spinner + row/notes styling + rawJsonBox) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -206,147 +206,23 @@
 
     .results{ display:flex; flex-direction:column; gap:14px; }
 
-    .aa-section{ padding:14px }
-    .aa-section-head{
-      display:flex;
-      align-items:baseline;
-      justify-content:space-between;
-      gap:10px;
-      padding-bottom:10px;
-      border-bottom:1px solid var(--border);
-      margin-bottom:12px;
-    }
-    .aa-section-title{ font-size:16px; font-weight:900; }
-    .aa-section-subtitle{ font-size:12px; font-weight:700; color:var(--muted); }
-
-    .aa-grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      align-items:start;
-    }
-
-    .aa-empty{
-      padding:10px 12px;
-      border:1px dashed rgba(15,23,42,.18);
-      border-radius:12px;
-      background:rgba(15,23,42,.02);
-      color:var(--muted);
-      font-weight:800;
-    }
-
-    .aa-card{
-      padding:12px;
-      border-radius:14px;
-      border:1px solid var(--border);
-      background:rgba(15,23,42,.02);
-      box-shadow:none;
-    }
-    .aa-card-title{
-      font-weight:900;
-      font-size:14px;
-      margin-bottom:10px;
-    }
-
-    .aa-fields{
-      display:grid;
-      grid-template-columns:140px 1fr;
-      gap:8px 14px;
-      align-items:start;
-    }
-    .aa-field{ display:contents; }
-    .aa-label{
-      font-size:12px;
-      font-weight:950;
-      color:var(--brand);
-      margin:0;
-      padding-top:2px;
-    }
-    .aa-value{
-      font-size:14px;
-      font-weight:850;
-      color:#0b1220;
-      line-height:1.25;
-      word-break:break-word;
-    }
-
-    /* ✅ Compact one-line rows */
+    /* compact rows + notes toggle (already in your file) */
     .aa-row{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:8px;
-      padding:8px 10px;
+      gap:12px;
+      padding:10px 12px;
       border:1px solid var(--border);
       border-radius:14px;
       background:#fff;
-      margin-bottom:6px;
+      margin-bottom:8px;
     }
     .aa-row:last-child{ margin-bottom:0; }
     .aa-row-main{ flex:1 1 auto; min-width:0; }
-    .aa-row-title{ display:none; } /* legacy layout disabled */
-    .aa-row-sub{ display:none; }   /* legacy layout disabled */
+    .aa-row-title{ font-weight:950; font-size:14px; margin-bottom:4px; }
+    .aa-row-sub{ font-size:13px; font-weight:850; color:#0b1220; display:flex; flex-wrap:wrap; gap:6px 10px; }
     .aa-muted{ color:var(--muted); font-weight:800; }
-
-    /* Single header row + one-line grids for Subscriptions / Orders */
-    .aa-list-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:8px 10px;
-      margin:10px 0 8px;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:rgba(15,23,42,.02);
-    }
-    .aa-head-col{
-      font-size:11px;
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:#334155;
-      opacity:.92;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .aa-val{
-      font-size:13px;
-      font-weight:900;
-      color:#0b1220;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      min-width:0;
-    }
-    .aa-sub-grid{
-      display:grid;
-      grid-template-columns: 90px 130px 120px 120px 140px 110px;
-      gap:10px 12px;
-      align-items:center;
-      flex:1 1 auto;
-      min-width:0;
-    }
-    .aa-order-grid{
-      display:grid;
-      grid-template-columns: 90px 160px 140px 120px;
-      gap:10px 12px;
-      align-items:center;
-      flex:1 1 auto;
-      min-width:0;
-    }
-    .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
-    .aa-row-notes-head{
-      min-width:220px;
-      text-align:right;
-      font-size:11px;
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:#334155;
-      opacity:.92;
-    }
 
     .aa-pill{
       display:inline-flex;
@@ -366,6 +242,7 @@
       color:rgba(30,144,255,.98);
     }
 
+    .aa-row-notes{ flex:0 0 auto; min-width:220px; text-align:right; }
     .aa-notes-empty{ color:var(--muted); font-weight:850; }
 
     .aa-notes-toggle{
@@ -441,16 +318,10 @@
     }
 
     @media (max-width: 980px){
-      .aa-sub-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .aa-order-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-
       .grid{ grid-template-columns:1fr 1fr; }
       .grid .btn{ grid-column:1 / -1 }
-      .aa-grid-2{ grid-template-columns:1fr }
-      .aa-fields{ grid-template-columns:1fr; }
       .aa-row{ flex-direction:column; align-items:flex-start; }
       .aa-row-notes{ min-width:unset; text-align:left; }
-      .aa-row-notes-head{ min-width:unset; text-align:left; }
     }
   </style>
 </head>
@@ -516,7 +387,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-26g"></script>
+  <script src="./main.js?v=2026-02-27-002"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
