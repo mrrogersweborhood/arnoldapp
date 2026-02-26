@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Totals screen + pretty formatting + shipping fallback)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — Totals screen + pretty formatting + shipping fallback)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -360,50 +360,11 @@
     `;
   }
 
-  function getOrderItemsSummary(o) {
-    // Prefer Woo standard field: line_items[]
-    const li = Array.isArray(o?.line_items) ? o.line_items : null;
-    if (li && li.length) {
-      const parts = li
-        .map((x) => {
-          const name = String(x?.name ?? "").trim();
-          const qty = x?.quantity ?? x?.qty ?? null;
-          if (!name) return null;
-          const qn = Number(qty);
-          return Number.isFinite(qn) && qn > 1 ? `${name} ×${qn}` : name;
-        })
-        .filter(Boolean);
-
-      if (!parts.length) return "—";
-      if (parts.length <= 2) return parts.join(", ");
-      return `${parts.slice(0, 2).join(", ")} +${parts.length - 2} more`;
-    }
-
-    // Fallbacks if worker ever provides a summary string/array
-    if (typeof o?.items_summary === "string" && o.items_summary.trim()) return o.items_summary.trim();
-    if (typeof o?.item_names === "string" && o.item_names.trim()) return o.item_names.trim();
-
-    const itemsArr = Array.isArray(o?.items) ? o.items : null;
-    if (itemsArr && itemsArr.length) {
-      const parts = itemsArr
-        .map((x) => String(x?.name ?? x?.title ?? "").trim())
-        .filter(Boolean);
-
-      if (!parts.length) return "—";
-      if (parts.length <= 2) return parts.join(", ");
-      return `${parts.slice(0, 2).join(", ")} +${parts.length - 2} more`;
-    }
-
-    return "—";
-  }
-
   function renderOrderRow(o) {
     const id = o?.id ?? "—";
     const status = o?.status ?? "—";
     const total = fmtMoney(o?.total, o?.currency);
     const created = fmtDate(o?.date_created);
-
-    const items = getOrderItemsSummary(o);
 
     const notesHtml = renderNotesToggle("order", String(id), o?.notes || []);
 
@@ -414,7 +375,6 @@
           <div class="aa-row-sub">
             <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
             <span class="aa-muted">Date</span> ${esc(created)}
-            <span class="aa-muted">Items</span> ${esc(items)}
             <span class="aa-muted">Total</span> ${esc(total)}
           </div>
         </div>
