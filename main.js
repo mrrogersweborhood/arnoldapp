@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-nt1 — Notes tables with headers)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-27-002 — two-tier rows + notes right toggle)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -270,36 +270,17 @@
     if (!safeNotes.length) return `<div class="aa-notes-empty">—</div>`;
 
     const arrow = isOpen ? "▾" : "▸";
-
-    const tableRows = safeNotes
+    const rows = safeNotes
       .map((n) => {
         const when = fmtDate(n?.date_created);
-        const who = (n?.author || n?.added_by || "").trim();
+        const who = n?.author || n?.added_by || "";
         const text = stripHtml(n?.note || "");
-        return `<tr>
-          <td class="aa-notes-td-date">${esc(when)}</td>
-          <td class="aa-notes-td-who">${esc(who || "—")}</td>
-          <td class="aa-notes-td-note">${esc(text || "—")}</td>
-        </tr>`;
+        return `<div class="aa-note">
+          <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+          <div class="aa-note-text">${esc(text || "—")}</div>
+        </div>`;
       })
       .join("");
-
-    const tableHtml = `
-      <div class="aa-notes-table-wrap">
-        <table class="aa-notes-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Added By</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${tableRows}
-          </tbody>
-        </table>
-      </div>
-    `;
 
     return `
       <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
@@ -307,7 +288,7 @@
         <span class="aa-notes-label">Notes</span>
         <span class="aa-notes-count">${esc(String(safeNotes.length))}</span>
       </button>
-      <div class="aa-notes-body" style="${isOpen ? "" : "display:none;"}">${tableHtml}</div>
+      <div class="aa-notes-body" style="${isOpen ? "" : "display:none;"}">${rows}</div>
     `;
   }
 
@@ -478,21 +459,29 @@
     return `
       <div class="aa-row">
         <div class="aa-row-main">
-          <div class="aa-row-title">#${esc(String(id))}</div>
-          <div class="aa-row-sub">
-            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
-            <span class="aa-muted">Start</span> ${esc(start)}
-            <span class="aa-muted">Next</span> ${esc(nextPay)}
-            <span class="aa-muted">End</span> ${esc(end)}
-            <span class="aa-muted">Total</span> ${esc(total)}
+          <div class="aa-row-grid aa-sub-grid">
+            <div class="aa-row-h">ID</div>
+            <div class="aa-row-h">Status</div>
+            <div class="aa-row-h">Start</div>
+            <div class="aa-row-h">Next</div>
+            <div class="aa-row-h">End</div>
+            <div class="aa-row-h">Total</div>
+
+            <div class="aa-row-v">#${esc(String(id))}</div>
+            <div class="aa-row-v"><span class="aa-pill aa-pill-blue">${esc(String(status))}</span></div>
+            <div class="aa-row-v">${esc(start)}</div>
+            <div class="aa-row-v">${esc(nextPay)}</div>
+            <div class="aa-row-v">${esc(end)}</div>
+            <div class="aa-row-v">${esc(total)}</div>
           </div>
         </div>
+
         <div class="aa-row-notes">${notesHtml}</div>
       </div>
     `;
   }
 
-  // ✅ Purchased items from Woo order line_items (Name xQty)
+  // Purchased items from Woo order line_items (Name xQty)
   function renderOrderItems(o) {
     const items = Array.isArray(o?.line_items) ? o.line_items : [];
     if (!items.length) return "—";
@@ -516,14 +505,21 @@
     return `
       <div class="aa-row">
         <div class="aa-row-main">
-          <div class="aa-row-title">#${esc(String(id))}</div>
-          <div class="aa-row-sub">
-            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
-            <span class="aa-muted">Date</span> ${esc(created)}
-            <span class="aa-muted">Total</span> ${esc(total)}
-            <span class="aa-muted">Items</span> <span class="aa-items">${renderOrderItems(o)}</span>
+          <div class="aa-row-grid aa-order-grid">
+            <div class="aa-row-h">ID</div>
+            <div class="aa-row-h">Status</div>
+            <div class="aa-row-h">Date</div>
+            <div class="aa-row-h">Total</div>
+            <div class="aa-row-h">Items</div>
+
+            <div class="aa-row-v">#${esc(String(id))}</div>
+            <div class="aa-row-v"><span class="aa-pill aa-pill-blue">${esc(String(status))}</span></div>
+            <div class="aa-row-v">${esc(created)}</div>
+            <div class="aa-row-v">${esc(total)}</div>
+            <div class="aa-row-v aa-row-v-items">${renderOrderItems(o)}</div>
           </div>
         </div>
+
         <div class="aa-row-notes">${notesHtml}</div>
       </div>
     `;
