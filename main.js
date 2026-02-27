@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-02-25c — Totals screen + pretty formatting + shipping fallback)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Restore table layout + billing/shipping email/phone + order items)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -120,6 +120,10 @@
   // -----------------------------
   // RAW JSON TOGGLE (hide meta_data in viewer)
   // -----------------------------
+  // Re-render state (so Notes toggles can expand table rows)
+  let lastMode = null; // 'search' | 'totals'
+  let lastPayload = null;
+
   let rawVisible = false;
   let lastRaw = null;
 
@@ -135,11 +139,26 @@
     return out;
   }
 
+  function ensureRawBox() {
+    let box = $("rawJsonBox");
+    if (box) return box;
+
+    const wrap = document.querySelector(".wrap");
+    const btn = $("btnRawJson");
+    if (!wrap || !btn) return null;
+
+    box = document.createElement("pre");
+    box.id = "rawJsonBox";
+    box.style.display = "none";
+    wrap.insertBefore(box, btn);
+    return box;
+  }
+
   function renderRawJson() {
-    const box = $("rawJsonBox");
+    const box = ensureRawBox();
     if (!box) return;
     if (!rawVisible) {
-      box.innerHTML = "";
+      box.textContent = "";
       box.style.display = "none";
       return;
     }
@@ -167,18 +186,18 @@
       <div class="aa-card">
         <div class="aa-card-title">Customer</div>
 
-        <div class="aa-fields">
-          <div class="aa-field">
+        <div class="aa-tiles customer">
+          <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
             <div class="aa-value">${esc(String(id))}</div>
           </div>
 
-          <div class="aa-field">
+          <div class="aa-tile">
             <div class="aa-label">Username</div>
             <div class="aa-value">${esc(String(username))}</div>
           </div>
 
-          <div class="aa-field">
+          <div class="aa-tile">
             <div class="aa-label">Name</div>
             <div class="aa-value">${esc(String(name))}</div>
           </div>
@@ -187,8 +206,9 @@
     `;
   }
 
-  function renderAddressBlock(title, a, fallbackBilling) {
-    const f = fallbackBilling;
+  function renderAddressBlock(title, addr, fallbackAddr) {
+    const a = addr || null;
+    const f = fallbackAddr || null;
 
     const first = (a?.first_name ?? "").trim();
     const last = (a?.last_name ?? "").trim();
@@ -202,27 +222,36 @@
     const country = (a?.country ?? "").trim();
 
     const email = (a?.email ?? "").trim();
-    const phone = (a?.phone ?? "").trim();
+    const phone = fmtPhone((a?.phone ?? "").trim());
 
     const hasAny =
       name || addr1 || addr2 || city || state || zip || country || email || phone;
 
-    // Shipping fallback: if missing, show "Same as billing" + render billing details
+    // Shipping fallback: if missing, show "Same as billing" and use billing fields
     const sameAsBilling = title.toLowerCase() === "shipping" && !hasAny && f;
 
-    const showName = sameAsBilling ? (() => {
-      const bf = (f?.first_name ?? "").trim();
-      const bl = (f?.last_name ?? "").trim();
-      return [bf, bl].filter(Boolean).join(" ").trim() || "Same as billing";
-    })() : (name || (title.toLowerCase() === "shipping" && !hasAny ? "Same as billing" : "—"));
+    const pick = (key) => {
+      if (!sameAsBilling) return (a?.[key] ?? "");
+      return (f?.[key] ?? "");
+    };
 
-    const showAddrLines = sameAsBilling ? (() => {
-      const b1 = (f?.address_1 ?? "").trim();
-      const b2 = (f?.address_2 ?? "").trim();
-      const c = (f?.city ?? "").trim();
-      const s = (f?.state ?? "").trim();
-      const z = (f?.postcode ?? "").trim();
-      const co = (f?.country ?? "").trim();
+    const showName = (() => {
+      const fn = String(pick("first_name") ?? "").trim();
+      const ln = String(pick("last_name") ?? "").trim();
+      const nm = [fn, ln].filter(Boolean).join(" ").trim();
+      if (nm) return nm;
+      if (sameAsBilling) return "Same as billing";
+      return "—";
+    })();
+
+    const showAddrLines = (() => {
+      const b1 = String(pick("address_1") ?? "").trim();
+      const b2 = String(pick("address_2") ?? "").trim();
+      const c = String(pick("city") ?? "").trim();
+      const s = String(pick("state") ?? "").trim();
+      const z = String(pick("postcode") ?? "").trim();
+      const co = String(pick("country") ?? "").trim();
+
       const lines = [];
       if (b1) lines.push(b1);
       if (b2) lines.push(b2);
@@ -231,43 +260,41 @@
       if (csz) lines.push(csz);
       if (co) lines.push(co);
       return lines.length ? lines.join("<br>") : "—";
-    })() : (() => {
-      const lines = [];
-      if (addr1) lines.push(addr1);
-      if (addr2) lines.push(addr2);
-      const cs = [city, state].filter(Boolean).join(", ");
-      const csz = [cs, zip].filter(Boolean).join(" ");
-      if (csz) lines.push(csz);
-      if (country) lines.push(country);
-      return lines.length ? lines.join("<br>") : "—";
     })();
 
-    const showEmail = sameAsBilling ? ((f?.email ?? "").trim() || "—") : (email || "—");
-    const showPhone = sameAsBilling ? (fmtPhone(f?.phone) || "—") : fmtPhone(phone);
+    const showEmail = (() => {
+      const e = String(pick("email") ?? "").trim();
+      return e || "—";
+    })();
+
+    const showPhone = (() => {
+      const p = fmtPhone(String(pick("phone") ?? "").trim());
+      return p || "—";
+    })();
 
     return `
       <div class="aa-card">
         <div class="aa-card-title">${esc(title)}</div>
 
-        <div class="aa-fields">
-          <div class="aa-field">
+        <div class="aa-tiles onecol">
+          <div class="aa-tile">
             <div class="aa-label">Name</div>
             <div class="aa-value">${esc(showName)}</div>
           </div>
 
-          <div class="aa-field">
+          <div class="aa-tile">
             <div class="aa-label">Address</div>
             <div class="aa-value">${showAddrLines}</div>
           </div>
 
-          <div class="aa-field">
+          <div class="aa-tile">
             <div class="aa-label">Email</div>
-            <div class="aa-value">${esc(showEmail || "—")}</div>
+            <div class="aa-value">${esc(showEmail)}</div>
           </div>
 
-          <div class="aa-field">
+          <div class="aa-tile">
             <div class="aa-label">Phone</div>
-            <div class="aa-value">${esc(showPhone || "—")}</div>
+            <div class="aa-value">${esc(showPhone)}</div>
           </div>
         </div>
       </div>
@@ -285,28 +312,14 @@
     const isOpen = set.has(id);
 
     const safeNotes = Array.isArray(notes) ? notes : [];
-    if (!safeNotes.length) return `<div class="aa-notes-empty">—</div>`;
-
     const arrow = isOpen ? "▾" : "▸";
-    const rows = safeNotes
-      .map((n) => {
-        const when = fmtDate(n?.date_created);
-        const who = n?.author || n?.added_by || "";
-        const text = stripHtml(n?.note || "");
-        return `<div class="aa-note" style="padding:10px 10px;border-radius:12px;border:1px solid var(--border);background:#fff;margin-bottom:10px;">
-          <div class="aa-note-meta" style="font-size:12px;font-weight:950;color:#334155;margin-bottom:6px;">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
-          <div class="aa-note-text" style="font-size:13px;font-weight:750;color:#0b1220;line-height:1.35;white-space:pre-wrap;">${esc(text || "—")}</div>
-        </div>`;
-      })
-      .join("");
 
     return `
       <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
-        <span class="aa-notes-arrow">${arrow}</span>
         <span class="aa-notes-label">Notes</span>
-        <span class="aa-notes-count">${esc(String(safeNotes.length))}</span>
+        <span class="aa-notes-count">${esc(String(safeNotes.length || 0))}</span>
+        <span class="aa-notes-arrow">${arrow}</span>
       </button>
-      <div class="aa-notes-body" style="${isOpen ? "" : "display:none;"}">${rows}</div>
     `;
   }
 
@@ -322,64 +335,113 @@
         if (set.has(id)) set.delete(id);
         else set.add(id);
 
-        const body = btn.nextElementSibling;
-        const arrow = btn.querySelector(".aa-notes-arrow");
-        if (body) {
-          const open = set.has(id);
-          body.style.display = open ? "" : "none";
-          if (arrow) arrow.textContent = open ? "▾" : "▸";
+        // Re-render current view so the table can insert/remove expanded rows
+        if (lastMode === "search" && lastPayload) {
+          $("results").innerHTML = renderResults(lastPayload);
+          bindNotesToggles($("results"));
         }
       });
     });
   }
 
   function renderSubscriptionRow(s) {
-    const id = s?.id ?? "—";
-    const status = s?.status ?? "—";
+    const id = String(s?.id ?? "—");
+    const status = String(s?.status ?? "—");
     const total = fmtMoney(s?.total, s?.currency);
-    const start = fmtDate(s?.start_date);
     const nextPay = fmtDate(s?.next_payment_date);
     const end = s?.end_date ? fmtDate(s?.end_date) : "Auto-renews";
 
-    const notesHtml = renderNotesToggle("sub", String(id), s?.notes || []);
+    const notes = Array.isArray(s?.notes) ? s.notes : [];
+    const isOpen = openSubNotes.has(id);
+
+    const btn = renderNotesToggle("sub", id, notes);
+
+    const notesHtml = notes.length
+      ? notes
+          .map((n) => {
+            const when = fmtDate(n?.date_created);
+            const who = n?.author || n?.added_by || "";
+            const text = stripHtml(n?.note || "");
+            return `<div class="aa-note">
+              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+              <div class="aa-note-text">${esc(text || "—")}</div>
+            </div>`;
+          })
+          .join("")
+      : `<div class="aa-muted">No notes.</div>`;
 
     return `
-      <div class="aa-row">
-        <div class="aa-row-main">
-          <div class="aa-row-title">#${esc(String(id))}</div>
-          <div class="aa-row-sub">
-            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
-            <span class="aa-muted">Start</span> ${esc(start)}
-            <span class="aa-muted">Next</span> ${esc(nextPay)}
-            <span class="aa-muted">End</span> ${esc(end)}
-            <span class="aa-muted">Total</span> ${esc(total)}
-          </div>
-        </div>
-        <div class="aa-row-notes">${notesHtml}</div>
-      </div>
+      <tr>
+        <td>
+          <span class="aa-sub-id">#${esc(id)}</span>
+          <span class="aa-pill">${esc(status)}</span>
+        </td>
+        <td>${esc(total)}</td>
+        <td>${esc(nextPay)}</td>
+        <td>${esc(end)}</td>
+        <td class="aa-notes-cell">${btn}</td>
+      </tr>
+      ${isOpen ? `<tr class="aa-notes-row"><td colspan="5"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
 
   function renderOrderRow(o) {
-    const id = o?.id ?? "—";
-    const status = o?.status ?? "—";
+    const id = String(o?.id ?? "—");
+    const status = String(o?.status ?? "—");
     const total = fmtMoney(o?.total, o?.currency);
     const created = fmtDate(o?.date_created);
 
-    const notesHtml = renderNotesToggle("order", String(id), o?.notes || []);
+    const payment = (() => {
+      const pm = (o?.payment_method_title ?? "").trim();
+      return pm || "—";
+    })();
+
+    // Items purchased (WooCommerce orders use `line_items`)
+    const li = Array.isArray(o?.line_items)
+      ? o.line_items
+      : (Array.isArray(o?.items) ? o.items : []);
+    const itemsText = li.length
+      ? li
+          .map((it) => {
+            const nm = (it?.name ?? "").trim();
+            const qty = it?.quantity ?? it?.qty ?? "";
+            if (!nm) return "";
+            if (qty === "" || qty == null) return nm;
+            return `${nm} ×${qty}`;
+          })
+          .filter(Boolean)
+          .join("; ")
+      : "—";
+
+    const notes = Array.isArray(o?.notes) ? o.notes : [];
+    const isOpen = openOrderNotes.has(id);
+    const btn = renderNotesToggle("order", id, notes);
+
+    const notesHtml = notes.length
+      ? notes
+          .map((n) => {
+            const when = fmtDate(n?.date_created);
+            const who = n?.author || n?.added_by || "";
+            const text = stripHtml(n?.note || "");
+            return `<div class="aa-note">
+              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+              <div class="aa-note-text">${esc(text || "—")}</div>
+            </div>`;
+          })
+          .join("")
+      : `<div class="aa-muted">No notes.</div>`;
 
     return `
-      <div class="aa-row">
-        <div class="aa-row-main">
-          <div class="aa-row-title">#${esc(String(id))}</div>
-          <div class="aa-row-sub">
-            <span class="aa-pill aa-pill-blue">${esc(String(status))}</span>
-            <span class="aa-muted">Date</span> ${esc(created)}
-            <span class="aa-muted">Total</span> ${esc(total)}
-          </div>
-        </div>
-        <div class="aa-row-notes">${notesHtml}</div>
-      </div>
+      <tr>
+        <td><span class="aa-order-id">#${esc(id)}</span></td>
+        <td>${esc(created)}</td>
+        <td><span class="aa-pill">${esc(status)}</span></td>
+        <td>${esc(total)}</td>
+        <td>${esc(payment)}</td>
+        <td title="${esc(itemsText)}">${esc(itemsText)}</td>
+        <td class="aa-notes-cell">${btn}</td>
+      </tr>
+      ${isOpen ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
 
@@ -396,13 +458,13 @@
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
 
-    const subList = subs.length
-      ? subs.map(renderSubscriptionRow).join("")
-      : `<div class="aa-empty">No subscriptions found.</div>`;
+    const subsBody = subs.length ? subs.map(renderSubscriptionRow).join("") : `
+      <tr><td colspan="5" class="aa-muted">No subscriptions found.</td></tr>
+    `;
 
-    const orderList = orders.length
-      ? orders.map(renderOrderRow).join("")
-      : `<div class="aa-empty">No orders found.</div>`;
+    const ordersBody = orders.length ? orders.map(renderOrderRow).join("") : `
+      <tr><td colspan="7" class="aa-muted">No orders found.</td></tr>
+    `;
 
     return `
       <section class="card aa-section">
@@ -423,15 +485,49 @@
           <div class="aa-section-title">Subscriptions</div>
           <div class="aa-section-subtitle">Schedule & Notes</div>
         </div>
-        ${subList}
+
+        <div class="aa-table-wrap">
+          <table class="aa-table">
+            <thead>
+              <tr>
+                <th>Subscription</th>
+                <th>Total</th>
+                <th>Next Payment</th>
+                <th>End</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subsBody}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Orders</div>
-          <div class="aa-section-subtitle">Payment & Notes</div>
+          <div class="aa-section-subtitle">Most recent first</div>
         </div>
-        ${orderList}
+
+        <div class="aa-table-wrap">
+          <table class="aa-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Items</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ordersBody}
+            </tbody>
+          </table>
+        </div>
       </section>
     `;
   }
@@ -463,7 +559,7 @@
         </div>
 
         <div class="aa-table-wrap">
-          <table>
+          <table class="aa-table" style="min-width:420px;">
             <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
             <tbody>${subRows}</tbody>
           </table>
@@ -535,6 +631,8 @@
 
     const j = await r.json().catch(() => null);
     lastRaw = j;
+    lastMode = "search";
+    lastPayload = j;
 
     if (!r.ok || !j?.ok) {
       setStatus("warn", j?.error || `Search failed (${r.status})`);
@@ -560,6 +658,8 @@
 
     const j = await r.json().catch(() => null);
     lastRaw = j;
+    lastMode = "totals";
+    lastPayload = j;
 
     if (!r.ok || !j?.ok) {
       setStatus("warn", j?.error || `Totals failed (${r.status})`);
