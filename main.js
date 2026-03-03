@@ -25,12 +25,39 @@
 
   // -----------------------------
   // STATUS LINE
+function friendlyText(x) {
+  if (x == null) return "";
+  if (typeof x === "string") return x;
+
+  // Common error shapes from APIs
+  if (typeof x === "object") {
+    if (typeof x.message === "string") return x.message;
+    if (typeof x.error === "string") return x.error;
+    if (typeof x.detail === "string") return x.detail;
+    if (typeof x.reason === "string") return x.reason;
+
+    // Try JSON as a last resort (but keep it short)
+    try {
+      const s = JSON.stringify(x);
+      return s.length > 220 ? s.slice(0, 220) + "…" : s;
+    } catch {
+      return "An unexpected error occurred.";
+    }
+  }
+
+  return String(x);
+}
+
+function isNotFoundish(status, payload) {
+  const msg = (friendlyText(payload?.error || payload?.message || payload?.detail)).toLowerCase();
+  return status === 404 || msg.includes("not found") || msg.includes("no results") || msg.includes("no matching");
+}
   // -----------------------------
   function setStatus(kind, text) {
     const sl = $("statusLine");
     if (!sl) return;
     sl.className = "msg" + (kind ? ` ${kind}` : "");
-    sl.textContent = String(text ?? "");
+    sl.textContent = friendlyText(text ?? "");
   }
 
   // -----------------------------
@@ -635,10 +662,15 @@
     lastPayload = j;
 
     if (!r.ok || !j?.ok) {
-      setStatus("warn", j?.error || `Search failed (${r.status})`);
-      renderRawJson();
-      return;
-    }
+  const qTxt = $("q")?.value?.trim() || "";
+  if (isNotFoundish(r.status, j)) {
+    setStatus("warn", `No results found for "${qTxt}". Try an email address or an order # (example: #385309).`);
+  } else {
+    setStatus("warn", friendlyText(j?.error || j?.message) || `Search failed (${r.status})`);
+  }
+  renderRawJson();
+  return;
+}
 
     setStatus("", "Search complete.");
     $("results").innerHTML = renderResults(j);
