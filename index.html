@@ -323,6 +323,25 @@
 .aa-tiles.onecol .aa-value{
   font-weight:800;
 } 
+/* Billing/Shipping: label left, value right */
+.aa-tiles.onecol .aa-tile{
+  display:grid;
+  grid-template-columns:120px 1fr;
+  column-gap:14px;
+  align-items:start;
+}
+
+.aa-tiles.onecol .aa-label{
+  margin:0;
+  line-height:1.2;
+  white-space:nowrap;
+}
+
+.aa-tiles.onecol .aa-value{
+  margin:0;
+  line-height:1.25;
+  word-break:break-word;
+}
     .aa-pill{
       display:inline-flex;
       align-items:center;
@@ -515,7 +534,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-26h"></script>
+  <script src="./main.js?v=2026-02-26i"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

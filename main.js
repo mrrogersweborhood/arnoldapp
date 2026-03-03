@@ -123,18 +123,36 @@ return s;
   // -----------------------------
   // SESSION UI
   // -----------------------------
-  function setSessionPill(isLoggedIn, name) {
+  function applyLoginUserMask(isLoggedIn) {
+    const u = $("loginUser");
+    if (!u) return;
+
+    const hasValue = !!String(u.value || "").trim();
+
+    // If logged in AND the field has a value, mask it.
+    if (isLoggedIn && hasValue) {
+      if (u.type !== "password") u.type = "password";
+      return;
+    }
+
+    // Otherwise show it normally.
+    if (u.type !== "text") u.type = "text";
+  }  
+function setSessionPill(isLoggedIn, name) {
     const pill = $("sessionPill");
     const txt = $("sessionText");
     if (!pill || !txt) return;
 
-    if (isLoggedIn) {
+        if (isLoggedIn) {
       pill.classList.add("ok");
       txt.textContent = `Session: logged in as ${name || "admin"}`;
     } else {
       pill.classList.remove("ok");
       txt.textContent = "Session: unknown";
     }
+
+    // Hide/reveal username field based on logged-in state
+    applyLoginUserMask(!!isLoggedIn);
   }
 
   async function refreshSession() {
@@ -717,7 +735,18 @@ return s;
     $("btnSearch")?.addEventListener("click", (e) => { e.preventDefault(); doSearch().catch(console.error); });
     $("btnTotals")?.addEventListener("click", (e) => { e.preventDefault(); doTotals().catch(console.error); });
     $("btnRawJson")?.addEventListener("click", (e) => { e.preventDefault(); toggleRawJson(); });
-
+    // Username field behavior:
+    // - when logged in, it will be masked (password type)
+    // - click/focus reveals it
+    // - blur re-masks it if still logged in
+    const u = $("loginUser");
+    u?.addEventListener("focus", () => {
+      if (u.type !== "text") u.type = "text";
+    });
+    u?.addEventListener("blur", () => {
+      const loggedInNow = $("sessionPill")?.classList?.contains("ok");
+      applyLoginUserMask(!!loggedInNow);
+    });
     refreshSession().catch(() => setSessionPill(false, null));
   }
 
