@@ -499,7 +499,7 @@ function isNotFoundish(status, payload) {
           <div class="aa-section-title">Subscriber</div>
         </div>
 
-        ${customerCard}
+       
 
         <div class="aa-grid-2">
           ${billingCard}
