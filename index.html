@@ -1,48 +1,47 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Restore table layout + billing/shipping email/phone) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26e — Restore table layout + billing/shipping email/phone) -->
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Arnold Admin</title>
-
   <style>
     :root{
-      --brand:#1E90FF;
-      --bg:#f4f6fb;
-      --card:#ffffff;
+      --blue:#1E90FF;
+      --bg:#f3f6fb;
+      --card:#fff;
+      --text:#101418;
       --muted:#6b7280;
-      --text:#0f172a;
-      --border:rgba(15,23,42,.10);
-      --shadow:0 10px 26px rgba(15,23,42,.08);
-      --radius:16px;
+      --border:rgba(0,0,0,.08);
+      --shadow:0 10px 25px rgba(0,0,0,.08);
+      --radius:14px;
+      --radius2:18px;
+      --max:1200px;
+      --font:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
     }
-    html,body{height:100%}
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      font-size:16px;
+      font-family:var(--font);
       background:var(--bg);
       color:var(--text);
     }
-
     .topbar{
       position:sticky;
       top:0;
-      z-index:5;
-      background:var(--brand);
+      z-index:50;
+      background:var(--blue);
       color:#fff;
-      box-shadow:0 8px 22px rgba(0,0,0,.12);
-      padding:12px 16px;
+      box-shadow:0 4px 14px rgba(0,0,0,.15);
     }
     .topbar-inner{
-      max-width:1500px;
+      max-width:var(--max);
       margin:0 auto;
+      padding:10px 16px;
       display:flex;
       align-items:center;
-      justify-content:space-between;
-      gap:12px;
+      gap:14px;
     }
     .brand{
       display:flex;
@@ -50,453 +49,431 @@
       gap:12px;
       min-width:220px;
     }
-    .brand img{
-      width:44px;
-      height:44px;
+    .logo{
+      width:44px;height:44px;
       border-radius:10px;
-      object-fit:cover;
       background:#fff;
-    }
-    .brand .title{
-      display:flex;
-      flex-direction:column;
-      line-height:1.15;
-    }
-    .brand .title b{
-      font-size:18px;
-      letter-spacing:.2px;
-    }
-    .brand .title span{
-      font-size:12px;
-      opacity:.95;
-      margin-top:2px;
-    }
-
-    .session-pill{
-      background:rgba(255,255,255,.20);
-      border:1px solid rgba(255,255,255,.26);
-      color:#fff;
-      padding:8px 12px;
-      border-radius:999px;
-      font-weight:650;
-      font-size:13px;
       display:flex;
       align-items:center;
-      gap:8px;
+      justify-content:center;
+      overflow:hidden;
+      box-shadow:0 3px 10px rgba(0,0,0,.18);
+      flex:0 0 auto;
+    }
+    .logo img{ width:100%; height:100%; object-fit:cover; }
+    .brand-text{ line-height:1.15; }
+    .brand-title{ font-weight:900; letter-spacing:.2px; font-size:18px; }
+    .brand-sub{ font-size:12px; opacity:.9; }
+    .pill{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.25);
+      padding:8px 12px;
+      border-radius:999px;
+      font-size:13px;
       white-space:nowrap;
     }
     .dot{
-      width:10px;
-      height:10px;
-      border-radius:50%;
-      background:#fca5a5;
-      box-shadow:0 0 0 3px rgba(252,165,165,.20);
-      flex:0 0 auto;
-      transition: background .15s ease, box-shadow .15s ease;
+      width:10px;height:10px;border-radius:50%;
+      background:#ff3b30;
+      box-shadow:0 0 0 4px rgba(255,59,48,.22);
     }
-    .session-pill.ok .dot{
-      background:#22c55e;
-      box-shadow:0 0 0 3px rgba(34,197,94,.22);
+    .dot.ok{
+      background:#2dd36f;
+      box-shadow:0 0 0 4px rgba(45,211,111,.22);
     }
 
     .wrap{
-      max-width:1500px;
-      margin:18px auto 44px;
-      padding:0 16px;
+      max-width:var(--max);
+      margin:0 auto;
+      padding:18px 16px 48px;
     }
 
     .card{
       background:var(--card);
       border:1px solid var(--border);
-      border-radius:var(--radius);
+      border-radius:var(--radius2);
       box-shadow:var(--shadow);
     }
 
-    .search-card{
-      padding:14px 14px 10px;
-      margin-bottom:14px;
-      background:var(--brand);
+    .auth{
+      padding:16px;
+      margin-top:12px;
+      background:linear-gradient(0deg, rgba(255,255,255,.08), rgba(255,255,255,.08)), var(--blue);
       border:0;
+      color:#fff;
     }
-    .grid{
+    .auth .row{
       display:grid;
-      grid-template-columns:1fr 1fr auto;
-      gap:12px;
+      grid-template-columns: 1fr 1fr auto;
+      gap:14px;
       align-items:end;
     }
-    .field label{
-      display:block;
+    .auth label{
       font-size:12px;
-      font-weight:700;
-      color:rgba(255,255,255,.90);
-      margin:0 0 6px;
-      letter-spacing:.2px;
+      font-weight:800;
+      opacity:.95;
+      display:block;
+      margin-bottom:6px;
     }
-    .field input{
+    .auth input{
       width:100%;
-      box-sizing:border-box;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.32);
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.35);
       background:rgba(255,255,255,.92);
-      outline:none;
       font-size:14px;
+      outline:none;
     }
-    .field input:focus{border-color:#fff}
-    .btn{
+    .btns{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      padding-bottom:2px;
+    }
+    button{
       cursor:pointer;
       border:0;
-      border-radius:12px;
+      border-radius:14px;
       padding:10px 14px;
       font-weight:800;
       background:#fff;
-      color:var(--brand);
-      box-shadow:0 8px 18px rgba(0,0,0,.10);
+      color:var(--blue);
+      box-shadow:0 8px 18px rgba(0,0,0,.12);
     }
-    .btn.ghost{
+    button.secondary{
       background:rgba(255,255,255,.18);
+      border:1px solid rgba(255,255,255,.28);
       color:#fff;
-      border:1px solid rgba(255,255,255,.26);
       box-shadow:none;
     }
 
-    /* Status line: visible only when it has text */
-    #statusLine{ display:block; }
-    #statusLine:empty{ display:none; }
+    .search-row{
+      display:grid;
+      grid-template-columns: 1fr auto auto;
+      gap:12px;
+      align-items:end;
+      margin-top:12px;
+    }
+    .search-row label{
+      font-size:12px;
+      font-weight:800;
+      opacity:.95;
+      display:block;
+      margin-bottom:6px;
+    }
+    .search-row input{
+      width:100%;
+      padding:12px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.35);
+      background:rgba(255,255,255,.92);
+      font-size:14px;
+      outline:none;
+    }
 
     .msg{
       margin-top:12px;
-      padding:12px 14px;
-      border-radius:12px;
-      border:1px solid rgba(30,144,255,.22);
-      background:rgba(30,144,255,.10);
-      color:#0b3b7a;
-      font-weight:750;
+      font-weight:900;
+      font-size:14px;
+      opacity:.95;
+      text-align:left;
     }
-    .msg.warn{
-      border-color:rgba(251,191,36,.40);
-      background:rgba(251,191,36,.16);
-      color:#6b4a00;
-    }
+    .msg.ok{ color:#eafff1; }
+    .msg.warn{ color:#fff; }
+    .msg.err{ color:#ffe9e7; }
 
-    /* Busy spinner (left-justified inside the message) */
-    .msg.busy{
-      background: var(--brand);
-      border-color: rgba(30,144,255,.55);
-      color: #fff;
-      position: relative;
-      padding-left: 44px;
-    }
-    .msg.busy::before{
-      content: "";
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      width: 16px;
-      height: 16px;
-      margin-top: -8px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,.55);
-      border-top-color: #fff;
-      animation: aaSpin 0.9s linear infinite;
-    }
-    @keyframes aaSpin { to { transform: rotate(360deg); } }
-
-    .results{ display:flex; flex-direction:column; gap:14px; }
-
-    .rawjson-toggle{
-      position:static;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      margin-top:14px;
-      padding:10px 14px;
-      border-radius:999px;
-      border:0;
-      cursor:pointer;
-      font-weight:950;
-      background:#0b1220;
+    .toggle-raw{
+      margin:16px 0 10px;
+      background:#111827;
       color:#fff;
-      box-shadow:0 12px 26px rgba(0,0,0,.20);
+      border-radius:999px;
+      padding:10px 14px;
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
     }
 
-    pre{
-      background:#0b1220;
-      color:#e5e7eb;
-      border-radius:14px;
-      padding:12px;
-      overflow:auto;
-      border:1px solid rgba(255,255,255,.08);
-      font-size:12px;
-      line-height:1.35;
-      max-height:46vh;
+    .section{
+      margin-top:16px;
     }
-
-    .aa-section{ padding:14px; }
+    .aa-section{
+      padding:0;
+      overflow:hidden;
+    }
     .aa-section-head{
+      padding:14px 16px;
+      border-bottom:1px solid var(--border);
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      padding:2px 2px 10px;
-      border-bottom:1px solid var(--border);
-      margin-bottom:12px;
+      background:rgba(30,144,255,.04);
     }
-    .aa-section-title{ font-weight:950; font-size:16px; letter-spacing:.2px; }
-    .aa-section-subtitle{ font-size:12px; font-weight:700; color:var(--muted); }
+    .aa-section-title{
+      font-weight:900;
+      letter-spacing:.2px;
+    }
+    .aa-section-meta{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:800;
+    }
 
-    /* ----------------------------------------------------
-       ✅ Arnold Admin renderer contract (aa-*) — pretty tables/cards
-       ---------------------------------------------------- */
     .aa-card{
-      margin-top:12px;
-      padding:12px;
-      border-radius:14px;
+      background:#fff;
       border:1px solid var(--border);
-      background:rgba(15,23,42,.02);
-      box-shadow:none;
+      border-radius:16px;
+      padding:14px;
+      margin:14px 16px 16px;
+      box-shadow:0 8px 18px rgba(0,0,0,.06);
     }
     .aa-card-title{
       font-weight:900;
       font-size:14px;
       margin-bottom:10px;
+      color:#111;
     }
 
-    /* Field tiles (label on top, value beneath) */
+    .aa-subblock{
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid rgba(0,0,0,.08);
+    }
+    .aa-subtitle{
+      font-weight:800;
+      font-size:12px;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      color:#1E90FF;
+      margin:0 0 10px 0;
+    }
+    .aa-subhead{
+      font-weight:800;
+      font-size:12px;
+      color:#111;
+      margin:0 0 10px 0;
+    }
+
+    .aa-grid-2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:14px;
+    }
+
     .aa-tiles{
       display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:12px;
-      align-items:start;
+      gap:10px;
     }
+    .aa-tiles.customer{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .aa-tiles.twocol{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .aa-tiles.onecol{ grid-template-columns: 1fr; }
+
     .aa-tile{
       border:1px solid var(--border);
-      border-radius:12px;
+      border-radius:14px;
+      padding:10px 12px;
       background:#fff;
-      padding:10px 10px 9px;
+      box-shadow:0 6px 14px rgba(0,0,0,.04);
       min-height:54px;
     }
     .aa-label{
       font-size:12px;
-      font-weight:950;
-      color:var(--brand);
-      margin:0 0 6px;
+      font-weight:900;
+      color:var(--blue);
+      margin-bottom:4px;
     }
     .aa-value{
+      font-weight:800;
+      color:#111;
       font-size:14px;
-      font-weight:850;
-      color:#0b1220;
-      line-height:1.25;
+      line-height:1.2;
       word-break:break-word;
     }
-
-    /* Customer: 3 across on desktop (ID / Username / Name) */
-    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
-
-    /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
-    .aa-grid-2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      align-items:start;
+    .aa-muted{
+      color:var(--muted);
+      font-weight:800;
     }
 
-    /* Billing/Shipping card internals: one column of tiles (Name/Address/Email/Phone stacked) */
-    .aa-tiles.onecol{ grid-template-columns:1fr; }
-
-    .aa-pill{
-      display:inline-flex;
-      align-items:center;
-      border-radius:999px;
-      padding:4px 10px;
-      font-weight:950;
-      font-size:12px;
-      border:1px solid rgba(30,144,255,.35);
-      background:rgba(30,144,255,.12);
-      color:rgba(30,144,255,.98);
-      white-space:nowrap;
-    }
-
-    /* Tables (Subscriptions / Orders) */
-    .aa-table-wrap{
-      width:100%;
-      overflow:auto;
-      border:1px solid var(--border);
-      border-radius:14px;
-      background:#fff;
-    }
     table.aa-table{
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      min-width:860px; /* allows Orders columns without crushing */
+      font-size:14px;
     }
     .aa-table thead th{
-      position:sticky;
-      top:0;
-      background:rgba(30,144,255,.06);
-      color:var(--brand);
-      font-size:12px;
-      font-weight:950;
       text-align:left;
       padding:10px 12px;
       border-bottom:1px solid var(--border);
-      white-space:nowrap;
+      color:var(--muted);
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:.02em;
+      text-transform:uppercase;
+      background:rgba(30,144,255,.03);
     }
     .aa-table tbody td{
       padding:10px 12px;
-      border-bottom:1px solid rgba(15,23,42,.08);
-      vertical-align:middle;
-      font-size:14px;
-      font-weight:850;
-      color:#0b1220;
-      white-space:nowrap;
+      border-bottom:1px solid var(--border);
+      vertical-align:top;
     }
     .aa-table tbody tr:last-child td{ border-bottom:0; }
-    .aa-sub-id, .aa-order-id{
-      font-weight:950;
-      color:#0b1220;
-      margin-right:10px;
-    }
-    .aa-muted{ color:var(--muted); font-weight:850; }
 
-    /* Notes toggle (right aligned) */
-    .aa-notes-cell{ text-align:right; }
-    .aa-notes-toggle{
-      cursor:pointer;
-      border:0;
-      background:transparent;
-      color:var(--brand);
-      font-weight:950;
-      font-size:14px;
+    .aa-pill{
       display:inline-flex;
       align-items:center;
-      gap:10px;
-      padding:4px 6px;
+      gap:8px;
+      padding:4px 10px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      border:1px solid rgba(30,144,255,.25);
+      background:rgba(30,144,255,.08);
+      color:var(--blue);
+      white-space:nowrap;
+    }
+    .aa-notes-cell{ text-align:right; white-space:nowrap; }
+    .aa-notes-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(30,144,255,.25);
+      background:rgba(30,144,255,.06);
+      color:var(--blue);
+      font-weight:900;
+      cursor:pointer;
+      user-select:none;
     }
     .aa-notes-count{
       display:inline-flex;
       align-items:center;
       justify-content:center;
       min-width:22px;
-      height:18px;
-      padding:0 7px;
+      height:22px;
+      padding:0 6px;
       border-radius:999px;
-      border:1px solid rgba(30,144,255,.35);
-      background:rgba(30,144,255,.12);
-      color:rgba(30,144,255,.98);
+      background:rgba(30,144,255,.14);
+      border:1px solid rgba(30,144,255,.20);
       font-size:12px;
-      font-weight:950;
     }
-    .aa-notes-arrow{
-      font-size:12px;
-      color:rgba(30,144,255,.98);
-      transform:translateY(1px);
-    }
-
-    /* Expanded notes row */
     .aa-notes-row td{
-      background:rgba(15,23,42,.02);
-      padding:12px;
+      padding-top:0;
+      border-bottom:0;
     }
     .aa-notes-box{
       border:1px solid var(--border);
-      border-radius:12px;
+      border-radius:14px;
       background:#fff;
-      padding:10px;
+      padding:10px 12px;
+      box-shadow:0 10px 20px rgba(0,0,0,.06);
+      margin:0 0 12px;
     }
-    .aa-note{
-      border:1px solid rgba(15,23,42,.10);
-      border-radius:12px;
-      background:#fff;
-      padding:10px;
-      margin-bottom:10px;
+    .aa-notes-item{
+      border-top:1px dashed var(--border);
+      padding-top:8px;
+      margin-top:8px;
     }
-    .aa-note:last-child{ margin-bottom:0; }
+    .aa-notes-item:first-child{
+      border-top:0;
+      padding-top:0;
+      margin-top:0;
+    }
     .aa-note-meta{
       font-size:12px;
-      font-weight:950;
-      color:#334155;
-      margin-bottom:6px;
+      font-weight:900;
+      color:var(--muted);
+      margin-bottom:4px;
     }
     .aa-note-text{
-      font-size:13px;
-      font-weight:750;
-      color:#0b1220;
-      line-height:1.35;
+      font-weight:800;
+      color:#111;
       white-space:pre-wrap;
     }
 
+    .raw{
+      display:none;
+      margin-top:10px;
+      padding:14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background:#0b1220;
+      color:#e5e7eb;
+      font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:12px;
+      overflow:auto;
+      box-shadow:0 12px 26px rgba(0,0,0,.16);
+    }
+    .raw.show{ display:block; }
 
-    @media (max-width: 980px){
-      .grid{ grid-template-columns:1fr 1fr; }
-      .grid .btn{ grid-column:1 / -1 }
+    @media (max-width: 900px){
+      .auth .row{ grid-template-columns:1fr; }
+      .btns{ justify-content:flex-start; }
+      .search-row{ grid-template-columns:1fr; }
       .aa-grid-2{ grid-template-columns:1fr; }
-      .aa-tiles.customer{ grid-template-columns:1fr; }
-      table.aa-table{ min-width:720px; }
+      .brand{ min-width:0; }
+      .pill{ font-size:12px; }
     }
   </style>
 </head>
 
 <body>
-  <div class="topbar">
+  <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <img src="./logo.png" alt="Arnold Admin logo" />
-        <div class="title">
-          <b>Arnold Admin</b>
-          <span>OkObserver admin lookups (cookie session)</span>
+        <div class="logo"><img src="./logo.png" alt="OkObserver" /></div>
+        <div class="brand-text">
+          <div class="brand-title">Arnold Admin</div>
+          <div class="brand-sub">OkObserver admin lookups (cookie session)</div>
         </div>
       </div>
 
-      <div id="sessionPill" class="session-pill">
-        <span class="dot"></span>
+      <div class="pill" id="sessionPill">
+        <span class="dot" id="sessionDot"></span>
         <span id="sessionText">Session: unknown</span>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="wrap">
-    <div class="card search-card">
-      <div class="grid">
-        <div class="field">
+  <main class="wrap">
+    <section class="card auth" aria-label="Authentication">
+      <div class="row">
+        <div>
           <label for="loginUser">Username</label>
-          <input id="loginUser" autocomplete="username" placeholder="admin username" />
+          <input id="loginUser" autocomplete="username" placeholder="admin user id" />
         </div>
-
-        <div class="field">
+        <div>
           <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
+          <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" />
         </div>
-
-        <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end;">
-          <button id="btnLogin" class="btn">Login</button>
-          <button id="btnLogout" class="btn ghost">Logout</button>
-        </div>
-
-        <div class="field" style="grid-column:1 / span 2;">
-          <label for="q">Search</label>
-          <input id="q" placeholder="Find subscription for email, find order #12345, etc." />
-        </div>
-
-        <div style="display:flex; align-items:end; justify-content:flex-end;">
-          <button id="btnSearch" class="btn">Search</button>
-          <button id="btnTotals" class="btn ghost" style="margin-left:10px;">Totals</button>
-        </div>
-
-        <div style="grid-column:1 / -1; display:flex; justify-content:flex-start; gap:10px;">
-          <div id="statusLine" class="msg"></div>
+        <div class="btns">
+          <button id="btnLogin">Login</button>
+          <button class="secondary" id="btnLogout">Logout</button>
         </div>
       </div>
-    </div>
 
-    <div id="results" class="results"></div>
+      <div class="search-row">
+        <div>
+          <label for="q">Search</label>
+          <input id="q" placeholder="email, order #, subscription #, name…" />
+        </div>
+        <button id="btnSearch">Search</button>
+        <button class="secondary" id="btnTotals">Totals</button>
+      </div>
 
-    <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
-  </div>
+      <div class="msg" id="statusLine"></div>
+    </section>
 
-  <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-26f"></script>
+    <button class="toggle-raw" id="toggleRaw">Toggle Raw JSON</button>
+    <pre class="raw" id="rawJson"></pre>
+
+    <div id="app"></div>
+  </main>
+
+  <!-- Cache-bust main.js build -->
+  <script src="./main.js?v=2026-02-26e"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
