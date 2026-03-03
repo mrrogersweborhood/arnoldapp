@@ -94,11 +94,18 @@ function isNotFoundish(status, payload) {
   function fmtPhone(val) {
     const s = String(val ?? "").trim();
     if (!s) return "";
-    const digits = s.replace(/\D/g, "");
-    if (digits.length === 10) {
-      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-    }
-    return s;
+    const digitsRaw = s.replace(/\D/g, "");
+
+// Handle US country code (11 digits starting with 1)
+const digits = (digitsRaw.length === 11 && digitsRaw.startsWith("1"))
+  ? digitsRaw.slice(1)
+  : digitsRaw;
+
+if (digits.length === 10) {
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+return s;
   }
 
   // -----------------------------
@@ -499,7 +506,7 @@ function isNotFoundish(status, payload) {
           <div class="aa-section-title">Subscriber</div>
         </div>
 
-       
+        ${customerCard}
 
         <div class="aa-grid-2">
           ${billingCard}

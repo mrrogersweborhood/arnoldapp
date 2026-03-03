@@ -303,7 +303,26 @@
 
     /* Billing/Shipping card internals: one column of tiles (Name/Address/Email/Phone stacked) */
     .aa-tiles.onecol{ grid-template-columns:1fr; }
+    /* Make Billing/Shipping look like ONE card: remove mini-card styling inside onecol tiles */
+.aa-tiles.onecol{
+  gap:8px;
+}
 
+.aa-tiles.onecol .aa-tile{
+  border:none;
+  background:transparent;
+  padding:0;
+  min-height:auto;
+  border-radius:0;
+}
+
+.aa-tiles.onecol .aa-label{
+  margin:0 0 4px;
+}
+
+.aa-tiles.onecol .aa-value{
+  font-weight:800;
+} 
     .aa-pill{
       display:inline-flex;
       align-items:center;
@@ -496,7 +515,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-02-26g"></script>
+  <script src="./main.js?v=2026-02-26h"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
