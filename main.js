@@ -587,21 +587,47 @@ function setSessionPill(isLoggedIn, name) {
   // -----------------------------
   // TOTALS
   // -----------------------------
-  function renderTotals(data) {
+function renderTotals(data) {
     const d = data || {};
-    const subs = d.subscriptions_by_status || {};
+
+    // Worker may return subscription counts either nested (subscriptions_by_status)
+    // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
+    const subs = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
+      ? d.subscriptions_by_status
+      : {
+          "trash": d.trash,
+          "active": d.active,
+          "expired": d.expired,
+          "pending-cancel": d["pending-cancel"],
+          "pending": d.pending,
+          "on-hold": d["on-hold"],
+          "cancelled": d.cancelled
+        };
+
+    const orders = d.orders_last_30d || {};
     const gen = d.generated_at ? fmtDate(d.generated_at) : "";
 
-    const SUB_STATUS_ORDER = [
-      "Trash","Active","Expired","On hold","Pending payment","Pending cancellation","Cancelled"
-    ];
+const STATUS_MAP = {
+  "Trash": "trash",
+  "Active": "active",
+  "Expired": "expired",
+  "On hold": "on-hold",
+  "Pending payment": "pending",
+  "Pending cancellation": "pending-cancel",
+  "Cancelled": "cancelled"
+};
 
-    const subRows = SUB_STATUS_ORDER
-      .map((label) => {
-        const count = (subs[label] != null) ? subs[label] : 0;
-        return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
-      })
-      .join("") || `<tr><td colspan="2">—</td></tr>`;
+const SUB_STATUS_ORDER = [
+  "Trash","Active","Expired","On hold","Pending payment","Pending cancellation","Cancelled"
+];
+
+const subRows = SUB_STATUS_ORDER
+  .map((label) => {
+    const key = STATUS_MAP[label] || label;
+    const count = (subs[key] != null) ? subs[key] : 0;
+    return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
+  })
+  .join("") || `<tr><td colspan="2">—</td></tr>`;
 
     return `
       <section class="card aa-section">
