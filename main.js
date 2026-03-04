@@ -497,7 +497,6 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 // -----------------------------
-/* TEMP DISABLE HIERARCHY
 // SUBSCRIPTION HIERARCHY (Option A: separate section)
 // -----------------------------
 function getOrderLinkedSubscriptionIds(order) {
@@ -544,14 +543,7 @@ if (Array.isArray(md)) {
   }
 }
 
-      if (val && typeof val === "object") {
-        if (Array.isArray(val)) val.forEach(add);
-        else {
-          add(val.id);
-          add(val.subscription_id);
-        }
-      }
-    }
+
   
 
   return ids;
@@ -671,7 +663,7 @@ function renderHierarchySection(subs, orders) {
     </section>
   `;
 }
-*/ // END TEMP DISABLE HIERARCHY
+
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
@@ -706,7 +698,7 @@ function renderHierarchySection(subs, orders) {
           ${shippingCard}
         </div>
 </section>
-
+     ${hierarchySection}
      
 
       <section class="card aa-section">
