@@ -866,6 +866,11 @@ const subRows = SUB_STATUS_ORDER
     }
 
     setStatus("busy", "Searching…");
+    // Always collapse Raw JSON at the start of a new search
+    if (rawVisible) {
+      rawVisible = false;
+      renderRawJson();
+    }
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
