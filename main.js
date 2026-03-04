@@ -760,17 +760,37 @@ function renderTotals(data) {
 
     // Worker may return subscription counts either nested (subscriptions_by_status)
     // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
-    const subs = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
-      ? d.subscriptions_by_status
-      : {
-          "trash": d.trash,
-          "active": d.active,
-          "expired": d.expired,
-          "pending-cancel": d["pending-cancel"],
-          "pending": d.pending,
-          "on-hold": d["on-hold"],
-          "cancelled": d.cancelled
-        };
+      // Worker may return subscription counts either nested (subscriptions_by_status)
+  // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
+  // ALSO: Worker currently returns LABEL keys (e.g., "Active", "On hold") inside subscriptions_by_status.
+  // Normalize everything so lookups by slug ("active", "on-hold", "pending-cancel") work.
+  const subsRaw = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
+    ? d.subscriptions_by_status
+    : {
+        "trash": d.trash,
+        "active": d.active,
+        "expired": d.expired,
+        "pending-cancel": d["pending-cancel"],
+        "pending": d.pending,
+        "on-hold": d["on-hold"],
+        "cancelled": d.cancelled
+      };
+
+  const subs = {};
+  if (subsRaw && typeof subsRaw === "object") {
+    for (const [k, v] of Object.entries(subsRaw)) {
+      const key = String(k);
+      // preserve original key
+      subs[key] = v;
+
+      // if it's already a slug, keep it (lowercase version too)
+      subs[key.toLowerCase()] = v;
+
+      // if it's a label like "On hold", map to slug "on-hold"
+      const mapped = STATUS_MAP[key];
+      if (mapped) subs[mapped] = v;
+    }
+  }
 
     // Orders totals (sitewide) — Worker should provide either orders_by_status or order_totals
 const ordersByStatus =
