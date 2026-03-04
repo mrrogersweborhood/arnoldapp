@@ -496,13 +496,177 @@ function setSessionPill(isLoggedIn, name) {
       ${isOpen ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
+// -----------------------------
+// SUBSCRIPTION HIERARCHY (Option A: separate section)
+// -----------------------------
+function getOrderLinkedSubscriptionIds(order) {
+  const ids = new Set();
 
+  const add = (v) => {
+    if (v == null) return;
+    const n = typeof v === "number" ? v : parseInt(String(v).trim(), 10);
+    if (Number.isFinite(n) && n > 0) ids.add(String(n));
+  };
+
+  // direct shapes (if present)
+  add(order?.subscription_id);
+  add(order?._subscription_id);
+
+  const subsArr = order?.subscriptions || order?.subscription_ids || order?.related_subscriptions;
+  if (Array.isArray(subsArr)) subsArr.forEach(add);
+
+  // metadata heuristic (only if present; raw JSON toggle already scrubs this in viewer)
+  const md = order?.meta_data;
+  if (Array.isArray(md)) {
+    for (const entry of md) {
+      const key = String(entry?.key ?? "");
+      const val = entry?.value;
+
+      if (!key) continue;
+
+      if (
+        key === "subscription_id" ||
+        key === "_subscription_id" ||
+        key === "_subscriptions" ||
+        key === "subscriptions"
+      ) {
+        if (Array.isArray(val)) val.forEach(add);
+        else add(val);
+      }
+
+      if (val && typeof val === "object") {
+        if (Array.isArray(val)) val.forEach(add);
+        else {
+          add(val.id);
+          add(val.subscription_id);
+        }
+      }
+    }
+  }
+
+  return ids;
+}
+
+function buildOrdersBySubscriptionId(subs, orders) {
+  const map = new Map(); // subId -> orders[]
+  (Array.isArray(subs) ? subs : []).forEach((s) => map.set(String(s?.id ?? ""), []));
+  if (!Array.isArray(orders)) return map;
+
+  for (const o of orders) {
+    const linked = getOrderLinkedSubscriptionIds(o);
+    for (const sid of linked) {
+      if (!map.has(sid)) map.set(sid, []);
+      map.get(sid).push(o);
+    }
+  }
+
+  // newest-first by date_created (if parseable)
+  for (const [sid, arr] of map.entries()) {
+    arr.sort((a, b) => {
+      const da = new Date(a?.date_created || 0).getTime();
+      const db = new Date(b?.date_created || 0).getTime();
+      return (Number.isFinite(db) ? db : 0) - (Number.isFinite(da) ? da : 0);
+    });
+  }
+
+  return map;
+}
+
+function renderHierarchySection(subs, orders) {
+  const sArr = Array.isArray(subs) ? subs : [];
+  const oArr = Array.isArray(orders) ? orders : [];
+  if (!sArr.length) return "";
+
+  const bySub = buildOrdersBySubscriptionId(sArr, oArr);
+
+  const blocks = sArr
+    .map((s) => {
+      const sid = String(s?.id ?? "—");
+      const status = String(s?.status ?? "—");
+      const total = fmtMoney(s?.total, s?.currency);
+      const nextPay = fmtDate(s?.next_payment_date);
+
+      const linked = bySub.get(sid) || [];
+
+      const rows = linked.length
+        ? linked
+            .map((o) => {
+              const oid = String(o?.id ?? "—");
+              const oStatus = String(o?.status ?? "—");
+              const created = fmtDate(o?.date_created);
+              const oTotal = fmtMoney(o?.total, o?.currency);
+              const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+
+              return `
+                <tr>
+                  <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                  <td>${esc(created)}</td>
+                  <td><span class="aa-pill">${esc(oStatus)}</span></td>
+                  <td>${esc(oTotal)}</td>
+                  <td>${esc(payment)}</td>
+                </tr>
+              `;
+            })
+            .join("")
+        : `<tr><td colspan="5" class="aa-muted">No linked orders found in payload for this subscription.</td></tr>`;
+
+      return `
+        <div class="aa-card">
+          <div class="aa-card-title">Subscription #${esc(sid)} • <span class="aa-pill">${esc(status)}</span></div>
+
+          <div class="aa-tiles customer" style="grid-template-columns:repeat(3, minmax(0, 1fr));">
+            <div class="aa-tile">
+              <div class="aa-label">Total</div>
+              <div class="aa-value">${esc(total)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Next Payment</div>
+              <div class="aa-value">${esc(nextPay)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Linked Orders</div>
+              <div class="aa-value">${esc(String(linked.length))}</div>
+            </div>
+          </div>
+
+          <details style="margin-top:10px;">
+            <summary style="cursor:pointer; font-weight:950; color:var(--brand);">Show linked orders</summary>
+            <div class="aa-table-wrap" style="margin-top:10px;">
+              <table class="aa-table" style="min-width:720px;">
+                <thead>
+                  <tr>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Payment</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <section class="card aa-section">
+      <div class="aa-section-head">
+        <div class="aa-section-title">Hierarchy</div>
+        <div class="aa-section-subtitle">Subscriptions with linked orders when detectable</div>
+      </div>
+      ${blocks}
+    </section>
+  `;
+}
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
     const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
     const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
-
+    const hierarchySection = renderHierarchySection(subs, orders);
     const billing = customer?.billing || null;
     const shipping = customer?.shipping || null;
 
@@ -530,12 +694,13 @@ function setSessionPill(isLoggedIn, name) {
           ${billingCard}
           ${shippingCard}
         </div>
-      </section>
+</section>
+
+      ${hierarchySection}
 
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Subscriptions</div>
-          <div class="aa-section-subtitle">Schedule & Notes</div>
         </div>
 
         <div class="aa-table-wrap">
