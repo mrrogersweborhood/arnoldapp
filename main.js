@@ -497,6 +497,7 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 // -----------------------------
+/* TEMP DISABLE HIERARCHY
 // SUBSCRIPTION HIERARCHY (Option A: separate section)
 // -----------------------------
 function getOrderLinkedSubscriptionIds(order) {
@@ -670,6 +671,7 @@ function renderHierarchySection(subs, orders) {
     </section>
   `;
 }
+*/ // END TEMP DISABLE HIERARCHY
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
@@ -705,7 +707,7 @@ function renderHierarchySection(subs, orders) {
         </div>
 </section>
 
-      ${hierarchySection}
+     
 
       <section class="card aa-section">
         <div class="aa-section-head">
