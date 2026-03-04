@@ -772,7 +772,14 @@ function renderTotals(data) {
           "cancelled": d.cancelled
         };
 
-    const orders = d.orders_last_30d || {};
+    // Orders totals (sitewide) — Worker should provide either orders_by_status or order_totals
+const ordersByStatus =
+  (d.orders_by_status && typeof d.orders_by_status === "object") ? d.orders_by_status :
+  (d.order_totals && typeof d.order_totals === "object") ? d.order_totals :
+  null;
+
+// Keep existing 30d block if present (optional UI later)
+const ordersLast30d = (d.orders_last_30d && typeof d.orders_last_30d === "object") ? d.orders_last_30d : {};
     const gen = d.generated_at ? fmtDate(d.generated_at) : "";
 
 const STATUS_MAP = {
@@ -792,11 +799,31 @@ const SUB_STATUS_ORDER = [
 const subRows = SUB_STATUS_ORDER
   .map((label) => {
     const key = STATUS_MAP[label] || label;
-    const count = (subs[key] != null) ? subs[key] : 0;
+
+    // Accept either Worker shape:
+    // - label keys: "Active", "Trash", ...
+    // - slug keys:  "active", "trash", ...
+    const countRaw =
+      (subs && typeof subs === "object")
+        ? (subs[label] ?? subs[key] ?? 0)
+        : 0;
+
+    const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+
     return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
   })
   .join("") || `<tr><td colspan="2">—</td></tr>`;
+  })
+  .join("") || `<tr><td colspan="2">—</td></tr>`;
+    const ORDER_STATUS_ORDER = ["completed","processing","pending","failed","cancelled","refunded"];
 
+const orderRows = ordersByStatus
+  ? ORDER_STATUS_ORDER.map((key) => {
+      const label = key.replace(/^\w/, (c) => c.toUpperCase());
+      const count = (ordersByStatus[key] != null) ? ordersByStatus[key] : 0;
+      return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
+    }).join("")
+  : `<tr><td colspan="2" class="aa-muted">Orders totals not provided by Worker yet.</td></tr>`;
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
@@ -810,6 +837,14 @@ const subRows = SUB_STATUS_ORDER
             <tbody>${subRows}</tbody>
           </table>
         </div>
+<div style="height:12px;"></div>
+
+<div class="aa-table-wrap">
+  <table class="aa-table" style="min-width:420px;">
+    <thead><tr><th>Orders</th><th style="text-align:right;">Count</th></tr></thead>
+    <tbody>${orderRows}</tbody>
+  </table>
+</div>
       </section>
     `;
   }
@@ -905,6 +940,11 @@ const subRows = SUB_STATUS_ORDER
 
   async function doTotals() {
     setStatus("busy", "Loading totals…");
+  // Always collapse Raw JSON at the start of totals load
+  if (rawVisible) {
+    rawVisible = false;
+    renderRawJson();
+  }
     $("results").innerHTML = "";
 
     const r = await fetch(`${WORKER_BASE}/admin/stats`, {
