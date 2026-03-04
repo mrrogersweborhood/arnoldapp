@@ -517,22 +517,31 @@ function getOrderLinkedSubscriptionIds(order) {
 
   // metadata heuristic (only if present; raw JSON toggle already scrubs this in viewer)
   const md = order?.meta_data;
-  if (Array.isArray(md)) {
-    for (const entry of md) {
-      const key = String(entry?.key ?? "");
-      const val = entry?.value;
 
-      if (!key) continue;
+if (Array.isArray(md)) {
+  for (const entry of md) {
+    const k = String(entry?.key ?? "").toLowerCase();
+    const v = entry?.value;
 
-      if (
-        key === "subscription_id" ||
-        key === "_subscription_id" ||
-        key === "_subscriptions" ||
-        key === "subscriptions"
-      ) {
-        if (Array.isArray(val)) val.forEach(add);
-        else add(val);
+    // Woo Subscriptions renewal link (this is what your DevTools showed)
+    if (k === "_subscription_renewal" && v != null) add(v);
+
+    // Other common subscription link keys (safe to support)
+    if (k === "_subscription_id" && v != null) add(v);
+    if (k === "_parent_subscription_id" && v != null) add(v);
+
+    // Some installs store arrays/objects
+    if (k === "_subscriptions" || k === "subscriptions") {
+      if (Array.isArray(v)) v.forEach(add);
+      else if (v && typeof v === "object") {
+        add(v.id);
+        add(v.subscription_id);
+      } else if (v != null) {
+        add(v);
       }
+    }
+  }
+}
 
       if (val && typeof val === "object") {
         if (Array.isArray(val)) val.forEach(add);
