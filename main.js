@@ -396,7 +396,7 @@ function setSessionPill(isLoggedIn, name) {
     });
   }
 
-  function renderSubscriptionRow(s) {
+    function renderSubscriptionRow(s, bySub) {
     const id = String(s?.id ?? "—");
     const status = String(s?.status ?? "—");
     const total = fmtMoney(s?.total, s?.currency);
@@ -405,6 +405,9 @@ function setSessionPill(isLoggedIn, name) {
 
     const notes = Array.isArray(s?.notes) ? s.notes : [];
     const isOpen = openSubNotes.has(id);
+
+    const linked = (bySub && typeof bySub.get === "function") ? (bySub.get(id) || []) : [];
+    const linkedCount = linked.length;
 
     const btn = renderNotesToggle("sub", id, notes);
 
@@ -422,6 +425,54 @@ function setSessionPill(isLoggedIn, name) {
           .join("")
       : `<div class="aa-muted">No notes.</div>`;
 
+    const linkedRows = linkedCount
+      ? linked
+          .map((o) => {
+            const oid = String(o?.id ?? "—");
+            const oStatus = String(o?.status ?? "—");
+            const created = fmtDate(o?.date_created);
+            const oTotal = fmtMoney(o?.total, o?.currency);
+            const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+
+            return `
+              <tr>
+                <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                <td>${esc(created)}</td>
+                <td><span class="aa-pill">${esc(oStatus)}</span></td>
+                <td>${esc(oTotal)}</td>
+                <td>${esc(payment)}</td>
+              </tr>
+            `;
+          })
+          .join("")
+      : "";
+
+    const linkedBlock = linkedCount
+      ? `
+        <tr class="aa-notes-row">
+          <td colspan="6">
+            <details>
+              <summary style="cursor:pointer; font-weight:950; color:var(--brand);">Show linked orders</summary>
+              <div class="aa-table-wrap" style="margin-top:10px;">
+                <table class="aa-table" style="min-width:720px;">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                      <th>Payment</th>
+                    </tr>
+                  </thead>
+                  <tbody>${linkedRows}</tbody>
+                </table>
+              </div>
+            </details>
+          </td>
+        </tr>
+      `
+      : ``;
+
     return `
       <tr>
         <td>
@@ -431,9 +482,11 @@ function setSessionPill(isLoggedIn, name) {
         <td>${esc(total)}</td>
         <td>${esc(nextPay)}</td>
         <td>${esc(end)}</td>
+        <td><span class="aa-pill">${esc(String(linkedCount))}</span></td>
         <td class="aa-notes-cell">${btn}</td>
       </tr>
-      ${isOpen ? `<tr class="aa-notes-row"><td colspan="5"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
+      ${linkedBlock}
+      ${isOpen ? `<tr class="aa-notes-row"><td colspan="6"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
 
@@ -669,7 +722,7 @@ function renderHierarchySection(subs, orders) {
     const customer = ctx.customer || null;
     const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
     const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
-    const hierarchySection = renderHierarchySection(subs, orders);
+    const bySub = buildOrdersBySubscriptionId(subs, orders);
     const billing = customer?.billing || null;
     const shipping = customer?.shipping || null;
 
@@ -677,8 +730,8 @@ function renderHierarchySection(subs, orders) {
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
 
-    const subsBody = subs.length ? subs.map(renderSubscriptionRow).join("") : `
-      <tr><td colspan="5" class="aa-muted">No subscriptions found.</td></tr>
+    const subsBody = subs.length ? subs.map((s) => renderSubscriptionRow(s, bySub)).join("") : `
+      <tr><td colspan="6" class="aa-muted">No subscriptions found.</td></tr>
     `;
 
     const ordersBody = orders.length ? orders.map(renderOrderRow).join("") : `
@@ -698,7 +751,7 @@ function renderHierarchySection(subs, orders) {
           ${shippingCard}
         </div>
 </section>
-     ${hierarchySection}
+     
      
 
       <section class="card aa-section">
@@ -714,6 +767,7 @@ function renderHierarchySection(subs, orders) {
                 <th>Total</th>
                 <th>Next Payment</th>
                 <th>End</th>
+                <th>Linked Orders</th>
                 <th style="text-align:right;">Notes</th>
               </tr>
             </thead>
@@ -734,12 +788,11 @@ function renderHierarchySection(subs, orders) {
           <table class="aa-table">
             <thead>
               <tr>
-                <th>Order</th>
-                <th>Date</th>
-                <th>Status</th>
+                <th>Subscription</th>
                 <th>Total</th>
-                <th>Payment</th>
-                <th>Items</th>
+                <th>Next Payment</th>
+                <th>End</th>
+                <th>Linked Orders</th>
                 <th style="text-align:right;">Notes</th>
               </tr>
             </thead>
