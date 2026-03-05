@@ -492,7 +492,51 @@
       white-space:pre-wrap;
     }
 
-
+    /* Arnold Admin — Totals layout (OkObserver-ish) */
+.aa-totals-grid{
+  display:flex;
+  gap:14px;
+  align-items:stretch;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.aa-totals-card{
+  flex:1 1 420px;
+  min-width:280px;
+}
+table.aa-totals-table{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+table.aa-totals-table td{
+  padding:10px 12px;
+  border-bottom:1px solid rgba(0,0,0,0.08);
+  vertical-align:middle;
+}
+table.aa-totals-table td:first-child{
+  font-weight:700;
+}
+table.aa-totals-table td.aa-num{
+  text-align:right;
+  font-weight:800;
+  font-variant-numeric: tabular-nums;
+  white-space:nowrap;
+}
+table.aa-totals-table tr.aa-totals-divider td{
+  padding:8px 0;
+  border-bottom:0;
+}
+table.aa-totals-table tr.aa-totals-divider td::after{
+  content:"";
+  display:block;
+  height:1px;
+  background:rgba(0,0,0,0.12);
+}
+table.aa-totals-table tr.aa-totals-total td{
+  border-bottom:0;
+  padding-top:12px;
+}
     @media (max-width: 980px){
       .grid{ grid-template-columns:1fr 1fr; }
       .grid .btn{ grid-column:1 / -1 }
@@ -561,7 +605,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-04-011"></script>
+  <script src="./main.js?v=2026-03-04-012"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

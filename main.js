@@ -761,131 +761,115 @@ function renderHierarchySection(subs, orders) {
 function renderTotals(data) {
   const d = data || {};
 
-  // Worker may return subscription counts nested (subscriptions_by_status)
-  // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
-  const subs =
-    (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
-      ? d.subscriptions_by_status
-      : {
-          "trash": d.trash,
-          "active": d.active,
-          "expired": d.expired,
-          "pending-cancel": d["pending-cancel"],
-          "pending": d.pending,
-          "on-hold": d["on-hold"],
-          "cancelled": d.cancelled
-        };
+  // Always return a string (prevents "undefined" leaking into the UI)
+  // Worker shape (current): { subscriptions_by_status: { "Trash": 12, ... }, orders_last_30d: { window:"all_time", by_status:{...}, total } }
+  const subsByLabel = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
+    ? d.subscriptions_by_status
+    : {};
 
-  // Orders totals (sitewide) — Worker may provide:
-  // - orders_last_30d.by_status (your current worker uses this key but window=all_time)
-  // - OR orders_by_status / order_totals (older variants)
-  const ordersByStatus =
-    (d?.orders_last_30d?.by_status && typeof d.orders_last_30d.by_status === "object") ? d.orders_last_30d.by_status :
-    (d.orders_by_status && typeof d.orders_by_status === "object") ? d.orders_by_status :
-    (d.order_totals && typeof d.order_totals === "object") ? d.order_totals :
-    null;
+  const ordersBlock = (d.orders_last_30d && typeof d.orders_last_30d === "object")
+    ? d.orders_last_30d
+    : (d.orders_by_status && typeof d.orders_by_status === "object")
+      ? { by_status: d.orders_by_status, total: d.orders_total || null }
+      : {};
 
-  const orderTotalRaw =
-    (d?.orders_last_30d?.total != null) ? d.orders_last_30d.total :
-    (ordersByStatus && ordersByStatus.total != null) ? ordersByStatus.total :
-    null;
+  const ordersByStatus = (ordersBlock.by_status && typeof ordersBlock.by_status === "object")
+    ? ordersBlock.by_status
+    : {};
 
-  const orderTotal = Number.isFinite(Number(orderTotalRaw)) ? Number(orderTotalRaw) : null;
-
-  // ---- Subscription card rows (labels exactly as requested)
+  // Subscription labels (must match Worker labels exactly)
   const SUB_STATUS_ORDER = [
-    "Trash", "Active", "Expired", "On hold", "Pending payment", "Pending cancellation", "Cancelled"
+    "Trash",
+    "Active",
+    "Expired",
+    "On hold",
+    "Pending payment",
+    "Pending cancellation",
+    "Cancelled"
   ];
 
-  const STATUS_MAP = {
-    "Trash": "trash",
-    "Active": "active",
-    "Expired": "expired",
-    "On hold": "on-hold",
-    "Pending payment": "pending",
-    "Pending cancellation": "pending-cancel",
-    "Cancelled": "cancelled"
-  };
+  // Order labels (map from Woo slugs)
+  const ORDER_STATUS_ORDER = [
+    ["Pending", "pending"],
+    ["Processing", "processing"],
+    ["On hold", "on-hold"],
+    ["Completed", "completed"],
+    ["Cancelled", "cancelled"],
+    ["Refunded", "refunded"],
+    ["Failed", "failed"]
+  ];
 
-  const subRows = SUB_STATUS_ORDER.map((label) => {
-    const slug = STATUS_MAP[label] || label;
-    const countRaw =
-      (subs && typeof subs === "object")
-        ? ((subs[label] ?? subs[slug] ?? subs[String(slug).toLowerCase()] ?? 0))
-        : 0;
-
-    const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
-
-    return `<tr>
-      <td><b>${esc(label)}</b></td>
-      <td style="text-align:right;"><b>${esc(String(count))}</b></td>
-    </tr>`;
-  }).join("") || `<tr><td colspan="2">—</td></tr>`;
+  const subRows = SUB_STATUS_ORDER
+    .map((label) => {
+      const countRaw = subsByLabel[label];
+      const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+      return `
+        <tr>
+          <td>${esc(label)}</td>
+          <td class="aa-num">${esc(String(count))}</td>
+        </tr>
+      `;
+    })
+    .join("");
 
   const subTotal = SUB_STATUS_ORDER.reduce((acc, label) => {
-    const slug = STATUS_MAP[label] || label;
-    const v = (subs && typeof subs === "object")
-      ? (subs[label] ?? subs[slug] ?? subs[String(slug).toLowerCase()] ?? 0)
-      : 0;
-    const n = Number.isFinite(Number(v)) ? Number(v) : 0;
-    return acc + n;
+    const v = Number(subsByLabel[label] ?? 0);
+    return acc + (Number.isFinite(v) ? v : 0);
   }, 0);
 
-  // ---- Orders card rows
-  const ORDER_STATUS_ORDER = ["pending", "processing", "on-hold", "completed", "cancelled", "refunded", "failed"];
+  const orderRows = ORDER_STATUS_ORDER
+    .map(([label, slug]) => {
+      const countRaw = ordersByStatus[slug];
+      const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+      return `
+        <tr>
+          <td>${esc(label)}</td>
+          <td class="aa-num">${esc(String(count))}</td>
+        </tr>
+      `;
+    })
+    .join("");
 
-  const orderRows = (ordersByStatus && typeof ordersByStatus === "object")
-    ? ORDER_STATUS_ORDER.map((st) => {
-        const v = ordersByStatus[st] ?? 0;
-        const n = Number.isFinite(Number(v)) ? Number(v) : 0;
-        const label = st.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        return `<tr>
-          <td><b>${esc(label)}</b></td>
-          <td style="text-align:right;"><b>${esc(String(n))}</b></td>
-        </tr>`;
-      }).join("")
-    : `<tr><td colspan="2">No order totals returned.</td></tr>`;
+  let orderTotal = Number(ordersBlock.total);
+  if (!Number.isFinite(orderTotal)) {
+    orderTotal = ORDER_STATUS_ORDER.reduce((acc, [, slug]) => {
+      const v = Number(ordersByStatus[slug] ?? 0);
+      return acc + (Number.isFinite(v) ? v : 0);
+    }, 0);
+  }
 
-  const orderTotalRow = (orderTotal != null)
-    ? `<tr><td colspan="2"><hr/></td></tr>
-       <tr>
-         <td><b>Total</b></td>
-         <td style="text-align:right;"><b>${esc(String(orderTotal))}</b></td>
-       </tr>`
-    : "";
-
-  // Two cards side-by-side (wraps on small screens)
   return `
-    <section class="aa-results">
-      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
-        <div class="aa-card" style="flex:1 1 360px; min-width:320px;">
-          <div class="aa-card-title">Subscriptions (all time)</div>
-          <table class="aa-table" style="width:100%">
-            <tbody>
-              ${subRows}
-              <tr><td colspan="2"><hr/></td></tr>
-              <tr>
-                <td><b>Total</b></td>
-                <td style="text-align:right;"><b>${esc(String(subTotal))}</b></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="aa-card" style="flex:1 1 360px; min-width:320px;">
-          <div class="aa-card-title">Orders (all time)</div>
-          <table class="aa-table" style="width:100%">
-            <tbody>
-              ${orderRows}
-              ${orderTotalRow}
-            </tbody>
-          </table>
-        </div>
+    <div class="aa-totals-grid">
+      <div class="aa-card aa-totals-card">
+        <div class="aa-card-title">Subscriptions (all time)</div>
+        <table class="aa-totals-table" role="table" aria-label="Subscriptions totals">
+          <tbody>
+            ${subRows}
+            <tr class="aa-totals-divider"><td colspan="2"></td></tr>
+            <tr class="aa-totals-total">
+              <td>Total</td>
+              <td class="aa-num">${esc(String(subTotal))}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </section>
+
+      <div class="aa-card aa-totals-card">
+        <div class="aa-card-title">Orders (all time)</div>
+        <table class="aa-totals-table" role="table" aria-label="Orders totals">
+          <tbody>
+            ${orderRows}
+            <tr class="aa-totals-divider"><td colspan="2"></td></tr>
+            <tr class="aa-totals-total">
+              <td>Total</td>
+              <td class="aa-num">${esc(String(orderTotal))}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
-}
-  async function doLogin() {
+}  async function doLogin() {
     const u = $("loginUser")?.value?.trim() || "";
     const p = $("loginPass")?.value?.trim() || "";
 
