@@ -761,92 +761,130 @@ function renderHierarchySection(subs, orders) {
 function renderTotals(data) {
   const d = data || {};
 
-  // Worker v2026-02-24a shape:
-  // - subscriptions_by_status: { "Trash": 1, "Active": 289, ... }
-  // - orders_last_30d.by_status: { pending: 12, processing: 34, ... } (window may be "all_time")
-  const subsByLabel =
+  // Worker may return subscription counts nested (subscriptions_by_status)
+  // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
+  const subs =
     (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
       ? d.subscriptions_by_status
-      : {};
+      : {
+          "trash": d.trash,
+          "active": d.active,
+          "expired": d.expired,
+          "pending-cancel": d["pending-cancel"],
+          "pending": d.pending,
+          "on-hold": d["on-hold"],
+          "cancelled": d.cancelled
+        };
 
+  // Orders totals (sitewide) — Worker may provide:
+  // - orders_last_30d.by_status (your current worker uses this key but window=all_time)
+  // - OR orders_by_status / order_totals (older variants)
   const ordersByStatus =
-    (d.orders_last_30d && d.orders_last_30d.by_status && typeof d.orders_last_30d.by_status === "object")
-      ? d.orders_last_30d.by_status
-      : (d.orders_by_status && typeof d.orders_by_status === "object")
-        ? d.orders_by_status
-        : (d.order_totals && typeof d.order_totals === "object")
-          ? d.order_totals
-          : null;
+    (d?.orders_last_30d?.by_status && typeof d.orders_last_30d.by_status === "object") ? d.orders_last_30d.by_status :
+    (d.orders_by_status && typeof d.orders_by_status === "object") ? d.orders_by_status :
+    (d.order_totals && typeof d.order_totals === "object") ? d.order_totals :
+    null;
 
+  const orderTotalRaw =
+    (d?.orders_last_30d?.total != null) ? d.orders_last_30d.total :
+    (ordersByStatus && ordersByStatus.total != null) ? ordersByStatus.total :
+    null;
+
+  const orderTotal = Number.isFinite(Number(orderTotalRaw)) ? Number(orderTotalRaw) : null;
+
+  // ---- Subscription card rows (labels exactly as requested)
   const SUB_STATUS_ORDER = [
-    "Trash",
-    "Active",
-    "Expired",
-    "On hold",
-    "Pending payment",
-    "Pending cancellation",
-    "Cancelled"
+    "Trash", "Active", "Expired", "On hold", "Pending payment", "Pending cancellation", "Cancelled"
   ];
 
-  const ORDER_STATUS_ORDER = [
-    "completed",
-    "processing",
-    "on-hold",
-    "pending",
-    "failed",
-    "cancelled",
-    "refunded"
-  ];
+  const STATUS_MAP = {
+    "Trash": "trash",
+    "Active": "active",
+    "Expired": "expired",
+    "On hold": "on-hold",
+    "Pending payment": "pending",
+    "Pending cancellation": "pending-cancel",
+    "Cancelled": "cancelled"
+  };
 
-  const subRows = SUB_STATUS_ORDER
-    .map((label) => {
-      const v = subsByLabel[label];
-      const count = Number.isFinite(Number(v)) ? Number(v) : 0;
-      return `<tr><td><b>${esc(label)}</b></td><td class="aa-right"><b>${esc(String(count))}</b></td></tr>`;
-    })
-    .join("");
+  const subRows = SUB_STATUS_ORDER.map((label) => {
+    const slug = STATUS_MAP[label] || label;
+    const countRaw =
+      (subs && typeof subs === "object")
+        ? ((subs[label] ?? subs[slug] ?? subs[String(slug).toLowerCase()] ?? 0))
+        : 0;
 
-  const orderRows = ordersByStatus
-    ? ORDER_STATUS_ORDER.map((slug) => {
-        const v = ordersByStatus[slug];
-        const count = Number.isFinite(Number(v)) ? Number(v) : 0;
-        const label = slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-        return `<tr><td><b>${esc(label)}</b></td><td class="aa-right"><b>${esc(String(count))}</b></td></tr>`;
+    const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+
+    return `<tr>
+      <td><b>${esc(label)}</b></td>
+      <td style="text-align:right;"><b>${esc(String(count))}</b></td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="2">—</td></tr>`;
+
+  const subTotal = SUB_STATUS_ORDER.reduce((acc, label) => {
+    const slug = STATUS_MAP[label] || label;
+    const v = (subs && typeof subs === "object")
+      ? (subs[label] ?? subs[slug] ?? subs[String(slug).toLowerCase()] ?? 0)
+      : 0;
+    const n = Number.isFinite(Number(v)) ? Number(v) : 0;
+    return acc + n;
+  }, 0);
+
+  // ---- Orders card rows
+  const ORDER_STATUS_ORDER = ["pending", "processing", "on-hold", "completed", "cancelled", "refunded", "failed"];
+
+  const orderRows = (ordersByStatus && typeof ordersByStatus === "object")
+    ? ORDER_STATUS_ORDER.map((st) => {
+        const v = ordersByStatus[st] ?? 0;
+        const n = Number.isFinite(Number(v)) ? Number(v) : 0;
+        const label = st.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        return `<tr>
+          <td><b>${esc(label)}</b></td>
+          <td style="text-align:right;"><b>${esc(String(n))}</b></td>
+        </tr>`;
       }).join("")
-    : `<tr><td colspan="2" class="aa-muted">Orders totals not provided by Worker.</td></tr>`;
+    : `<tr><td colspan="2">No order totals returned.</td></tr>`;
 
-  const generatedAt = d.generated_at ? String(d.generated_at) : null;
-  const ordersWindow = (d.orders_last_30d && d.orders_last_30d.window) ? String(d.orders_last_30d.window) : null;
+  const orderTotalRow = (orderTotal != null)
+    ? `<tr><td colspan="2"><hr/></td></tr>
+       <tr>
+         <td><b>Total</b></td>
+         <td style="text-align:right;"><b>${esc(String(orderTotal))}</b></td>
+       </tr>`
+    : "";
 
-  const metaLineParts = [];
-  if (generatedAt) metaLineParts.push(`Generated ${new Date(generatedAt).toLocaleString()}`);
-  if (ordersWindow) metaLineParts.push(`Orders window: ${esc(ordersWindow)}`);
-  const metaLine = metaLineParts.length ? `<div class="aa-muted aa-totals-meta">${metaLineParts.join(" • ")}</div>` : "";
-
-  results.innerHTML = `
-    <div class="aa-totals-wrap">
-      <div class="aa-grid-2 aa-totals-grid">
-        <div class="aa-card">
-          <div class="aa-card-title">Subscription Totals</div>
-          <table class="aa-totals-table">
-            <thead><tr><th>Status</th><th class="aa-right">Count</th></tr></thead>
-            <tbody>${subRows || `<tr><td colspan="2" class="aa-muted">No subscription totals.</td></tr>`}</tbody>
+  // Two cards side-by-side (wraps on small screens)
+  return `
+    <section class="aa-results">
+      <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+        <div class="aa-card" style="flex:1 1 360px; min-width:320px;">
+          <div class="aa-card-title">Subscriptions (all time)</div>
+          <table class="aa-table" style="width:100%">
+            <tbody>
+              ${subRows}
+              <tr><td colspan="2"><hr/></td></tr>
+              <tr>
+                <td><b>Total</b></td>
+                <td style="text-align:right;"><b>${esc(String(subTotal))}</b></td>
+              </tr>
+            </tbody>
           </table>
         </div>
 
-        <div class="aa-card">
-          <div class="aa-card-title">Orders Totals</div>
-          <table class="aa-totals-table">
-            <thead><tr><th>Status</th><th class="aa-right">Count</th></tr></thead>
-            <tbody>${orderRows}</tbody>
+        <div class="aa-card" style="flex:1 1 360px; min-width:320px;">
+          <div class="aa-card-title">Orders (all time)</div>
+          <table class="aa-table" style="width:100%">
+            <tbody>
+              ${orderRows}
+              ${orderTotalRow}
+            </tbody>
           </table>
         </div>
       </div>
-      ${metaLine}
-    </div>
+    </section>
   `;
-}  // API ACTIONS
-  // -----------------------------
+}
   async function doLogin() {
     const u = $("loginUser")?.value?.trim() || "";
     const p = $("loginPass")?.value?.trim() || "";
