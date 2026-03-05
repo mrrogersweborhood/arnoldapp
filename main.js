@@ -756,120 +756,117 @@ function renderHierarchySection(subs, orders) {
   // TOTALS
   // -----------------------------
 function renderTotals(data) {
-    const d = data || {};
+  const d = data || {};
 
-    // Worker may return subscription counts either nested (subscriptions_by_status)
-    // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
-      // Worker may return subscription counts either nested (subscriptions_by_status)
-  // OR at top-level keys like "active", "on-hold", etc. (as seen in Network).
-  // ALSO: Worker currently returns LABEL keys (e.g., "Active", "On hold") inside subscriptions_by_status.
-  // Normalize everything so lookups by slug ("active", "on-hold", "pending-cancel") work.
-  const subsRaw = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
+  // Worker returns subscriptions counts in `subscriptions_by_status`.
+  // Keys may be either:
+  // - labels: "Active", "Trash", ...
+  // - slugs:  "active", "trash", ...
+  const subs = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
     ? d.subscriptions_by_status
-    : {
-        "trash": d.trash,
-        "active": d.active,
-        "expired": d.expired,
-        "pending-cancel": d["pending-cancel"],
-        "pending": d.pending,
-        "on-hold": d["on-hold"],
-        "cancelled": d.cancelled
-      };
+    : (typeof d === "object" ? d : {});
 
-  const subs = {};
-  if (subsRaw && typeof subsRaw === "object") {
-    for (const [k, v] of Object.entries(subsRaw)) {
-      const key = String(k);
-      // preserve original key
-      subs[key] = v;
+  const STATUS_MAP = {
+    "Trash": "trash",
+    "Active": "active",
+    "Expired": "expired",
+    "On hold": "on-hold",
+    "Pending payment": "pending",
+    "Pending cancellation": "pending-cancel",
+    "Cancelled": "cancelled"
+  };
 
-      // if it's already a slug, keep it (lowercase version too)
-      subs[key.toLowerCase()] = v;
+  const SUB_STATUS_ORDER = [
+    "Trash",
+    "Active",
+    "Expired",
+    "On hold",
+    "Pending payment",
+    "Pending cancellation",
+    "Cancelled"
+  ];
 
-      // if it's a label like "On hold", map to slug "on-hold"
-      const mapped = STATUS_MAP[key];
-      if (mapped) subs[mapped] = v;
-    }
+  const subRows = SUB_STATUS_ORDER
+    .map((label) => {
+      const slug = STATUS_MAP[label] || label;
+
+      // Prefer label-keyed counts when present; fall back to slug-keyed counts.
+      const countRaw =
+        (subs && typeof subs === "object")
+          ? ((subs[label] ?? subs[slug] ?? 0))
+          : 0;
+
+      const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+
+      return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
+    })
+    .join("") || `<tr><td colspan="2">—</td></tr>`;
+
+  // Orders totals (sitewide) — accept any of these shapes:
+  // - d.orders_by_status
+  // - d.order_totals
+  // - d.orders_last_30d.by_status  (current Worker: window=all_time but key retained)
+  const ordersByStatus =
+    (d.orders_by_status && typeof d.orders_by_status === "object") ? d.orders_by_status :
+    (d.order_totals && typeof d.order_totals === "object") ? d.order_totals :
+    (d.orders_last_30d && d.orders_last_30d.by_status && typeof d.orders_last_30d.by_status === "object") ? d.orders_last_30d.by_status :
+    null;
+
+  const ORDER_STATUS_ORDER = [
+    "pending",
+    "processing",
+    "on-hold",
+    "completed",
+    "cancelled",
+    "refunded",
+    "failed"
+  ];
+
+  function titleizeStatus(slug) {
+    return String(slug || "")
+      .split("-")
+      .map((p) => p ? (p[0].toUpperCase() + p.slice(1)) : "")
+      .join(" ");
   }
 
-    // Orders totals (sitewide) — Worker should provide either orders_by_status or order_totals
-const ordersByStatus =
-  (d.orders_by_status && typeof d.orders_by_status === "object") ? d.orders_by_status :
-  (d.order_totals && typeof d.order_totals === "object") ? d.order_totals :
-  null;
+  const orderRows = ordersByStatus
+    ? ORDER_STATUS_ORDER.map((key) => {
+        const countRaw = (ordersByStatus[key] != null) ? ordersByStatus[key] : 0;
+        const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
+        return `<tr><td><b>${esc(titleizeStatus(key))}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
+      }).join("")
+    : `<tr><td colspan="2" class="aa-muted">Orders totals not provided by Worker yet.</td></tr>`;
 
-// Keep existing 30d block if present (optional UI later)
-const ordersLast30d = (d.orders_last_30d && typeof d.orders_last_30d === "object") ? d.orders_last_30d : {};
-    const gen = d.generated_at ? fmtDate(d.generated_at) : "";
+  const generated = d.generated_at ? String(d.generated_at) : null;
+  const genLabel = generated ? new Date(generated).toLocaleString() : "";
 
-const STATUS_MAP = {
-  "Trash": "trash",
-  "Active": "active",
-  "Expired": "expired",
-  "On hold": "on-hold",
-  "Pending payment": "pending",
-  "Pending cancellation": "pending-cancel",
-  "Cancelled": "cancelled"
-};
+  return `
+    <div class="aa-card">
+      <div class="aa-card-head">
+        <div class="aa-card-title">Totals</div>
+        <div class="aa-card-sub">${genLabel ? `Generated ${esc(genLabel)}` : ""}</div>
+      </div>
 
-const SUB_STATUS_ORDER = [
-  "Trash","Active","Expired","On hold","Pending payment","Pending cancellation","Cancelled"
-];
-
-const subRows = SUB_STATUS_ORDER
-  .map((label) => {
-    const key = STATUS_MAP[label] || label;
-
-    // Accept either Worker shape:
-    // - label keys: "Active", "Trash", ...
-    // - slug keys:  "active", "trash", ...
-    const countRaw =
-      (subs && typeof subs === "object")
-        ? (subs[label] ?? subs[key] ?? 0)
-        : 0;
-
-    const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
-
-    return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
-  })
-  .join("") || `<tr><td colspan="2">—</td></tr>`;
-  })
-  .join("") || `<tr><td colspan="2">—</td></tr>`;
-    const ORDER_STATUS_ORDER = ["completed","processing","pending","failed","cancelled","refunded"];
-
-const orderRows = ordersByStatus
-  ? ORDER_STATUS_ORDER.map((key) => {
-      const label = key.replace(/^\w/, (c) => c.toUpperCase());
-      const count = (ordersByStatus[key] != null) ? ordersByStatus[key] : 0;
-      return `<tr><td><b>${esc(label)}</b></td><td style="text-align:right;"><b>${esc(String(count))}</b></td></tr>`;
-    }).join("")
-  : `<tr><td colspan="2" class="aa-muted">Orders totals not provided by Worker yet.</td></tr>`;
-    return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Totals</div>
-          <div class="aa-section-subtitle">${esc(gen ? `Generated ${gen}` : "")}</div>
-        </div>
-
-        <div class="aa-table-wrap">
-          <table class="aa-table" style="min-width:420px;">
+      <div class="aa-two-col">
+        <div class="aa-subcard">
+          <div class="aa-subcard-title">Subscriptions</div>
+          <table class="aa-table">
             <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
             <tbody>${subRows}</tbody>
           </table>
         </div>
-<div style="height:12px;"></div>
 
-<div class="aa-table-wrap">
-  <table class="aa-table" style="min-width:420px;">
-    <thead><tr><th>Orders</th><th style="text-align:right;">Count</th></tr></thead>
-    <tbody>${orderRows}</tbody>
-  </table>
-</div>
-      </section>
-    `;
-  }
-
-  // -----------------------------
+        <div class="aa-subcard">
+          <div class="aa-subcard-title">Orders</div>
+          <table class="aa-table">
+            <thead><tr><th>Status</th><th style="text-align:right;">Count</th></tr></thead>
+            <tbody>${orderRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}  // -----------------------------
   // API ACTIONS
   // -----------------------------
   async function doLogin() {
