@@ -391,6 +391,33 @@
       white-space:nowrap;
     }
     .aa-table tbody tr:last-child td{ border-bottom:0; }
+    /* Totals */
+    .aa-totals-wrap{ margin-top:14px; }
+    .aa-totals-grid{ align-items:start; }
+    .aa-right{ text-align:right; }
+
+    .aa-totals-table{ width:100%; border-collapse:collapse; }
+    .aa-totals-table th,
+    .aa-totals-table td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(0,0,0,.06);
+      font-size:14px;
+      vertical-align:middle;
+    }
+    .aa-totals-table th{
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      font-size:12px;
+      color:#4b5563;
+      font-weight:850;
+    }
+    .aa-totals-table tbody tr:last-child td{ border-bottom:0; }
+
+    .aa-totals-meta{ margin-top:10px; }
+
+    @media (max-width: 860px){
+      .aa-totals-grid{ grid-template-columns:1fr; }
+    }
     .aa-sub-id, .aa-order-id{
       font-weight:950;
       color:#0b1220;
@@ -534,7 +561,7 @@
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-04-009"></script>
+  <script src="./main.js?v=2026-03-04-010"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
