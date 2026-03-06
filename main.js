@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-07R4-statusPills-ageCopy)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R1-inlineClipboardIcons)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -97,7 +97,20 @@
   function renderCopyButton(label, value) {
     const safe = String(value ?? "").trim();
     if (!safe || safe === "—") return "";
-    return `<button class="aa-copy-icon" type="button" data-copy="${esc(safe)}" title="Copy">📋</button>`;
+    return `<button class="aa-copy-icon" type="button" data-copy="${esc(safe)}" title="Copy ${esc(String(label || "value"))}" aria-label="Copy ${esc(String(label || "value"))}">📋</button>`;
+  }
+
+  function renderValueWithCopy(value, copyValue) {
+    const rawValue = String(value ?? "").trim();
+    const safeValue = rawValue || "—";
+    const copyBtn = renderCopyButton("Copy", copyValue ?? value);
+
+    return `
+      <div class="aa-value-inline">
+        <span class="aa-value-text">${esc(safeValue)}</span>
+        ${copyBtn}
+      </div>
+    `;
   }
 
 
@@ -331,26 +344,23 @@ function setSessionPill(isLoggedIn, name) {
         <div class="aa-tiles customer">
           <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
-            <div class="aa-value">${esc(String(id))}</div>
-            <div class="aa-copy-row">${renderCopyButton("ID", String(id))}</div>
+            ${renderValueWithCopy(String(id), String(id))}
+            <div class="aa-copy-row">
+              <a
+                class="aa-copy-btn"
+                href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open WP
+              </a>
+            </div>
           </div>
 
           <div class="aa-tile">
-  <div class="aa-label">Customer ID</div>
-  <div class="aa-value">${esc(String(id))}</div>
-
-  <div class="aa-copy-row">
-    ${renderCopyButton("ID", String(id))}
-    <a
-      class="aa-copy-btn"
-      href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Open WP
-    </a>
-  </div>
-</div>
+            <div class="aa-label">Username</div>
+            ${renderValueWithCopy(String(username), String(username))}
+          </div>
 
           <div class="aa-tile">
             <div class="aa-label">Name</div>
@@ -444,14 +454,12 @@ function setSessionPill(isLoggedIn, name) {
 
           <div class="aa-tile">
             <div class="aa-label">Email</div>
-            <div class="aa-value">${esc(showEmail)}</div>
-            <div class="aa-copy-row">${renderCopyButton("Email", showEmail)}</div>
+            ${renderValueWithCopy(showEmail, showEmail)}
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Phone</div>
-            <div class="aa-value">${esc(showPhone)}</div>
-            <div class="aa-copy-row">${renderCopyButton("Phone", showPhone)}</div>
+            ${renderValueWithCopy(showPhone, showPhone)}
           </div>
         </div>
       </div>
@@ -505,15 +513,26 @@ function setSessionPill(isLoggedIn, name) {
 
   function bindCopyButtons(container) {
     if (!container) return;
-    container.querySelectorAll(".aa-copy-btn").forEach((btn) => {
+    container.querySelectorAll(".aa-copy-btn[data-copy], .aa-copy-icon[data-copy]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const text = btn.getAttribute("data-copy") || "";
-        const old = btn.innerHTML;
+        const oldHtml = btn.innerHTML;
+        const oldTitle = btn.getAttribute("title") || "";
+        const isIcon = btn.classList.contains("aa-copy-icon");
         const ok = await copyText(text);
-        btn.innerHTML = ok ? 'Copied <span aria-hidden="true">✓</span>' : 'Copy failed';
+
+        if (isIcon) {
+          btn.innerHTML = ok ? "✓" : "!";
+          btn.setAttribute("title", ok ? "Copied" : "Copy failed");
+        } else {
+          btn.innerHTML = ok ? 'Copied <span aria-hidden="true">✓</span>' : 'Copy failed';
+        }
+
         btn.classList.toggle("copied", !!ok);
         window.setTimeout(() => {
-          btn.innerHTML = old;
+          btn.innerHTML = oldHtml;
+          if (oldTitle) btn.setAttribute("title", oldTitle);
+          else btn.removeAttribute("title");
           btn.classList.remove("copied");
         }, 1200);
       });

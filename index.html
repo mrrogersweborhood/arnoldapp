@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-02-26d — Restore table layout + billing/shipping email/phone) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R1 — Inline Clipboard Icons + Customer Quick Open) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -407,48 +407,47 @@
       font-weight:900;
       cursor:pointer;
     }
-/* Clipboard copy icon */
-.aa-copy-icon{
-  border:none;
-  background:transparent;
-  cursor:pointer;
-  font-size:15px;
-  margin-left:6px;
-  opacity:.55;
-  transition:opacity .15s ease, transform .05s ease;
-}
-
-.aa-copy-icon:hover{
-  opacity:1;
-}
-
-.aa-copy-icon:active{
-  transform:scale(.92);
-}
-/* Copy clipboard icon */
-.aa-copy-icon{
-  border:none;
-  background:transparent;
-  cursor:pointer;
-  font-size:15px;
-  margin-left:6px;
-  opacity:.55;
-  transition:opacity .15s ease, transform .05s ease;
-}
-
-.aa-copy-icon:hover{
-  opacity:1;
-}
-
-.aa-copy-icon:active{
-  transform:scale(.92);
-}
     .aa-copy-btn:hover{
       background:rgba(30,144,255,.14);
     }
     .aa-copy-btn.copied{
       background:#dcfce7;
       border-color:#bbf7d0;
+      color:#166534;
+    }
+
+    .aa-value-inline{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      width:100%;
+    }
+    .aa-value-text{
+      min-width:0;
+      flex:1 1 auto;
+      overflow-wrap:anywhere;
+    }
+    .aa-copy-icon{
+      flex:0 0 auto;
+      border:none;
+      background:transparent;
+      cursor:pointer;
+      font-size:15px;
+      line-height:1;
+      margin-left:6px;
+      padding:0;
+      opacity:.55;
+      transition:opacity .15s ease, transform .05s ease;
+    }
+    .aa-copy-icon:hover{
+      opacity:1;
+    }
+    .aa-copy-icon:active{
+      transform:scale(.92);
+    }
+    .aa-copy-icon.copied{
+      opacity:1;
       color:#166534;
     }
 
@@ -663,26 +662,7 @@ table.aa-totals-table tr.aa-totals-total td{
 /* timeline indicator */
 .aa-type-cell{display:flex;align-items:center;gap:8px;}
 .aa-type-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block;}
-/* Ledger timeline connector */
-.aa-type-cell {
-  position: relative;
-  padding-left: 18px;
-}
 
-.aa-type-cell::before {
-  content: "";
-  position: absolute;
-  left: 7px;
-  top: -12px;
-  bottom: -12px;
-  width: 2px;
-  background: rgba(0,0,0,.08);
-}
-
-.aa-type-dot {
-  position: relative;
-  z-index: 2;
-}
 </style>
 </head>
 
@@ -744,7 +724,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-07-016"></script>
+  <script src="./main.js?v=2026-03-08-001"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
