@@ -921,6 +921,77 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 
+
+  function renderPossibleMatches(payload) {
+    const matches = Array.isArray(payload?.possible_matches) ? payload.possible_matches : [];
+    const query = String(payload?.query ?? "").trim();
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Possible Matches</div>
+          <div class="aa-section-subtitle">Select the correct customer for ${esc(query || "your search")}</div>
+        </div>
+
+        <div class="aa-health-wrap">
+          ${matches.length ? matches.map((entry) => {
+            const cust = entry?.customer || {};
+            const id = String(cust?.id ?? "—");
+            const first = String(cust?.first_name ?? "").trim();
+            const last = String(cust?.last_name ?? "").trim();
+            const fullName = [first, last].filter(Boolean).join(" ").trim() || "—";
+            const email = String(cust?.email ?? cust?.billing?.email ?? "").trim() || "—";
+            const username = String(cust?.username ?? "").trim() || "—";
+            const matchReason = String(entry?.reason ?? "possible match").replaceAll("_", " ").trim() || "possible match";
+            const matchScore = Number(entry?.score ?? 0);
+            const canOpen = email && email !== "—";
+
+            return `
+              <div class="aa-card aa-health-card">
+                <div class="aa-card-title">${esc(fullName)}</div>
+                <div class="aa-health-grid">
+                  <div class="aa-tile">
+                    <div class="aa-label">Email</div>
+                    <div class="aa-value">${renderValueWithCopy(email, email)}</div>
+                  </div>
+                  <div class="aa-tile">
+                    <div class="aa-label">Customer ID</div>
+                    <div class="aa-value">${esc(id)}</div>
+                  </div>
+                  <div class="aa-tile">
+                    <div class="aa-label">Username</div>
+                    <div class="aa-value">${esc(username)}</div>
+                  </div>
+                  <div class="aa-tile">
+                    <div class="aa-label">Match</div>
+                    <div class="aa-value">${esc(matchReason)}${matchScore ? ` (${esc(String(matchScore))})` : ""}</div>
+                  </div>
+                </div>
+                <div class="aa-copy-row" style="margin-top:12px;">
+                  ${canOpen ? `<button class="aa-copy-btn aa-open-match-btn" type="button" data-candidate-query="${esc(email)}">Open</button>` : ""}
+                  ${canOpen ? `<button class="aa-copy-btn" type="button" data-copy="${esc(email)}">Copy Email</button>` : ""}
+                </div>
+              </div>
+            `;
+          }).join("") : `<div class="aa-muted">No candidate matches returned.</div>`}
+        </div>
+      </section>
+    `;
+  }
+
+  function bindCandidateButtons(container) {
+    if (!container) return;
+    container.querySelectorAll('.aa-open-match-btn[data-candidate-query]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const q = btn.getAttribute('data-candidate-query') || '';
+        if (!q) return;
+        const input = $('q');
+        if (input) input.value = q;
+        await doSearch(q);
+      });
+    });
+  }
+
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
@@ -1611,8 +1682,8 @@ function renderTotals(data) {
     setSessionPill(false, null);
   }
 
-  async function doSearch() {
-    const q = $("q")?.value?.trim() || "";
+  async function doSearch(forcedQuery) {
+    const q = String(forcedQuery ?? $("q")?.value?.trim() ?? "").trim();
     if (!q) {
       setStatus("warn", "Enter a query (email or order #).");
       return;
@@ -1649,11 +1720,21 @@ function renderTotals(data) {
   return;
 }
 
+    if (j?.intent === "customer_candidates_by_name") {
+      setStatus("", "Possible matches found.");
+      $("results").innerHTML = renderPossibleMatches(j);
+      bindCandidateButtons($("results"));
+      bindCopyButtons($("results"));
+      renderRawJson();
+      return;
+    }
+
     setStatus("", "Search complete.");
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
     bindCopyButtons($("results"));
+    bindCandidateButtons($("results"));
     renderRawJson();
   }
 
