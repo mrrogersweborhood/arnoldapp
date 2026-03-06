@@ -97,7 +97,7 @@
   function renderCopyButton(label, value) {
     const safe = String(value ?? "").trim();
     if (!safe || safe === "—") return "";
-    return `<button class="aa-copy-btn" type="button" data-copy="${esc(safe)}">${esc(label)} <span aria-hidden="true">copy</span></button>`;
+    return `<button class="aa-copy-icon" type="button" data-copy="${esc(safe)}" title="Copy">📋</button>`;
   }
 
 

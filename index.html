@@ -407,6 +407,42 @@
       font-weight:900;
       cursor:pointer;
     }
+/* Clipboard copy icon */
+.aa-copy-icon{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font-size:15px;
+  margin-left:6px;
+  opacity:.55;
+  transition:opacity .15s ease, transform .05s ease;
+}
+
+.aa-copy-icon:hover{
+  opacity:1;
+}
+
+.aa-copy-icon:active{
+  transform:scale(.92);
+}
+/* Copy clipboard icon */
+.aa-copy-icon{
+  border:none;
+  background:transparent;
+  cursor:pointer;
+  font-size:15px;
+  margin-left:6px;
+  opacity:.55;
+  transition:opacity .15s ease, transform .05s ease;
+}
+
+.aa-copy-icon:hover{
+  opacity:1;
+}
+
+.aa-copy-icon:active{
+  transform:scale(.92);
+}
     .aa-copy-btn:hover{
       background:rgba(30,144,255,.14);
     }
@@ -627,7 +663,26 @@ table.aa-totals-table tr.aa-totals-total td{
 /* timeline indicator */
 .aa-type-cell{display:flex;align-items:center;gap:8px;}
 .aa-type-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block;}
+/* Ledger timeline connector */
+.aa-type-cell {
+  position: relative;
+  padding-left: 18px;
+}
 
+.aa-type-cell::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: -12px;
+  bottom: -12px;
+  width: 2px;
+  background: rgba(0,0,0,.08);
+}
+
+.aa-type-dot {
+  position: relative;
+  z-index: 2;
+}
 </style>
 </head>
 
