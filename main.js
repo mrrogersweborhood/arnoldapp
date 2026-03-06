@@ -8,6 +8,7 @@
   // CONFIG
   // -----------------------------
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+  const WOO_ADMIN = "https://okobserver.org/wp-admin/post.php";
 
   // -----------------------------
   // DOM HELPERS
@@ -425,7 +426,7 @@ function setSessionPill(isLoggedIn, name) {
     return `
       <tr>
         <td>
-          <span class="aa-sub-id">#${esc(id)}</span>
+          <a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>
           <span class="aa-pill">${esc(status)}</span>
         </td>
         <td>${esc(total)}</td>
@@ -485,7 +486,7 @@ function setSessionPill(isLoggedIn, name) {
 
     return `
       <tr>
-        <td><span class="aa-order-id">#${esc(id)}</span></td>
+        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a></td>
         <td>${esc(created)}</td>
         <td><span class="aa-pill">${esc(status)}</span></td>
         <td>${esc(total)}</td>
@@ -590,13 +591,25 @@ function buildOrdersBySubscriptionId(subs, orders) {
   (Array.isArray(subs) ? subs : []).forEach((s) => map.set(String(s?.id ?? ""), []));
   if (!Array.isArray(orders)) return map;
 
-  for (const o of orders) {
-    const linked = getOrderLinkedSubscriptionIds(o);
-    for (const sid of linked) {
-      if (!map.has(sid)) map.set(sid, []);
-      map.get(sid).push(o);
+for (const o of orders) {
+
+  // cache the linked subscription IDs once
+  const linkedIds = getOrderLinkedSubscriptionIds(o);
+
+  if (!linkedIds || linkedIds.size === 0) continue;
+
+  for (const sid of linkedIds) {
+
+    let bucket = map.get(sid);
+
+    if (!bucket) {
+      bucket = [];
+      map.set(sid, bucket);
     }
+
+    bucket.push(o);
   }
+}
 
   // newest-first by date_created (if parseable)
   for (const [sid, arr] of map.entries()) {
@@ -637,7 +650,7 @@ function renderHierarchySection(subs, orders) {
 
               return `
                 <tr>
-                  <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                  <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
                   <td>${esc(created)}</td>
                   <td><span class="aa-pill">${esc(oStatus)}</span></td>
                   <td>${esc(oTotal)}</td>
@@ -824,7 +837,7 @@ function renderHierarchySection(subs, orders) {
       orderRows.push(`
         <tr>
           <td class="aa-muted">Parent</td>
-          <td><span class="aa-order-id">#${esc(oid)}</span></td>
+          <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
           <td><span class="aa-pill">${esc(String(parentOrder?.status ?? "—"))}</span></td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
@@ -845,7 +858,7 @@ function renderHierarchySection(subs, orders) {
       orderRows.push(`
         <tr>
           <td class="aa-muted">Renewal</td>
-          <td><span class="aa-order-id">#${esc(oid)}</span></td>
+          <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(o?.date_created))}</td>
           <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
@@ -906,7 +919,7 @@ function renderHierarchySection(subs, orders) {
             <tbody>
               <tr>
                 <td class="aa-muted">Sub</td>
-                <td><span class="aa-sub-id">#${esc(sid)}</span></td>
+                <td><a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(sid)}</a></td>
                 <td>${esc(subDate)}</td>
                 <td><span class="aa-pill">${esc(subStatus)}</span></td>
                 <td class="aa-right">${esc(subTotal)}</td>
@@ -962,7 +975,7 @@ function renderHierarchySection(subs, orders) {
                 return `
                   <tr>
                     <td class="aa-muted">Order</td>
-                    <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                    <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
                     <td>${esc(fmtDate(o?.date_created))}</td>
                     <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>

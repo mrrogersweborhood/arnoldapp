@@ -388,15 +388,19 @@
     .aa-table tbody td.aa-right{
       text-align:right;
     }
-    .aa-table tbody td{
-      padding:10px 12px;
-      border-bottom:1px solid rgba(15,23,42,.08);
-      vertical-align:middle;
-      font-size:14px;
-      font-weight:850;
-      color:#0b1220;
-      white-space:nowrap;
-    }
+.aa-table tbody td{
+  padding:11px 14px;
+  border-bottom:1px solid rgba(15,23,42,.06);
+  vertical-align:middle;
+  font-size:14px;
+  font-weight:850;
+  color:#0b1220;
+  white-space:nowrap;
+  background:#fff;
+}
+.aa-table tbody tr:hover td{
+  background:rgba(30,144,255,.04);
+}
     .aa-table tbody tr:last-child td{ border-bottom:0; }
     /* Totals */
     .aa-totals-wrap{ margin-top:14px; }
@@ -425,10 +429,17 @@
     @media (max-width: 860px){
       .aa-totals-grid{ grid-template-columns:1fr; }
     }
-    .aa-sub-id, .aa-order-id{
+    .aa-order-id,
+    .aa-sub-id{
       font-weight:950;
-      color:#0b1220;
+      color:var(--brand);
+      text-decoration:none;
       margin-right:10px;
+    }
+
+    .aa-order-id:hover,
+    .aa-sub-id:hover{
+      text-decoration:underline;
     }
     .aa-muted{ color:var(--muted); font-weight:850; }
 
@@ -612,7 +623,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-06-011"></script>
+  <script src="./main.js?v=2026-03-06-012"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
