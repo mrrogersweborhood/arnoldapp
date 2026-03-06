@@ -822,7 +822,7 @@ function renderHierarchySection(subs, orders) {
               const oStatus = String(o?.status ?? "—");
               const created = fmtDateWithAge(o?.date_created);
               const oTotal = fmtMoney(o?.total, o?.currency);
-              const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+              const paymentHtml = renderPaymentWithWarning(o);
 
               return `
                 <tr>
@@ -1038,7 +1038,7 @@ function renderHierarchySection(subs, orders) {
           <td>${esc(fmtDate(o?.date_created))}</td>
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
-          <td>${esc(payment)}</td>
+          <td>${paymentHtml}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
