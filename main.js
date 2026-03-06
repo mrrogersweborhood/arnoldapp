@@ -776,8 +776,8 @@ function renderHierarchySection(subs, orders) {
           </div>
         </div>
 
-        <details style="margin-top:10px;">
-          <summary style="cursor:pointer; font-weight:950; color:var(--brand);">Show renewal orders (newest first)</summary>
+        <div style="margin-top:10px;">
+          <div style="font-weight:950; color:var(--brand); margin-bottom:8px;">Renewal orders (newest first)</div>
           <div class="aa-table-wrap" style="margin-top:10px;">
             <table class="aa-table" style="min-width:720px;">
               <thead>
@@ -792,7 +792,7 @@ function renderHierarchySection(subs, orders) {
               <tbody>${renewalRows}</tbody>
             </table>
           </div>
-        </details>
+        </div>
       </div>
     `;
   }).join("");
