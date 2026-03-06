@@ -496,6 +496,42 @@ function setSessionPill(isLoggedIn, name) {
       ${isOpen ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
+
+
+  function renderResults(payload) {
+    const ctx = payload?.context || {};
+    const customer = ctx.customer || null;
+    const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
+    const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
+
+    const billing = customer?.billing || null;
+    const shipping = customer?.shipping || null;
+
+    const customerCard = customer ? renderCustomerCard(customer) : "";
+
+    const billingCard = renderAddressBlock("Billing", billing, null);
+    const shippingCard = renderAddressBlock("Shipping", shipping, billing);
+
+    const ledger = renderSubscriptionLedger(subs, orders);
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscriber</div>
+        </div>
+
+        ${customerCard}
+
+        <div class="aa-grid-2">
+          ${billingCard}
+          ${shippingCard}
+        </div>
+      </section>
+
+      ${ledger || ""}
+    `;
+  }
+
 // -----------------------------
 // SUBSCRIPTION HIERARCHY (Option A: separate section)
 // -----------------------------
