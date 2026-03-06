@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R1-inlineClipboardIcons)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R2-supportClipboardPack)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -111,6 +111,22 @@
         ${copyBtn}
       </div>
     `;
+  }
+
+  function buildSupportClipboard(customer, subs, orders) {
+    const email = String(customer?.email ?? customer?.username ?? "").trim();
+
+    const firstSub = Array.isArray(subs) && subs.length ? subs[0] : null;
+    const subId = firstSub?.id != null ? String(firstSub.id).trim() : "";
+
+    const firstOrder = Array.isArray(orders) && orders.length ? orders[0] : null;
+    const orderId = firstOrder?.id != null ? String(firstOrder.id).trim() : "";
+
+    return [
+      email ? `Email: ${email}` : "",
+      subId ? `Subscription: #${subId}` : "",
+      orderId ? `Order: #${orderId}` : ""
+    ].filter(Boolean).join("\n");
   }
 
 
@@ -341,6 +357,10 @@ function setSessionPill(isLoggedIn, name) {
       <div class="aa-card">
         <div class="aa-card-title">Customer</div>
 
+        <div style="margin-bottom:8px;">
+          <button class="aa-copy-btn" type="button" data-support-copy="true">Copy Support Info</button>
+        </div>
+
         <div class="aa-tiles customer">
           <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
@@ -533,6 +553,27 @@ function setSessionPill(isLoggedIn, name) {
           btn.innerHTML = oldHtml;
           if (oldTitle) btn.setAttribute("title", oldTitle);
           else btn.removeAttribute("title");
+          btn.classList.remove("copied");
+        }, 1200);
+      });
+    });
+
+    container.querySelectorAll("[data-support-copy]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const payload = lastPayload?.context || {};
+        const text = buildSupportClipboard(
+          payload.customer,
+          payload.subscriptions,
+          payload.orders
+        );
+
+        const oldHtml = btn.innerHTML;
+        const ok = await copyText(text);
+        btn.innerHTML = ok ? 'Copied <span aria-hidden="true">✓</span>' : 'Copy failed';
+        btn.classList.toggle("copied", !!ok);
+
+        window.setTimeout(() => {
+          btn.innerHTML = oldHtml;
           btn.classList.remove("copied");
         }, 1200);
       });
