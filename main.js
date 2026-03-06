@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-05R1-ledgerUI1)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-06R2-ledgerAlignedCols)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -701,282 +701,297 @@ function renderHierarchySection(subs, orders) {
 }
 
   function renderSubscriptionLedger(subs, orders) {
-    const sArr = Array.isArray(subs) ? subs : [];
-    const oArr = Array.isArray(orders) ? orders : [];
+  const sArr = Array.isArray(subs) ? subs : [];
+  const oArr = Array.isArray(orders) ? orders : [];
 
-    if (!sArr.length && !oArr.length) return "";
+  if (!sArr.length && !oArr.length) return "";
 
-    const bySub = buildOrdersBySubscriptionId(sArr, oArr);
+  const bySub = buildOrdersBySubscriptionId(sArr, oArr);
 
-    const orderById = new Map();
-    for (const o of oArr) {
-      const oid = String(o?.id ?? "").trim();
-      if (oid) orderById.set(oid, o);
-    }
+  const orderById = new Map();
+  for (const o of oArr) {
+    const oid = String(o?.id ?? "").trim();
+    if (oid) orderById.set(oid, o);
+  }
 
-    const linkedOrderIds = new Set();
+  const linkedOrderIds = new Set();
 
-    function renderSubNotesRow(sub) {
-      const sid = String(sub?.id ?? "");
-      const notes = Array.isArray(sub?.notes) ? sub.notes : [];
-      const isOpen = openSubNotes.has(sid);
-      if (!isOpen) return "";
+  const ledgerColGroup = `
+    <colgroup>
+      <col style="width:110px;">
+      <col style="width:150px;">
+      <col style="width:150px;">
+      <col style="width:150px;">
+      <col style="width:130px;">
+      <col style="width:220px;">
+      <col style="width:120px;">
+    </colgroup>
+  `;
 
-      const notesHtml = notes.length
-        ? notes.map((n) => {
-            const when = fmtDate(n?.date_created);
-            const who = n?.author || n?.added_by || "";
-            const text = stripHtml(n?.note || "");
-            return `
-              <div class="aa-note">
-                <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
-                <div class="aa-note-text">${esc(text || "—")}</div>
-              </div>
-            `;
-          }).join("")
-        : `<div class="aa-muted">No notes.</div>`;
+  function renderSubNotesRow(sub) {
+    const sid = String(sub?.id ?? "");
+    const notes = Array.isArray(sub?.notes) ? sub.notes : [];
+    const isOpen = openSubNotes.has(sid);
+    if (!isOpen) return "";
 
-      return `
-        <div class="aa-notes-box" style="margin-top:10px;">
-          ${notesHtml}
-        </div>
-      `;
-    }
-
-    function renderOrderNotesRow(order) {
-      const oid = String(order?.id ?? "");
-      const notes = Array.isArray(order?.notes) ? order.notes : [];
-      const isOpen = openOrderNotes.has(oid);
-      if (!isOpen) return "";
-
-      const notesHtml = notes.length
-        ? notes.map((n) => {
-            const when = fmtDate(n?.date_created);
-            const who = n?.author || n?.added_by || "";
-            const text = stripHtml(n?.note || "");
-            return `
-              <div class="aa-note">
-                <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
-                <div class="aa-note-text">${esc(text || "—")}</div>
-              </div>
-            `;
-          }).join("")
-        : `<div class="aa-muted">No notes.</div>`;
-
-      return `
-        <tr class="aa-notes-row">
-          <td colspan="7">
-            <div class="aa-notes-box">${notesHtml}</div>
-          </td>
-        </tr>
-      `;
-    }
-
-    const subscriptionBlocks = sArr.map((s) => {
-      const sid = String(s?.id ?? "—");
-      const subStatus = String(s?.status ?? "—");
-      const subTotal = fmtMoney(s?.total, s?.currency);
-      const subDate = fmtDate(s?.next_payment_date);
-
-      const billingInterval = String(s?.billing_interval ?? "").trim();
-      const billingPeriod = String(s?.billing_period ?? "").trim();
-      const billingLabel = (billingInterval && billingPeriod)
-        ? `${billingInterval} ${billingPeriod}`
-        : "—";
-
-      const subNotes = Array.isArray(s?.notes) ? s.notes : [];
-      const subNotesBtn = renderNotesToggle("sub", sid, subNotes);
-
-      const parentId = String(s?.parent_id ?? "").trim();
-      const parentOrder = parentId ? orderById.get(parentId) : null;
-      if (parentId) linkedOrderIds.add(parentId);
-
-      const linked = bySub.get(sid) || [];
-      const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
-
-      renewals.sort((a, b) => {
-        const da = new Date(a?.date_created || 0).getTime();
-        const db = new Date(b?.date_created || 0).getTime();
-        return db - da;
-      });
-
-      const orderRows = [];
-
-      if (parentOrder) {
-        const oid = String(parentOrder?.id ?? "—");
-        linkedOrderIds.add(oid);
-
-        const payment = ((parentOrder?.payment_method_title ?? "").trim()) || "—";
-        const notes = Array.isArray(parentOrder?.notes) ? parentOrder.notes : [];
-
-        orderRows.push(`
-          <tr>
-            <td class="aa-muted">Parent</td>
-            <td><span class="aa-order-id">#${esc(oid)}</span></td>
-            <td>${esc(fmtDate(parentOrder?.date_created))}</td>
-            <td><span class="aa-pill">${esc(String(parentOrder?.status ?? "—"))}</span></td>
-            <td class="aa-right"><strong>${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</strong></td>
-            <td>${esc(payment)}</td>
-            <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-          </tr>
-        `);
-        orderRows.push(renderOrderNotesRow(parentOrder));
-      }
-
-      for (const o of renewals) {
-        const oid = String(o?.id ?? "—");
-        linkedOrderIds.add(oid);
-
-        const payment = ((o?.payment_method_title ?? "").trim()) || "—";
-        const notes = Array.isArray(o?.notes) ? o.notes : [];
-
-        orderRows.push(`
-          <tr>
-            <td class="aa-muted">Renewal</td>
-            <td><span class="aa-order-id">#${esc(oid)}</span></td>
-            <td>${esc(fmtDate(o?.date_created))}</td>
-            <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
-            <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
-            <td>${esc(payment)}</td>
-            <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-          </tr>
-        `);
-        orderRows.push(renderOrderNotesRow(o));
-      }
-
-      const ordersTable = `
-        <div class="aa-card" style="margin-top:12px;">
-          <div class="aa-card-title">Orders</div>
-          <div class="aa-table-wrap" style="margin-top:10px;">
-            <table class="aa-table" style="min-width:980px;">
-              <thead>
-                <tr>
-                  <th style="width:110px;">Type</th>
-                  <th style="width:150px;">ID</th>
-                  <th style="width:150px;">Date</th>
-                  <th style="width:150px;">Status</th>
-                  <th class="aa-right" style="width:130px;">Total</th>
-                  <th>Payment</th>
-                  <th style="width:120px; text-align:right;">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${orderRows.filter(Boolean).join("") || `
-                  <tr>
-                    <td colspan="7" class="aa-muted">No orders found for this subscription in the current payload.</td>
-                  </tr>
-                `}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-
-      return `
-        <div class="aa-card">
-          <div class="aa-card-title">Subscription</div>
-
-          <div class="aa-table-wrap" style="margin-top:10px;">
-            <table class="aa-table" style="min-width:980px;">
-              <thead>
-                <tr>
-                  <th style="width:110px;">Type</th>
-                  <th style="width:150px;">ID</th>
-                  <th style="width:150px;">Date</th>
-                  <th style="width:150px;">Status</th>
-                  <th class="aa-right" style="width:130px;">Total</th>
-                  <th>Billing</th>
-                  <th style="width:120px; text-align:right;">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="aa-muted">Sub</td>
-                  <td><span class="aa-sub-id">#${esc(sid)}</span></td>
-                  <td>${esc(subDate)}</td>
-                  <td><span class="aa-pill">${esc(subStatus)}</span></td>
-                  <td class="aa-right"><strong>${esc(subTotal)}</strong></td>
-                  <td>${esc(billingLabel)}</td>
-                  <td class="aa-notes-cell">${subNotesBtn}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          ${renderSubNotesRow(s)}
-
-          ${ordersTable}
-        </div>
-      `;
-    }).join("");
-
-    const unlinked = oArr
-      .filter((o) => {
-        const oid = String(o?.id ?? "").trim();
-        return oid && !linkedOrderIds.has(oid);
-      })
-      .sort((a, b) => {
-        const da = new Date(a?.date_created || 0).getTime();
-        const db = new Date(b?.date_created || 0).getTime();
-        return db - da;
-      });
-
-    const unlinkedTable = unlinked.length
-      ? `
-        <div class="aa-card" style="margin-top:14px;">
-          <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
-          <div class="aa-table-wrap" style="margin-top:10px;">
-            <table class="aa-table" style="min-width:980px;">
-              <thead>
-                <tr>
-                  <th style="width:110px;">Type</th>
-                  <th style="width:150px;">ID</th>
-                  <th style="width:150px;">Date</th>
-                  <th style="width:150px;">Status</th>
-                  <th class="aa-right" style="width:130px;">Total</th>
-                  <th>Payment</th>
-                  <th style="width:120px; text-align:right;">Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${unlinked.map((o) => {
-                  const oid = String(o?.id ?? "—");
-                  const notes = Array.isArray(o?.notes) ? o.notes : [];
-                  const payment = ((o?.payment_method_title ?? "").trim()) || "—";
-
-                  return `
-                    <tr>
-                      <td class="aa-muted">Order</td>
-                      <td><span class="aa-order-id">#${esc(oid)}</span></td>
-                      <td>${esc(fmtDate(o?.date_created))}</td>
-                      <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
-                      <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
-                      <td>${esc(payment)}</td>
-                      <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-                    </tr>
-                    ${renderOrderNotesRow(o)}
-                  `;
-                }).join("")}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `
-      : "";
+    const notesHtml = notes.length
+      ? notes.map((n) => {
+          const when = fmtDate(n?.date_created);
+          const who = n?.author || n?.added_by || "";
+          const text = stripHtml(n?.note || "");
+          return `
+            <div class="aa-note">
+              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+              <div class="aa-note-text">${esc(text || "—")}</div>
+            </div>
+          `;
+        }).join("")
+      : `<div class="aa-muted">No notes.</div>`;
 
     return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Subscription Ledger</div>
-          <div class="aa-section-subtitle">Subscription card above orders table • no nested tables</div>
-        </div>
-
-        ${subscriptionBlocks || `<div class="aa-muted">No subscriptions found.</div>`}
-
-        ${unlinkedTable}
-      </section>
+      <div class="aa-notes-box" style="margin-top:10px;">
+        ${notesHtml}
+      </div>
     `;
   }
+
+  function renderOrderNotesRow(order) {
+    const oid = String(order?.id ?? "");
+    const notes = Array.isArray(order?.notes) ? order.notes : [];
+    const isOpen = openOrderNotes.has(oid);
+    if (!isOpen) return "";
+
+    const notesHtml = notes.length
+      ? notes.map((n) => {
+          const when = fmtDate(n?.date_created);
+          const who = n?.author || n?.added_by || "";
+          const text = stripHtml(n?.note || "");
+          return `
+            <div class="aa-note">
+              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+              <div class="aa-note-text">${esc(text || "—")}</div>
+            </div>
+          `;
+        }).join("")
+      : `<div class="aa-muted">No notes.</div>`;
+
+    return `
+      <tr class="aa-notes-row">
+        <td colspan="7">
+          <div class="aa-notes-box">${notesHtml}</div>
+        </td>
+      </tr>
+    `;
+  }
+
+  const subscriptionBlocks = sArr.map((s) => {
+    const sid = String(s?.id ?? "—");
+    const subStatus = String(s?.status ?? "—");
+    const subTotal = fmtMoney(s?.total, s?.currency);
+    const subDate = fmtDate(s?.next_payment_date);
+
+    const billingInterval = String(s?.billing_interval ?? "").trim();
+    const billingPeriod = String(s?.billing_period ?? "").trim();
+    const billingLabel = (billingInterval && billingPeriod)
+      ? `${billingInterval} ${billingPeriod}`
+      : "—";
+
+    const subNotes = Array.isArray(s?.notes) ? s.notes : [];
+    const subNotesBtn = renderNotesToggle("sub", sid, subNotes);
+
+    const parentId = String(s?.parent_id ?? "").trim();
+    const parentOrder = parentId ? orderById.get(parentId) : null;
+    if (parentId) linkedOrderIds.add(parentId);
+
+    const linked = bySub.get(sid) || [];
+    const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
+
+    renewals.sort((a, b) => {
+      const da = new Date(a?.date_created || 0).getTime();
+      const db = new Date(b?.date_created || 0).getTime();
+      return db - da;
+    });
+
+    const orderRows = [];
+
+    if (parentOrder) {
+      const oid = String(parentOrder?.id ?? "—");
+      linkedOrderIds.add(oid);
+
+      const payment = ((parentOrder?.payment_method_title ?? "").trim()) || "—";
+      const notes = Array.isArray(parentOrder?.notes) ? parentOrder.notes : [];
+
+      orderRows.push(`
+        <tr>
+          <td class="aa-muted">Parent</td>
+          <td><span class="aa-order-id">#${esc(oid)}</span></td>
+          <td>${esc(fmtDate(parentOrder?.date_created))}</td>
+          <td><span class="aa-pill">${esc(String(parentOrder?.status ?? "—"))}</span></td>
+          <td class="aa-right"><strong>${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</strong></td>
+          <td>${esc(payment)}</td>
+          <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
+        </tr>
+      `);
+      orderRows.push(renderOrderNotesRow(parentOrder));
+    }
+
+    for (const o of renewals) {
+      const oid = String(o?.id ?? "—");
+      linkedOrderIds.add(oid);
+
+      const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+      const notes = Array.isArray(o?.notes) ? o.notes : [];
+
+      orderRows.push(`
+        <tr>
+          <td class="aa-muted">Renewal</td>
+          <td><span class="aa-order-id">#${esc(oid)}</span></td>
+          <td>${esc(fmtDate(o?.date_created))}</td>
+          <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
+          <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
+          <td>${esc(payment)}</td>
+          <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
+        </tr>
+      `);
+      orderRows.push(renderOrderNotesRow(o));
+    }
+
+    const ordersTable = `
+      <div class="aa-card" style="margin-top:12px;">
+        <div class="aa-card-title">Orders</div>
+        <div class="aa-table-wrap" style="margin-top:10px;">
+          <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
+            ${ledgerColGroup}
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th class="aa-right">Total</th>
+                <th>Payment</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${orderRows.filter(Boolean).join("") || `
+                <tr>
+                  <td colspan="7" class="aa-muted">No orders found for this subscription in the current payload.</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    return `
+      <div class="aa-card">
+        <div class="aa-card-title">Subscription</div>
+
+        <div class="aa-table-wrap" style="margin-top:10px;">
+          <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
+            ${ledgerColGroup}
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th class="aa-right">Total</th>
+                <th>Billing</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="aa-muted">Sub</td>
+                <td><span class="aa-sub-id">#${esc(sid)}</span></td>
+                <td>${esc(subDate)}</td>
+                <td><span class="aa-pill">${esc(subStatus)}</span></td>
+                <td class="aa-right"><strong>${esc(subTotal)}</strong></td>
+                <td>${esc(billingLabel)}</td>
+                <td class="aa-notes-cell">${subNotesBtn}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        ${renderSubNotesRow(s)}
+
+        ${ordersTable}
+      </div>
+    `;
+  }).join("");
+
+  const unlinked = oArr
+    .filter((o) => {
+      const oid = String(o?.id ?? "").trim();
+      return oid && !linkedOrderIds.has(oid);
+    })
+    .sort((a, b) => {
+      const da = new Date(a?.date_created || 0).getTime();
+      const db = new Date(b?.date_created || 0).getTime();
+      return db - da;
+    });
+
+  const unlinkedTable = unlinked.length
+    ? `
+      <div class="aa-card" style="margin-top:14px;">
+        <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
+        <div class="aa-table-wrap" style="margin-top:10px;">
+          <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
+            ${ledgerColGroup}
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th class="aa-right">Total</th>
+                <th>Payment</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${unlinked.map((o) => {
+                const oid = String(o?.id ?? "—");
+                const notes = Array.isArray(o?.notes) ? o.notes : [];
+                const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+
+                return `
+                  <tr>
+                    <td class="aa-muted">Order</td>
+                    <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                    <td>${esc(fmtDate(o?.date_created))}</td>
+                    <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
+                    <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
+                    <td>${esc(payment)}</td>
+                    <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
+                  </tr>
+                  ${renderOrderNotesRow(o)}
+                `;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `
+    : "";
+
+  return `
+    <section class="card aa-section">
+      <div class="aa-section-head">
+        <div class="aa-section-title">Subscription Ledger</div>
+        <div class="aa-section-subtitle">Subscription card above orders table • no nested tables</div>
+      </div>
+
+      ${subscriptionBlocks || `<div class="aa-muted">No subscriptions found.</div>`}
+
+      ${unlinkedTable}
+    </section>
+  `;
+}
 
 
 function renderTotals(data) {
