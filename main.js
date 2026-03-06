@@ -827,7 +827,7 @@ function renderHierarchySection(subs, orders) {
           <td><span class="aa-order-id">#${esc(oid)}</span></td>
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
           <td><span class="aa-pill">${esc(String(parentOrder?.status ?? "—"))}</span></td>
-          <td class="aa-right"><strong>${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</strong></td>
+          <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
           <td>${esc(payment)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
@@ -848,7 +848,7 @@ function renderHierarchySection(subs, orders) {
           <td><span class="aa-order-id">#${esc(oid)}</span></td>
           <td>${esc(fmtDate(o?.date_created))}</td>
           <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
-          <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
+          <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
           <td>${esc(payment)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
@@ -909,7 +909,7 @@ function renderHierarchySection(subs, orders) {
                 <td><span class="aa-sub-id">#${esc(sid)}</span></td>
                 <td>${esc(subDate)}</td>
                 <td><span class="aa-pill">${esc(subStatus)}</span></td>
-                <td class="aa-right"><strong>${esc(subTotal)}</strong></td>
+                <td class="aa-right">${esc(subTotal)}</td>
                 <td>${esc(billingLabel)}</td>
                 <td class="aa-notes-cell">${subNotesBtn}</td>
               </tr>
@@ -965,7 +965,7 @@ function renderHierarchySection(subs, orders) {
                     <td><span class="aa-order-id">#${esc(oid)}</span></td>
                     <td>${esc(fmtDate(o?.date_created))}</td>
                     <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
-                    <td class="aa-right"><strong>${esc(fmtMoney(o?.total, o?.currency))}</strong></td>
+                    <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
                     <td>${esc(payment)}</td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
                   </tr>
