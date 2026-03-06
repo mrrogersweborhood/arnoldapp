@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-06R2-ledgerAlignedCols)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-07R4-statusPills-ageCopy)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -23,6 +23,83 @@
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
   }
+
+  function statusClass(val) {
+    return String(val ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function renderStatusPill(val) {
+    const raw = String(val ?? "—").trim() || "—";
+    const cls = statusClass(raw);
+    return `<span class="aa-pill${cls ? ` ${esc(cls)}` : ""}">${esc(raw)}</span>`;
+  }
+
+  function formatAgeFromDate(val) {
+    if (!val) return "";
+    const d = new Date(val);
+    if (!Number.isFinite(d.getTime())) return "";
+
+    const now = new Date();
+    let years = now.getFullYear() - d.getFullYear();
+    let months = now.getMonth() - d.getMonth();
+    if (months < 0 || (months === 0 && now.getDate() < d.getDate())) {
+      years -= 1;
+      months += 12;
+    }
+    if (now.getDate() < d.getDate()) months -= 1;
+    if (months < 0) months += 12;
+
+    if (years >= 1) return ` (${years}y ago)`;
+    if (months >= 1) return ` (${months}mo ago)`;
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const days = Math.max(0, Math.floor((now - d) / msPerDay));
+    if (days >= 7) return ` (${Math.floor(days / 7)}w ago)`;
+    return ` (${days}d ago)`;
+  }
+
+  function fmtDateWithAge(val) {
+    const base = fmtDate(val);
+    if (base === "—") return base;
+    const age = formatAgeFromDate(val);
+    return `${base}${age}`;
+  }
+
+  async function copyText(text) {
+    const value = String(text ?? "").trim();
+    if (!value || value === "—") return false;
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (_) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = value;
+        ta.setAttribute("readonly", "readonly");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return !!ok;
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
+  function renderCopyButton(label, value) {
+    const safe = String(value ?? "").trim();
+    if (!safe || safe === "—") return "";
+    return `<button class="aa-copy-btn" type="button" data-copy="${esc(safe)}">${esc(label)} <span aria-hidden="true">copy</span></button>`;
+  }
+
 
   // -----------------------------
   // STATUS LINE
@@ -243,11 +320,13 @@ function setSessionPill(isLoggedIn, name) {
           <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
             <div class="aa-value">${esc(String(id))}</div>
+            <div class="aa-copy-row">${renderCopyButton("ID", String(id))}</div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Username</div>
             <div class="aa-value">${esc(String(username))}</div>
+            <div class="aa-copy-row">${renderCopyButton("Username", String(username))}</div>
           </div>
 
           <div class="aa-tile">
@@ -343,11 +422,13 @@ function setSessionPill(isLoggedIn, name) {
           <div class="aa-tile">
             <div class="aa-label">Email</div>
             <div class="aa-value">${esc(showEmail)}</div>
+            <div class="aa-copy-row">${renderCopyButton("Email", showEmail)}</div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Phone</div>
             <div class="aa-value">${esc(showPhone)}</div>
+            <div class="aa-copy-row">${renderCopyButton("Phone", showPhone)}</div>
           </div>
         </div>
       </div>
@@ -392,7 +473,26 @@ function setSessionPill(isLoggedIn, name) {
         if (lastMode === "search" && lastPayload) {
           $("results").innerHTML = renderResults(lastPayload);
           bindNotesToggles($("results"));
+          bindCopyButtons($("results"));
         }
+      });
+    });
+  }
+
+
+  function bindCopyButtons(container) {
+    if (!container) return;
+    container.querySelectorAll(".aa-copy-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const text = btn.getAttribute("data-copy") || "";
+        const old = btn.innerHTML;
+        const ok = await copyText(text);
+        btn.innerHTML = ok ? 'Copied <span aria-hidden="true">✓</span>' : 'Copy failed';
+        btn.classList.toggle("copied", !!ok);
+        window.setTimeout(() => {
+          btn.innerHTML = old;
+          btn.classList.remove("copied");
+        }, 1200);
       });
     });
   }
@@ -427,7 +527,8 @@ function setSessionPill(isLoggedIn, name) {
       <tr>
         <td>
           <a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>
-          <span class="aa-pill ${esc(status)}">${esc(status)}</span>
+          ${renderCopyButton("Sub ID", `#${id}`)}
+          ${renderStatusPill(status)}
         </td>
         <td>${esc(total)}</td>
         <td>${esc(nextPay)}</td>
@@ -442,7 +543,7 @@ function setSessionPill(isLoggedIn, name) {
     const id = String(o?.id ?? "—");
     const status = String(o?.status ?? "—");
     const total = fmtMoney(o?.total, o?.currency);
-    const created = fmtDate(o?.date_created);
+    const created = fmtDateWithAge(o?.date_created);
 
     const payment = (() => {
       const pm = (o?.payment_method_title ?? "").trim();
@@ -486,9 +587,9 @@ function setSessionPill(isLoggedIn, name) {
 
     return `
       <tr>
-        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a></td>
+        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}</td>
         <td>${esc(created)}</td>
-        <td><span class="aa-pill ${esc(status)}">${esc(status)}</span></td>
+        <td>${renderStatusPill(status)}</td>
         <td>${esc(total)}</td>
         <td>${esc(payment)}</td>
         <td title="${esc(itemsText)}">${esc(itemsText)}</td>
@@ -644,7 +745,7 @@ function renderHierarchySection(subs, orders) {
             .map((o) => {
               const oid = String(o?.id ?? "—");
               const oStatus = String(o?.status ?? "—");
-              const created = fmtDate(o?.date_created);
+              const created = fmtDateWithAge(o?.date_created);
               const oTotal = fmtMoney(o?.total, o?.currency);
               const payment = ((o?.payment_method_title ?? "").trim()) || "—";
 
@@ -652,7 +753,7 @@ function renderHierarchySection(subs, orders) {
                 <tr>
                   <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
                   <td>${esc(created)}</td>
-                  <td><span class="aa-pill">${esc(oStatus)}</span></td>
+                  <td>${renderStatusPill(oStatus)}</td>
                   <td>${esc(oTotal)}</td>
                   <td>${esc(payment)}</td>
                 </tr>
@@ -663,7 +764,7 @@ function renderHierarchySection(subs, orders) {
 
       return `
         <div class="aa-card">
-          <div class="aa-card-title">Subscription #${esc(sid)} • <span class="aa-pill">${esc(status)}</span></div>
+          <div class="aa-card-title">Subscription #${esc(sid)} • ${renderStatusPill(status)}</div>
 
           <div class="aa-tiles customer" style="grid-template-columns:repeat(3, minmax(0, 1fr));">
             <div class="aa-tile">
@@ -839,7 +940,7 @@ function renderHierarchySection(subs, orders) {
           <td class="aa-muted">Parent</td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
-          <td><span class="aa-pill">${esc(String(parentOrder?.status ?? "—"))}</span></td>
+          <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
           <td>${esc(payment)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
@@ -860,7 +961,7 @@ function renderHierarchySection(subs, orders) {
           <td class="aa-muted">Renewal</td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(o?.date_created))}</td>
-          <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
+          <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
           <td>${esc(payment)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
@@ -921,7 +1022,7 @@ function renderHierarchySection(subs, orders) {
                 <td class="aa-muted">Sub</td>
                 <td><a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(sid)}</a></td>
                 <td>${esc(subDate)}</td>
-                <td><span class="aa-pill">${esc(subStatus)}</span></td>
+                <td>${renderStatusPill(subStatus)}</td>
                 <td class="aa-right">${esc(subTotal)}</td>
                 <td>${esc(billingLabel)}</td>
                 <td class="aa-notes-cell">${subNotesBtn}</td>
@@ -977,7 +1078,7 @@ function renderHierarchySection(subs, orders) {
                     <td class="aa-muted">Order</td>
                     <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
                     <td>${esc(fmtDate(o?.date_created))}</td>
-                    <td><span class="aa-pill">${esc(String(o?.status ?? "—"))}</span></td>
+                    <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
                     <td>${esc(payment)}</td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
@@ -1201,6 +1302,7 @@ function renderTotals(data) {
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
+    bindCopyButtons($("results"));
     renderRawJson();
   }
 
