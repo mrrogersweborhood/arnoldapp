@@ -763,7 +763,7 @@ function renderHierarchySection(subs, orders) {
             <td><span class="aa-order-id">#${esc(oid)}</span></td>
             <td>${esc(created)}</td>
             <td><span class="aa-pill">${esc(oStatus)}</span></td>
-            <td>${esc(oTotal)}</td>
+            <td class="aa-right"><strong>${esc(oTotal)}</strong></td>
             <td>${esc(payment)}</td>
           </tr>
         `);
@@ -784,7 +784,7 @@ function renderHierarchySection(subs, orders) {
                 <td><span class="aa-order-id">#${esc(oid)}</span></td>
                 <td>${esc(created)}</td>
                 <td><span class="aa-pill">${esc(oStatus)}</span></td>
-                <td>${esc(oTotal)}</td>
+                <td class="aa-right"><strong>${esc(oTotal)}</strong></td>
                 <td>${esc(payment)}</td>
               </tr>
             `;
@@ -797,13 +797,13 @@ function renderHierarchySection(subs, orders) {
 
     return `
       <tr class="aa-sub-row">
-        <td><strong>#${esc(sid)}</strong></td>
+        <td><span class="aa-sub-id">#${esc(sid)}</span></td>
         <td><span class="aa-pill">${esc(status)}</span></td>
-        <td><strong>${esc(total)}</strong></td>
+        <td class="aa-right"><strong>${esc(total)}</strong></td>
         <td>${esc(nextPay)}</td>
         <td>${esc(endDate)}</td>
-        <td>${esc(String(ordersCount))}</td>
-        <td>${esc(String(notesCount))}</td>
+        <td><span class="aa-order-id">${esc(String(ordersCount))}</span></td>
+        <td class="aa-notes-cell"><span class="aa-notes-count">${esc(String(notesCount))}</span></td>
       </tr>
       <tr class="aa-sub-detail">
         <td colspan="7" style="padding:10px 12px 14px;">
@@ -815,7 +815,7 @@ function renderHierarchySection(subs, orders) {
                   <th style="width:140px;">Order</th>
                   <th style="width:140px;">Date</th>
                   <th style="width:140px;">Status</th>
-                  <th style="width:120px;">Total</th>
+                  <th class="aa-right" style="width:120px;">Total</th>
                   <th>Payment</th>
                 </tr>
               </thead>
@@ -831,16 +831,16 @@ function renderHierarchySection(subs, orders) {
     <div class="aa-card">
       <div class="aa-card-title">Subscriptions</div>
       <div class="aa-table-wrap" style="margin-top:10px;">
-        <table class="aa-table" style="min-width:900px;">
+        <table class="aa-table" style="min-width:920px;">
           <thead>
             <tr>
-              <th>Subscription</th>
-              <th>Status</th>
-              <th>Total</th>
-              <th>Next Payment</th>
-              <th>End</th>
-              <th>Orders</th>
-              <th>Notes</th>
+              <th style="width:160px;">Subscription</th>
+              <th style="width:140px;">Status</th>
+              <th class="aa-right" style="width:120px;">Total</th>
+              <th style="width:140px;">Next Payment</th>
+              <th style="width:140px;">End</th>
+              <th style="width:110px;">Orders</th>
+              <th style="width:110px; text-align:right;">Notes</th>
             </tr>
           </thead>
           <tbody>
@@ -868,7 +868,7 @@ function renderHierarchySection(subs, orders) {
     <div class="aa-card" style="margin-top:14px;">
       <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
       <div class="aa-table-wrap" style="margin-top:10px;">
-        <table class="aa-table" style="min-width:900px;">
+        <table class="aa-table" style="min-width:920px;">
           <thead>
             <tr>
               <th>Order</th>
