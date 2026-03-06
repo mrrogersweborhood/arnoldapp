@@ -148,7 +148,19 @@ function isNotFoundish(status, payload) {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     const dd = String(d.getDate()).padStart(2, "0");
     const yyyy = d.getFullYear();
-    return `${mm}/${dd}/${yyyy}`;
+    const age = Date.now() - d.getTime();
+const days = Math.floor(age / 86400000);
+
+let ageText = "";
+if (days >= 365) {
+  ageText = ` (${Math.floor(days / 365)}y ago)`;
+} else if (days >= 30) {
+  ageText = ` (${Math.floor(days / 30)}mo ago)`;
+} else if (days >= 1) {
+  ageText = ` (${days}d ago)`;
+}
+
+return `${mm}/${dd}/${yyyy}${ageText}`;
   }
 
   function fmtMoney(total, currency) {
