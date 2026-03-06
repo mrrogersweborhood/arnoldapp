@@ -293,7 +293,7 @@
     }
 
     /* Customer: 3 across on desktop (ID / Username / Name) */
-    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    .aa-tiles.customer{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 
     /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
     .aa-grid-2{
@@ -446,6 +446,13 @@
     .aa-copy-icon.copied{
       opacity:1;
       color:#166534;
+    }
+
+    .aa-sub-actions{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
     }
 
     /* Tables (Subscriptions / Orders) */
@@ -652,7 +659,7 @@ table.aa-totals-table tr.aa-totals-total td{
       .grid{ grid-template-columns:1fr 1fr; }
       .grid .btn{ grid-column:1 / -1 }
       .aa-grid-2{ grid-template-columns:1fr; }
-      .aa-tiles.customer{ grid-template-columns:1fr; }
+      .aa-tiles.customer{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
       table.aa-table{ min-width:720px; }
     }
   
@@ -847,7 +854,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-09-001"></script>
+  <script src="./main.js?v=2026-03-09-002"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

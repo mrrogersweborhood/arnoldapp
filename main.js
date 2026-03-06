@@ -365,6 +365,7 @@ function setSessionPill(isLoggedIn, name) {
   // -----------------------------
   function renderCustomerCard(customer) {
     const id = customer?.id ?? "—";
+    const email = String(customer?.email ?? customer?.billing?.email ?? "").trim() || "—";
     const username = customer?.username ?? customer?.email ?? "—";
     const fn = (customer?.first_name ?? "").trim();
     const ln = (customer?.last_name ?? "").trim();
@@ -376,56 +377,62 @@ function setSessionPill(isLoggedIn, name) {
 
         <div class="aa-tiles customer">
           <div class="aa-tile">
+            <div class="aa-label">Name</div>
+            <div class="aa-value">${esc(String(name))}</div>
+          </div>
+
+          <div class="aa-tile">
+            <div class="aa-label">Email</div>
+            ${renderValueWithCopy(String(email), String(email))}
+          </div>
+
+          <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
             ${renderValueWithCopy(String(id), String(id))}
-            <div class="aa-copy-row">
-              <a
-                class="aa-copy-btn"
-                href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open WP
-              </a>
-
-              <a
-                class="aa-copy-btn"
-                href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Subscriptions
-              </a>
-
-              <a
-                class="aa-copy-btn"
-                href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Orders
-              </a>
-
-              <a
-                class="aa-copy-btn"
-                href="https://okobserver.org/wp-admin/post-new.php?post_type=shop_order&customer_id=${esc(String(id))}"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                New Order
-              </a>
-            </div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Username</div>
             ${renderValueWithCopy(String(username), String(username))}
           </div>
+        </div>
 
-          <div class="aa-tile">
-            <div class="aa-label">Name</div>
-            <div class="aa-value">${esc(String(name))}</div>
-          </div>
+        <div class="aa-copy-row" style="margin-top:12px;">
+          <a
+            class="aa-copy-btn"
+            href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open WP
+          </a>
+
+          <a
+            class="aa-copy-btn"
+            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Subscriptions
+          </a>
+
+          <a
+            class="aa-copy-btn"
+            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Orders
+          </a>
+
+          <a
+            class="aa-copy-btn"
+            href="https://okobserver.org/wp-admin/post-new.php?post_type=shop_order&customer_id=${esc(String(id))}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            New Order
+          </a>
         </div>
       </div>
     `;
@@ -597,6 +604,16 @@ function setSessionPill(isLoggedIn, name) {
         }, 1200);
       });
     });
+  }
+
+  function renderSubscriptionActions(sub) {
+    const sid = String(sub?.id ?? "").trim();
+    if (!sid) return "";
+    return `
+      <div class="aa-sub-actions">
+        <a class="aa-copy-btn" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">Open Subscription</a>
+      </div>
+    `;
   }
 
   function renderSubscriptionRow(s) {
@@ -820,67 +837,6 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 
-  function renderSubscriptionHealthSummary(subs, ordersBySub) {
-    const sArr = Array.isArray(subs) ? subs : [];
-    if (!sArr.length) return "";
-
-    const cards = sArr.map((sub) => {
-      const sid = String(sub?.id ?? "—");
-      const linked = getSortedOrdersNewestFirst(ordersBySub.get(sid) || []);
-      const parentId = String(sub?.parent_id ?? "").trim();
-      const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
-      const latestOrder = linked[0] || null;
-      const lastSuccessful = linked.find((o) => !isProblemOrderStatus(o?.status)) || null;
-      const failureCount = linked.filter((o) => isProblemOrderStatus(o?.status)).length;
-      const nextPayment = sub?.next_payment_date ? fmtDate(sub.next_payment_date) : "—";
-      const lastPayment = lastSuccessful?.date_created ? fmtDate(lastSuccessful.date_created) : (latestOrder?.date_created ? fmtDate(latestOrder.date_created) : "—");
-      const latestOrderId = latestOrder ? String(latestOrder?.id ?? "").trim() : "";
-      const latestOrderStatus = latestOrder ? String(latestOrder?.status ?? "—").trim() || "—" : "—";
-
-      return `
-        <div class="aa-card aa-health-card">
-          <div class="aa-card-title">Subscription #${esc(sid)}</div>
-          <div class="aa-health-grid">
-            <div class="aa-tile">
-              <div class="aa-label">Last payment</div>
-              <div class="aa-value">${esc(lastPayment)}</div>
-            </div>
-            <div class="aa-tile">
-              <div class="aa-label">Next payment</div>
-              <div class="aa-value">${esc(nextPayment)}</div>
-            </div>
-            <div class="aa-tile">
-              <div class="aa-label">Renewal count</div>
-              <div class="aa-value">${esc(String(renewals.length))}</div>
-            </div>
-            <div class="aa-tile">
-              <div class="aa-label">Failure count</div>
-              <div class="aa-value">${esc(String(failureCount))}</div>
-            </div>
-            <div class="aa-tile">
-              <div class="aa-label">Latest order</div>
-              <div class="aa-value">${latestOrderId ? `#${esc(latestOrderId)}` : "—"}</div>
-            </div>
-            <div class="aa-tile">
-              <div class="aa-label">Latest status</div>
-              <div class="aa-value">${renderStatusPill(latestOrderStatus)}</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Subscription Health Summary</div>
-          <div class="aa-section-subtitle">Last payment, next payment, renewal count, and failure count</div>
-        </div>
-        <div class="aa-health-wrap">${cards}</div>
-      </section>
-    `;
-  }
-
   function renderActivityTimeline(customer, subs, orders, ordersBySub) {
     const events = [];
     const customerCreated = firstUsableDate(customer?.date_created, customer?.date_created_gmt, customer?.registered_date, customer?.user_registered);
@@ -981,7 +937,6 @@ function setSessionPill(isLoggedIn, name) {
 
     const ordersBySub = buildOrdersBySubscriptionId(subs, orders);
     const clipboardPack = renderSupportClipboardPack(customer, subs, orders, ordersBySub);
-    const healthSummary = renderSubscriptionHealthSummary(subs, ordersBySub);
     const activityTimeline = renderActivityTimeline(customer, subs, orders, ordersBySub);
     const ledger = renderSubscriptionLedger(subs, orders);
 
@@ -1000,7 +955,6 @@ function setSessionPill(isLoggedIn, name) {
       </section>
 
       ${clipboardPack || ""}
-      ${healthSummary || ""}
       ${activityTimeline || ""}
       ${ledger || ""}
     `;
@@ -1419,6 +1373,8 @@ function renderHierarchySection(subs, orders) {
             </tbody>
           </table>
         </div>
+
+        ${renderSubscriptionActions(s)}
 
         ${renderSubNotesRow(s)}
 
