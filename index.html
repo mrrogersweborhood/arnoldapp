@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R2 — Support Clipboard Pack + Inline Clipboard Icons) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1 — Timeline + Health Summary + Support Clipboard Pack) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -656,6 +656,113 @@ table.aa-totals-table tr.aa-totals-total td{
       table.aa-table{ min-width:720px; }
     }
   
+
+
+/* Activity Timeline / Health / Clipboard Pack */
+.aa-health-wrap{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+  gap:12px;
+}
+.aa-health-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+.aa-health-grid .aa-tile .aa-value .aa-pill{
+  vertical-align:middle;
+}
+.aa-clipboard-pack{
+  background:rgba(30,144,255,.05);
+}
+.aa-copy-row-pack{
+  margin-top:0;
+  margin-bottom:12px;
+}
+.aa-clipboard-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
+}
+.aa-clipboard-item{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
+  color:#0b1220;
+}
+.aa-timeline{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.aa-timeline-item{
+  display:grid;
+  grid-template-columns:26px 1fr;
+  gap:12px;
+  align-items:start;
+}
+.aa-timeline-rail{
+  position:relative;
+  min-height:100%;
+}
+.aa-timeline-rail::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:0;
+  bottom:-12px;
+  width:2px;
+  background:rgba(30,144,255,.18);
+}
+.aa-timeline-item:last-child .aa-timeline-rail::before{
+  bottom:12px;
+}
+.aa-timeline-dot{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:10px;
+  height:10px;
+  margin:8px 0 0 7px;
+  border-radius:50%;
+  background:var(--brand);
+  box-shadow:0 0 0 4px rgba(30,144,255,.12);
+}
+.aa-timeline-body{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+}
+.aa-timeline-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.aa-timeline-label{
+  font-weight:950;
+  color:#0b1220;
+}
+.aa-timeline-date{
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.aa-timeline-meta{
+  margin-top:4px;
+  font-size:13px;
+  font-weight:750;
+  color:#334155;
+}
+.aa-timeline-badge{
+  margin-top:8px;
+}
+
 /* timeline indicator */
 .aa-type-cell{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .aa-type-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block;}
@@ -740,7 +847,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-08-006"></script>
+  <script src="./main.js?v=2026-03-09-001"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

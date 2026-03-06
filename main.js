@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R1-inlineClipboardIcons)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1-timelineHealthClipboard)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -699,6 +699,272 @@ function setSessionPill(isLoggedIn, name) {
   }
 
 
+  function isProblemOrderStatus(status) {
+    const raw = String(status ?? "").trim().toLowerCase();
+    return raw === "failed" || raw === "refunded" || raw === "cancelled" || raw === "on-hold" || raw.includes("chargeback");
+  }
+
+  function toTimestamp(val) {
+    if (!val) return null;
+    const ts = new Date(val).getTime();
+    return Number.isFinite(ts) ? ts : null;
+  }
+
+  function firstUsableDate(...vals) {
+    for (const val of vals) {
+      if (toTimestamp(val) != null) return val;
+    }
+    return null;
+  }
+
+  function getSubscriptionStartDate(sub) {
+    return firstUsableDate(
+      sub?.start_date,
+      sub?.date_created,
+      sub?.date_created_gmt,
+      sub?.created_at,
+      sub?.date_created_local
+    );
+  }
+
+  function getSortedOrdersNewestFirst(orders) {
+    const arr = Array.isArray(orders) ? [...orders] : [];
+    arr.sort((a, b) => {
+      const da = toTimestamp(a?.date_created) ?? 0;
+      const db = toTimestamp(b?.date_created) ?? 0;
+      return db - da;
+    });
+    return arr;
+  }
+
+  function getPrimarySubscription(subs, ordersBySub) {
+    const arr = Array.isArray(subs) ? [...subs] : [];
+    if (!arr.length) return null;
+
+    const rankStatus = (status) => {
+      const raw = String(status ?? "").trim().toLowerCase();
+      if (raw === "active") return 0;
+      if (raw === "on-hold") return 1;
+      if (raw === "pending-cancel") return 2;
+      if (raw === "pending") return 3;
+      return 4;
+    };
+
+    arr.sort((a, b) => {
+      const ra = rankStatus(a?.status);
+      const rb = rankStatus(b?.status);
+      if (ra !== rb) return ra - rb;
+
+      const aNext = toTimestamp(a?.next_payment_date);
+      const bNext = toTimestamp(b?.next_payment_date);
+      if (aNext != null && bNext != null && aNext !== bNext) return aNext - bNext;
+      if (aNext != null && bNext == null) return -1;
+      if (aNext == null && bNext != null) return 1;
+
+      const aOrders = getSortedOrdersNewestFirst(ordersBySub?.get(String(a?.id ?? "")) || []);
+      const bOrders = getSortedOrdersNewestFirst(ordersBySub?.get(String(b?.id ?? "")) || []);
+      const aLatest = toTimestamp(aOrders[0]?.date_created) ?? 0;
+      const bLatest = toTimestamp(bOrders[0]?.date_created) ?? 0;
+      if (aLatest !== bLatest) return bLatest - aLatest;
+
+      return String(a?.id ?? "").localeCompare(String(b?.id ?? ""), undefined, { numeric: true });
+    });
+
+    return arr[0] || null;
+  }
+
+  function renderSupportClipboardPack(customer, subs, orders, ordersBySub) {
+    const email = String(customer?.email ?? customer?.billing?.email ?? "").trim();
+    const primarySub = getPrimarySubscription(subs, ordersBySub);
+    const primarySubId = primarySub ? String(primarySub?.id ?? "").trim() : "";
+    const primarySubOrders = primarySub ? getSortedOrdersNewestFirst(ordersBySub.get(primarySubId) || []) : [];
+    const latestOrder = primarySubOrders[0] || getSortedOrdersNewestFirst(orders)[0] || null;
+    const latestOrderId = latestOrder ? String(latestOrder?.id ?? "").trim() : "";
+
+    const pieces = [];
+    if (email) pieces.push(`Email: ${email}`);
+    if (primarySubId) pieces.push(`Subscription ID: #${primarySubId}`);
+    if (latestOrderId) pieces.push(`Latest Order ID: #${latestOrderId}`);
+
+    const name = [customer?.first_name, customer?.last_name].map((v) => String(v ?? "").trim()).filter(Boolean).join(" ");
+    const nextPayment = primarySub?.next_payment_date ? fmtDate(primarySub.next_payment_date) : "—";
+    const packText = [
+      name ? `Customer: ${name}` : "",
+      email ? `Email: ${email}` : "",
+      primarySubId ? `Subscription ID: #${primarySubId}` : "",
+      latestOrderId ? `Latest Order ID: #${latestOrderId}` : "",
+      primarySub ? `Subscription Status: ${String(primarySub?.status ?? "—")}` : "",
+      primarySub ? `Next Payment: ${nextPayment}` : ""
+    ].filter(Boolean).join("\n");
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Support Clipboard Pack</div>
+          <div class="aa-section-subtitle">One-click copy for common support fields</div>
+        </div>
+
+        <div class="aa-card aa-clipboard-pack">
+          <div class="aa-copy-row aa-copy-row-pack">
+            ${email ? `<button class="aa-copy-btn" type="button" data-copy="${esc(email)}">Copy Email</button>` : ""}
+            ${primarySubId ? `<button class="aa-copy-btn" type="button" data-copy="${esc(`#${primarySubId}`)}">Copy Subscription ID</button>` : ""}
+            ${latestOrderId ? `<button class="aa-copy-btn" type="button" data-copy="${esc(`#${latestOrderId}`)}">Copy Latest Order ID</button>` : ""}
+            ${packText ? `<button class="aa-copy-btn" type="button" data-copy="${esc(packText)}">Copy Support Pack</button>` : ""}
+          </div>
+
+          <div class="aa-clipboard-summary">
+            ${pieces.length ? pieces.map((piece) => `<div class="aa-clipboard-item">${esc(piece)}</div>`).join("") : `<div class="aa-muted">No clipboard values available for this result.</div>`}
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderSubscriptionHealthSummary(subs, ordersBySub) {
+    const sArr = Array.isArray(subs) ? subs : [];
+    if (!sArr.length) return "";
+
+    const cards = sArr.map((sub) => {
+      const sid = String(sub?.id ?? "—");
+      const linked = getSortedOrdersNewestFirst(ordersBySub.get(sid) || []);
+      const parentId = String(sub?.parent_id ?? "").trim();
+      const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
+      const latestOrder = linked[0] || null;
+      const lastSuccessful = linked.find((o) => !isProblemOrderStatus(o?.status)) || null;
+      const failureCount = linked.filter((o) => isProblemOrderStatus(o?.status)).length;
+      const nextPayment = sub?.next_payment_date ? fmtDate(sub.next_payment_date) : "—";
+      const lastPayment = lastSuccessful?.date_created ? fmtDate(lastSuccessful.date_created) : (latestOrder?.date_created ? fmtDate(latestOrder.date_created) : "—");
+      const latestOrderId = latestOrder ? String(latestOrder?.id ?? "").trim() : "";
+      const latestOrderStatus = latestOrder ? String(latestOrder?.status ?? "—").trim() || "—" : "—";
+
+      return `
+        <div class="aa-card aa-health-card">
+          <div class="aa-card-title">Subscription #${esc(sid)}</div>
+          <div class="aa-health-grid">
+            <div class="aa-tile">
+              <div class="aa-label">Last payment</div>
+              <div class="aa-value">${esc(lastPayment)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Next payment</div>
+              <div class="aa-value">${esc(nextPayment)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Renewal count</div>
+              <div class="aa-value">${esc(String(renewals.length))}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Failure count</div>
+              <div class="aa-value">${esc(String(failureCount))}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Latest order</div>
+              <div class="aa-value">${latestOrderId ? `#${esc(latestOrderId)}` : "—"}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Latest status</div>
+              <div class="aa-value">${renderStatusPill(latestOrderStatus)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscription Health Summary</div>
+          <div class="aa-section-subtitle">Last payment, next payment, renewal count, and failure count</div>
+        </div>
+        <div class="aa-health-wrap">${cards}</div>
+      </section>
+    `;
+  }
+
+  function renderActivityTimeline(customer, subs, orders, ordersBySub) {
+    const events = [];
+    const customerCreated = firstUsableDate(customer?.date_created, customer?.date_created_gmt, customer?.registered_date, customer?.user_registered);
+    if (customerCreated) {
+      events.push({
+        ts: toTimestamp(customerCreated),
+        label: 'Customer created',
+        meta: customer?.id ? `Customer #${String(customer.id)}` : '',
+        dateText: fmtDate(customerCreated),
+        badge: ''
+      });
+    }
+
+    const sArr = Array.isArray(subs) ? subs : [];
+    for (const sub of sArr) {
+      const sid = String(sub?.id ?? '').trim();
+      const started = getSubscriptionStartDate(sub);
+      if (started) {
+        events.push({
+          ts: toTimestamp(started),
+          label: 'Subscription started',
+          meta: sid ? `Subscription #${sid}` : '',
+          dateText: fmtDate(started),
+          badge: renderStatusPill(String(sub?.status ?? '—'))
+        });
+      }
+
+      const parentId = String(sub?.parent_id ?? '').trim();
+      const linked = getSortedOrdersNewestFirst(ordersBySub.get(sid) || []);
+      const newestRenewalId = linked
+        .filter((o) => String(o?.id ?? '').trim() !== parentId)
+        .map((o) => String(o?.id ?? '').trim())
+        .find(Boolean) || '';
+
+      for (const order of linked) {
+        const oid = String(order?.id ?? '').trim();
+        const created = firstUsableDate(order?.date_created, order?.date_created_gmt, order?.date_paid);
+        if (!oid || !created) continue;
+        const isParent = parentId && oid === parentId;
+        const isLatest = !isParent && newestRenewalId && oid === newestRenewalId;
+        const status = String(order?.status ?? '—').trim() || '—';
+        const label = isParent ? 'Parent order' : (isProblemOrderStatus(status) ? 'Problem renewal' : 'Renewal');
+        const metaParts = [`Order #${oid}`];
+        if (!isParent && isLatest) metaParts.push('Latest');
+        metaParts.push(status);
+        events.push({
+          ts: toTimestamp(created),
+          label,
+          meta: metaParts.join(' • '),
+          dateText: fmtDate(created),
+          badge: renderStatusPill(status)
+        });
+      }
+    }
+
+    if (!events.length) return '';
+
+    events.sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0));
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscriber Activity Timeline</div>
+          <div class="aa-section-subtitle">Chronological history across customer, subscription, and order events</div>
+        </div>
+        <div class="aa-timeline">
+          ${events.map((evt) => `
+            <div class="aa-timeline-item">
+              <div class="aa-timeline-rail"><span class="aa-timeline-dot"></span></div>
+              <div class="aa-timeline-body">
+                <div class="aa-timeline-top">
+                  <div class="aa-timeline-label">${esc(evt.label)}</div>
+                  <div class="aa-timeline-date">${esc(evt.dateText || '—')}</div>
+                </div>
+                <div class="aa-timeline-meta">${esc(evt.meta || '—')}</div>
+                ${evt.badge ? `<div class="aa-timeline-badge">${evt.badge}</div>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  }
+
   function renderResults(payload) {
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
@@ -713,6 +979,10 @@ function setSessionPill(isLoggedIn, name) {
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
 
+    const ordersBySub = buildOrdersBySubscriptionId(subs, orders);
+    const clipboardPack = renderSupportClipboardPack(customer, subs, orders, ordersBySub);
+    const healthSummary = renderSubscriptionHealthSummary(subs, ordersBySub);
+    const activityTimeline = renderActivityTimeline(customer, subs, orders, ordersBySub);
     const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
@@ -729,6 +999,9 @@ function setSessionPill(isLoggedIn, name) {
         </div>
       </section>
 
+      ${clipboardPack || ""}
+      ${healthSummary || ""}
+      ${activityTimeline || ""}
       ${ledger || ""}
     `;
   }
