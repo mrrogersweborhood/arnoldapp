@@ -122,6 +122,30 @@
     return esc(payment);
   }
 
+  function renderOrderBadges(order, opts = {}) {
+    const status = String(order?.status ?? "").trim().toLowerCase();
+    const isLatest = !!opts.isLatest;
+
+    const badges = [];
+    if (isLatest) {
+      badges.push('<span class="aa-order-flag aa-order-flag-latest">★ Latest</span>');
+    }
+
+    if (status === "failed") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Failed</span>');
+    } else if (status === "refunded") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Refunded</span>');
+    } else if (status === "cancelled") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Cancelled</span>');
+    } else if (status === "on-hold") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ On hold</span>');
+    } else if (status.includes("chargeback")) {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Chargeback</span>');
+    }
+
+    return badges.join("");
+  }
+
 
   // -----------------------------
   // STATUS LINE
@@ -1001,6 +1025,10 @@ function renderHierarchySection(subs, orders) {
       return db - da;
     });
 
+    const newestRenewalId = renewals.length
+      ? String(renewals[0]?.id ?? "")
+      : null;
+
     const orderRows = [];
 
     if (parentOrder) {
@@ -1012,7 +1040,13 @@ function renderHierarchySection(subs, orders) {
 
       orderRows.push(`
         <tr>
-          <td><div class="aa-type-cell"><span class="aa-type-dot"></span><span class="aa-muted">Parent</span></div></td>
+          <td>
+            <div class="aa-type-cell">
+              <span class="aa-type-dot"></span>
+              <span class="aa-muted">Parent</span>
+              ${renderOrderBadges(parentOrder)}
+            </div>
+          </td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
@@ -1026,6 +1060,7 @@ function renderHierarchySection(subs, orders) {
 
     for (const o of renewals) {
       const oid = String(o?.id ?? "—");
+      const isLatest = !!newestRenewalId && oid === newestRenewalId;
       linkedOrderIds.add(oid);
 
       const paymentHtml = renderPaymentWithWarning(o);
@@ -1033,7 +1068,13 @@ function renderHierarchySection(subs, orders) {
 
       orderRows.push(`
         <tr>
-          <td><div class="aa-type-cell"><span class="aa-type-dot"></span><span class="aa-muted">Renewal</span></div></td>
+          <td>
+            <div class="aa-type-cell">
+              <span class="aa-type-dot"></span>
+              <span class="aa-muted">Renewal</span>
+              ${renderOrderBadges(o, { isLatest })}
+            </div>
+          </td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(o?.date_created))}</td>
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
@@ -1150,7 +1191,13 @@ function renderHierarchySection(subs, orders) {
 
                 return `
                   <tr>
-                    <td class="aa-muted">Order</td>
+                    <td>
+                      <div class="aa-type-cell">
+                        <span class="aa-type-dot"></span>
+                        <span class="aa-muted">Order</span>
+                        ${renderOrderBadges(o)}
+                      </div>
+                    </td>
                     <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
                     <td>${esc(fmtDate(o?.date_created))}</td>
                     <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
