@@ -427,7 +427,7 @@ function setSessionPill(isLoggedIn, name) {
       <tr>
         <td>
           <a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>
-          <span class="aa-pill">${esc(status)}</span>
+          <span class="aa-pill ${esc(status)}">${esc(status)}</span>
         </td>
         <td>${esc(total)}</td>
         <td>${esc(nextPay)}</td>
@@ -488,7 +488,7 @@ function setSessionPill(isLoggedIn, name) {
       <tr>
         <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a></td>
         <td>${esc(created)}</td>
-        <td><span class="aa-pill">${esc(status)}</span></td>
+        <td><span class="aa-pill ${esc(status)}">${esc(status)}</span></td>
         <td>${esc(total)}</td>
         <td>${esc(payment)}</td>
         <td title="${esc(itemsText)}">${esc(itemsText)}</td>
