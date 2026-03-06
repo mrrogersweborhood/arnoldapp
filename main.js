@@ -949,7 +949,7 @@ function renderHierarchySection(subs, orders) {
 
       orderRows.push(`
         <tr>
-          <td class="aa-muted">Parent</td>
+          <td><div class="aa-type-cell"><span class="aa-type-dot"></span><span class="aa-muted">Parent</span></div></td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
@@ -970,7 +970,7 @@ function renderHierarchySection(subs, orders) {
 
       orderRows.push(`
         <tr>
-          <td class="aa-muted">Renewal</td>
+          <td><div class="aa-type-cell"><span class="aa-type-dot"></span><span class="aa-muted">Renewal</span></div></td>
           <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a></td>
           <td>${esc(fmtDate(o?.date_created))}</td>
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
@@ -1031,7 +1031,7 @@ function renderHierarchySection(subs, orders) {
             </thead>
             <tbody>
               <tr>
-                <td class="aa-muted">Sub</td>
+                <td><div class="aa-type-cell"><span class="aa-type-dot"></span><span class="aa-muted">Sub</span></div></td>
                 <td><a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(sid)}</a></td>
                 <td>${esc(subDate)}</td>
                 <td>${renderStatusPill(subStatus)}</td>
