@@ -113,6 +113,15 @@
     `;
   }
 
+  function renderPaymentWithWarning(order) {
+    const payment = String(order?.payment_method_title ?? "").trim() || "—";
+    const status = String(order?.status ?? "").trim().toLowerCase();
+    if (status === "failed") {
+      return `${esc(payment)} <span class="aa-muted">⚠ Failed payment</span>`;
+    }
+    return esc(payment);
+  }
+
 
   // -----------------------------
   // STATUS LINE
@@ -614,10 +623,7 @@ function setSessionPill(isLoggedIn, name) {
     const total = fmtMoney(o?.total, o?.currency);
     const created = fmtDateWithAge(o?.date_created);
 
-    const payment = (() => {
-      const pm = (o?.payment_method_title ?? "").trim();
-      return pm || "—";
-    })();
+    const paymentHtml = renderPaymentWithWarning(o);
 
     // Items purchased (WooCommerce orders use `line_items`)
     const li = Array.isArray(o?.line_items)
@@ -660,7 +666,7 @@ function setSessionPill(isLoggedIn, name) {
         <td>${esc(created)}</td>
         <td>${renderStatusPill(status)}</td>
         <td>${esc(total)}</td>
-        <td>${esc(payment)}</td>
+        <td>${paymentHtml}</td>
         <td title="${esc(itemsText)}">${esc(itemsText)}</td>
         <td class="aa-notes-cell">${btn}</td>
       </tr>
@@ -824,7 +830,7 @@ function renderHierarchySection(subs, orders) {
                   <td>${esc(created)}</td>
                   <td>${renderStatusPill(oStatus)}</td>
                   <td>${esc(oTotal)}</td>
-                  <td>${esc(payment)}</td>
+                  <td>${paymentHtml}</td>
                 </tr>
               `;
             })
@@ -1001,7 +1007,7 @@ function renderHierarchySection(subs, orders) {
       const oid = String(parentOrder?.id ?? "—");
       linkedOrderIds.add(oid);
 
-      const payment = ((parentOrder?.payment_method_title ?? "").trim()) || "—";
+      const paymentHtml = renderPaymentWithWarning(parentOrder);
       const notes = Array.isArray(parentOrder?.notes) ? parentOrder.notes : [];
 
       orderRows.push(`
@@ -1011,7 +1017,7 @@ function renderHierarchySection(subs, orders) {
           <td>${esc(fmtDate(parentOrder?.date_created))}</td>
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
-          <td>${esc(payment)}</td>
+          <td>${paymentHtml}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1022,7 +1028,7 @@ function renderHierarchySection(subs, orders) {
       const oid = String(o?.id ?? "—");
       linkedOrderIds.add(oid);
 
-      const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+      const paymentHtml = renderPaymentWithWarning(o);
       const notes = Array.isArray(o?.notes) ? o.notes : [];
 
       orderRows.push(`
@@ -1140,7 +1146,7 @@ function renderHierarchySection(subs, orders) {
               ${unlinked.map((o) => {
                 const oid = String(o?.id ?? "—");
                 const notes = Array.isArray(o?.notes) ? o.notes : [];
-                const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+                const paymentHtml = renderPaymentWithWarning(o);
 
                 return `
                   <tr>
@@ -1149,7 +1155,7 @@ function renderHierarchySection(subs, orders) {
                     <td>${esc(fmtDate(o?.date_created))}</td>
                     <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
-                    <td>${esc(payment)}</td>
+                    <td>${paymentHtml}</td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
                   </tr>
                   ${renderOrderNotesRow(o)}
