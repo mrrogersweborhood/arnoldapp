@@ -365,7 +365,6 @@ function setSessionPill(isLoggedIn, name) {
   // -----------------------------
   function renderCustomerCard(customer) {
     const id = customer?.id ?? "—";
-    const email = String(customer?.email ?? customer?.billing?.email ?? "").trim() || "—";
     const username = customer?.username ?? customer?.email ?? "—";
     const fn = (customer?.first_name ?? "").trim();
     const ln = (customer?.last_name ?? "").trim();
@@ -377,62 +376,56 @@ function setSessionPill(isLoggedIn, name) {
 
         <div class="aa-tiles customer">
           <div class="aa-tile">
-            <div class="aa-label">Name</div>
-            <div class="aa-value">${esc(String(name))}</div>
-          </div>
-
-          <div class="aa-tile">
-            <div class="aa-label">Email</div>
-            ${renderValueWithCopy(String(email), String(email))}
-          </div>
-
-          <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
             ${renderValueWithCopy(String(id), String(id))}
+            <div class="aa-copy-row">
+              <a
+                class="aa-copy-btn"
+                href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open WP
+              </a>
+
+              <a
+                class="aa-copy-btn"
+                href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Subscriptions
+              </a>
+
+              <a
+                class="aa-copy-btn"
+                href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Orders
+              </a>
+
+              <a
+                class="aa-copy-btn"
+                href="https://okobserver.org/wp-admin/post-new.php?post_type=shop_order&customer_id=${esc(String(id))}"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                New Order
+              </a>
+            </div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Username</div>
             ${renderValueWithCopy(String(username), String(username))}
           </div>
-        </div>
 
-        <div class="aa-copy-row" style="margin-top:12px;">
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open WP
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Subscriptions
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Orders
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/post-new.php?post_type=shop_order&customer_id=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            New Order
-          </a>
+          <div class="aa-tile">
+            <div class="aa-label">Name</div>
+            <div class="aa-value">${esc(String(name))}</div>
+          </div>
         </div>
       </div>
     `;
@@ -604,16 +597,6 @@ function setSessionPill(isLoggedIn, name) {
         }, 1200);
       });
     });
-  }
-
-  function renderSubscriptionActions(sub) {
-    const sid = String(sub?.id ?? "").trim();
-    if (!sid) return "";
-    return `
-      <div class="aa-sub-actions">
-        <a class="aa-copy-btn" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">Open Subscription</a>
-      </div>
-    `;
   }
 
   function renderSubscriptionRow(s) {
@@ -837,6 +820,67 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 
+  function renderSubscriptionHealthSummary(subs, ordersBySub) {
+    const sArr = Array.isArray(subs) ? subs : [];
+    if (!sArr.length) return "";
+
+    const cards = sArr.map((sub) => {
+      const sid = String(sub?.id ?? "—");
+      const linked = getSortedOrdersNewestFirst(ordersBySub.get(sid) || []);
+      const parentId = String(sub?.parent_id ?? "").trim();
+      const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
+      const latestOrder = linked[0] || null;
+      const lastSuccessful = linked.find((o) => !isProblemOrderStatus(o?.status)) || null;
+      const failureCount = linked.filter((o) => isProblemOrderStatus(o?.status)).length;
+      const nextPayment = sub?.next_payment_date ? fmtDate(sub.next_payment_date) : "—";
+      const lastPayment = lastSuccessful?.date_created ? fmtDate(lastSuccessful.date_created) : (latestOrder?.date_created ? fmtDate(latestOrder.date_created) : "—");
+      const latestOrderId = latestOrder ? String(latestOrder?.id ?? "").trim() : "";
+      const latestOrderStatus = latestOrder ? String(latestOrder?.status ?? "—").trim() || "—" : "—";
+
+      return `
+        <div class="aa-card aa-health-card">
+          <div class="aa-card-title">Subscription #${esc(sid)}</div>
+          <div class="aa-health-grid">
+            <div class="aa-tile">
+              <div class="aa-label">Last payment</div>
+              <div class="aa-value">${esc(lastPayment)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Next payment</div>
+              <div class="aa-value">${esc(nextPayment)}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Renewal count</div>
+              <div class="aa-value">${esc(String(renewals.length))}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Failure count</div>
+              <div class="aa-value">${esc(String(failureCount))}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Latest order</div>
+              <div class="aa-value">${latestOrderId ? `#${esc(latestOrderId)}` : "—"}</div>
+            </div>
+            <div class="aa-tile">
+              <div class="aa-label">Latest status</div>
+              <div class="aa-value">${renderStatusPill(latestOrderStatus)}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscription Health Summary</div>
+          <div class="aa-section-subtitle">Last payment, next payment, renewal count, and failure count</div>
+        </div>
+        <div class="aa-health-wrap">${cards}</div>
+      </section>
+    `;
+  }
+
   function renderActivityTimeline(customer, subs, orders, ordersBySub) {
     const events = [];
     const customerCreated = firstUsableDate(customer?.date_created, customer?.date_created_gmt, customer?.registered_date, customer?.user_registered);
@@ -921,78 +965,40 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 
-
-  function renderPossibleMatches(payload) {
+  
+  function renderCandidateMatches(payload){
     const matches = Array.isArray(payload?.possible_matches) ? payload.possible_matches : [];
-    const query = String(payload?.query ?? "").trim();
+    if(!matches.length){
+      return `<section class="aa-card"><h3>Possible Matches</h3><div class="aa-muted">No matches found.</div></section>`;
+    }
+
+    const rows = matches.map(m=>{
+      const c = m?.customer || {};
+      const name = [c.first_name,c.last_name].filter(Boolean).join(" ") || "—";
+      const email = c.email || "—";
+      const id = c.id ? `#${c.id}` : "—";
+      return `
+        <div class="aa-match-row">
+          <button class="aa-btn aa-open-match" data-email="${esc(email)}">Open</button>
+          <div class="aa-match-name">${esc(name)}</div>
+          <div class="aa-match-email">${esc(email)}</div>
+          <div class="aa-match-id">${esc(id)}</div>
+        </div>
+      `;
+    }).join("");
 
     return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Possible Matches</div>
-          <div class="aa-section-subtitle">Select the correct customer for ${esc(query || "your search")}</div>
-        </div>
-
-        <div class="aa-health-wrap">
-          ${matches.length ? matches.map((entry) => {
-            const cust = entry?.customer || {};
-            const id = String(cust?.id ?? "—");
-            const first = String(cust?.first_name ?? "").trim();
-            const last = String(cust?.last_name ?? "").trim();
-            const fullName = [first, last].filter(Boolean).join(" ").trim() || "—";
-            const email = String(cust?.email ?? cust?.billing?.email ?? "").trim() || "—";
-            const username = String(cust?.username ?? "").trim() || "—";
-            const matchReason = String(entry?.reason ?? "possible match").replaceAll("_", " ").trim() || "possible match";
-            const matchScore = Number(entry?.score ?? 0);
-            const canOpen = email && email !== "—";
-
-            return `
-              <div class="aa-card aa-health-card">
-                <div class="aa-card-title">${esc(fullName)}</div>
-                <div class="aa-health-grid">
-                  <div class="aa-tile">
-                    <div class="aa-label">Email</div>
-                    <div class="aa-value">${renderValueWithCopy(email, email)}</div>
-                  </div>
-                  <div class="aa-tile">
-                    <div class="aa-label">Customer ID</div>
-                    <div class="aa-value">${esc(id)}</div>
-                  </div>
-                  <div class="aa-tile">
-                    <div class="aa-label">Username</div>
-                    <div class="aa-value">${esc(username)}</div>
-                  </div>
-                  <div class="aa-tile">
-                    <div class="aa-label">Match</div>
-                    <div class="aa-value">${esc(matchReason)}${matchScore ? ` (${esc(String(matchScore))})` : ""}</div>
-                  </div>
-                </div>
-                <div class="aa-copy-row" style="margin-top:12px;">
-                  ${canOpen ? `<button class="aa-copy-btn aa-open-match-btn" type="button" data-candidate-query="${esc(email)}">Open</button>` : ""}
-                  ${canOpen ? `<button class="aa-copy-btn" type="button" data-copy="${esc(email)}">Copy Email</button>` : ""}
-                </div>
-              </div>
-            `;
-          }).join("") : `<div class="aa-muted">No candidate matches returned.</div>`}
+      <section class="aa-card">
+        <h3>Possible Matches</h3>
+        <div class="aa-match-list">
+          ${rows}
         </div>
       </section>
     `;
   }
 
-  function bindCandidateButtons(container) {
-    if (!container) return;
-    container.querySelectorAll('.aa-open-match-btn[data-candidate-query]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const q = btn.getAttribute('data-candidate-query') || '';
-        if (!q) return;
-        const input = $('q');
-        if (input) input.value = q;
-        await doSearch(q);
-      });
-    });
-  }
-
   function renderResults(payload) {
+    if(payload?.intent==='customer_candidates_by_name'){ return renderCandidateMatches(payload);} 
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
     const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
@@ -1008,6 +1014,7 @@ function setSessionPill(isLoggedIn, name) {
 
     const ordersBySub = buildOrdersBySubscriptionId(subs, orders);
     const clipboardPack = renderSupportClipboardPack(customer, subs, orders, ordersBySub);
+    const healthSummary = renderSubscriptionHealthSummary(subs, ordersBySub);
     const activityTimeline = renderActivityTimeline(customer, subs, orders, ordersBySub);
     const ledger = renderSubscriptionLedger(subs, orders);
 
@@ -1026,6 +1033,7 @@ function setSessionPill(isLoggedIn, name) {
       </section>
 
       ${clipboardPack || ""}
+      ${healthSummary || ""}
       ${activityTimeline || ""}
       ${ledger || ""}
     `;
@@ -1445,8 +1453,6 @@ function renderHierarchySection(subs, orders) {
           </table>
         </div>
 
-        ${renderSubscriptionActions(s)}
-
         ${renderSubNotesRow(s)}
 
         ${ordersTable}
@@ -1682,8 +1688,8 @@ function renderTotals(data) {
     setSessionPill(false, null);
   }
 
-  async function doSearch(forcedQuery) {
-    const q = String(forcedQuery ?? $("q")?.value?.trim() ?? "").trim();
+  async function doSearch() {
+    const q = $("q")?.value?.trim() || "";
     if (!q) {
       setStatus("warn", "Enter a query (email or order #).");
       return;
@@ -1720,21 +1726,11 @@ function renderTotals(data) {
   return;
 }
 
-    if (j?.intent === "customer_candidates_by_name") {
-      setStatus("", "Possible matches found.");
-      $("results").innerHTML = renderPossibleMatches(j);
-      bindCandidateButtons($("results"));
-      bindCopyButtons($("results"));
-      renderRawJson();
-      return;
-    }
-
     setStatus("", "Search complete.");
     $("results").innerHTML = renderResults(j);
 
     bindNotesToggles($("results"));
     bindCopyButtons($("results"));
-    bindCandidateButtons($("results"));
     renderRawJson();
   }
 
