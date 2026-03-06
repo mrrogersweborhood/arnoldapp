@@ -336,10 +336,21 @@ function setSessionPill(isLoggedIn, name) {
           </div>
 
           <div class="aa-tile">
-            <div class="aa-label">Username</div>
-            <div class="aa-value">${esc(String(username))}</div>
-            <div class="aa-copy-row">${renderCopyButton("Username", String(username))}</div>
-          </div>
+  <div class="aa-label">Customer ID</div>
+  <div class="aa-value">${esc(String(id))}</div>
+
+  <div class="aa-copy-row">
+    ${renderCopyButton("ID", String(id))}
+    <a
+      class="aa-copy-btn"
+      href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Open WP
+    </a>
+  </div>
+</div>
 
           <div class="aa-tile">
             <div class="aa-label">Name</div>
