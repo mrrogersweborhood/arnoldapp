@@ -687,7 +687,7 @@ function renderHierarchySection(subs, orders) {
     if (oid) orderById.set(oid, o);
   }
 
-  const blocks = sArr.map((s) => {
+  const subscriptionRows = sArr.map((s) => {
     const sid = String(s?.id ?? "—");
     const status = String(s?.status ?? "—");
     const total = fmtMoney(s?.total, s?.currency);
@@ -696,13 +696,22 @@ function renderHierarchySection(subs, orders) {
 
     const parentId = String(s?.parent_id ?? "").trim();
     const parentOrder = parentId ? orderById.get(parentId) : null;
+
     // Treat parent order as "linked" so it does not appear in the unlinked orders table.
     if (parentId) linkedOrderIds.add(parentId);
 
     const linked = bySub.get(String(s?.id ?? "").trim()) || [];
     const renewals = linked.filter((o) => String(o?.id ?? "") !== parentId);
 
+    // Newest first (renewals)
+    renewals.sort((a, b) => {
+      const da = new Date(a?.date_created || 0).getTime();
+      const db = new Date(b?.date_created || 0).getTime();
+      return db - da;
+    });
+
     const notesCount = Array.isArray(s?.notes) ? s.notes.length : 0;
+    const ordersCount = (parentOrder ? 1 : 0) + (renewals.length || 0);
 
     const combinedRows = (() => {
       const rows = [];
@@ -748,53 +757,63 @@ function renderHierarchySection(subs, orders) {
       }
 
       return rows.filter(Boolean).join("");
-    })() || `<tr><td colspan="6" class="aa-muted">No orders found for this subscription in the current payload.</td></tr>`;;
+    })() || `<tr><td colspan="6" class="aa-muted">No orders found for this subscription in the current payload.</td></tr>`;
 
     return `
-      <div class="aa-card">
-        <div class="aa-card-title">Subscription #${esc(sid)} • <span class="aa-pill">${esc(status)}</span></div>
-
-        <div class="aa-tiles customer" style="grid-template-columns:repeat(4, minmax(0, 1fr));">
-          <div class="aa-tile">
-            <div class="aa-label">Total</div>
-            <div class="aa-value">${esc(total)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Next Payment</div>
-            <div class="aa-value">${esc(nextPay)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">End</div>
-            <div class="aa-value">${esc(endDate)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Notes</div>
-            <div class="aa-value">${esc(String(notesCount))}</div>
-          </div>
-        </div>
-
-        <div style="margin-top:10px;">
-          <div style="font-weight:950; color:var(--brand); margin-bottom:8px;">Orders (parent + renewals)</div>
-          <div class="aa-table-wrap" style="margin-top:10px;">
+      <tr class="aa-sub-row">
+        <td><strong>#${esc(sid)}</strong></td>
+        <td><span class="aa-pill">${esc(status)}</span></td>
+        <td><strong>${esc(total)}</strong></td>
+        <td>${esc(nextPay)}</td>
+        <td>${esc(endDate)}</td>
+        <td>${esc(String(ordersCount))}</td>
+        <td>${esc(String(notesCount))}</td>
+      </tr>
+      <tr class="aa-sub-detail">
+        <td colspan="7" style="padding:10px 12px 14px;">
+          <div class="aa-table-wrap">
             <table class="aa-table" style="min-width:760px;">
               <thead>
                 <tr>
-                  <th>Type</th>
-                  <th>Order</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Total</th>
+                  <th style="width:110px;">Type</th>
+                  <th style="width:140px;">Order</th>
+                  <th style="width:140px;">Date</th>
+                  <th style="width:140px;">Status</th>
+                  <th style="width:120px;">Total</th>
                   <th>Payment</th>
                 </tr>
               </thead>
               <tbody>${combinedRows}</tbody>
             </table>
           </div>
-        </div>
-</div>
-      </div>
+        </td>
+      </tr>
     `;
   }).join("");
+
+  const subscriptionsTable = `
+    <div class="aa-card">
+      <div class="aa-card-title">Subscriptions</div>
+      <div class="aa-table-wrap" style="margin-top:10px;">
+        <table class="aa-table" style="min-width:900px;">
+          <thead>
+            <tr>
+              <th>Subscription</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Next Payment</th>
+              <th>End</th>
+              <th>Orders</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${subscriptionRows || `<tr><td colspan="7" class="aa-muted">No subscriptions found.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 
   // Orders that weren't linked to any subscription (still keep the same information available)
   const unlinked = oArr
@@ -805,36 +824,15 @@ function renderHierarchySection(subs, orders) {
     .sort((a, b) => {
       const da = new Date(a?.date_created || 0).getTime();
       const db = new Date(b?.date_created || 0).getTime();
-      return (Number.isFinite(db) ? db : 0) - (Number.isFinite(da) ? da : 0);
+      return db - da;
     });
 
-  const unlinkedRows = unlinked.length
-    ? unlinked.map((o) => {
-        const oid = String(o?.id ?? "—");
-        const created = fmtDate(o?.date_created);
-        const oStatus = String(o?.status ?? "—");
-        const oTotal = fmtMoney(o?.total, o?.currency);
-        const payment = ((o?.payment_method_title ?? "").trim()) || "—";
-        const linkedSids = Array.from(getOrderLinkedSubscriptionIds(o));
-
-        return `
-          <tr>
-            <td><span class="aa-order-id">#${esc(oid)}</span></td>
-            <td>${esc(created)}</td>
-            <td><span class="aa-pill">${esc(oStatus)}</span></td>
-            <td>${esc(oTotal)}</td>
-            <td>${esc(payment)}</td>
-            <td class="aa-muted">${linkedSids.length ? esc(linkedSids.join(", ")) : "—"}</td>
-          </tr>
-        `;
-      }).join("")
-    : "";
-
-  const unlinkedBlock = unlinked.length ? `
-    <div class="aa-card" style="margin-top:12px;">
+  const unlinkedTable = unlinked.length
+    ? `
+    <div class="aa-card" style="margin-top:14px;">
       <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
       <div class="aa-table-wrap" style="margin-top:10px;">
-        <table class="aa-table" style="min-width:720px;">
+        <table class="aa-table" style="min-width:900px;">
           <thead>
             <tr>
               <th>Order</th>
@@ -845,64 +843,45 @@ function renderHierarchySection(subs, orders) {
               <th>Detected Subscription Ids</th>
             </tr>
           </thead>
-          <tbody>${unlinkedRows}</tbody>
+          <tbody>
+            ${unlinked.map((o) => {
+              const oid = String(o?.id ?? "—");
+              const created = fmtDate(o?.date_created);
+              const oStatus = String(o?.status ?? "—");
+              const oTotal = fmtMoney(o?.total, o?.currency);
+              const payment = ((o?.payment_method_title ?? "").trim()) || "—";
+              const subIds = getOrderLinkedSubscriptionIds(o);
+              return `
+                <tr>
+                  <td><span class="aa-order-id">#${esc(oid)}</span></td>
+                  <td>${esc(created)}</td>
+                  <td><span class="aa-pill">${esc(oStatus)}</span></td>
+                  <td>${esc(oTotal)}</td>
+                  <td>${esc(payment)}</td>
+                  <td>${esc(subIds.length ? subIds.join(", ") : "—")}</td>
+                </tr>
+              `;
+            }).join("")}
+          </tbody>
         </table>
       </div>
     </div>
-  ` : "";
+  `
+    : "";
 
   return `
     <section class="card aa-section">
-      <div class="aa-section-head">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
         <div class="aa-section-title">Subscription Ledger</div>
-        <div class="aa-section-subtitle">Parent order + renewal orders (newest first)</div>
+        <div class="aa-muted" style="font-weight:700;">Parent order + renewal orders (newest first)</div>
       </div>
-
-      ${blocks || `<div class="aa-muted">No subscriptions found.</div>`}
-      ${unlinkedBlock}
+      ${subscriptionsTable}
+      ${unlinkedTable}
     </section>
   `;
 }
 
-  function renderResults(payload) {
-    const ctx = payload?.context || {};
-    const customer = ctx.customer || null;
-    const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
-    const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
-    const billing = customer?.billing || null;
-    const shipping = customer?.shipping || null;
 
-    const customerCard = customer ? renderCustomerCard(customer) : "";
-    const billingCard = renderAddressBlock("Billing", billing, null);
-    const shippingCard = renderAddressBlock("Shipping", shipping, billing);
-
-    const ledger = renderSubscriptionLedger(subs, orders);
-
-    return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Subscriber</div>
-        </div>
-
-        ${customerCard}
-
-        <div class="aa-grid-2">
-          ${billingCard}
-          ${shippingCard}
-        </div>
-      </section>
-
-      ${ledger}
-    `;
-  }
-
-
-  // -----------------------------
-  // TOTALS
-  // -----------------------------
-// -----------------------------
-// TOTALS
-// -----------------------------
 function renderTotals(data) {
   const d = data || {};
 
