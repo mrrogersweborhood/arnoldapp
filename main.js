@@ -279,7 +279,48 @@ if (digits.length === 10) {
 
 return s;
   }
+function renderSubscriberTimeline(customer, subs, orders){
+  const events = [];
 
+  if(customer && customer.date_created){
+    events.push({date:customer.date_created,type:"Customer created",detail:""});
+  }
+
+  (Array.isArray(subs)?subs:[]).forEach(s=>{
+    if(s?.date_created){
+      events.push({date:s.date_created,type:"Subscription started",detail:`#${s.id}`});
+    }
+  });
+
+  (Array.isArray(orders)?orders:[]).forEach(o=>{
+    const status = String(o?.status||"").toLowerCase();
+    let type="Order";
+
+    if(status==="failed") type="⚠ Failed renewal";
+    else if(status==="completed"||status==="processing") type="Renewal";
+
+    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`});
+  });
+
+  events.sort((a,b)=> new Date(a.date)-new Date(b.date));
+
+  const rows = events.map(e=>`
+    <div class="aa-timeline-row">
+      <div class="aa-timeline-date">${fmtDate(e.date)}</div>
+      <div class="aa-timeline-type">${esc(e.type)}</div>
+      <div class="aa-timeline-detail">${esc(e.detail)}</div>
+    </div>
+  `).join("");
+
+  return `
+    <section class="card aa-section">
+      <div class="aa-section-head">
+        <div class="aa-section-title">Subscriber Activity</div>
+      </div>
+      <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
+    </section>
+  `;
+}
   // -----------------------------
   // SAFE HTML STRIP FOR NOTES
   // -----------------------------
