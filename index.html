@@ -748,11 +748,17 @@ table.aa-totals-table tr.aa-totals-total td{
 </style>
 
 <style id="timeline-style">
-.aa-timeline{display:block;margin-top:10px}
-.aa-timeline-row{display:grid;grid-template-columns:140px 1fr 100px;gap:10px;padding:6px 0;border-bottom:1px solid #eee;font-size:14px}
-.aa-timeline-date{color:#666}
-.aa-timeline-type{font-weight:600}
-.aa-timeline-detail{text-align:right;color:#333}
+.aa-timeline-summary{display:flex;justify-content:space-between;cursor:pointer;border-bottom:1px solid var(--border);padding-bottom:8px}
+.aa-timeline-summary::after{content:"▸";color:var(--brand)}
+.aa-timeline-details[open] .aa-timeline-summary::after{content:"▾"}
+.aa-timeline-row{display:grid;grid-template-columns:140px 1fr 90px;gap:10px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.05)}
+.aa-timeline-row:last-child{border-bottom:0}
+.aa-timeline-date{color:#64748b;font-weight:700}
+.aa-timeline-type{font-weight:800;display:flex;gap:6px}
+.aa-timeline-detail{text-align:right;font-weight:700}
+.aa-timeline-row-success .aa-timeline-type{color:#15803d}
+.aa-timeline-row-problem .aa-timeline-type{color:#b91c1c}
+.aa-timeline-row-warn .aa-timeline-type{color:#b45309}
 </style>
 
 </head>
@@ -815,7 +821,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-09-006"></script>
+  <script src="./main.js?v=2026-03-10-002"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

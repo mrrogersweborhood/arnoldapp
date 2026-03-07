@@ -1,35 +1,54 @@
 
 function renderSubscriberTimeline(customer, subs, orders){
   const events = [];
-  if(customer && customer.date_created){
-    events.push({date:customer.date_created,type:"Customer created",detail:""});
+
+  if (customer && customer.date_created) {
+    events.push({date:customer.date_created,type:"Customer created",detail:"",cls:"info",icon:"🔵"});
   }
+
   (Array.isArray(subs)?subs:[]).forEach(s=>{
-    if(s?.date_created){
-      events.push({date:s.date_created,type:"Subscription started",detail:`#${s.id}`});
+    const started = s?.date_created || s?.start_date || null;
+    if(started){
+      events.push({date:started,type:"Subscription started",detail:`#${s.id}`,cls:"info",icon:"🔵"});
     }
   });
+
   (Array.isArray(orders)?orders:[]).forEach(o=>{
     const status = String(o?.status||"").toLowerCase();
-    let type="Order";
-    if(status==="failed") type="⚠ Failed renewal";
-    else if(status==="completed"||status==="processing") type="Renewal";
-    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`});
+    let type="Order", cls="info", icon="🔵";
+
+    if(status==="failed"||status==="cancelled"||status==="refunded"||status.includes("chargeback")){
+      type="Problem order"; cls="problem"; icon="🔴";
+    }
+    else if(status==="on-hold"||status==="pending"){
+      type="Needs attention"; cls="warn"; icon="🟠";
+    }
+    else if(status==="completed"||status==="processing"){
+      type="Renewal"; cls="success"; icon="🟢";
+    }
+
+    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`,cls,icon});
   });
-  events.sort((a,b)=> new Date(a.date)-new Date(b.date));
+
+  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
   const rows = events.map(e=>`
-    <div class="aa-timeline-row">
+    <div class="aa-timeline-row aa-timeline-row-${esc(e.cls)}">
       <div class="aa-timeline-date">${fmtDate(e.date)}</div>
-      <div class="aa-timeline-type">${esc(e.type)}</div>
+      <div class="aa-timeline-type"><span class="aa-timeline-icon">${e.icon}</span>${esc(e.type)}</div>
       <div class="aa-timeline-detail">${esc(e.detail)}</div>
     </div>
   `).join("");
+
   return `
-    <section class="card aa-section">
-      <div class="aa-section-head">
-        <div class="aa-section-title">Subscriber Activity</div>
-      </div>
-      <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
+    <section class="card aa-section aa-timeline-section">
+      <details class="aa-timeline-details">
+        <summary class="aa-timeline-summary">
+          <span class="aa-section-title">Subscriber Activity</span>
+          <span class="aa-timeline-summary-meta">${events.length} event${events.length===1?"":"s"}</span>
+        </summary>
+        <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
+      </details>
     </section>
   `;
 }
@@ -282,42 +301,53 @@ return s;
 function renderSubscriberTimeline(customer, subs, orders){
   const events = [];
 
-  if(customer && customer.date_created){
-    events.push({date:customer.date_created,type:"Customer created",detail:""});
+  if (customer && customer.date_created) {
+    events.push({date:customer.date_created,type:"Customer created",detail:"",cls:"info",icon:"🔵"});
   }
 
   (Array.isArray(subs)?subs:[]).forEach(s=>{
-    if(s?.date_created){
-      events.push({date:s.date_created,type:"Subscription started",detail:`#${s.id}`});
+    const started = s?.date_created || s?.start_date || null;
+    if(started){
+      events.push({date:started,type:"Subscription started",detail:`#${s.id}`,cls:"info",icon:"🔵"});
     }
   });
 
   (Array.isArray(orders)?orders:[]).forEach(o=>{
     const status = String(o?.status||"").toLowerCase();
-    let type="Order";
+    let type="Order", cls="info", icon="🔵";
 
-    if(status==="failed") type="⚠ Failed renewal";
-    else if(status==="completed"||status==="processing") type="Renewal";
+    if(status==="failed"||status==="cancelled"||status==="refunded"||status.includes("chargeback")){
+      type="Problem order"; cls="problem"; icon="🔴";
+    }
+    else if(status==="on-hold"||status==="pending"){
+      type="Needs attention"; cls="warn"; icon="🟠";
+    }
+    else if(status==="completed"||status==="processing"){
+      type="Renewal"; cls="success"; icon="🟢";
+    }
 
-    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`});
+    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`,cls,icon});
   });
 
-  events.sort((a,b)=> new Date(a.date)-new Date(b.date));
+  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
 
   const rows = events.map(e=>`
-    <div class="aa-timeline-row">
+    <div class="aa-timeline-row aa-timeline-row-${esc(e.cls)}">
       <div class="aa-timeline-date">${fmtDate(e.date)}</div>
-      <div class="aa-timeline-type">${esc(e.type)}</div>
+      <div class="aa-timeline-type"><span class="aa-timeline-icon">${e.icon}</span>${esc(e.type)}</div>
       <div class="aa-timeline-detail">${esc(e.detail)}</div>
     </div>
   `).join("");
 
   return `
-    <section class="card aa-section">
-      <div class="aa-section-head">
-        <div class="aa-section-title">Subscriber Activity</div>
-      </div>
-      <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
+    <section class="card aa-section aa-timeline-section">
+      <details class="aa-timeline-details">
+        <summary class="aa-timeline-summary">
+          <span class="aa-section-title">Subscriber Activity</span>
+          <span class="aa-timeline-summary-meta">${events.length} event${events.length===1?"":"s"}</span>
+        </summary>
+        <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
+      </details>
     </section>
   `;
 }
