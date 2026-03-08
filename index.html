@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1 — Timeline + Health Summary + Support Clipboard Pack) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R2 — Support Clipboard Pack + Inline Clipboard Icons) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -656,113 +656,6 @@ table.aa-totals-table tr.aa-totals-total td{
       table.aa-table{ min-width:720px; }
     }
   
-
-
-/* Activity Timeline / Health / Clipboard Pack */
-.aa-health-wrap{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
-  gap:12px;
-}
-.aa-health-grid{
-  display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:10px;
-}
-.aa-health-grid .aa-tile .aa-value .aa-pill{
-  vertical-align:middle;
-}
-.aa-clipboard-pack{
-  background:rgba(30,144,255,.05);
-}
-.aa-copy-row-pack{
-  margin-top:0;
-  margin-bottom:12px;
-}
-.aa-clipboard-summary{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-  gap:10px;
-}
-.aa-clipboard-item{
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:800;
-  color:#0b1220;
-}
-.aa-timeline{
-  position:relative;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
-.aa-timeline-item{
-  display:grid;
-  grid-template-columns:26px 1fr;
-  gap:12px;
-  align-items:start;
-}
-.aa-timeline-rail{
-  position:relative;
-  min-height:100%;
-}
-.aa-timeline-rail::before{
-  content:"";
-  position:absolute;
-  left:12px;
-  top:0;
-  bottom:-12px;
-  width:2px;
-  background:rgba(30,144,255,.18);
-}
-.aa-timeline-item:last-child .aa-timeline-rail::before{
-  bottom:12px;
-}
-.aa-timeline-dot{
-  position:relative;
-  z-index:1;
-  display:block;
-  width:10px;
-  height:10px;
-  margin:8px 0 0 7px;
-  border-radius:50%;
-  background:var(--brand);
-  box-shadow:0 0 0 4px rgba(30,144,255,.12);
-}
-.aa-timeline-body{
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius:14px;
-  padding:10px 12px;
-}
-.aa-timeline-top{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-}
-.aa-timeline-label{
-  font-weight:950;
-  color:#0b1220;
-}
-.aa-timeline-date{
-  font-size:12px;
-  font-weight:900;
-  color:var(--muted);
-  white-space:nowrap;
-}
-.aa-timeline-meta{
-  margin-top:4px;
-  font-size:13px;
-  font-weight:750;
-  color:#334155;
-}
-.aa-timeline-badge{
-  margin-top:8px;
-}
-
 /* timeline indicator */
 .aa-type-cell{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .aa-type-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block;}
@@ -787,160 +680,203 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 
 
-/* Subscription Health */
-.aa-health-grid{
-  display:grid;
-  grid-template-columns:repeat(4, minmax(0, 1fr));
-  gap:12px;
+/* Typography cleanup — OkObserver-ish */
+body{
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  color:var(--text);
 }
-.aa-health-card{
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#fff;
-  padding:12px;
+
+.aa-section{
+  padding:16px;
 }
-.aa-health-card-healthy{
-  background:#f0fdf4;
-  border-color:#bbf7d0;
+
+.aa-section-head{
+  padding:0 0 12px;
+  margin-bottom:14px;
 }
-.aa-health-card-problem{
-  background:#fef2f2;
-  border-color:#fecaca;
-}
-.aa-health-card-watch{
-  background:#fefce8;
-  border-color:#fde68a;
-}
-.aa-health-kicker{
-  font-size:12px;
-  font-weight:950;
+
+.aa-section-title{
+  font-size:18px;
+  font-weight:800;
+  line-height:1.2;
+  letter-spacing:.01em;
   color:var(--brand);
-  margin-bottom:6px;
 }
+
+.aa-section-subtitle{
+  font-size:12px;
+  font-weight:500;
+  line-height:1.35;
+  color:#64748b;
+}
+
+.aa-card-title{
+  font-size:12px;
+  font-weight:700;
+  line-height:1.3;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:#64748b;
+  margin-bottom:10px;
+}
+
+.aa-label{
+  font-size:11px;
+  font-weight:700;
+  line-height:1.25;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:#64748b;
+}
+
+.aa-value,
+.aa-value-text{
+  font-size:15px;
+  font-weight:700;
+  line-height:1.35;
+  color:#0f172a;
+}
+
+.aa-muted{
+  color:#64748b;
+  font-weight:500;
+}
+
+.aa-copy-btn{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+
+.aa-copy-icon{
+  font-size:14px;
+}
+
+.aa-pill{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.01em;
+  padding:4px 10px;
+}
+
+.aa-order-id,
+.aa-sub-id{
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:0;
+}
+
+.aa-table thead th{
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:#64748b;
+}
+
+.aa-table tbody td{
+  font-size:14px;
+  font-weight:500;
+  line-height:1.35;
+  color:#1f2937;
+}
+
+.aa-note-meta{
+  font-size:12px;
+  font-weight:700;
+  color:#64748b;
+}
+
+.aa-note-text{
+  font-size:14px;
+  font-weight:500;
+  line-height:1.45;
+  color:#1f2937;
+}
+
+.aa-clipboard-item{
+  font-size:14px;
+  font-weight:600;
+  line-height:1.35;
+}
+
+.aa-health-kicker{
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:#64748b;
+}
+
 .aa-health-value{
   font-size:16px;
-  font-weight:950;
-  color:#0b1220;
-  line-height:1.2;
+  font-weight:700;
+  line-height:1.25;
+  color:#0f172a;
 }
+
 .aa-health-meta{
-  margin-top:8px;
   font-size:12px;
-  font-weight:800;
-  color:#475569;
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
+  font-weight:500;
+  line-height:1.35;
+  color:#64748b;
 }
+
 .aa-health-alert{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  margin-bottom:12px;
-}
-.aa-health-alert-problem{
-  background:#fee2e2;
-  border:1px solid #fecaca;
-  color:#991b1b;
-}
-@media (max-width: 1100px){
-  .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
-}
-@media (max-width:760px){
-  .aa-health-grid{grid-template-columns:1fr}
+  font-size:13px;
+  font-weight:700;
+  line-height:1.35;
 }
 
+.aa-timeline-label{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.35;
+  color:#0f172a;
+}
 
-/* Health + unified activity */
-.aa-health-grid{
-  display:grid;
-  grid-template-columns:repeat(4, minmax(0, 1fr));
-  gap:12px;
-}
-.aa-health-card{
-  border:1px solid var(--border);
-  border-radius:12px;
-  background:#fff;
-  padding:12px;
-}
-.aa-health-card-healthy{
-  background:#f0fdf4;
-  border-color:#bbf7d0;
-}
-.aa-health-card-problem{
-  background:#fef2f2;
-  border-color:#fecaca;
-}
-.aa-health-card-watch{
-  background:#fefce8;
-  border-color:#fde68a;
-}
-.aa-health-kicker{
+.aa-timeline-date{
   font-size:12px;
-  font-weight:950;
-  color:var(--brand);
-  margin-bottom:6px;
+  font-weight:500;
+  line-height:1.25;
+  color:#64748b;
 }
-.aa-health-value{
-  font-size:16px;
-  font-weight:950;
-  color:#0b1220;
-  line-height:1.2;
-}
-.aa-health-meta{
-  margin-top:8px;
-  font-size:12px;
-  font-weight:800;
+
+.aa-timeline-meta{
+  font-size:13px;
+  font-weight:500;
+  line-height:1.4;
   color:#475569;
-  display:flex;
-  gap:8px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.aa-health-alert{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:900;
-  margin-bottom:12px;
-}
-.aa-health-alert-problem{
-  background:#fee2e2;
-  border:1px solid #fecaca;
-  color:#991b1b;
 }
 
-.aa-activity-table td{
-  white-space:normal;
-}
-.aa-activity-event-main{
-  font-weight:900;
-  color:#0b1220;
-}
-.aa-activity-submeta{
-  display:inline-block;
-  margin-left:6px;
-  color:var(--muted);
-  font-weight:800;
-}
-.aa-activity-row-problem td{
-  background:#fff7f7;
-}
-.aa-activity-row-problem:hover td{
-  background:#fee2e2;
+.aa-value-inline{
+  gap:4px;
 }
 
-@media (max-width: 1100px){
-  .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
+.aa-tiles.customer .aa-tile{
+  min-height:unset;
 }
-@media (max-width:760px){
-  .aa-health-grid{grid-template-columns:1fr;}
+
+.aa-health-card .aa-tile,
+.aa-clipboard-pack .aa-tile{
+  min-height:unset;
+}
+
+.aa-table tbody tr.aa-activity-row-problem td{
+  border-left:4px solid #ef4444;
+}
+
+@media (max-width: 760px){
+  .aa-section-title{
+    font-size:17px;
+  }
+  .aa-value,
+  .aa-value-text{
+    font-size:14px;
+  }
+  .aa-table tbody td{
+    font-size:13px;
+  }
 }
 
 </style>
@@ -1004,7 +940,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-006"></script>
+  <script src="./main.js?v=2026-03-10-007"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
