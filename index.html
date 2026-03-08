@@ -680,6 +680,23 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 
 
+/* Support Clipboard Pack */
+.aa-clipboard-pack{background:rgba(30,144,255,.05)}
+.aa-copy-row-pack{margin-top:0;margin-bottom:12px}
+.aa-clipboard-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
+}
+.aa-clipboard-item{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
+  color:#0b1220;
+}
+
 /* Subscription Health */
 .aa-health-grid{
   display:grid;
@@ -741,11 +758,39 @@ table.aa-totals-table tr.aa-totals-total td{
   border:1px solid #fde68a;
   color:#92400e;
 }
-@media (max-width: 1100px){
-  .aa-health-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+
+/* Timeline */
+.aa-timeline-summary{
+  display:flex;
+  justify-content:space-between;
+  cursor:pointer;
+  border-bottom:1px solid var(--border);
+  padding-bottom:8px;
 }
-@media (max-width: 700px){
-  .aa-health-grid{ grid-template-columns:1fr; }
+.aa-timeline-summary::after{content:"▸";color:var(--brand)}
+.aa-timeline-details[open] .aa-timeline-summary::after{content:"▾"}
+.aa-timeline-row{
+  display:grid;
+  grid-template-columns:140px 1fr 90px;
+  gap:10px;
+  padding:6px 0;
+  border-bottom:1px solid rgba(0,0,0,.05);
+}
+.aa-timeline-row:last-child{border-bottom:0}
+.aa-timeline-date{color:#64748b;font-weight:700}
+.aa-timeline-type{font-weight:800;display:flex;gap:6px}
+.aa-timeline-detail{text-align:right;font-weight:700}
+.aa-timeline-row-success .aa-timeline-type{color:#15803d}
+.aa-timeline-row-problem .aa-timeline-type{color:#b91c1c}
+.aa-timeline-row-warn .aa-timeline-type{color:#b45309}
+
+@media (max-width: 1100px){
+  .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
+}
+@media (max-width:760px){
+  .aa-timeline-row{grid-template-columns:1fr;gap:4px}
+  .aa-timeline-detail{text-align:left}
+  .aa-health-grid{grid-template-columns:1fr}
 }
 
 </style>
