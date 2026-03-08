@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R2 — Support Clipboard Pack + Inline Clipboard Icons) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1 — Timeline + Health Summary + Support Clipboard Pack) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -656,6 +656,113 @@ table.aa-totals-table tr.aa-totals-total td{
       table.aa-table{ min-width:720px; }
     }
   
+
+
+/* Activity Timeline / Health / Clipboard Pack */
+.aa-health-wrap{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
+  gap:12px;
+}
+.aa-health-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+}
+.aa-health-grid .aa-tile .aa-value .aa-pill{
+  vertical-align:middle;
+}
+.aa-clipboard-pack{
+  background:rgba(30,144,255,.05);
+}
+.aa-copy-row-pack{
+  margin-top:0;
+  margin-bottom:12px;
+}
+.aa-clipboard-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
+}
+.aa-clipboard-item{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
+  color:#0b1220;
+}
+.aa-timeline{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.aa-timeline-item{
+  display:grid;
+  grid-template-columns:26px 1fr;
+  gap:12px;
+  align-items:start;
+}
+.aa-timeline-rail{
+  position:relative;
+  min-height:100%;
+}
+.aa-timeline-rail::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:0;
+  bottom:-12px;
+  width:2px;
+  background:rgba(30,144,255,.18);
+}
+.aa-timeline-item:last-child .aa-timeline-rail::before{
+  bottom:12px;
+}
+.aa-timeline-dot{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:10px;
+  height:10px;
+  margin:8px 0 0 7px;
+  border-radius:50%;
+  background:var(--brand);
+  box-shadow:0 0 0 4px rgba(30,144,255,.12);
+}
+.aa-timeline-body{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+}
+.aa-timeline-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.aa-timeline-label{
+  font-weight:950;
+  color:#0b1220;
+}
+.aa-timeline-date{
+  font-size:12px;
+  font-weight:900;
+  color:var(--muted);
+  white-space:nowrap;
+}
+.aa-timeline-meta{
+  margin-top:4px;
+  font-size:13px;
+  font-weight:750;
+  color:#334155;
+}
+.aa-timeline-badge{
+  margin-top:8px;
+}
+
 /* timeline indicator */
 .aa-type-cell{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .aa-type-dot{width:8px;height:8px;border-radius:50%;background:var(--brand);display:inline-block;}
@@ -680,23 +787,6 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 
 
-/* Support Clipboard Pack */
-.aa-clipboard-pack{background:rgba(30,144,255,.05)}
-.aa-copy-row-pack{margin-top:0;margin-bottom:12px}
-.aa-clipboard-summary{
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-  gap:10px;
-}
-.aa-clipboard-item{
-  border:1px solid var(--border);
-  background:#fff;
-  border-radius:12px;
-  padding:10px 12px;
-  font-weight:800;
-  color:#0b1220;
-}
-
 /* Subscription Health */
 .aa-health-grid{
   display:grid;
@@ -716,6 +806,10 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-health-card-problem{
   background:#fef2f2;
   border-color:#fecaca;
+}
+.aa-health-card-watch{
+  background:#fefce8;
+  border-color:#fde68a;
 }
 .aa-health-kicker{
   font-size:12px;
@@ -753,43 +847,10 @@ table.aa-totals-table tr.aa-totals-total td{
   border:1px solid #fecaca;
   color:#991b1b;
 }
-.aa-health-alert-watch{
-  background:#fef3c7;
-  border:1px solid #fde68a;
-  color:#92400e;
-}
-
-/* Timeline */
-.aa-timeline-summary{
-  display:flex;
-  justify-content:space-between;
-  cursor:pointer;
-  border-bottom:1px solid var(--border);
-  padding-bottom:8px;
-}
-.aa-timeline-summary::after{content:"▸";color:var(--brand)}
-.aa-timeline-details[open] .aa-timeline-summary::after{content:"▾"}
-.aa-timeline-row{
-  display:grid;
-  grid-template-columns:140px 1fr 90px;
-  gap:10px;
-  padding:6px 0;
-  border-bottom:1px solid rgba(0,0,0,.05);
-}
-.aa-timeline-row:last-child{border-bottom:0}
-.aa-timeline-date{color:#64748b;font-weight:700}
-.aa-timeline-type{font-weight:800;display:flex;gap:6px}
-.aa-timeline-detail{text-align:right;font-weight:700}
-.aa-timeline-row-success .aa-timeline-type{color:#15803d}
-.aa-timeline-row-problem .aa-timeline-type{color:#b91c1c}
-.aa-timeline-row-warn .aa-timeline-type{color:#b45309}
-
 @media (max-width: 1100px){
   .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
 }
 @media (max-width:760px){
-  .aa-timeline-row{grid-template-columns:1fr;gap:4px}
-  .aa-timeline-detail{text-align:left}
   .aa-health-grid{grid-template-columns:1fr}
 }
 
@@ -854,7 +915,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-004"></script>
+  <script src="./main.js?v=2026-03-10-005"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
