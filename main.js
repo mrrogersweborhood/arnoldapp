@@ -1,58 +1,3 @@
-
-function renderSubscriberTimeline(customer, subs, orders){
-  const events = [];
-
-  if (customer && customer.date_created) {
-    events.push({date:customer.date_created,type:"Customer created",detail:"",cls:"info",icon:"🔵"});
-  }
-
-  (Array.isArray(subs)?subs:[]).forEach(s=>{
-    const started = s?.date_created || s?.start_date || null;
-    if(started){
-      events.push({date:started,type:"Subscription started",detail:`#${s.id}`,cls:"info",icon:"🔵"});
-    }
-  });
-
-  (Array.isArray(orders)?orders:[]).forEach(o=>{
-    const status = String(o?.status||"").toLowerCase();
-    let type="Order", cls="info", icon="🔵";
-
-    if(status==="failed"||status==="cancelled"||status==="refunded"||status.includes("chargeback")){
-      type="Problem order"; cls="problem"; icon="🔴";
-    }
-    else if(status==="on-hold"||status==="pending"){
-      type="Needs attention"; cls="warn"; icon="🟠";
-    }
-    else if(status==="completed"||status==="processing"){
-      type="Renewal"; cls="success"; icon="🟢";
-    }
-
-    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`,cls,icon});
-  });
-
-  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-  const rows = events.map(e=>`
-    <div class="aa-timeline-row aa-timeline-row-${esc(e.cls)}">
-      <div class="aa-timeline-date">${fmtDate(e.date)}</div>
-      <div class="aa-timeline-type"><span class="aa-timeline-icon">${e.icon}</span>${esc(e.type)}</div>
-      <div class="aa-timeline-detail">${esc(e.detail)}</div>
-    </div>
-  `).join("");
-
-  return `
-    <section class="card aa-section aa-timeline-section">
-      <details class="aa-timeline-details">
-        <summary class="aa-timeline-summary">
-          <span class="aa-section-title">Subscriber Activity</span>
-          <span class="aa-timeline-summary-meta">${events.length} event${events.length===1?"":"s"}</span>
-        </summary>
-        <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
-      </details>
-    </section>
-  `;
-}
-
 // 🟢 main.js
 // Arnold Admin — FULL REPLACEMENT (Build 2026-03-08R1-inlineClipboardIcons)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
@@ -298,59 +243,7 @@ if (digits.length === 10) {
 
 return s;
   }
-function renderSubscriberTimeline(customer, subs, orders){
-  const events = [];
 
-  if (customer && customer.date_created) {
-    events.push({date:customer.date_created,type:"Customer created",detail:"",cls:"info",icon:"🔵"});
-  }
-
-  (Array.isArray(subs)?subs:[]).forEach(s=>{
-    const started = s?.date_created || s?.start_date || null;
-    if(started){
-      events.push({date:started,type:"Subscription started",detail:`#${s.id}`,cls:"info",icon:"🔵"});
-    }
-  });
-
-  (Array.isArray(orders)?orders:[]).forEach(o=>{
-    const status = String(o?.status||"").toLowerCase();
-    let type="Order", cls="info", icon="🔵";
-
-    if(status==="failed"||status==="cancelled"||status==="refunded"||status.includes("chargeback")){
-      type="Problem order"; cls="problem"; icon="🔴";
-    }
-    else if(status==="on-hold"||status==="pending"){
-      type="Needs attention"; cls="warn"; icon="🟠";
-    }
-    else if(status==="completed"||status==="processing"){
-      type="Renewal"; cls="success"; icon="🟢";
-    }
-
-    events.push({date:o?.date_created,type,detail:`#${o?.id||""}`,cls,icon});
-  });
-
-  events.sort((a,b)=>new Date(a.date)-new Date(b.date));
-
-  const rows = events.map(e=>`
-    <div class="aa-timeline-row aa-timeline-row-${esc(e.cls)}">
-      <div class="aa-timeline-date">${fmtDate(e.date)}</div>
-      <div class="aa-timeline-type"><span class="aa-timeline-icon">${e.icon}</span>${esc(e.type)}</div>
-      <div class="aa-timeline-detail">${esc(e.detail)}</div>
-    </div>
-  `).join("");
-
-  return `
-    <section class="card aa-section aa-timeline-section">
-      <details class="aa-timeline-details">
-        <summary class="aa-timeline-summary">
-          <span class="aa-section-title">Subscriber Activity</span>
-          <span class="aa-timeline-summary-meta">${events.length} event${events.length===1?"":"s"}</span>
-        </summary>
-        <div class="aa-timeline">${rows||'<div class="aa-muted">No activity found.</div>'}</div>
-      </details>
-    </section>
-  `;
-}
   // -----------------------------
   // SAFE HTML STRIP FOR NOTES
   // -----------------------------
@@ -672,7 +565,6 @@ function setSessionPill(isLoggedIn, name) {
           $("results").innerHTML = renderResults(lastPayload);
           bindNotesToggles($("results"));
           bindCopyButtons($("results"));
-          bindOpenCandidateButtons($("results"));
         }
       });
     });
@@ -706,20 +598,6 @@ function setSessionPill(isLoggedIn, name) {
       });
     });
   }
-
-  function bindOpenCandidateButtons(container) {
-    if (!container) return;
-    container.querySelectorAll('.aa-candidate-open-btn[data-open-query]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const query = String(btn.getAttribute('data-open-query') || '').trim();
-        if (!query) return;
-        const qEl = $('q');
-        if (qEl) qEl.value = query;
-        await doSearch();
-      });
-    });
-  }
-
 
   function renderSubscriptionRow(s) {
     const id = String(s?.id ?? "—");
@@ -821,64 +699,7 @@ function setSessionPill(isLoggedIn, name) {
   }
 
 
-
-  function renderCandidateMatches(payload) {
-    const matches = Array.isArray(payload?.possible_matches) ? payload.possible_matches : [];
-    if (!matches.length) {
-      return `
-        <section class="card aa-section">
-          <div class="aa-section-head">
-            <div class="aa-section-title">Possible Matches</div>
-            <div class="aa-section-subtitle">No candidate matches returned</div>
-          </div>
-          <div class="aa-muted">No matches found.</div>
-        </section>
-      `;
-    }
-
-    const rows = matches.map((m) => {
-      const c = m?.customer || {};
-      const name = [c?.first_name, c?.last_name].map((v) => String(v ?? '').trim()).filter(Boolean).join(' ') || '—';
-      const email = String(c?.email ?? '').trim() || '—';
-      const id = c?.id != null && String(c.id).trim() ? `#${String(c.id).trim()}` : '—';
-      const openValue = email !== '—' ? email : (id !== '—' ? id : '');
-
-      return `
-        <div class="aa-candidate-row">
-          <div class="aa-candidate-open">
-            ${openValue ? `<button type="button" class="aa-copy-btn aa-candidate-open-btn" data-open-query="${esc(openValue)}">Open</button>` : `<span class="aa-muted">—</span>`}
-          </div>
-          <div class="aa-candidate-name">${esc(name)}</div>
-          <div class="aa-candidate-email">${esc(email)}</div>
-          <div class="aa-candidate-id">${esc(id)}</div>
-        </div>
-      `;
-    }).join('');
-
-    return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Possible Matches</div>
-          <div class="aa-section-subtitle">Select the correct customer</div>
-        </div>
-
-        <div class="aa-candidate-table-wrap">
-          <div class="aa-candidate-header">
-            <div>Open</div>
-            <div>Name</div>
-            <div>Email</div>
-            <div>Customer ID</div>
-          </div>
-          <div class="aa-candidate-list">
-            ${rows}
-          </div>
-        </div>
-      </section>
-    `;
-  }
-
   function renderResults(payload) {
-    if (payload?.intent === "customer_candidates_by_name") return renderCandidateMatches(payload);
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
     const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
@@ -892,7 +713,6 @@ function setSessionPill(isLoggedIn, name) {
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
 
-    const timeline = renderSubscriberTimeline(customer, subs, orders);
     const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
@@ -908,8 +728,6 @@ function setSessionPill(isLoggedIn, name) {
           ${shippingCard}
         </div>
       </section>
-
-      ${timeline || ""}
 
       ${ledger || ""}
     `;
@@ -1607,7 +1425,6 @@ function renderTotals(data) {
 
     bindNotesToggles($("results"));
     bindCopyButtons($("results"));
-    bindOpenCandidateButtons($("results"));
     renderRawJson();
   }
 
