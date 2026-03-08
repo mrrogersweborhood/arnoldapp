@@ -854,6 +854,95 @@ table.aa-totals-table tr.aa-totals-total td{
   .aa-health-grid{grid-template-columns:1fr}
 }
 
+
+/* Health + unified activity */
+.aa-health-grid{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+}
+.aa-health-card{
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:#fff;
+  padding:12px;
+}
+.aa-health-card-healthy{
+  background:#f0fdf4;
+  border-color:#bbf7d0;
+}
+.aa-health-card-problem{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+.aa-health-card-watch{
+  background:#fefce8;
+  border-color:#fde68a;
+}
+.aa-health-kicker{
+  font-size:12px;
+  font-weight:950;
+  color:var(--brand);
+  margin-bottom:6px;
+}
+.aa-health-value{
+  font-size:16px;
+  font-weight:950;
+  color:#0b1220;
+  line-height:1.2;
+}
+.aa-health-meta{
+  margin-top:8px;
+  font-size:12px;
+  font-weight:800;
+  color:#475569;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.aa-health-alert{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  margin-bottom:12px;
+}
+.aa-health-alert-problem{
+  background:#fee2e2;
+  border:1px solid #fecaca;
+  color:#991b1b;
+}
+
+.aa-activity-table td{
+  white-space:normal;
+}
+.aa-activity-event-main{
+  font-weight:900;
+  color:#0b1220;
+}
+.aa-activity-submeta{
+  display:inline-block;
+  margin-left:6px;
+  color:var(--muted);
+  font-weight:800;
+}
+.aa-activity-row-problem td{
+  background:#fff7f7;
+}
+.aa-activity-row-problem:hover td{
+  background:#fee2e2;
+}
+
+@media (max-width: 1100px){
+  .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
+}
+@media (max-width:760px){
+  .aa-health-grid{grid-template-columns:1fr;}
+}
+
 </style>
 </head>
 
@@ -915,7 +1004,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-005"></script>
+  <script src="./main.js?v=2026-03-10-006"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

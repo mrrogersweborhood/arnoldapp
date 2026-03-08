@@ -127,9 +127,6 @@
     const isLatest = !!opts.isLatest;
 
     const badges = [];
-    if (isLatest) {
-      badges.push('<span class="aa-order-flag aa-order-flag-latest">★ Latest</span>');
-    }
 
     if (status === "failed") {
       badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Failed</span>');
@@ -1163,6 +1160,224 @@ function renderSubscriptionRow(s) {
   }
 
 
+
+  function aaIsProblemOrderStatus(status) {
+    const raw = String(status ?? "").trim().toLowerCase();
+    return raw === "failed" || raw === "refunded" || raw === "cancelled" || raw === "on-hold" || raw.includes("chargeback");
+  }
+
+  function aaOrderItems(order) {
+    const items = Array.isArray(order?.line_items)
+      ? order.line_items
+      : (Array.isArray(order?.items) ? order.items : []);
+    return items
+      .map((it) => String(it?.name ?? "").trim())
+      .filter(Boolean);
+  }
+
+  function aaOrderItemsSummary(order) {
+    const names = aaOrderItems(order);
+    if (!names.length) return "";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} + ${names[1]}`;
+    return `${names[0]} + ${names.length - 1} more`;
+  }
+
+  function aaOrderItemsTooltip(order) {
+    const names = aaOrderItems(order);
+    return names.join(" • ");
+  }
+
+  function aaSortNewestFirst(arr, key = "date_created") {
+    const copy = Array.isArray(arr) ? [...arr] : [];
+    copy.sort((a, b) => {
+      const da = new Date(a?.[key] || 0).getTime();
+      const db = new Date(b?.[key] || 0).getTime();
+      return (Number.isFinite(db) ? db : 0) - (Number.isFinite(da) ? da : 0);
+    });
+    return copy;
+  }
+
+  function aaRenderSubscriptionHealthSummary(customer, subs, orders) {
+    const sortedOrders = aaSortNewestFirst(orders);
+    const latestOrder = sortedOrders[0] || null;
+    const latestProblem = latestOrder && aaIsProblemOrderStatus(latestOrder?.status);
+    const failedCount = sortedOrders.filter((o) => aaIsProblemOrderStatus(o?.status)).length;
+
+    const primarySub = Array.isArray(subs) && subs.length ? subs[0] : null;
+    const nextPayment = primarySub?.next_payment_date ? fmtDate(primarySub.next_payment_date) : "—";
+    const subStatus = String(primarySub?.status ?? "—").trim() || "—";
+
+    let tone = "healthy";
+    let headline = "Subscription looks healthy";
+    if (latestProblem) {
+      tone = "problem";
+      headline = "Latest payment failed / needs attention";
+    } else if (failedCount > 0) {
+      tone = "problem";
+      headline = "Customer has failed/problem payments";
+    } else if (!primarySub) {
+      tone = "watch";
+      headline = "No subscription found";
+    }
+
+    const latestOrderId = latestOrder ? `#${String(latestOrder?.id ?? "").trim()}` : "—";
+    const latestOrderStatus = latestOrder ? String(latestOrder?.status ?? "—") : "—";
+    const latestOrderTotal = latestOrder ? fmtMoney(latestOrder?.total, latestOrder?.currency) : "—";
+    const latestOrderDate = latestOrder?.date_created ? fmtDate(latestOrder.date_created) : "—";
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Subscription Health</div>
+          <div class="aa-section-subtitle">Quick support summary</div>
+        </div>
+
+        ${latestProblem ? `
+          <div class="aa-health-alert aa-health-alert-problem">
+            <span class="aa-health-alert-icon">🔴</span>
+            <span class="aa-health-alert-text">Latest payment failed / needs attention • ${esc(latestOrderId)}</span>
+          </div>
+        ` : ""}
+
+        <div class="aa-health-grid">
+          <div class="aa-health-card aa-health-card-${esc(tone)}">
+            <div class="aa-health-kicker">Health</div>
+            <div class="aa-health-value">${esc(headline)}</div>
+            <div class="aa-health-meta">${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}</div>
+          </div>
+
+          <div class="aa-health-card">
+            <div class="aa-health-kicker">Latest payment</div>
+            <div class="aa-health-value">${esc(latestOrderId)}</div>
+            <div class="aa-health-meta">
+              ${latestOrder ? `${renderStatusPill(latestOrderStatus)} <span class="aa-muted">${esc(latestOrderDate)}</span>` : '<span class="aa-muted">No orders</span>'}
+            </div>
+          </div>
+
+          <div class="aa-health-card">
+            <div class="aa-health-kicker">Latest total</div>
+            <div class="aa-health-value">${esc(latestOrderTotal)}</div>
+            <div class="aa-health-meta">${latestOrderDate !== "—" ? esc(latestOrderDate) : '<span class="aa-muted">—</span>'}</div>
+          </div>
+
+          <div class="aa-health-card">
+            <div class="aa-health-kicker">Failed/problem payments</div>
+            <div class="aa-health-value">${esc(String(failedCount))}</div>
+            <div class="aa-health-meta">${nextPayment !== "—" ? `Next payment ${esc(nextPayment)}` : '<span class="aa-muted">No next payment</span>'}</div>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function aaRenderCustomerActivity(customer, subs, orders) {
+    const events = [];
+    const subscriptions = Array.isArray(subs) ? subs : [];
+    const orderArr = Array.isArray(orders) ? orders : [];
+
+    if (customer?.date_created) {
+      events.push({
+        date: customer.date_created,
+        eventHtml: `<span class="aa-activity-event-main">Customer created</span>`,
+        orderIdHtml: '—',
+        statusHtml: '<span class="aa-muted">—</span>',
+        totalHtml: '—',
+        rowClass: ''
+      });
+    }
+
+    subscriptions.forEach((s) => {
+      const sid = String(s?.id ?? "").trim();
+      const started = s?.start_date || s?.date_created || null;
+      if (!started) return;
+      events.push({
+        date: started,
+        eventHtml: `<span class="aa-activity-event-main">Subscription started</span>${sid ? ` <span class="aa-activity-submeta">#${esc(sid)}</span>` : ''}`,
+        orderIdHtml: '—',
+        statusHtml: renderStatusPill(String(s?.status ?? "—")),
+        totalHtml: '—',
+        rowClass: 'aa-activity-row-subscription'
+      });
+    });
+
+    orderArr.forEach((o) => {
+      const oid = String(o?.id ?? "").trim();
+      const status = String(o?.status ?? "");
+      const statusLower = status.toLowerCase();
+      let eventBase = "Order";
+
+      const maybeParent = subscriptions.find((s) => String(s?.parent_id ?? "").trim() === oid);
+      if (maybeParent) eventBase = "Parent order";
+      else if (aaIsProblemOrderStatus(status)) eventBase = "Problem order";
+      else if (statusLower === "completed" || statusLower === "processing") eventBase = "Renewal";
+
+      const itemSummary = aaOrderItemsSummary(o);
+      const tooltip = aaOrderItemsTooltip(o);
+      const eventLabel = itemSummary ? `${eventBase} — ${itemSummary}` : eventBase;
+
+      events.push({
+        date: o?.date_created,
+        eventHtml: `<span class="aa-activity-event-main" title="${esc(tooltip || eventLabel)}">${esc(eventLabel)}</span>`,
+        orderIdHtml: oid
+          ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a>${renderCopyButton("Order ID", `#${oid}`)}`
+          : '—',
+        statusHtml: status ? renderStatusPill(status) : '<span class="aa-muted">—</span>',
+        totalHtml: fmtMoney(o?.total, o?.currency),
+        rowClass: aaIsProblemOrderStatus(status) ? 'aa-activity-row-problem' : ''
+      });
+    });
+
+    events.sort((a, b) => {
+      const da = new Date(a?.date || 0).getTime();
+      const db = new Date(b?.date || 0).getTime();
+      return (Number.isFinite(db) ? db : 0) - (Number.isFinite(da) ? da : 0);
+    });
+
+    const rows = events.map((e) => `
+      <tr class="${esc(e.rowClass || '')}">
+        <td>${esc(fmtDateWithAge(e.date))}</td>
+        <td class="aa-activity-event">${e.eventHtml}</td>
+        <td>${e.orderIdHtml || '—'}</td>
+        <td>${e.statusHtml || '<span class="aa-muted">—</span>'}</td>
+        <td class="aa-right">${e.totalHtml || '—'}</td>
+      </tr>
+    `).join("");
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Customer Activity</div>
+          <div class="aa-section-subtitle">Newest first</div>
+        </div>
+        <div class="aa-table-wrap">
+          <table class="aa-table aa-activity-table" style="min-width:980px; table-layout:fixed;">
+            <colgroup>
+              <col style="width:180px;">
+              <col style="width:420px;">
+              <col style="width:160px;">
+              <col style="width:140px;">
+              <col style="width:120px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Event</th>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th class="aa-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || `<tr><td colspan="5" class="aa-muted">No activity found.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  }
+
+
 function renderResults(payload) {
     if (payload?.intent === "customer_candidates_by_name") return renderCandidateMatches(payload);
 
@@ -1177,8 +1392,8 @@ function renderResults(payload) {
     const customerCard = customer ? renderCustomerCard(customer) : "";
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
-    const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
-    const activity = renderCustomerActivity(customer, subs, orders);
+    const healthSummary = aaRenderSubscriptionHealthSummary(customer, subs, orders);
+    const activity = aaRenderCustomerActivity(customer, subs, orders);
 
     return `
       <section class="card aa-section">
