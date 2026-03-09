@@ -1215,13 +1215,14 @@ function renderResults(payload) {
 
     const billing = customer?.billing || null;
     const shipping = customer?.shipping || null;
+    const ordersBySub = buildOrdersBySubscriptionId(subs, orders);
 
     const customerCard = customer ? renderCustomerCard(customer) : "";
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
+    const supportPack = renderSupportClipboardPack(customer || {}, subs, orders, ordersBySub);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
-    const activity = renderCustomerActivity(customer, subs, orders);
-    const ledger = renderSubscriptionLedger(subs, orders);
+    const ledger = renderSubscriptionLedger(customer, subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1237,7 +1238,7 @@ function renderResults(payload) {
         </div>
       </section>
 
-      ${activity || ""}
+      ${supportPack || ""}
       ${ledger || ""}
       ${healthSummary || ""}
     `;
