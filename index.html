@@ -23,8 +23,12 @@
       margin:0;
       font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
       font-size:16px;
+      line-height:1.45;
       background:var(--bg);
       color:var(--text);
+      text-rendering:optimizeLegibility;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
     }
 
     .topbar{
@@ -37,7 +41,7 @@
       padding:12px 16px;
     }
     .topbar-inner{
-      max-width:1500px;
+      max-width:1680px;
       margin:0 auto;
       display:flex;
       align-items:center;
@@ -102,7 +106,7 @@
     }
 
     .wrap{
-      max-width:1500px;
+      max-width:1680px;
       margin:18px auto 44px;
       padding:0 16px;
     }
@@ -244,8 +248,8 @@
       border-bottom:1px solid var(--border);
       margin-bottom:12px;
     }
-    .aa-section-title{ font-weight:950; font-size:16px; letter-spacing:.2px; }
-    .aa-section-subtitle{ font-size:12px; font-weight:700; color:var(--muted); }
+    .aa-section-title{ font-weight:800; font-size:16px; letter-spacing:.2px; }
+    .aa-section-subtitle{ font-size:12px; font-weight:600; color:var(--muted); }
 
     /* ----------------------------------------------------
        ✅ Arnold Admin renderer contract (aa-*) — pretty tables/cards
@@ -259,7 +263,7 @@
       box-shadow:none;
     }
     .aa-card-title{
-      font-weight:900;
+      font-weight:800;
       font-size:14px;
       margin-bottom:10px;
     }
@@ -280,20 +284,22 @@
     }
     .aa-label{
       font-size:12px;
-      font-weight:950;
+      font-weight:700;
       color:var(--brand);
       margin:0 0 6px;
+      letter-spacing:.01em;
     }
     .aa-value{
       font-size:14px;
-      font-weight:850;
+      font-weight:600;
       color:#0b1220;
-      line-height:1.25;
+      line-height:1.35;
+      overflow-wrap:anywhere;
       word-break:break-word;
     }
 
-    /* Customer: 3 across on desktop (ID / Username / Name) */
-    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    /* Customer: 4 across on desktop */
+    .aa-tiles.customer{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 
     /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
     .aa-grid-2{
@@ -349,7 +355,7 @@
       align-items:center;
       border-radius:999px;
       padding:4px 10px;
-      font-weight:950;
+      font-weight:700;
       font-size:12px;
       white-space:nowrap;
       border:1px solid rgba(0,0,0,.08);
@@ -469,7 +475,7 @@
   background:#ffffff;
   color:var(--brand);
   font-size:12px;
-  font-weight:950;
+  font-weight:700;
   text-align:left;
   padding:10px 12px;
   border-bottom:2px solid rgba(0,0,0,.08);
@@ -486,7 +492,7 @@
   border-bottom:1px solid rgba(15,23,42,.06);
   vertical-align:middle;
   font-size:14px;
-  font-weight:850;
+  font-weight:600;
   color:#0b1220;
   white-space:nowrap;
   background:#fff;
@@ -524,7 +530,7 @@
     }
     .aa-order-id,
     .aa-sub-id{
-      font-weight:950;
+      font-weight:700;
       color:var(--brand);
       text-decoration:none;
       margin-right:10px;
@@ -534,7 +540,7 @@
     .aa-sub-id:hover{
       text-decoration:underline;
     }
-    .aa-muted{ color:var(--muted); font-weight:850; }
+    .aa-muted{ color:var(--muted); font-weight:600; }
 
     /* Notes toggle (right aligned) */
     .aa-notes-cell{ text-align:right; }
@@ -543,7 +549,7 @@
       border:0;
       background:transparent;
       color:var(--brand);
-      font-weight:950;
+      font-weight:700;
       font-size:14px;
       display:inline-flex;
       align-items:center;
@@ -591,16 +597,18 @@
     .aa-note:last-child{ margin-bottom:0; }
     .aa-note-meta{
       font-size:12px;
-      font-weight:950;
+      font-weight:700;
       color:#334155;
       margin-bottom:6px;
     }
     .aa-note-text{
       font-size:13px;
-      font-weight:750;
+      font-weight:500;
       color:#0b1220;
-      line-height:1.35;
+      line-height:1.45;
       white-space:pre-wrap;
+      overflow-wrap:anywhere;
+      word-break:break-word;
     }
 
     /* Arnold Admin — Totals layout (OkObserver-ish) */
@@ -680,17 +688,17 @@ table.aa-table.aa-compact-table{
   min-width:0;
   table-layout:fixed;
 }
-.aa-col-id{ width:120px; }
-.aa-col-date{ width:145px; }
-.aa-col-type{ width:170px; }
-.aa-col-status{ width:120px; }
-.aa-col-total{ width:110px; }
+.aa-col-id{ width:116px; }
+.aa-col-date{ width:136px; }
+.aa-col-type{ width:156px; }
+.aa-col-status{ width:110px; }
+.aa-col-total{ width:100px; }
 .aa-col-details{ width:auto; }
-.aa-col-notes{ width:90px; }
+.aa-col-notes{ width:82px; }
 .aa-detail-wrap{
   white-space:normal;
   overflow-wrap:anywhere;
-  line-height:1.35;
+  line-height:1.4;
 }
 .aa-compact-table tbody td:nth-child(3),
 .aa-compact-table tbody td:nth-child(6),
@@ -700,6 +708,29 @@ table.aa-table.aa-compact-table{
 @media (max-width: 980px){
   .aa-compact-wrap{ overflow-x:auto; }
   table.aa-table.aa-compact-table{ min-width:760px; }
+}
+@media (min-width: 981px){
+  .aa-table.aa-compact-table tbody td{
+    padding-left:10px;
+    padding-right:10px;
+  }
+}
+
+.aa-notes-row td{
+  overflow:hidden;
+}
+.aa-notes-box,
+.aa-note{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+}
+.aa-notes-box{
+  overflow:hidden;
+}
+.aa-note{
+  overflow-wrap:anywhere;
+  word-break:break-word;
 }
 
 /* timeline indicator */
@@ -752,20 +783,20 @@ table.aa-table.aa-compact-table{
 }
 .aa-health-kicker{
   font-size:12px;
-  font-weight:950;
+  font-weight:700;
   color:var(--brand);
   margin-bottom:6px;
 }
 .aa-health-value{
   font-size:16px;
-  font-weight:950;
+  font-weight:700;
   color:#0b1220;
   line-height:1.2;
 }
 .aa-health-meta{
   margin-top:8px;
   font-size:12px;
-  font-weight:800;
+  font-weight:600;
   color:#475569;
   display:flex;
   gap:8px;
@@ -778,7 +809,7 @@ table.aa-table.aa-compact-table{
   gap:10px;
   border-radius:12px;
   padding:10px 12px;
-  font-weight:900;
+  font-weight:700;
   margin-bottom:12px;
 }
 .aa-health-alert-problem{
@@ -879,7 +910,7 @@ table.aa-table.aa-compact-table{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-014"></script>
+  <script src="./main.js?v=2026-03-10-015"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
