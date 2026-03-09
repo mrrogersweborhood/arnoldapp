@@ -1215,14 +1215,13 @@ function renderResults(payload) {
 
     const billing = customer?.billing || null;
     const shipping = customer?.shipping || null;
-    const ordersBySub = buildOrdersBySubscriptionId(subs, orders);
 
     const customerCard = customer ? renderCustomerCard(customer) : "";
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
-    const supportPack = renderSupportClipboardPack(customer || {}, subs, orders, ordersBySub);
-    const ledger = renderSubscriptionLedger(subs, orders);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
+    const activity = renderCustomerActivity(customer, subs, orders);
+    const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1238,7 +1237,7 @@ function renderResults(payload) {
         </div>
       </section>
 
-      ${supportPack || ""}
+      ${activity || ""}
       ${ledger || ""}
       ${healthSummary || ""}
     `;
@@ -1424,7 +1423,8 @@ function renderHierarchySection(subs, orders) {
   `;
 }
 
-  function renderSubscriptionLedger(subs, orders) {
+  
+function renderSubscriptionLedger(subs, orders) {
   const sArr = Array.isArray(subs) ? subs : [];
   const oArr = Array.isArray(orders) ? orders : [];
 
@@ -1439,34 +1439,34 @@ function renderHierarchySection(subs, orders) {
 
   const linkedOrderIds = new Set();
 
+  const subscriptionColGroup = `
+    <colgroup>
+      <col style="width:120px;">
+      <col style="width:110px;">
+      <col style="width:115px;">
+      <col style="width:115px;">
+      <col style="width:120px;">
+      <col style="width:95px;">
+      <col style="width:80px;">
+    </colgroup>
+  `;
+
+  const orderColGroup = `
+    <colgroup>
+      <col style="width:120px;">
+      <col style="width:105px;">
+      <col style="width:115px;">
+      <col style="width:95px;">
+      <col style="width:145px;">
+      <col style="width:auto;">
+      <col style="width:80px;">
+    </colgroup>
+  `;
+
   function renderSubNotesRow(sub) {
     const sid = String(sub?.id ?? "");
     const notes = Array.isArray(sub?.notes) ? sub.notes : [];
-    const isOpen = openSubNotes.has(sid);
-    if (!isOpen) return "";
-
-    const notesHtml = notes.length
-      ? notes.map((n) => {
-          const when = fmtDate(n?.date_created);
-          const who = n?.author || n?.added_by || "";
-          const text = stripHtml(n?.note || "");
-          return `
-            <div class="aa-note">
-              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
-              <div class="aa-note-text">${esc(text || "—")}</div>
-            </div>
-          `;
-        }).join("")
-      : `<div class="aa-muted">No notes.</div>`;
-
-    return `<div class="aa-notes-box" style="margin-top:10px;">${notesHtml}</div>`;
-  }
-
-  function renderOrderNotesRow(order) {
-    const oid = String(order?.id ?? "");
-    const notes = Array.isArray(order?.notes) ? order.notes : [];
-    const isOpen = openOrderNotes.has(oid);
-    if (!isOpen) return "";
+    if (!openSubNotes.has(sid)) return "";
 
     const notesHtml = notes.length
       ? notes.map((n) => {
@@ -1484,27 +1484,85 @@ function renderHierarchySection(subs, orders) {
 
     return `
       <tr class="aa-notes-row">
-        <td colspan="8">
+        <td colspan="7">
           <div class="aa-notes-box">${notesHtml}</div>
         </td>
       </tr>
     `;
   }
 
+  function renderOrderNotesRow(order) {
+    const oid = String(order?.id ?? "");
+    const notes = Array.isArray(order?.notes) ? order.notes : [];
+    if (!openOrderNotes.has(oid)) return "";
+
+    const notesHtml = notes.length
+      ? notes.map((n) => {
+          const when = fmtDate(n?.date_created);
+          const who = n?.author || n?.added_by || "";
+          const text = stripHtml(n?.note || "");
+          return `
+            <div class="aa-note">
+              <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
+              <div class="aa-note-text">${esc(text || "—")}</div>
+            </div>
+          `;
+        }).join("")
+      : `<div class="aa-muted">No notes.</div>`;
+
+    return `
+      <tr class="aa-notes-row">
+        <td colspan="7">
+          <div class="aa-notes-box">${notesHtml}</div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderOrderTableRows(orderList, parentId, newestRenewalId) {
+    const rows = [];
+
+    for (const o of orderList) {
+      const oid = String(o?.id ?? "—");
+      const oidTrim = String(o?.id ?? "").trim();
+      if (oidTrim) linkedOrderIds.add(oidTrim);
+
+      const notes = Array.isArray(o?.notes) ? o.notes : [];
+      const paymentTitle = String(o?.payment_method_title ?? "").trim() || "—";
+      const isProblem = isProblemOrderStatus(o?.status);
+      const paymentHtml = isProblem
+        ? `<span class="aa-payment-problem">${esc(paymentTitle)} ⚠ Failed payment</span>`
+        : esc(paymentTitle);
+      const orderItems = getOrderItemsSummary(o);
+
+      rows.push(`
+        <tr>
+          <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a>${renderCopyButton("Order ID", `#${oid}`)}</td>
+          <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
+          <td>${esc(fmtDate(o?.date_created))}</td>
+          <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
+          <td>${paymentHtml}</td>
+          <td><div class="aa-items" title="${esc(orderItems.text)}">${esc(orderItems.text)}</div></td>
+          <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
+        </tr>
+      `);
+      rows.push(renderOrderNotesRow(o));
+    }
+
+    return rows.filter(Boolean).join("");
+  }
+
   const subscriptionBlocks = sArr.map((s) => {
     const sid = String(s?.id ?? "—");
     const subStatus = String(s?.status ?? "—");
-    const subTotal = fmtMoney(s?.total, s?.currency);
     const startDate = fmtDate(s?.start_date || s?.date_created);
-    const nextPay = fmtDate(s?.next_payment_date);
-    const endDate = s?.end_date ? fmtDate(s?.end_date) : "Auto-renews";
-
+    const nextDate = fmtDate(s?.next_payment_date);
     const billingInterval = String(s?.billing_interval ?? "").trim();
     const billingPeriod = String(s?.billing_period ?? "").trim();
     const billingLabel = (billingInterval && billingPeriod)
       ? `${billingInterval} ${billingPeriod}`
       : "—";
-
+    const subTotal = fmtMoney(s?.total, s?.currency);
     const subNotes = Array.isArray(s?.notes) ? s.notes : [];
     const subNotesBtn = renderNotesToggle("sub", sid, subNotes);
 
@@ -1512,122 +1570,59 @@ function renderHierarchySection(subs, orders) {
     const parentOrder = parentId ? orderById.get(parentId) : null;
     if (parentId) linkedOrderIds.add(parentId);
 
-    const linked = bySub.get(sid) || [];
-    const renewals = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
-
-    renewals.sort((a, b) => {
+    const linked = (bySub.get(sid) || []).slice();
+    linked.sort((a, b) => {
       const da = new Date(a?.date_created || 0).getTime();
       const db = new Date(b?.date_created || 0).getTime();
       return db - da;
     });
 
-    const newestRenewalId = renewals.length ? String(renewals[0]?.id ?? "") : null;
-    const linkedCount = (parentOrder ? 1 : 0) + renewals.length;
-
-    const orderRows = [];
-
-    if (parentOrder) {
-      const oid = String(parentOrder?.id ?? "—");
-      linkedOrderIds.add(oid);
-      const paymentHtml = renderPaymentWithWarning(parentOrder);
-      const parentItems = getOrderItemsSummary(parentOrder);
-      const notes = Array.isArray(parentOrder?.notes) ? parentOrder.notes : [];
-
-      orderRows.push(`
-        <tr>
-          <td>${esc(fmtDateWithAge(parentOrder?.date_created))}</td>
-          <td><span class="aa-muted">Parent</span>${renderOrderBadges(parentOrder)}</td>
-          <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a>${renderCopyButton("Order ID", `#${oid}`)}</td>
-          <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
-          <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
-          <td>${paymentHtml}</td>
-          <td><div class="aa-items" title="${esc(parentItems.text)}">${esc(parentItems.text)}</div></td>
-          <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-        </tr>
-      `);
-      orderRows.push(renderOrderNotesRow(parentOrder));
-    }
-
-    for (const o of renewals) {
-      const oid = String(o?.id ?? "—");
-      const isLatest = !!newestRenewalId && oid === newestRenewalId;
-      linkedOrderIds.add(oid);
-      const paymentHtml = renderPaymentWithWarning(o);
-      const orderItems = getOrderItemsSummary(o);
-      const notes = Array.isArray(o?.notes) ? o.notes : [];
-
-      orderRows.push(`
-        <tr>
-          <td>${esc(fmtDateWithAge(o?.date_created))}</td>
-          <td><span class="aa-muted">Renewal</span>${renderOrderBadges(o, { isLatest })}</td>
-          <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a>${renderCopyButton("Order ID", `#${oid}`)}</td>
-          <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
-          <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
-          <td>${paymentHtml}</td>
-          <td><div class="aa-items" title="${esc(orderItems.text)}">${esc(orderItems.text)}</div></td>
-          <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-        </tr>
-      `);
-      orderRows.push(renderOrderNotesRow(o));
-    }
+    const parentRows = parentOrder ? [parentOrder] : [];
+    const renewalRows = linked.filter((o) => String(o?.id ?? "").trim() !== parentId);
 
     return `
-      <div class="aa-card aa-subscription-block">
-        <div class="aa-card-title">Subscription <a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(sid)}</a>${renderCopyButton("Subscription ID", `#${sid}`)} ${renderStatusPill(subStatus)}</div>
+      <div class="aa-card">
+        <div class="aa-card-title">Subscription</div>
 
-        <div class="aa-tiles aa-subscription-summary">
-          <div class="aa-tile">
-            <div class="aa-label">Start date</div>
-            <div class="aa-value">${esc(startDate)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Next payment</div>
-            <div class="aa-value">${esc(nextPay)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Billing</div>
-            <div class="aa-value">${esc(billingLabel)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Total</div>
-            <div class="aa-value">${esc(subTotal)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">End date</div>
-            <div class="aa-value">${esc(endDate)}</div>
-          </div>
-          <div class="aa-tile">
-            <div class="aa-label">Related orders</div>
-            <div class="aa-value">${esc(String(linkedCount))}</div>
-          </div>
+        <div class="aa-table-wrap" style="margin-top:10px;">
+          <table class="aa-table aa-compact-table">
+            ${subscriptionColGroup}
+            <thead>
+              <tr>
+                <th>Subscription ID</th>
+                <th>Status</th>
+                <th>Start</th>
+                <th>Next</th>
+                <th>Billing</th>
+                <th class="aa-right">Total</th>
+                <th style="text-align:right;">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(sid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(sid)}</a>${renderCopyButton("Subscription ID", `#${sid}`)}</td>
+                <td>${renderStatusPill(subStatus)}</td>
+                <td>${esc(startDate)}</td>
+                <td>${esc(nextDate)}</td>
+                <td>${esc(billingLabel)}</td>
+                <td class="aa-right">${esc(subTotal)}</td>
+                <td class="aa-notes-cell">${subNotesBtn}</td>
+              </tr>
+              ${renderSubNotesRow(s)}
+            </tbody>
+          </table>
         </div>
-
-        <div class="aa-subscription-tools">
-          <div class="aa-subscription-notes">${subNotesBtn}</div>
-        </div>
-
-        ${renderSubNotesRow(s)}
 
         <div class="aa-card" style="margin-top:12px;">
           <div class="aa-card-title">Orders</div>
           <div class="aa-table-wrap" style="margin-top:10px;">
-            <table class="aa-table aa-orders-table" style="min-width:1180px; table-layout:fixed;">
-              <colgroup>
-                <col style="width:140px;">
-                <col style="width:140px;">
-                <col style="width:150px;">
-                <col style="width:140px;">
-                <col style="width:120px;">
-                <col style="width:220px;">
-                <col style="width:260px;">
-                <col style="width:120px;">
-              </colgroup>
+            <table class="aa-table aa-compact-table">
+              ${orderColGroup}
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Type</th>
                   <th>Order ID</th>
                   <th>Status</th>
+                  <th>Date</th>
                   <th class="aa-right">Total</th>
                   <th>Payment</th>
                   <th>Items</th>
@@ -1635,9 +1630,9 @@ function renderHierarchySection(subs, orders) {
                 </tr>
               </thead>
               <tbody>
-                ${orderRows.filter(Boolean).join("") || `
+                ${renderOrderTableRows(parentRows.concat(renewalRows), parentId, null) || `
                   <tr>
-                    <td colspan="8" class="aa-muted">No orders found for this subscription in the current payload.</td>
+                    <td colspan="7" class="aa-muted">No orders found for this subscription in the current payload.</td>
                   </tr>
                 `}
               </tbody>
@@ -1664,23 +1659,13 @@ function renderHierarchySection(subs, orders) {
       <div class="aa-card" style="margin-top:14px;">
         <div class="aa-card-title">Other Orders</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
-          <table class="aa-table aa-orders-table" style="min-width:1180px; table-layout:fixed;">
-            <colgroup>
-              <col style="width:140px;">
-              <col style="width:140px;">
-              <col style="width:150px;">
-              <col style="width:140px;">
-              <col style="width:120px;">
-              <col style="width:220px;">
-              <col style="width:260px;">
-              <col style="width:120px;">
-            </colgroup>
+          <table class="aa-table aa-compact-table">
+            ${orderColGroup}
             <thead>
               <tr>
-                <th>Date</th>
-                <th>Type</th>
                 <th>Order ID</th>
                 <th>Status</th>
+                <th>Date</th>
                 <th class="aa-right">Total</th>
                 <th>Payment</th>
                 <th>Items</th>
@@ -1688,25 +1673,7 @@ function renderHierarchySection(subs, orders) {
               </tr>
             </thead>
             <tbody>
-              ${unlinked.map((o) => {
-                const oid = String(o?.id ?? "—");
-                const notes = Array.isArray(o?.notes) ? o.notes : [];
-                const paymentHtml = renderPaymentWithWarning(o);
-                const orderItems = getOrderItemsSummary(o);
-                return `
-                  <tr>
-                    <td>${esc(fmtDateWithAge(o?.date_created))}</td>
-                    <td><span class="aa-muted">Order</span>${renderOrderBadges(o)}</td>
-                    <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(oid)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(oid)}</a>${renderCopyButton("Order ID", `#${oid}`)}</td>
-                    <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
-                    <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
-                    <td>${paymentHtml}</td>
-                    <td><div class="aa-items" title="${esc(orderItems.text)}">${esc(orderItems.text)}</div></td>
-                    <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
-                  </tr>
-                  ${renderOrderNotesRow(o)}
-                `;
-              }).join("")}
+              ${renderOrderTableRows(unlinked, null, null)}
             </tbody>
           </table>
         </div>
@@ -1718,7 +1685,7 @@ function renderHierarchySection(subs, orders) {
     <section class="card aa-section">
       <div class="aa-section-head">
         <div class="aa-section-title">Subscriptions & Orders</div>
-        <div class="aa-section-subtitle">Subscription summary first, related orders underneath, expandable notes on both</div>
+        <div class="aa-section-subtitle">Compact support layout</div>
       </div>
 
       ${subscriptionBlocks || `<div class="aa-muted">No subscriptions found.</div>`}
