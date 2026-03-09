@@ -648,8 +648,9 @@ function setSessionPill(isLoggedIn, name) {
       const c = m?.customer || {};
       const name = [c?.first_name, c?.last_name].map((v) => String(v ?? '').trim()).filter(Boolean).join(' ') || '—';
       const email = String(c?.email ?? '').trim() || '—';
-      const id = c?.id != null && String(c.id).trim() ? `#${String(c.id).trim()}` : '—';
-      const openValue = email !== '—' ? email : (id !== '—' ? id : '');
+      const idRaw = c?.id != null && String(c.id).trim() ? String(c.id).trim() : '';
+      const id = idRaw ? `#${idRaw}` : '—';
+      const openValue = email !== '—' ? email : (idRaw ? `customer #${idRaw}` : '');
 
       return `
         <div class="aa-candidate-row">
@@ -1165,6 +1166,19 @@ function renderSubscriptionRow(s) {
 
 function renderResults(payload) {
     if (payload?.intent === "customer_candidates_by_name") return renderCandidateMatches(payload);
+
+    if (payload?.intent === "unknown") {
+      const note = String(payload?.note || "Try an email address, customer #123, or order #12345.").trim();
+      return `
+        <section class="card aa-section">
+          <div class="aa-section-head">
+            <div class="aa-section-title">No supported match yet</div>
+            <div class="aa-section-subtitle">${esc(note)}</div>
+          </div>
+          <div class="aa-muted">Try an email address, a customer lookup like customer #123, or an order lookup like order #12345.</div>
+        </section>
+      `;
+    }
 
     const ctx = payload?.context || {};
     const customer = ctx.customer || null;
