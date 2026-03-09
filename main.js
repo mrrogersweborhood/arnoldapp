@@ -415,12 +415,12 @@ function setSessionPill(isLoggedIn, name) {
 
           <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
-            <div class="aa-value">${esc(String(id))}</div>
+            ${renderValueWithCopy(String(id), String(id))}
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Username</div>
-            <div class="aa-value">${esc(String(username))}</div>
+            ${renderValueWithCopy(String(username), String(username))}
           </div>
         </div>
 
@@ -548,12 +548,12 @@ function setSessionPill(isLoggedIn, name) {
 
           <div class="aa-tile">
             <div class="aa-label">Email</div>
-            <div class="aa-value">${esc(showEmail)}</div>
+            ${renderValueWithCopy(showEmail, showEmail)}
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Phone</div>
-            <div class="aa-value">${esc(showPhone)}</div>
+            ${renderValueWithCopy(showPhone, showPhone)}
           </div>
         </div>
       </div>
@@ -796,7 +796,7 @@ function renderSubscriptionRow(s) {
 
     return `
       <tr>
-        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a></td>
+        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}</td>
         <td>${esc(created)}</td>
         <td>${renderStatusPill(status)}</td>
         <td>${esc(total)}</td>
@@ -1128,13 +1128,15 @@ function renderSubscriptionRow(s) {
       const maybeParent = subscriptions.find((s) => String(s?.parent_id ?? "").trim() === oid);
       if (maybeParent) event = "Parent order";
 
+      const orderItems = getOrderItemsSummary(o);
       events.push({
         date: o?.date_created,
         event,
         recordId: oid ? `#${oid}` : "",
         recordKind: oid ? "order" : "",
         status,
-        total: fmtMoney(o?.total, o?.currency)
+        total: fmtMoney(o?.total, o?.currency),
+        items: orderItems.text
       });
     });
 
@@ -1144,7 +1146,7 @@ function renderSubscriptionRow(s) {
       const idValue = String(e?.recordId ?? "").trim();
       const postId = idValue.replace(/^#/, "");
       const idHtml = idValue
-        ? `<div class="aa-id-wrap"><a class="${e.recordKind === "subscription" ? "aa-sub-id" : "aa-order-id"}" href="${WOO_ADMIN}?post=${esc(postId)}&action=edit" target="_blank" rel="noopener noreferrer">${esc(idValue)}</a><span class="aa-id-kind ${e.recordKind === "subscription" ? "aa-id-kind-sub" : "aa-id-kind-order"}">${e.recordKind === "subscription" ? "SUB" : "ORDER"}</span></div>`
+        ? `<a class="${e.recordKind === "subscription" ? "aa-sub-id" : "aa-order-id"}" href="${WOO_ADMIN}?post=${esc(postId)}&action=edit" target="_blank" rel="noopener noreferrer">${esc(idValue)}</a>${renderCopyButton(e.recordKind === "subscription" ? "Subscription ID" : "Order ID", idValue)}`
         : "—";
 
       return `
@@ -1153,6 +1155,7 @@ function renderSubscriptionRow(s) {
         <td>${esc(fmtDateWithAge(e.date))}</td>
         <td>${esc(e.event || "—")}</td>
         <td>${e.status ? renderStatusPill(e.status) : '<span class="aa-muted">—</span>'}</td>
+        <td>${e.items ? esc(e.items) : "—"}</td>
         <td class="aa-right">${e.total ? esc(e.total) : "—"}</td>
       </tr>
     `;
@@ -1171,6 +1174,7 @@ function renderSubscriptionRow(s) {
               <col style="width:180px;">
               <col style="width:260px;">
               <col style="width:140px;">
+              <col style="width:360px;">
               <col style="width:120px;">
             </colgroup>
             <thead>
@@ -1179,6 +1183,7 @@ function renderSubscriptionRow(s) {
                 <th>Date</th>
                 <th>Event</th>
                 <th>Status</th>
+                <th>Items</th>
                 <th class="aa-right">Total</th>
               </tr>
             </thead>
@@ -1221,6 +1226,7 @@ function renderResults(payload) {
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
     const activity = renderCustomerActivity(customer, subs, orders);
+    const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1237,6 +1243,7 @@ function renderResults(payload) {
       </section>
 
       ${activity || ""}
+      ${ledger || ""}
       ${healthSummary || ""}
     `;
   }
@@ -1611,6 +1618,7 @@ function renderHierarchySection(subs, orders) {
                 <th>ID</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Items</th>
                 <th class="aa-right">Total</th>
                 <th>Payment</th>
                 <th>Items</th>
@@ -1642,6 +1650,7 @@ function renderHierarchySection(subs, orders) {
                 <th>ID</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Items</th>
                 <th class="aa-right">Total</th>
                 <th>Billing</th>
                 <th style="text-align:right;">Notes</th>
@@ -1692,6 +1701,7 @@ function renderHierarchySection(subs, orders) {
                 <th>ID</th>
                 <th>Date</th>
                 <th>Status</th>
+                <th>Items</th>
                 <th class="aa-right">Total</th>
                 <th>Payment</th>
                 <th>Items</th>
