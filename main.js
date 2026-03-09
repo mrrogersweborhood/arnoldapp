@@ -1606,7 +1606,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Orders</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${orderLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1637,7 +1637,7 @@ function renderHierarchySection(subs, orders) {
 
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${orderLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1687,7 +1687,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
-            ${orderLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
