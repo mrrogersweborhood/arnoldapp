@@ -9,7 +9,14 @@
   // -----------------------------
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const WOO_ADMIN = "https://okobserver.org/wp-admin/post.php";
-
+// -----------------------------
+  // RENDER SMOKE TEST (split renderer safety)
+  // -----------------------------
+  if (typeof renderCustomerActivity !== "function") {
+    console.error(
+      "Arnold Admin: renderCustomerActivity is missing. Check renderActivity.js load order."
+    );
+  }
   // -----------------------------
   // DOM HELPERS
   // -----------------------------
