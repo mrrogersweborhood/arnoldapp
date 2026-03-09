@@ -1,5 +1,5 @@
 <!-- 🟢 index.html -->
-<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-10R3 — Wider Support Timeline + Notes Visibility) -->
+<!-- OkObserver / Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1 — Timeline + Health Summary + Support Clipboard Pack) -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -37,7 +37,7 @@
       padding:12px 16px;
     }
     .topbar-inner{
-      max-width:1800px;
+      max-width:1500px;
       margin:0 auto;
       display:flex;
       align-items:center;
@@ -102,7 +102,7 @@
     }
 
     .wrap{
-      max-width:1800px;
+      max-width:1500px;
       margin:18px auto 44px;
       padding:0 16px;
     }
@@ -244,7 +244,7 @@
       border-bottom:1px solid var(--border);
       margin-bottom:12px;
     }
-    .aa-section-title{ font-weight:800; font-size:16px; letter-spacing:.1px; }
+    .aa-section-title{ font-weight:950; font-size:16px; letter-spacing:.2px; }
     .aa-section-subtitle{ font-size:12px; font-weight:700; color:var(--muted); }
 
     /* ----------------------------------------------------
@@ -259,7 +259,7 @@
       box-shadow:none;
     }
     .aa-card-title{
-      font-weight:700;
+      font-weight:900;
       font-size:14px;
       margin-bottom:10px;
     }
@@ -267,7 +267,7 @@
     /* Field tiles (label on top, value beneath) */
     .aa-tiles{
       display:grid;
-      grid-template-columns:repeat(4, minmax(0, 1fr));
+      grid-template-columns:repeat(3, minmax(0, 1fr));
       gap:12px;
       align-items:start;
     }
@@ -280,21 +280,20 @@
     }
     .aa-label{
       font-size:12px;
-      font-weight:700;
+      font-weight:950;
       color:var(--brand);
       margin:0 0 6px;
-      letter-spacing:.01em;
     }
     .aa-value{
       font-size:14px;
-      font-weight:600;
+      font-weight:850;
       color:#0b1220;
-      line-height:1.35;
+      line-height:1.25;
       word-break:break-word;
     }
 
-    /* Customer: 4 across on desktop (Name / Email / ID / Username) */
-    .aa-tiles.customer{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
+    /* Customer: 3 across on desktop (ID / Username / Name) */
+    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
 
     /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
     .aa-grid-2{
@@ -324,7 +323,7 @@
 }
 
 .aa-tiles.onecol .aa-value{
-  font-weight:600;
+  font-weight:800;
 } 
 /* Billing/Shipping: label left, value right */
 .aa-tiles.onecol .aa-tile{
@@ -350,7 +349,7 @@
       align-items:center;
       border-radius:999px;
       padding:4px 10px;
-      font-weight:700;
+      font-weight:950;
       font-size:12px;
       white-space:nowrap;
       border:1px solid rgba(0,0,0,.08);
@@ -405,7 +404,7 @@
       border-radius:999px;
       padding:4px 10px;
       font-size:12px;
-      font-weight:700;
+      font-weight:900;
       cursor:pointer;
     }
     .aa-copy-btn:hover{
@@ -470,7 +469,7 @@
   background:#ffffff;
   color:var(--brand);
   font-size:12px;
-  font-weight:700;
+  font-weight:950;
   text-align:left;
   padding:10px 12px;
   border-bottom:2px solid rgba(0,0,0,.08);
@@ -487,7 +486,7 @@
   border-bottom:1px solid rgba(15,23,42,.06);
   vertical-align:middle;
   font-size:14px;
-  font-weight:600;
+  font-weight:850;
   color:#0b1220;
   white-space:nowrap;
   background:#fff;
@@ -528,32 +527,59 @@
       font-weight:950;
       color:var(--brand);
       text-decoration:none;
-      margin-right:10px;
+      margin-right:0;
     }
 
     .aa-order-id:hover,
     .aa-sub-id:hover{
       text-decoration:underline;
     }
-    .aa-muted{ color:var(--muted); font-weight:600; }
+    .aa-id-wrap{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .aa-id-kind{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:20px;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.04em;
+      border:1px solid rgba(15,23,42,.10);
+      background:#f8fafc;
+      color:#475569;
+      white-space:nowrap;
+    }
+    .aa-id-kind-sub{
+      background:rgba(30,144,255,.10);
+      border-color:rgba(30,144,255,.22);
+      color:var(--brand);
+    }
+    .aa-id-kind-order{
+      background:rgba(15,23,42,.06);
+      border-color:rgba(15,23,42,.10);
+      color:#334155;
+    }
+    .aa-muted{ color:var(--muted); font-weight:850; }
 
     /* Notes toggle (right aligned) */
     .aa-notes-cell{ text-align:right; }
     .aa-notes-toggle{
       cursor:pointer;
-      border:1px solid rgba(30,144,255,.20);
-      background:rgba(30,144,255,.07);
+      border:0;
+      background:transparent;
       color:var(--brand);
-      font-weight:700;
-      font-size:13px;
+      font-weight:950;
+      font-size:14px;
       display:inline-flex;
       align-items:center;
-      justify-content:center;
-      gap:8px;
-      min-width:122px;
-      padding:6px 10px;
-      border-radius:999px;
-      white-space:nowrap;
+      gap:10px;
+      padding:4px 6px;
     }
     .aa-notes-count{
       display:inline-flex;
@@ -563,11 +589,11 @@
       height:18px;
       padding:0 7px;
       border-radius:999px;
-      border:1px solid rgba(30,144,255,.25);
-      background:#fff;
+      border:1px solid rgba(30,144,255,.35);
+      background:rgba(30,144,255,.12);
       color:rgba(30,144,255,.98);
       font-size:12px;
-      font-weight:700;
+      font-weight:950;
     }
     .aa-notes-arrow{
       font-size:12px;
@@ -596,13 +622,13 @@
     .aa-note:last-child{ margin-bottom:0; }
     .aa-note-meta{
       font-size:12px;
-      font-weight:700;
+      font-weight:950;
       color:#334155;
       margin-bottom:6px;
     }
     .aa-note-text{
       font-size:13px;
-      font-weight:500;
+      font-weight:750;
       color:#0b1220;
       line-height:1.35;
       white-space:pre-wrap;
@@ -663,8 +689,7 @@ table.aa-totals-table tr.aa-totals-total td{
   
 
 
-
-/* Merged Activity / Health */
+/* Activity Timeline / Health / Clipboard Pack */
 .aa-health-wrap{
   display:grid;
   grid-template-columns:repeat(auto-fit, minmax(320px, 1fr));
@@ -678,70 +703,95 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-health-grid .aa-tile .aa-value .aa-pill{
   vertical-align:middle;
 }
-.aa-compact-wrap{
-  overflow-x:hidden;
+.aa-clipboard-pack{
+  background:rgba(30,144,255,.05);
 }
-table.aa-table.aa-compact-table{
-  min-width:0;
-  table-layout:fixed;
+.aa-copy-row-pack{
+  margin-top:0;
+  margin-bottom:12px;
 }
-.aa-col-id{ width:118px; }
-.aa-col-date{ width:170px; }
-.aa-col-type{ width:160px; }
-.aa-col-status{ width:126px; }
-.aa-col-total{ width:100px; }
-.aa-col-details{ width:auto; }
-.aa-col-notes{ width:156px; }
-.aa-compact-table tbody td{
-  font-variant-numeric: tabular-nums;
+.aa-clipboard-summary{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+  gap:10px;
 }
-.aa-compact-table tbody td:nth-child(3),
-.aa-compact-table tbody td:nth-child(6),
-.aa-compact-table tbody td:nth-child(7){
-  white-space:normal;
-}
-.aa-detail-wrap{
-  white-space:normal;
-  overflow-wrap:anywhere;
-  line-height:1.3;
-}
-.aa-detail-primary{
-  font-weight:600;
+.aa-clipboard-item{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:800;
   color:#0b1220;
 }
-.aa-detail-secondary{
-  margin-top:2px;
-  font-size:12px;
-  line-height:1.35;
-  color:var(--muted);
-  font-weight:500;
-}
-.aa-event-wrap{
+.aa-timeline{
+  position:relative;
   display:flex;
   flex-direction:column;
-  gap:4px;
+  gap:12px;
 }
-.aa-event-main{
-  font-weight:600;
+.aa-timeline-item{
+  display:grid;
+  grid-template-columns:26px 1fr;
+  gap:12px;
+  align-items:start;
+}
+.aa-timeline-rail{
+  position:relative;
+  min-height:100%;
+}
+.aa-timeline-rail::before{
+  content:"";
+  position:absolute;
+  left:12px;
+  top:0;
+  bottom:-12px;
+  width:2px;
+  background:rgba(30,144,255,.18);
+}
+.aa-timeline-item:last-child .aa-timeline-rail::before{
+  bottom:12px;
+}
+.aa-timeline-dot{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:10px;
+  height:10px;
+  margin:8px 0 0 7px;
+  border-radius:50%;
+  background:var(--brand);
+  box-shadow:0 0 0 4px rgba(30,144,255,.12);
+}
+.aa-timeline-body{
+  border:1px solid var(--border);
+  background:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+}
+.aa-timeline-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.aa-timeline-label{
+  font-weight:950;
   color:#0b1220;
 }
-.aa-event-sub{
+.aa-timeline-date{
   font-size:12px;
+  font-weight:900;
   color:var(--muted);
-  font-weight:500;
+  white-space:nowrap;
 }
-.aa-row-problem td{
-  background:rgba(239,68,68,.045);
+.aa-timeline-meta{
+  margin-top:4px;
+  font-size:13px;
+  font-weight:750;
+  color:#334155;
 }
-.aa-row-problem td:first-child{
-  box-shadow: inset 3px 0 0 #ef4444;
-}
-.aa-row-subscription td:first-child{
-  box-shadow: inset 3px 0 0 rgba(30,144,255,.35);
-}
-@media (max-width: 980px){
-  .aa-compact-wrap{ overflow-x:auto; }
-  table.aa-table.aa-compact-table{ min-width:980px; }
+.aa-timeline-badge{
+  margin-top:8px;
 }
 
 /* timeline indicator */
@@ -753,7 +803,7 @@ table.aa-table.aa-compact-table{
   border-radius:999px;
   padding:2px 8px;
   font-size:11px;
-  font-weight:700;
+  font-weight:900;
   white-space:nowrap;
 }
 .aa-order-flag-latest{
@@ -820,7 +870,7 @@ table.aa-table.aa-compact-table{
   gap:10px;
   border-radius:12px;
   padding:10px 12px;
-  font-weight:700;
+  font-weight:900;
   margin-bottom:12px;
 }
 .aa-health-alert-problem{
@@ -921,7 +971,7 @@ table.aa-table.aa-compact-table{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-016"></script>
+  <script src="./main.js?v=2026-03-10-017"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

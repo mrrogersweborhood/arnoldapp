@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-10R3-widerSupportTimeline)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1-timelineHealthClipboard)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -415,12 +415,12 @@ function setSessionPill(isLoggedIn, name) {
 
           <div class="aa-tile">
             <div class="aa-label">Customer ID</div>
-            ${renderValueWithCopy(String(id), String(id))}
+            <div class="aa-value">${esc(String(id))}</div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Username</div>
-            ${renderValueWithCopy(String(username), String(username))}
+            <div class="aa-value">${esc(String(username))}</div>
           </div>
         </div>
 
@@ -548,12 +548,12 @@ function setSessionPill(isLoggedIn, name) {
 
           <div class="aa-tile">
             <div class="aa-label">Email</div>
-            ${renderValueWithCopy(showEmail, showEmail)}
+            <div class="aa-value">${esc(showEmail)}</div>
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Phone</div>
-            ${renderValueWithCopy(showPhone, showPhone)}
+            <div class="aa-value">${esc(showPhone)}</div>
           </div>
         </div>
       </div>
@@ -796,7 +796,7 @@ function renderSubscriptionRow(s) {
 
     return `
       <tr>
-        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}</td>
+        <td><a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a></td>
         <td>${esc(created)}</td>
         <td>${renderStatusPill(status)}</td>
         <td>${esc(total)}</td>
@@ -1088,147 +1088,102 @@ function renderSubscriptionRow(s) {
     `;
   }
 
-
-  function renderCustomerActivityMerged(customer, subs, orders) {
+  function renderCustomerActivity(customer, subs, orders) {
+    const events = [];
     const subscriptions = Array.isArray(subs) ? subs : [];
     const orderArr = Array.isArray(orders) ? orders : [];
-    const rows = [];
-
-    function buildNotesHtml(notes) {
-      const safeNotes = Array.isArray(notes) ? notes : [];
-      if (!safeNotes.length) return `<div class="aa-muted">No notes.</div>`;
-      return safeNotes.map((n) => {
-        const when = fmtDate(n?.date_created);
-        const who = n?.author || n?.added_by || "";
-        const text = stripHtml(n?.note || "");
-        return `<div class="aa-note">
-          <div class="aa-note-meta">${esc(when)}${who ? ` • ${esc(String(who))}` : ""}</div>
-          <div class="aa-note-text">${esc(text || "—")}</div>
-        </div>`;
-      }).join("");
-    }
 
     if (customer?.date_created) {
-      rows.push({
-        kind: "customer",
-        id: "",
-        rowClass: "",
-        idHtml: "—",
+      events.push({
         date: customer.date_created,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Customer created</div><div class="aa-event-sub">Account created</div></div>`,
-        statusHtml: '<span class="aa-muted">—</span>',
-        total: "—",
-        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Account created</div><div class="aa-detail-secondary">Customer record opened in WooCommerce</div></div>`,
-        notesHtml: '<span class="aa-muted">—</span>',
-        expandedNotesRow: ""
+        event: "Customer created",
+        recordId: "",
+        recordKind: "",
+        status: "",
+        total: ""
       });
     }
 
-    for (const s of subscriptions) {
-      const id = String(s?.id ?? "").trim();
-      const billing = s?.billing_interval && s?.billing_period
-        ? `${s.billing_interval} ${s.billing_period}`
-        : "—";
-      const nextPayment = fmtDate(s?.next_payment_date);
-      const notes = Array.isArray(s?.notes) ? s.notes : [];
-      const isOpen = id ? openSubNotes.has(id) : false;
-      const subStatus = String(s?.status ?? "—");
-      const rowClass = String(subStatus).toLowerCase() === 'cancelled' || String(subStatus).toLowerCase() === 'failed'
-        ? 'aa-row-problem aa-row-subscription'
-        : 'aa-row-subscription';
+    subscriptions.forEach((s) => {
+      const sid = String(s?.id ?? "").trim();
+      const started = s?.start_date || s?.date_created || null;
+      if (started) {
+        events.push({
+          date: started,
+          event: "Subscription started",
+          recordId: sid ? `#${sid}` : "",
+          recordKind: sid ? "subscription" : "",
+          status: String(s?.status ?? ""),
+          total: ""
+        });
+      }
+    });
 
-      rows.push({
-        kind: "sub",
-        id,
-        rowClass,
-        idHtml: id
-          ? `<a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Subscription ID", `#${id}`)}`
-          : "—",
-        date: s?.start_date || s?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Subscription started</div><div class="aa-event-sub">Recurring subscription</div></div>`,
-        statusHtml: renderStatusPill(subStatus),
-        total: "—",
-        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Next ${esc(nextPayment)}</div><div class="aa-detail-secondary">Billing ${esc(billing)}</div></div>`,
-        notesHtml: renderNotesToggle("sub", id || "sub", notes),
-        expandedNotesRow: isOpen
-          ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${buildNotesHtml(notes)}</div></td></tr>`
-          : ""
-      });
-    }
-
-    for (const o of orderArr) {
-      const id = String(o?.id ?? "").trim();
+    orderArr.forEach((o) => {
+      const oid = String(o?.id ?? "").trim();
       const status = String(o?.status ?? "");
-      const payment = String(o?.payment_method_title ?? "").trim() || "—";
-      const items = getOrderItemsSummary(o).text;
-      const notes = Array.isArray(o?.notes) ? o.notes : [];
-      const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id)
-        ? "Parent order"
-        : (isProblemOrderStatus(status) ? "Problem order" : "Renewal");
-      const isOpen = id ? openOrderNotes.has(id) : false;
-      const rowClass = isProblemOrderStatus(status) ? 'aa-row-problem' : '';
+      let event = "Order";
+      if (status.toLowerCase() === "completed" || status.toLowerCase() === "processing") event = "Renewal";
+      if (isProblemOrderStatus(status)) event = "Problem order";
+      const maybeParent = subscriptions.find((s) => String(s?.parent_id ?? "").trim() === oid);
+      if (maybeParent) event = "Parent order";
 
-      rows.push({
-        kind: "order",
-        id,
-        rowClass,
-        idHtml: id
-          ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}`
-          : "—",
-        date: o?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(event)}</div><div class="aa-event-sub">Order activity</div></div>`,
-        statusHtml: renderStatusPill(status || "—"),
-        total: fmtMoney(o?.total, o?.currency),
-        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">${esc(payment)}</div><div class="aa-detail-secondary">${esc(items)}</div></div>`,
-        notesHtml: renderNotesToggle("order", id || "order", notes),
-        expandedNotesRow: isOpen
-          ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${buildNotesHtml(notes)}</div></td></tr>`
-          : ""
+      events.push({
+        date: o?.date_created,
+        event,
+        recordId: oid ? `#${oid}` : "",
+        recordKind: oid ? "order" : "",
+        status,
+        total: fmtMoney(o?.total, o?.currency)
       });
-    }
+    });
 
-    rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    events.sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
 
-    const bodyHtml = rows.length
-      ? rows.map((r) => `
-          <tr class="${r.rowClass || ''}">
-            <td>${r.idHtml}</td>
-            <td>${esc(fmtDateWithAge(r.date))}</td>
-            <td>${r.eventHtml}</td>
-            <td>${r.statusHtml}</td>
-            <td class="aa-right">${esc(r.total)}</td>
-            <td>${r.detailsHtml}</td>
-            <td class="aa-notes-cell">${r.notesHtml}</td>
-          </tr>
-          ${r.expandedNotesRow || ""}
-        `).join("")
-      : `<tr><td colspan="7" class="aa-muted">No activity found.</td></tr>`;
+    const rows = events.map((e) => {
+      const idValue = String(e?.recordId ?? "").trim();
+      const postId = idValue.replace(/^#/, "");
+      const idHtml = idValue
+        ? `<div class="aa-id-wrap"><a class="${e.recordKind === "subscription" ? "aa-sub-id" : "aa-order-id"}" href="${WOO_ADMIN}?post=${esc(postId)}&action=edit" target="_blank" rel="noopener noreferrer">${esc(idValue)}</a><span class="aa-id-kind ${e.recordKind === "subscription" ? "aa-id-kind-sub" : "aa-id-kind-order"}">${e.recordKind === "subscription" ? "SUB" : "ORDER"}</span></div>`
+        : "—";
+
+      return `
+      <tr>
+        <td>${idHtml}</td>
+        <td>${esc(fmtDateWithAge(e.date))}</td>
+        <td>${esc(e.event || "—")}</td>
+        <td>${e.status ? renderStatusPill(e.status) : '<span class="aa-muted">—</span>'}</td>
+        <td class="aa-right">${e.total ? esc(e.total) : "—"}</td>
+      </tr>
+    `;
+    }).join("");
 
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Customer Activity</div>
-          <div class="aa-section-subtitle">Newest first • support timeline</div>
+          <div class="aa-section-subtitle">Newest first</div>
         </div>
-        <div class="aa-table-wrap aa-compact-wrap">
-          <table class="aa-table aa-compact-table">
+        <div class="aa-table-wrap">
+          <table class="aa-table" style="min-width:860px; table-layout:fixed;">
             <colgroup>
-              <col class="aa-col-id"><col class="aa-col-date"><col class="aa-col-type">
-              <col class="aa-col-status"><col class="aa-col-total"><col class="aa-col-details"><col class="aa-col-notes">
+              <col style="width:180px;">
+              <col style="width:180px;">
+              <col style="width:260px;">
+              <col style="width:140px;">
+              <col style="width:120px;">
             </colgroup>
             <thead>
               <tr>
-                <th>ID</th>
+                <th>Subscription / Order ID</th>
                 <th>Date</th>
                 <th>Event</th>
                 <th>Status</th>
                 <th class="aa-right">Total</th>
-                <th>Summary</th>
-                <th>Notes</th>
               </tr>
             </thead>
             <tbody>
-              ${bodyHtml}
+              ${rows || `<tr><td colspan="5" class="aa-muted">No activity found.</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -1265,7 +1220,8 @@ function renderResults(payload) {
     const billingCard = renderAddressBlock("Billing", billing, null);
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
-    const activity = renderCustomerActivityMerged(customer, subs, orders);
+    const activity = renderCustomerActivity(customer, subs, orders);
+    const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1282,6 +1238,7 @@ function renderResults(payload) {
       </section>
 
       ${activity || ""}
+      ${ledger || ""}
       ${healthSummary || ""}
     `;
   }
