@@ -293,7 +293,7 @@
     }
 
     /* Customer: 3 across on desktop (ID / Username / Name) */
-    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    .aa-tiles.customer{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 
     /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
     .aa-grid-2{
@@ -596,17 +596,25 @@
       font-weight:950;
     }
     .aa-notes-arrow{
-      font-size:12px;
+      font-size:24px;
+      line-height:1;
+      font-weight:900;
       color:rgba(30,144,255,.98);
-      transform:translateY(1px);
+      transform:translateY(0);
     }
 
     /* Expanded notes row */
     .aa-notes-row td{
       background:rgba(15,23,42,.02);
       padding:12px;
+      text-align:right;
     }
     .aa-notes-box{
+      display:block;
+      width:min(760px, 100%);
+      margin-left:auto;
+      margin-right:0;
+      text-align:left;
       border:1px solid var(--border);
       border-radius:12px;
       background:#fff;
@@ -971,7 +979,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-017"></script>
+  <script src="./main.js?v=2026-03-10-018"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
