@@ -602,6 +602,13 @@
       line-height:1.35;
       white-space:pre-wrap;
     }
+    .aa-items{
+      display:block;
+      max-width:100%;
+      white-space:normal;
+      overflow-wrap:anywhere;
+      word-break:break-word;
+    }
 
     /* Arnold Admin — Totals layout (OkObserver-ish) */
 .aa-totals-grid{
@@ -879,6 +886,34 @@ table.aa-totals-table tr.aa-totals-total td{
   to { background-position: -200% 0; }
 }
 
+
+.aa-subscription-summary{
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+}
+.aa-subscription-tools{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.aa-orders-table .aa-muted + .aa-order-flag,
+.aa-orders-table .aa-muted + .aa-order-flag-latest,
+.aa-orders-table .aa-muted + .aa-order-flag-problem{
+  margin-left:8px;
+}
+.aa-orders-table td:nth-child(2) .aa-order-flag{
+  margin-left:8px;
+}
+.aa-items{
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+@media (max-width: 980px){
+  .aa-subscription-summary{
+    grid-template-columns:1fr;
+  }
+}
+
 </style>
 </head>
 
@@ -940,7 +975,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-013"></script>
+  <script src="./main.js?v=2026-03-10-014"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
