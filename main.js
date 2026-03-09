@@ -1116,8 +1116,8 @@ function renderSubscriptionRow(s) {
       if (started) {
         events.push({
           date: started,
-          event: `Subscription started${sid ? ` #${sid}` : ""}`,
-          orderId: "",
+          event: "Subscription started",
+          orderId: sid ? `#${sid}` : "",
           status: String(s?.status ?? ""),
           total: ""
         });
@@ -1150,13 +1150,13 @@ function renderSubscriptionRow(s) {
 
     const rows = events.map((e) => `
       <tr>
-        <td>${esc(fmtDateWithAge(e.date))}</td>
-        <td>${esc(e.event || "—")}</td>
         <td>${
   e.orderId
-    ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(String(e.orderId).replace(/^#/, ""))}&action=edit" target="_blank" rel="noopener noreferrer">${esc(e.orderId)}</a>${renderCopyButton("Order ID", e.orderId)}`
+    ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(String(e.orderId).replace(/^#/, ""))}&action=edit" target="_blank" rel="noopener noreferrer">${esc(e.orderId)}</a>${renderCopyButton("Subscription / Order ID", e.orderId)}`
     : "—"
 }</td>
+        <td>${esc(fmtDateWithAge(e.date))}</td>
+        <td>${esc(e.event || "—")}</td>
         <td>${e.status ? renderStatusPill(e.status) : '<span class="aa-muted">—</span>'}</td>
         <td class="aa-right">${e.total ? esc(e.total) : "—"}</td>
       </tr>
@@ -1172,16 +1172,16 @@ function renderSubscriptionRow(s) {
           <table class="aa-table" style="min-width:860px; table-layout:fixed;">
             <colgroup>
               <col style="width:180px;">
+              <col style="width:180px;">
               <col style="width:260px;">
-              <col style="width:160px;">
               <col style="width:140px;">
               <col style="width:120px;">
             </colgroup>
             <thead>
               <tr>
+                <th>Subscription / Order ID</th>
                 <th>Date</th>
                 <th>Event</th>
-                <th>Order ID</th>
                 <th>Status</th>
                 <th class="aa-right">Total</th>
               </tr>
@@ -1241,9 +1241,9 @@ function renderResults(payload) {
         </div>
       </section>
 
-      ${healthSummary || ""}
       ${activity || ""}
       ${ledger || ""}
+      ${healthSummary || ""}
     `;
   }
 
