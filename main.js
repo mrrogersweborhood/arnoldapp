@@ -5,7 +5,7 @@
   "use strict";
 
   // -----------------------------
-  // CONFIG stuff
+  // CONFIG stuff x2
   // -----------------------------
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const WOO_ADMIN = "https://okobserver.org/wp-admin/post.php";
