@@ -1221,7 +1221,6 @@ function renderResults(payload) {
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
     const activity = renderCustomerActivity(customer, subs, orders);
-    const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1238,7 +1237,6 @@ function renderResults(payload) {
       </section>
 
       ${activity || ""}
-      ${ledger || ""}
       ${healthSummary || ""}
     `;
   }
