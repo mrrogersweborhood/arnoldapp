@@ -138,7 +138,7 @@
       if (qtyNum > 0) totalQty += qtyNum;
 
       if (!nm) continue;
-      if (qtyNum > 0) parts.push(`${nm} ×${qtyNum}`);
+      if (qtyNum > 1) parts.push(`${nm} (qty ${qtyNum})`);
       else parts.push(nm);
     }
 
@@ -571,7 +571,7 @@ function setSessionPill(isLoggedIn, name) {
     const isOpen = set.has(id);
 
     const safeNotes = Array.isArray(notes) ? notes : [];
-    const arrow = isOpen ? "▼" : "▾";
+    const arrow = isOpen ? "▾" : "▸";
 
     return `
       <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
@@ -1098,26 +1098,27 @@ function renderSubscriptionRow(s) {
     const events = [];
     const subscriptions = Array.isArray(subs) ? subs : [];
     const orderArr = Array.isArray(orders) ? orders : [];
-    const subById = new Map(subscriptions.map((s) => [String(s?.id ?? ""), s]));
 
     if (customer?.date_created) {
       events.push({
         date: customer.date_created,
         event: "Customer created",
-        orderId: "",
+        recordId: "",
+        recordKind: "",
         status: "",
         total: ""
       });
     }
 
     subscriptions.forEach((s) => {
-      const sid = String(s?.id ?? "");
+      const sid = String(s?.id ?? "").trim();
       const started = s?.start_date || s?.date_created || null;
       if (started) {
         events.push({
           date: started,
           event: "Subscription started",
-          orderId: sid ? `#${sid}` : "",
+          recordId: sid ? `#${sid}` : "",
+          recordKind: sid ? "subscription" : "",
           status: String(s?.status ?? ""),
           total: ""
         });
@@ -1127,20 +1128,17 @@ function renderSubscriptionRow(s) {
     orderArr.forEach((o) => {
       const oid = String(o?.id ?? "").trim();
       const status = String(o?.status ?? "");
-      const linkedSubIds = Array.isArray(o?.meta_data)
-        ? o.meta_data
-            .filter((m) => String(m?.key ?? "").toLowerCase() in [])
-        : []
       let event = "Order";
       if (status.toLowerCase() === "completed" || status.toLowerCase() === "processing") event = "Renewal";
       if (isProblemOrderStatus(status)) event = "Problem order";
-      const maybeParent = subscriptions.find((s) => String(s?.parent_id ?? "").trim() == oid);
+      const maybeParent = subscriptions.find((s) => String(s?.parent_id ?? "").trim() === oid);
       if (maybeParent) event = "Parent order";
 
       events.push({
         date: o?.date_created,
         event,
-        orderId: oid ? `#${oid}` : "",
+        recordId: oid ? `#${oid}` : "",
+        recordKind: oid ? "order" : "",
         status,
         total: fmtMoney(o?.total, o?.currency)
       });
@@ -1148,19 +1146,23 @@ function renderSubscriptionRow(s) {
 
     events.sort((a, b) => new Date(b?.date || 0) - new Date(a?.date || 0));
 
-    const rows = events.map((e) => `
+    const rows = events.map((e) => {
+      const idValue = String(e?.recordId ?? "").trim();
+      const postId = idValue.replace(/^#/, "");
+      const idHtml = idValue
+        ? `<a class="${e.recordKind === "subscription" ? "aa-sub-id" : "aa-order-id"}" href="${WOO_ADMIN}?post=${esc(postId)}&action=edit" target="_blank" rel="noopener noreferrer">${esc(idValue)}</a>${renderCopyButton(e.recordKind === "subscription" ? "Subscription ID" : "Order ID", idValue)}`
+        : "—";
+
+      return `
       <tr>
-        <td>${
-  e.orderId
-    ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(String(e.orderId).replace(/^#/, ""))}&action=edit" target="_blank" rel="noopener noreferrer">${esc(e.orderId)}</a>${renderCopyButton("Subscription / Order ID", e.orderId)}`
-    : "—"
-}</td>
+        <td>${idHtml}</td>
         <td>${esc(fmtDateWithAge(e.date))}</td>
         <td>${esc(e.event || "—")}</td>
         <td>${e.status ? renderStatusPill(e.status) : '<span class="aa-muted">—</span>'}</td>
         <td class="aa-right">${e.total ? esc(e.total) : "—"}</td>
       </tr>
-    `).join("");
+    `;
+    }).join("");
 
     return `
       <section class="card aa-section">
@@ -1443,7 +1445,7 @@ function renderHierarchySection(subs, orders) {
 
   const linkedOrderIds = new Set();
 
-  const subLedgerColGroup = `
+  const ledgerColGroup = `
     <colgroup>
       <col style="width:110px;">
       <col style="width:150px;">
@@ -1451,20 +1453,8 @@ function renderHierarchySection(subs, orders) {
       <col style="width:150px;">
       <col style="width:130px;">
       <col style="width:220px;">
-      <col style="width:140px;">
-    </colgroup>
-  `;
-
-  const orderLedgerColGroup = `
-    <colgroup>
-      <col style="width:105px;">
-      <col style="width:130px;">
-      <col style="width:150px;">
-      <col style="width:140px;">
       <col style="width:120px;">
-      <col style="width:220px;">
-      <col style="width:320px;">
-      <col style="width:140px;">
+      <col style="width:280px;">
     </colgroup>
   `;
 
@@ -1580,7 +1570,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
           <td>${paymentHtml}</td>
-          <td title="${esc(parentItems.text)}"><div class="aa-items-cell">${esc(parentItems.text)}${parentItems.countText !== "—" ? ` <span class="aa-muted">(${esc(parentItems.countText)})</span>` : ""}</div></td>
+          <td title="${esc(parentItems.text)}">${esc(parentItems.text)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1610,7 +1600,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
           <td>${paymentHtml}</td>
-          <td title="${esc(orderItems.text)}"><div class="aa-items-cell">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</div></td>
+          <td title="${esc(orderItems.text)}">${esc(orderItems.text)}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1622,7 +1612,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Orders</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${orderLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1653,7 +1643,7 @@ function renderHierarchySection(subs, orders) {
 
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${subLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1679,6 +1669,8 @@ function renderHierarchySection(subs, orders) {
           </table>
         </div>
 
+        ${renderSubscriptionActions(s)}
+
         ${renderSubNotesRow(s)}
 
         ${ordersTable}
@@ -1703,7 +1695,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
-            ${orderLedgerColGroup}
+            ${ledgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1737,7 +1729,7 @@ function renderHierarchySection(subs, orders) {
                     <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
                     <td>${paymentHtml}</td>
-                    <td title="${esc(orderItems.text)}"><div class="aa-items-cell">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</div></td>
+                    <td title="${esc(orderItems.text)}">${esc(orderItems.text)}</td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
                   </tr>
                   ${renderOrderNotesRow(o)}
