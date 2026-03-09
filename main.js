@@ -1809,7 +1809,9 @@ function renderTotals(data) {
       </div>
     </div>
   `;
-}  async function doLogin() {
+}
+
+async function doLogin() {
     const u = $("loginUser")?.value?.trim() || "";
     const p = $("loginPass")?.value?.trim() || "";
 
