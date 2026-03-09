@@ -1,11 +1,11 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R2-mergedActivity)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-10R3-widerSupportTimeline)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
   // -----------------------------
-  // CONFIG stuff x2
+  // CONFIG stuff
   // -----------------------------
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const WOO_ADMIN = "https://okobserver.org/wp-admin/post.php";
@@ -1112,12 +1112,13 @@ function renderSubscriptionRow(s) {
       rows.push({
         kind: "customer",
         id: "",
+        rowClass: "",
         idHtml: "—",
         date: customer.date_created,
-        event: "Customer created",
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Customer created</div><div class="aa-event-sub">Account created</div></div>`,
         statusHtml: '<span class="aa-muted">—</span>',
         total: "—",
-        details: "Account created",
+        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Account created</div><div class="aa-detail-secondary">Customer record opened in WooCommerce</div></div>`,
         notesHtml: '<span class="aa-muted">—</span>',
         expandedNotesRow: ""
       });
@@ -1128,20 +1129,26 @@ function renderSubscriptionRow(s) {
       const billing = s?.billing_interval && s?.billing_period
         ? `${s.billing_interval} ${s.billing_period}`
         : "—";
+      const nextPayment = fmtDate(s?.next_payment_date);
       const notes = Array.isArray(s?.notes) ? s.notes : [];
       const isOpen = id ? openSubNotes.has(id) : false;
+      const subStatus = String(s?.status ?? "—");
+      const rowClass = String(subStatus).toLowerCase() === 'cancelled' || String(subStatus).toLowerCase() === 'failed'
+        ? 'aa-row-problem aa-row-subscription'
+        : 'aa-row-subscription';
 
       rows.push({
         kind: "sub",
         id,
+        rowClass,
         idHtml: id
           ? `<a class="aa-sub-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Subscription ID", `#${id}`)}`
           : "—",
         date: s?.start_date || s?.date_created || null,
-        event: "Subscription started",
-        statusHtml: renderStatusPill(String(s?.status ?? "—")),
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Subscription started</div><div class="aa-event-sub">Recurring subscription</div></div>`,
+        statusHtml: renderStatusPill(subStatus),
         total: "—",
-        details: `Next ${fmtDate(s?.next_payment_date)} • Billing ${billing}`,
+        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Next ${esc(nextPayment)}</div><div class="aa-detail-secondary">Billing ${esc(billing)}</div></div>`,
         notesHtml: renderNotesToggle("sub", id || "sub", notes),
         expandedNotesRow: isOpen
           ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${buildNotesHtml(notes)}</div></td></tr>`
@@ -1152,25 +1159,27 @@ function renderSubscriptionRow(s) {
     for (const o of orderArr) {
       const id = String(o?.id ?? "").trim();
       const status = String(o?.status ?? "");
-      const items = getOrderItemsSummary(o).text;
       const payment = String(o?.payment_method_title ?? "").trim() || "—";
+      const items = getOrderItemsSummary(o).text;
       const notes = Array.isArray(o?.notes) ? o.notes : [];
       const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id)
         ? "Parent order"
         : (isProblemOrderStatus(status) ? "Problem order" : "Renewal");
       const isOpen = id ? openOrderNotes.has(id) : false;
+      const rowClass = isProblemOrderStatus(status) ? 'aa-row-problem' : '';
 
       rows.push({
         kind: "order",
         id,
+        rowClass,
         idHtml: id
           ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}`
           : "—",
         date: o?.date_created || null,
-        event,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(event)}</div><div class="aa-event-sub">Order activity</div></div>`,
         statusHtml: renderStatusPill(status || "—"),
         total: fmtMoney(o?.total, o?.currency),
-        details: `${payment} • ${items}`,
+        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">${esc(payment)}</div><div class="aa-detail-secondary">${esc(items)}</div></div>`,
         notesHtml: renderNotesToggle("order", id || "order", notes),
         expandedNotesRow: isOpen
           ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${buildNotesHtml(notes)}</div></td></tr>`
@@ -1182,13 +1191,13 @@ function renderSubscriptionRow(s) {
 
     const bodyHtml = rows.length
       ? rows.map((r) => `
-          <tr>
+          <tr class="${r.rowClass || ''}">
             <td>${r.idHtml}</td>
             <td>${esc(fmtDateWithAge(r.date))}</td>
-            <td>${esc(r.event)}</td>
+            <td>${r.eventHtml}</td>
             <td>${r.statusHtml}</td>
             <td class="aa-right">${esc(r.total)}</td>
-            <td><div class="aa-detail-wrap">${esc(r.details)}</div></td>
+            <td>${r.detailsHtml}</td>
             <td class="aa-notes-cell">${r.notesHtml}</td>
           </tr>
           ${r.expandedNotesRow || ""}
@@ -1199,7 +1208,7 @@ function renderSubscriptionRow(s) {
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Customer Activity</div>
-          <div class="aa-section-subtitle">Newest first</div>
+          <div class="aa-section-subtitle">Newest first • support timeline</div>
         </div>
         <div class="aa-table-wrap aa-compact-wrap">
           <table class="aa-table aa-compact-table">
@@ -1214,7 +1223,7 @@ function renderSubscriptionRow(s) {
                 <th>Event</th>
                 <th>Status</th>
                 <th class="aa-right">Total</th>
-                <th>Details</th>
+                <th>Summary</th>
                 <th>Notes</th>
               </tr>
             </thead>
