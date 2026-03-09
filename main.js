@@ -2007,19 +2007,7 @@ async function doSearch() {
     bindCopyButtons($("results"));
     bindOpenCandidateButtons($("results"));
     renderRawJson();
-  } else {
-    setStatus("warn", friendlyText(j?.error || j?.message) || `Search failed (${r.status})`);
-  }
-  renderRawJson();
-  return;
-}
-
-    setStatus("", "Search complete.");
-    $("results").innerHTML = renderResults(j);
-
-    bindNotesToggles($("results"));
-    bindCopyButtons($("results"));
-    renderRawJson();
+    return;
   }
 
   async function doTotals() {
