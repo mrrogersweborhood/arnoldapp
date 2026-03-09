@@ -460,7 +460,7 @@
       width:100%;
       border-collapse:separate;
       border-spacing:0;
-      table-layout:fixed;
+      min-width:860px; /* allows Orders columns without crushing */
     }
 .aa-table thead th{
   position:sticky;
@@ -602,64 +602,6 @@
       line-height:1.35;
       white-space:pre-wrap;
     }
-    .aa-items{
-      display:block;
-      max-width:100%;
-      white-space:normal;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-
-    .aa-compact-wrap{
-      overflow-x: visible;
-    }
-    table.aa-table.aa-compact-table{
-      table-layout: fixed;
-      min-width: 0;
-    }
-    .aa-compact-table col.aa-col-id{ width: 150px; }
-    .aa-compact-table col.aa-col-type{ width: 120px; }
-    .aa-compact-table col.aa-col-status{ width: 120px; }
-    .aa-compact-table col.aa-col-date{ width: 150px; }
-    .aa-compact-table col.aa-col-total{ width: 95px; }
-    .aa-compact-table col.aa-col-details{ width: auto; }
-    .aa-compact-table col.aa-col-notes{ width: 100px; }
-    .aa-compact-table td,
-    .aa-compact-table th{
-      white-space: normal;
-    }
-    .aa-compact-table .aa-col-id,
-    .aa-compact-table .aa-col-status,
-    .aa-compact-table .aa-col-total,
-    .aa-compact-table .aa-col-notes{
-      white-space: nowrap;
-    }
-    .aa-detail-wrap{
-      display:block;
-      line-height:1.25;
-      overflow-wrap:anywhere;
-      word-break:break-word;
-    }
-    .aa-detail-payment{
-      font-weight:900;
-    }
-    .aa-detail-items{
-      color:#334155;
-    }
-    .aa-problem-text{
-      color:#b91c1c;
-      font-weight:900;
-    }
-
-    .aa-compact-table{
-      width:100%;
-      table-layout:fixed;
-    }
-    .aa-payment-problem{
-      color:#b91c1c;
-      font-weight:950;
-    }
-
 
     /* Arnold Admin — Totals layout (OkObserver-ish) */
 .aa-totals-grid{
@@ -998,7 +940,7 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match main.js build -->
-  <script src="./main.js?v=2026-03-10-015"></script>
+  <script src="./main.js?v=2026-03-10-013"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
