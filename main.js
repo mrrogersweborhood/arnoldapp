@@ -571,7 +571,7 @@ function setSessionPill(isLoggedIn, name) {
     const isOpen = set.has(id);
 
     const safeNotes = Array.isArray(notes) ? notes : [];
-    const arrow = isOpen ? "▾" : "▸";
+    const arrow = isOpen ? "▼" : "▾";
 
     return `
       <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
@@ -1443,7 +1443,7 @@ function renderHierarchySection(subs, orders) {
 
   const linkedOrderIds = new Set();
 
-  const ledgerColGroup = `
+  const subLedgerColGroup = `
     <colgroup>
       <col style="width:110px;">
       <col style="width:150px;">
@@ -1451,8 +1451,20 @@ function renderHierarchySection(subs, orders) {
       <col style="width:150px;">
       <col style="width:130px;">
       <col style="width:220px;">
+      <col style="width:140px;">
+    </colgroup>
+  `;
+
+  const orderLedgerColGroup = `
+    <colgroup>
+      <col style="width:105px;">
+      <col style="width:130px;">
+      <col style="width:150px;">
+      <col style="width:140px;">
       <col style="width:120px;">
-      <col style="width:280px;">
+      <col style="width:220px;">
+      <col style="width:320px;">
+      <col style="width:140px;">
     </colgroup>
   `;
 
@@ -1568,7 +1580,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
           <td>${paymentHtml}</td>
-          <td title="${esc(parentItems.text)}">${esc(parentItems.text)}${parentItems.countText !== "—" ? ` <span class="aa-muted">(${esc(parentItems.countText)})</span>` : ""}</td>
+          <td title="${esc(parentItems.text)}"><div class="aa-items-cell">${esc(parentItems.text)}${parentItems.countText !== "—" ? ` <span class="aa-muted">(${esc(parentItems.countText)})</span>` : ""}</div></td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1598,7 +1610,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
           <td>${paymentHtml}</td>
-          <td title="${esc(orderItems.text)}">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</td>
+          <td title="${esc(orderItems.text)}"><div class="aa-items-cell">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</div></td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1610,7 +1622,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Orders</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${ledgerColGroup}
+            ${orderLedgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1641,7 +1653,7 @@ function renderHierarchySection(subs, orders) {
 
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
-            ${ledgerColGroup}
+            ${subLedgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1667,8 +1679,6 @@ function renderHierarchySection(subs, orders) {
           </table>
         </div>
 
-        ${renderSubscriptionActions(s)}
-
         ${renderSubNotesRow(s)}
 
         ${ordersTable}
@@ -1693,7 +1703,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Other Orders (not linked to a subscription)</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
           <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
-            ${ledgerColGroup}
+            ${orderLedgerColGroup}
             <thead>
               <tr>
                 <th>Type</th>
@@ -1727,7 +1737,7 @@ function renderHierarchySection(subs, orders) {
                     <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
                     <td>${paymentHtml}</td>
-                    <td title="${esc(orderItems.text)}">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</td>
+                    <td title="${esc(orderItems.text)}"><div class="aa-items-cell">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</div></td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
                   </tr>
                   ${renderOrderNotesRow(o)}
