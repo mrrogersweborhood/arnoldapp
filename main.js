@@ -118,6 +118,37 @@
     return esc(payment);
   }
 
+  function getOrderItemsSummary(order) {
+    const li = Array.isArray(order?.line_items)
+      ? order.line_items
+      : (Array.isArray(order?.items) ? order.items : []);
+
+    if (!li.length) {
+      return { text: "—", countText: "—" };
+    }
+
+    const parts = [];
+    let totalQty = 0;
+
+    for (const it of li) {
+      const nm = String(it?.name ?? "").trim();
+      const qtyRaw = it?.quantity ?? it?.qty ?? 0;
+      const qtyNum = Number.isFinite(Number(qtyRaw)) ? Number(qtyRaw) : 0;
+
+      if (qtyNum > 0) totalQty += qtyNum;
+
+      if (!nm) continue;
+      if (qtyNum > 0) parts.push(`${nm} ×${qtyNum}`);
+      else parts.push(nm);
+    }
+
+    const countText = totalQty > 0 ? `${totalQty}` : `${li.length}`;
+    return {
+      text: parts.length ? parts.join("; ") : "—",
+      countText
+    };
+  }
+
   function renderOrderBadges(order, opts = {}) {
     const status = String(order?.status ?? "").trim().toLowerCase();
     const isLatest = !!opts.isLatest;
@@ -748,21 +779,8 @@ function renderSubscriptionRow(s) {
     const paymentHtml = renderPaymentWithWarning(o);
 
     // Items purchased (WooCommerce orders use `line_items`)
-    const li = Array.isArray(o?.line_items)
-      ? o.line_items
-      : (Array.isArray(o?.items) ? o.items : []);
-    const itemsText = li.length
-      ? li
-          .map((it) => {
-            const nm = (it?.name ?? "").trim();
-            const qty = it?.quantity ?? it?.qty ?? "";
-            if (!nm) return "";
-            if (qty === "" || qty == null) return nm;
-            return `${nm} ×${qty}`;
-          })
-          .filter(Boolean)
-          .join("; ")
-      : "—";
+    const orderItems = getOrderItemsSummary(o);
+    const itemsText = orderItems.text;
 
     const notes = Array.isArray(o?.notes) ? o.notes : [];
     const isOpen = openOrderNotes.has(id);
@@ -792,7 +810,7 @@ function renderSubscriptionRow(s) {
         <td title="${esc(itemsText)}">${esc(itemsText)}</td>
         <td class="aa-notes-cell">${btn}</td>
       </tr>
-      ${isOpen ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
+      ${isOpen ? `<tr class="aa-notes-row"><td colspan="8"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
   }
 
@@ -1207,6 +1225,7 @@ function renderResults(payload) {
     const shippingCard = renderAddressBlock("Shipping", shipping, billing);
     const healthSummary = renderSubscriptionHealthSummary(customer, subs, orders);
     const activity = renderCustomerActivity(customer, subs, orders);
+    const ledger = renderSubscriptionLedger(subs, orders);
 
     return `
       <section class="card aa-section">
@@ -1224,6 +1243,7 @@ function renderResults(payload) {
 
       ${healthSummary || ""}
       ${activity || ""}
+      ${ledger || ""}
     `;
   }
 
@@ -1432,6 +1452,7 @@ function renderHierarchySection(subs, orders) {
       <col style="width:130px;">
       <col style="width:220px;">
       <col style="width:120px;">
+      <col style="width:280px;">
     </colgroup>
   `;
 
@@ -1484,7 +1505,7 @@ function renderHierarchySection(subs, orders) {
 
     return `
       <tr class="aa-notes-row">
-        <td colspan="7">
+        <td colspan="8">
           <div class="aa-notes-box">${notesHtml}</div>
         </td>
       </tr>
@@ -1530,6 +1551,7 @@ function renderHierarchySection(subs, orders) {
       linkedOrderIds.add(oid);
 
       const paymentHtml = renderPaymentWithWarning(parentOrder);
+      const parentItems = getOrderItemsSummary(parentOrder);
       const notes = Array.isArray(parentOrder?.notes) ? parentOrder.notes : [];
 
       orderRows.push(`
@@ -1546,6 +1568,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(parentOrder?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(parentOrder?.total, parentOrder?.currency))}</td>
           <td>${paymentHtml}</td>
+          <td title="${esc(parentItems.text)}">${esc(parentItems.text)}${parentItems.countText !== "—" ? ` <span class="aa-muted">(${esc(parentItems.countText)})</span>` : ""}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1558,6 +1581,7 @@ function renderHierarchySection(subs, orders) {
       linkedOrderIds.add(oid);
 
       const paymentHtml = renderPaymentWithWarning(o);
+      const orderItems = getOrderItemsSummary(o);
       const notes = Array.isArray(o?.notes) ? o.notes : [];
 
       orderRows.push(`
@@ -1574,6 +1598,7 @@ function renderHierarchySection(subs, orders) {
           <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
           <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
           <td>${paymentHtml}</td>
+          <td title="${esc(orderItems.text)}">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</td>
           <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
         </tr>
       `);
@@ -1584,7 +1609,7 @@ function renderHierarchySection(subs, orders) {
       <div class="aa-card" style="margin-top:12px;">
         <div class="aa-card-title">Orders</div>
         <div class="aa-table-wrap" style="margin-top:10px;">
-          <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
+          <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
             ${ledgerColGroup}
             <thead>
               <tr>
@@ -1594,13 +1619,14 @@ function renderHierarchySection(subs, orders) {
                 <th>Status</th>
                 <th class="aa-right">Total</th>
                 <th>Payment</th>
+                <th>Items</th>
                 <th style="text-align:right;">Notes</th>
               </tr>
             </thead>
             <tbody>
               ${orderRows.filter(Boolean).join("") || `
                 <tr>
-                  <td colspan="7" class="aa-muted">No orders found for this subscription in the current payload.</td>
+                  <td colspan="8" class="aa-muted">No orders found for this subscription in the current payload.</td>
                 </tr>
               `}
             </tbody>
@@ -1614,7 +1640,7 @@ function renderHierarchySection(subs, orders) {
         <div class="aa-card-title">Subscription</div>
 
         <div class="aa-table-wrap" style="margin-top:10px;">
-          <table class="aa-table" style="min-width:1030px; table-layout:fixed;">
+          <table class="aa-table" style="min-width:1310px; table-layout:fixed;">
             ${ledgerColGroup}
             <thead>
               <tr>
@@ -1676,6 +1702,7 @@ function renderHierarchySection(subs, orders) {
                 <th>Status</th>
                 <th class="aa-right">Total</th>
                 <th>Payment</th>
+                <th>Items</th>
                 <th style="text-align:right;">Notes</th>
               </tr>
             </thead>
@@ -1684,6 +1711,7 @@ function renderHierarchySection(subs, orders) {
                 const oid = String(o?.id ?? "—");
                 const notes = Array.isArray(o?.notes) ? o.notes : [];
                 const paymentHtml = renderPaymentWithWarning(o);
+                const orderItems = getOrderItemsSummary(o);
 
                 return `
                   <tr>
@@ -1699,6 +1727,7 @@ function renderHierarchySection(subs, orders) {
                     <td>${renderStatusPill(String(o?.status ?? "—"))}</td>
                     <td class="aa-right">${esc(fmtMoney(o?.total, o?.currency))}</td>
                     <td>${paymentHtml}</td>
+                    <td title="${esc(orderItems.text)}">${esc(orderItems.text)}${orderItems.countText !== "—" ? ` <span class="aa-muted">(${esc(orderItems.countText)})</span>` : ""}</td>
                     <td class="aa-notes-cell">${renderNotesToggle("order", oid, notes)}</td>
                   </tr>
                   ${renderOrderNotesRow(o)}
