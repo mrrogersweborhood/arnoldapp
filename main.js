@@ -1,6 +1,11 @@
 // 🟢 main.js
 // Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1-timelineHealthClipboard)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
+var openSubNotes = window.openSubNotes || new Set();
+var openOrderNotes = window.openOrderNotes || new Set();
+window.openSubNotes = openSubNotes;
+window.openOrderNotes = openOrderNotes;
+
 (() => {
   "use strict";
 
@@ -570,8 +575,6 @@ function setSessionPill(isLoggedIn, name) {
   // -----------------------------
   // NOTES (COLLAPSIBLE)
   // -----------------------------
-  const openSubNotes = new Set();
-  const openOrderNotes = new Set();
 
   function bindNotesToggles(container) {
     if (!container) return;
