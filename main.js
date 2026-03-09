@@ -646,21 +646,25 @@ function setSessionPill(isLoggedIn, name) {
 
     const rows = matches.map((m) => {
       const c = m?.customer || {};
-      const name = [c?.first_name, c?.last_name].map((v) => String(v ?? '').trim()).filter(Boolean).join(' ') || '—';
+      const name = [c?.first_name, c?.last_name]
+        .map((v) => String(v ?? '').trim())
+        .filter(Boolean)
+        .join(' ') || '—';
       const email = String(c?.email ?? '').trim() || '—';
       const idRaw = c?.id != null && String(c.id).trim() ? String(c.id).trim() : '';
       const id = idRaw ? `#${idRaw}` : '—';
       const openValue = email !== '—' ? email : (idRaw ? `customer #${idRaw}` : '');
+      const openCell = openValue
+        ? `<button type="button" class="aa-copy-btn aa-candidate-open-btn" data-open-query="${esc(openValue)}">Open</button>`
+        : `<span class="aa-muted">—</span>`;
 
       return `
-        <div class="aa-candidate-row">
-          <div class="aa-candidate-open">
-            ${openValue ? `<button type="button" class="aa-copy-btn aa-candidate-open-btn" data-open-query="${esc(openValue)}">Open</button>` : `<span class="aa-muted">—</span>`}
-          </div>
-          <div class="aa-candidate-name">${esc(name)}</div>
-          <div class="aa-candidate-email">${esc(email)}</div>
-          <div class="aa-candidate-id">${esc(id)}</div>
-        </div>
+        <tr>
+          <td>${openCell}</td>
+          <td>${esc(name)}</td>
+          <td>${esc(email)}</td>
+          <td>${esc(id)}</td>
+        </tr>
       `;
     }).join('');
 
@@ -671,16 +675,26 @@ function setSessionPill(isLoggedIn, name) {
           <div class="aa-section-subtitle">Select the correct customer</div>
         </div>
 
-        <div class="aa-candidate-table-wrap">
-          <div class="aa-candidate-header">
-            <div>Open</div>
-            <div>Name</div>
-            <div>Email</div>
-            <div>Customer ID</div>
-          </div>
-          <div class="aa-candidate-list">
-            ${rows}
-          </div>
+        <div class="aa-table-wrap">
+          <table class="aa-table" style="min-width:760px; table-layout:fixed;">
+            <colgroup>
+              <col style="width:120px;">
+              <col style="width:220px;">
+              <col style="width:280px;">
+              <col style="width:140px;">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Open</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Customer ID</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
         </div>
       </section>
     `;
