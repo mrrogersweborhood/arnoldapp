@@ -63,12 +63,8 @@
   }
 
   function fmtDateWithAge(val) {
-    const base = fmtDate(val);
-    if (base === "—") return base;
-    const age = formatAgeFromDate(val);
-    return `${base}${age}`;
-  }
-
+  return fmtDate(val);
+}
   async function copyText(text) {
     const value = String(text ?? "").trim();
     if (!value || value === "—") return false;
@@ -1138,7 +1134,11 @@ function renderSubscriptionRow(s) {
       <tr>
         <td>${esc(fmtDateWithAge(e.date))}</td>
         <td>${esc(e.event || "—")}</td>
-        <td>${e.orderId ? `${esc(e.orderId)}${renderCopyButton("Order ID", e.orderId)}` : "—"}</td>
+        <td>${
+  e.orderId
+    ? `<a class="aa-order-id" href="${WOO_ADMIN}?post=${esc(String(e.orderId).replace(/^#/, ""))}&action=edit" target="_blank" rel="noopener noreferrer">${esc(e.orderId)}</a>${renderCopyButton("Order ID", e.orderId)}`
+    : "—"
+}</td>
         <td>${e.status ? renderStatusPill(e.status) : '<span class="aa-muted">—</span>'}</td>
         <td class="aa-right">${e.total ? esc(e.total) : "—"}</td>
       </tr>
