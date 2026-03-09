@@ -1,5 +1,5 @@
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-10R2-splitPass1-main)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-10R2-splitPass1Safe)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
@@ -15,7 +15,73 @@
   // -----------------------------
   const $ = (id) => document.getElementById(id);
 
-  // Utility helpers moved to formatters.js
+  async function copyText(text) {
+    const value = String(text ?? "").trim();
+    if (!value || value === "—") return false;
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch (_) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = value;
+        ta.setAttribute("readonly", "readonly");
+        ta.style.position = "fixed";
+        ta.style.top = "-9999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return !!ok;
+      } catch (_) {
+        return false;
+      }
+    }
+  }
+
+  function renderOrderBadges(order, opts = {}) {
+    const status = String(order?.status ?? "").trim().toLowerCase();
+    const isLatest = !!opts.isLatest;
+
+    const badges = [];
+    if (isLatest) {
+      badges.push('<span class="aa-order-flag aa-order-flag-latest">★ Latest</span>');
+    }
+
+    if (status === "failed") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Failed</span>');
+    } else if (status === "refunded") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Refunded</span>');
+    } else if (status === "cancelled") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Cancelled</span>');
+    } else if (status === "on-hold") {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ On hold</span>');
+    } else if (status.includes("chargeback")) {
+      badges.push('<span class="aa-order-flag aa-order-flag-problem">⚠ Chargeback</span>');
+    }
+
+    return badges.join("");
+  }
+
+  // -----------------------------
+  // STATUS LINE
+
+  // -----------------------------
+  function setStatus(kind, text) {
+    const sl = $("statusLine");
+    if (!sl) return;
+    sl.className = "msg" + (kind ? ` ${kind}` : "");
+    sl.textContent = friendlyText(text ?? "");
+  }
+
+  // -----------------------------
+  // PRETTY FORMATTERS
+  // -----------------------------
+
+  // -----------------------------
+  // SAFE HTML STRIP FOR NOTES
+  // -----------------------------
 
   // -----------------------------
   // SESSION UI
@@ -121,7 +187,9 @@ function setSessionPill(isLoggedIn, name) {
     renderRawJson();
   }
 
-  // Customer/address renderers moved to renderCustomer.js
+  // -----------------------------
+  // ADDRESS / CUSTOMER CARDS
+  // -----------------------------
 
   // -----------------------------
   // NOTES (COLLAPSIBLE)
@@ -166,7 +234,6 @@ function setSessionPill(isLoggedIn, name) {
       });
     });
   }
-
 
   function bindCopyButtons(container) {
     if (!container) return;
@@ -284,7 +351,6 @@ function setSessionPill(isLoggedIn, name) {
     `;
   }
 
-
 function renderSubscriptionRow(s) {
     const id = String(s?.id ?? "—");
     const status = String(s?.status ?? "—");
@@ -369,35 +435,6 @@ function renderSubscriptionRow(s) {
       </tr>
       ${isOpen ? `<tr class="aa-notes-row"><td colspan="8"><div class="aa-notes-box">${notesHtml}</div></td></tr>` : ``}
     `;
-  }
-
-
-  function isProblemOrderStatus(status) {
-    const raw = String(status ?? "").trim().toLowerCase();
-    return raw === "failed" || raw === "refunded" || raw === "cancelled" || raw === "on-hold" || raw.includes("chargeback");
-  }
-
-  function toTimestamp(val) {
-    if (!val) return null;
-    const ts = new Date(val).getTime();
-    return Number.isFinite(ts) ? ts : null;
-  }
-
-  function firstUsableDate(...vals) {
-    for (const val of vals) {
-      if (toTimestamp(val) != null) return val;
-    }
-    return null;
-  }
-
-  function getSubscriptionStartDate(sub) {
-    return firstUsableDate(
-      sub?.start_date,
-      sub?.date_created,
-      sub?.date_created_gmt,
-      sub?.created_at,
-      sub?.date_created_local
-    );
   }
 
   function getSortedOrdersNewestFirst(orders) {
@@ -782,7 +819,6 @@ function renderSubscriptionRow(s) {
     `;
   }
 
-
 function renderResults(payload) {
     if (payload?.intent === "customer_candidates_by_name") return renderCandidateMatches(payload);
 
@@ -878,7 +914,6 @@ if (Array.isArray(md)) {
     }
   }
 }
-
 
   
 
@@ -1336,7 +1371,6 @@ function renderHierarchySection(subs, orders) {
     </section>
   `;
 }
-
 
 function renderTotals(data) {
   const d = data || {};
