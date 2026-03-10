@@ -1516,7 +1516,15 @@ async function doSearch() {
       const loggedInNow = $("sessionPill")?.classList?.contains("ok");
       applyLoginUserMask(!!loggedInNow);
     });
-    refreshSession().catch(() => setSessionPill(false, null));
+    refreshSession()
+  .then((loggedIn) => {
+    setSessionPill(loggedIn);
+    toggleLoginSearchUI(loggedIn);
+  })
+  .catch(() => {
+    setSessionPill(false, null);
+    toggleLoginSearchUI(false);
+  });
   }
 
   init();
