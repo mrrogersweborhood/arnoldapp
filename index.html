@@ -916,30 +916,34 @@ table.aa-totals-table tr.aa-totals-total td{
   <div class="wrap">
     <div class="card search-card">
       <div class="grid">
-        <div class="field">
-          <label for="loginUser">Username</label>
-          <input id="loginUser" autocomplete="username" placeholder="admin username" />
-        </div>
+<div id="loginFields">
+  <div class="field">
+    <label for="loginUser">Username</label>
+    <input id="loginUser" autocomplete="username" placeholder="admin username" />
+  </div>
 
-        <div class="field">
-          <label for="loginPass">Password</label>
-          <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
-        </div>
+  <div class="field">
+    <label for="loginPass">Password</label>
+    <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••••" />
+  </div>
 
-        <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end;">
-          <button id="btnLogin" class="btn">Login</button>
-          <button id="btnLogout" class="btn ghost">Logout</button>
-        </div>
+  <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end;">
+    <button id="btnLogin" class="btn">Login</button>
+    <button id="btnLogout" class="btn ghost">Logout</button>
+  </div>
+</div>
 
-        <div class="field" style="grid-column:1 / span 2;">
-          <label for="q">Search</label>
-          <input id="q" placeholder="Find subscription for email, find order #12345, etc." />
-        </div>
+<div id="searchFields">
+  <div class="field" style="grid-column:1 / span 2;">
+    <label for="q">Search</label>
+    <input id="q" placeholder="Find subscription for email, find order #12345, etc." />
+  </div>
 
-        <div style="display:flex; align-items:end; justify-content:flex-end;">
-          <button id="btnSearch" class="btn">Search</button>
-          <button id="btnTotals" class="btn ghost" style="margin-left:10px;">Totals</button>
-        </div>
+  <div style="display:flex; align-items:end; justify-content:flex-end;">
+    <button id="btnSearch" class="btn">Search</button>
+    <button id="btnTotals" class="btn ghost" style="margin-left:10px;">Totals</button>
+  </div>
+</div>
 
         <div style="grid-column:1 / -1; display:flex; justify-content:flex-start; gap:10px;">
           <div id="statusLine" class="msg"></div>
@@ -953,11 +957,11 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-035"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-035"></script>
-  <script src="./renderHealth.js?v=2026-03-10-035"></script>
-  <script src="./renderActivity.js?v=2026-03-10-035"></script>
-  <script src="./main.js?v=2026-03-10-035"></script>
+  <script src="./formatters.js?v=2026-03-10-037"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-037"></script>
+  <script src="./renderHealth.js?v=2026-03-10-037"></script>
+  <script src="./renderActivity.js?v=2026-03-10-037"></script>
+  <script src="./main.js?v=2026-03-10-037"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
