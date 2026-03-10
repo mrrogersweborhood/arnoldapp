@@ -323,7 +323,26 @@ function setSessionPill(isLoggedIn, name) {
     // Hide/reveal username field based on logged-in state
     applyLoginUserMask(!!isLoggedIn);
   }
+    // Hide/reveal username field based on logged-in state
+    applyLoginUserMask(!!isLoggedIn);
+  }
 
+  function toggleLoginSearchUI(isLoggedIn) {
+    const login = document.getElementById("loginFields");
+    const search = document.getElementById("searchFields");
+
+    if (login) login.style.display = isLoggedIn ? "none" : "";
+    if (search) search.style.display = isLoggedIn ? "" : "none";
+  }
+
+  async function refreshSession() {
+function toggleLoginSearchUI(isLoggedIn) {
+  const login = document.getElementById("loginFields");
+  const search = document.getElementById("searchFields");
+
+  if (login) login.style.display = isLoggedIn ? "none" : "";
+  if (search) search.style.display = isLoggedIn ? "" : "none";
+}
   async function refreshSession() {
     const r = await fetch(`${WORKER_BASE}/admin/status`, {
       method: "GET",
