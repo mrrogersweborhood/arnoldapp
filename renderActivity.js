@@ -74,17 +74,17 @@ function renderCustomerActivity(customer, subs, orders) {
       const notes = Array.isArray(s?.notes) ? s.notes : [];
       const isOpen = id ? __aaOpenSubNotes().has(id) : false;
       const subStatus = String(s?.status ?? "—");
-      const rowClass = String(subStatus).toLowerCase() === 'cancelled' || String(subStatus).toLowerCase() === 'failed'
-        ? 'aa-row-problem aa-row-subscription'
-        : 'aa-row-subscription';
+const rowClass = String(subStatus).toLowerCase() === 'failed'
+  ? 'aa-row-problem aa-row-subscription'
+  : 'aa-row-subscription';
 
       rows.push({
         kind: "sub",
         id,
         rowClass,
         idHtml: id
-          ? `<a class="aa-sub-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Subscription ID", `#${id}`)}`
-          : "—",
+  ? `<a class="aa-sub-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
+  : "—",
         date: s?.start_date || s?.date_created || null,
         eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Subscription started</div><div class="aa-event-sub">Recurring subscription</div></div>`,
         statusHtml: renderStatusPill(subStatus),
@@ -107,15 +107,17 @@ function renderCustomerActivity(customer, subs, orders) {
         ? "Parent order"
         : (isProblemOrderStatus(status) ? "Problem order" : "Renewal");
       const isOpen = id ? __aaOpenOrderNotes().has(id) : false;
-      const rowClass = isProblemOrderStatus(status) ? 'aa-row-problem' : '';
+      const rowClass = String(status).toLowerCase() === "failed"
+        ? "aa-row-problem"
+        : "";
 
       rows.push({
         kind: "order",
         id,
         rowClass,
-        idHtml: id
-          ? `<a class="aa-order-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>${renderCopyButton("Order ID", `#${id}`)}`
-          : "—",
+idHtml: id
+  ? `<a class="aa-order-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
+  : "—",
         date: o?.date_created || null,
         eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(event)}</div><div class="aa-event-sub">Order activity</div></div>`,
         statusHtml: renderStatusPill(status || "—"),
