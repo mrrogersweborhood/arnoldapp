@@ -1380,8 +1380,16 @@ async function doLogin() {
       return;
     }
 
-    setStatus("", "Logged in.");
-    await refreshSession();
+setStatus("", "Logged in.");
+await refreshSession();
+
+window.scrollTo({
+  top: 0,
+  behavior: "smooth"
+});
+
+const q = document.getElementById("q");
+if (q) q.focus();
   }
 
   async function doLogout() {

@@ -17,18 +17,21 @@ function renderSubscriptionHealthSummary(customer, subs, orders) {
     const subStatus = String(primarySub?.status ?? "—");
     const nextPayment = primarySub?.next_payment_date ? fmtDate(primarySub.next_payment_date) : "—";
 
-    let tone = "healthy";
-    let headline = "Subscription looks healthy";
-    if (latestOrder && isProblemOrderStatus(latestOrder?.status)) {
-      tone = "problem";
-      headline = "Latest payment has a problem";
-    } else if (failedCount > 0) {
-      tone = "problem";
-      headline = "Customer has failed/problem payments";
-    } else if (!primarySub) {
-      tone = "watch";
-      headline = "No subscription found";
-    }
+let tone = "healthy";
+let headline = "Subscription looks healthy";
+
+const latestStatus = String(latestOrder?.status ?? "").toLowerCase();
+
+if (latestStatus === "failed") {
+  tone = "problem";
+  headline = "Latest payment failed";
+} else if (failedCount > 0) {
+  tone = "problem";
+  headline = "Customer has failed payments";
+} else if (!primarySub) {
+  tone = "watch";
+  headline = "No subscription found";
+}
 
     const alertHtml = tone === "problem" ? `
       <div class="aa-health-alert aa-health-alert-problem">
