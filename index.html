@@ -522,32 +522,31 @@
     @media (max-width: 860px){
       .aa-totals-grid{ grid-template-columns:1fr; }
     }
-    /* Clickable IDs (order / subscription) */
-.aa-order-id,
-.aa-sub-id{
-  font-weight:950;
-  color:var(--brand);
-  text-decoration:underline;
-  text-underline-offset:3px;
-  text-decoration-thickness:2px;
-  margin-right:10px;
-  cursor:pointer;
-}
+    .aa-order-id,
+    .aa-sub-id{
+      font-weight:950;
+      color:var(--brand);
+      text-decoration:none;
+      margin-right:10px;
+    }
 
-.aa-order-id:hover,
-.aa-sub-id:hover{
-  color:#0f6fd6;
-  text-decoration-thickness:3px;
-}
-/* Generic clickable values */
-a{
-  text-decoration:underline;
-  text-underline-offset:3px;
-}
+    .aa-order-id:hover,
+    .aa-sub-id:hover{
+      text-decoration:underline;
+    }
 
-a:hover{
-  text-decoration-thickness:2px;
-}
+    .aa-value a{
+      color:var(--brand);
+      font-weight:850;
+      text-decoration:underline;
+      text-underline-offset:3px;
+      text-decoration-thickness:2px;
+    }
+
+    .aa-value a:hover{
+      color:#0f6fd6;
+      text-decoration-thickness:3px;
+    }
     .aa-muted{ color:var(--muted); font-weight:850; }
 
     /* Notes toggle (right aligned) */
@@ -953,12 +952,12 @@ table.aa-totals-table tr.aa-totals-total td{
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
   </div>
 
-  <!-- Cache-bust MUST match split build -->
-  <script src="./formatters.js?v=2026-03-10-032"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-032"></script>
-  <script src="./renderHealth.js?v=2026-03-10-032"></script>
-  <script src="./renderActivity.js?v=2026-03-10-032"></script>
-  <script src="./main.js?v=2026-03-10-032"></script>
+  <!-- Cache-bust MUST match split modular build -->
+  <script src="./formatters.js?v=2026-03-10-033"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-033"></script>
+  <script src="./renderHealth.js?v=2026-03-10-033"></script>
+  <script src="./renderActivity.js?v=2026-03-10-033"></script>
+  <script src="./main.js?v=2026-03-10-033"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

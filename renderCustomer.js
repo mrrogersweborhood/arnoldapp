@@ -22,7 +22,7 @@ function renderCustomerCard(customer) {
 
           <div class="aa-tile">
             <div class="aa-label">Email</div>
-            ${renderValueWithCopy(String(email), String(email))}
+            <div class="aa-value">${esc(String(email))}</div>
           </div>
 
           <div class="aa-tile">
@@ -143,6 +143,10 @@ function renderAddressBlock(title, addr, fallbackAddr) {
       return p || "—";
     })();
 
+    const isBilling = title.toLowerCase() === "billing";
+    const emailHref = isBilling && showEmail !== "—" ? `mailto:${showEmail}` : "";
+    const phoneHref = isBilling && showPhone !== "—" ? `tel:${String(showPhone).replace(/[^\d+]/g, "")}` : "";
+
     return `
       <div class="aa-card">
         <div class="aa-card-title">${esc(title)}</div>
@@ -160,12 +164,12 @@ function renderAddressBlock(title, addr, fallbackAddr) {
 
           <div class="aa-tile">
             <div class="aa-label">Email</div>
-            <div class="aa-value">${esc(showEmail)}</div>
+            ${isBilling && emailHref ? `<div class="aa-value"><a href="${esc(emailHref)}">${esc(showEmail)}</a></div>` : `<div class="aa-value">${esc(showEmail)}</div>`}
           </div>
 
           <div class="aa-tile">
             <div class="aa-label">Phone</div>
-            <div class="aa-value">${esc(showPhone)}</div>
+            ${isBilling && phoneHref ? `<div class="aa-value"><a href="${esc(phoneHref)}">${esc(showPhone)}</a></div>` : `<div class="aa-value">${esc(showPhone)}</div>`}
           </div>
         </div>
       </div>
