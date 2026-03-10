@@ -1,11 +1,12 @@
-// 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1-timelineHealthClipboard)
-// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 var openSubNotes = window.openSubNotes || new Set();
 var openOrderNotes = window.openOrderNotes || new Set();
 window.openSubNotes = openSubNotes;
 window.openOrderNotes = openOrderNotes;
+window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php";
 
+// 🟢 main.js
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-09R1-timelineHealthClipboard)
+// (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
@@ -13,14 +14,7 @@ window.openOrderNotes = openOrderNotes;
   // CONFIG stuff
   // -----------------------------
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
-  const WOO_ADMIN = "https://okobserver.org/wp-admin/post.php";
-
-  // -----------------------------
-  // RENDER SMOKE TEST (split renderer safety)
-  // -----------------------------
-  if (typeof renderCustomerActivity !== "function") {
-    console.error("Arnold Admin: renderCustomerActivity is missing. Check renderActivity.js load order.");
-  }
+  const WOO_ADMIN = window.WOO_ADMIN;
 
   // -----------------------------
   // DOM HELPERS
@@ -1082,7 +1076,7 @@ function renderSubscriptionRow(s) {
     `;
   }
 
-function renderResults(payload) {
+  function renderResults(payload) {
     if (payload?.intent === "customer_candidates_by_name") return renderCandidateMatches(payload);
 
     if (payload?.intent === "unknown") {
@@ -1311,11 +1305,7 @@ function renderHierarchySection(subs, orders) {
   `;
 }
 
-
-
-
-
-function renderTotals(data) {
+  function renderTotals(data) {
   const d = data || {};
 
   // Always return a string (prevents "undefined" leaking into the UI)
