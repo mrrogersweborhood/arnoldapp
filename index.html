@@ -293,7 +293,7 @@
     }
 
     /* Customer: 3 across on desktop (ID / Username / Name) */
-    .aa-tiles.customer{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
+    .aa-tiles.customer{ grid-template-columns:repeat(4, minmax(0, 1fr)); }
 
     /* Billing/Shipping: exactly 2 columns section layout (Billing left, Shipping right) */
     .aa-grid-2{
@@ -482,7 +482,7 @@
       text-align:right;
     }
 .aa-table tbody td{
-  padding:11px 14px;
+  padding:14px 16px;
   border-bottom:1px solid rgba(15,23,42,.06);
   vertical-align:middle;
   font-size:14px;
@@ -490,6 +490,9 @@
   color:#0b1220;
   white-space:nowrap;
   background:#fff;
+}
+.aa-table tbody tr:nth-child(even) td{
+  background:rgba(15,23,42,.02);
 }
 .aa-table tbody tr:hover td{
   background:rgba(30,144,255,.04);
@@ -526,13 +529,17 @@
     .aa-sub-id{
       font-weight:950;
       color:var(--brand);
-      text-decoration:none;
+      text-decoration:underline;
+      text-underline-offset:3px;
+      text-decoration-thickness:2px;
       margin-right:10px;
+      cursor:pointer;
     }
 
     .aa-order-id:hover,
     .aa-sub-id:hover{
-      text-decoration:underline;
+      color:#0f6fd6;
+      text-decoration-thickness:3px;
     }
 
     .aa-value a{
@@ -952,7 +959,7 @@ table.aa-totals-table tr.aa-totals-total td{
     <button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
   </div>
 
-  <!-- Cache-bust MUST match split modular build -->
+  <!-- Cache-bust MUST match modular build -->
   <script src="./formatters.js?v=2026-03-10-033"></script>
   <script src="./renderCustomer.js?v=2026-03-10-033"></script>
   <script src="./renderHealth.js?v=2026-03-10-033"></script>
