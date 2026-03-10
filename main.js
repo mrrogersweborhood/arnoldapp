@@ -1602,6 +1602,7 @@ async function doSearch() {
   function init() {
     $("btnLogin")?.addEventListener("click", (e) => { e.preventDefault(); doLogin().catch(console.error); });
     $("btnLogout")?.addEventListener("click", (e) => { e.preventDefault(); doLogout().catch(console.error); });
+    $("btnLogout2")?.addEventListener("click", (e) => { e.preventDefault(); doLogout().catch(console.error); });
     $("btnSearch")?.addEventListener("click", (e) => { e.preventDefault(); doSearch().catch(console.error); });
     $("btnTotals")?.addEventListener("click", (e) => { e.preventDefault(); doTotals().catch(console.error); });
     $("btnRawJson")?.addEventListener("click", (e) => { e.preventDefault(); toggleRawJson(); });
