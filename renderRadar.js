@@ -56,12 +56,17 @@ else if (id.toLowerCase().startsWith("sub")) {
     `;
   }).join("");
 
-  return `
-    <section class="card aa-section">
-      <div class="aa-section-head">
-        <div class="aa-section-title">Support Radar</div>
-        <div class="aa-section-subtitle">Current actionable problems</div>
+const visible = items.length;
+const total = data?.total_actionable_items ?? visible;
+
+return `
+  <section class="card aa-section">
+    <div class="aa-section-head">
+      <div class="aa-section-title">Support Radar</div>
+      <div class="aa-section-subtitle">
+        Showing ${visible} of ${total} actionable problems
       </div>
+    </div>
 
       <div class="aa-table-wrap">
         <table class="aa-table">
