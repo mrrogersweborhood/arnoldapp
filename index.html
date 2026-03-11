@@ -983,6 +983,32 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-radar-page{
   font-weight:600;
 }
+.aa-radar-paging .aa-btn,
+.aa-radar-paging button{
+  border:1px solid rgba(30,144,255,.22);
+  background:rgba(30,144,255,.08);
+  color:var(--brand);
+  border-radius:10px;
+  padding:6px 12px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:none;
+}
+
+.aa-radar-paging .aa-btn:hover,
+.aa-radar-paging button:hover{
+  background:rgba(30,144,255,.14);
+}
+
+.aa-radar-paging .aa-btn:disabled,
+.aa-radar-paging button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  background:rgba(15,23,42,.05);
+  color:#64748b;
+  border-color:rgba(15,23,42,.10);
+}
 </style>
 </head>
 
@@ -1050,12 +1076,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-057"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-057"></script>
-  <script src="./renderHealth.js?v=2026-03-10-057"></script>
-  <script src="./renderActivity.js?v=2026-03-10-057"></script>
-<script src="./renderRadar.js?v=2026-03-12-006"></script>  
-<script src="./main.js?v=2026-03-10-057"></script>
+  <script src="./formatters.js?v=2026-03-10-060"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-060"></script>
+  <script src="./renderHealth.js?v=2026-03-10-060"></script>
+  <script src="./renderActivity.js?v=2026-03-10-060"></script>
+<script src="./renderRadar.js?v=2026-03-10-060"></script>  
+<script src="./main.js?v=2026-03-10-060"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
