@@ -924,7 +924,40 @@ if (cachedShellPayload) {
     renderRawJson();
   }
 
+async function doRadar() {
 
+  setStatus("busy", "Loading support radar…");
+
+  if (rawVisible) {
+    rawVisible = false;
+    renderRawJson();
+  }
+
+  $("results").innerHTML = "";
+
+  const r = await fetch(`${WORKER_BASE}/admin/radar`, {
+    method: "GET",
+    credentials: "include"
+  });
+
+  const j = await r.json().catch(() => null);
+
+  lastRaw = j;
+  lastMode = "radar";
+  lastPayload = j;
+
+  if (!r.ok || !j?.ok) {
+    setStatus("warn", j?.error || `Radar failed (${r.status})`);
+    renderRawJson();
+    return;
+  }
+
+  setStatus("", "Radar loaded.");
+
+  $("results").innerHTML = renderRadar(j);
+
+  renderRawJson();
+}
   function init() {
 
     $("btnLogin")?.addEventListener("click", (e) => {
@@ -957,7 +990,10 @@ $("q")?.addEventListener("keydown", (e) => {
       e.preventDefault();
       doTotals().catch(console.error);
     });
-
+$("btnRadar")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doRadar().catch(console.error);
+});
     $("btnRawJson")?.addEventListener("click", (e) => {
       e.preventDefault();
       toggleRawJson();
