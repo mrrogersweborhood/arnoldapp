@@ -846,7 +846,13 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
       e.preventDefault();
       doSearch().catch(console.error);
     });
-
+// Allow Enter key in search box to trigger search
+$("q")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    doSearch().catch(console.error);
+  }
+});
     $("btnTotals")?.addEventListener("click", (e) => {
       e.preventDefault();
       doTotals().catch(console.error);
