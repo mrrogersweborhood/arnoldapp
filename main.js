@@ -323,13 +323,13 @@ function setSessionPill(isLoggedIn, name) {
     applyLoginUserMask(!!isLoggedIn);
   }
 
-  function toggleLoginSearchUI(isLoggedIn) {
-    const login = document.getElementById("loginFields");
-    const search = document.getElementById("searchFields");
+function toggleLoginSearchUI(isLoggedIn) {
+  const login = document.getElementById("loginFields");
+  const search = document.getElementById("searchFields");
 
-    if (login) login.style.display = isLoggedIn ? "none" : "";
-    if (search) search.style.display = isLoggedIn ? "" : "none";
-  }
+  if (login) login.style.display = isLoggedIn ? "none" : "contents";
+  if (search) search.style.display = isLoggedIn ? "contents" : "none";
+}
 
   async function refreshSession() {
     const r = await fetch(`${WORKER_BASE}/admin/status`, {
@@ -1447,17 +1447,18 @@ async function doLogin() {
       return;
     }
 
-    setStatus("", "Logged in.");
-    await refreshSession();
+setStatus("", "Logged in.");
+const loggedIn = await refreshSession();
+toggleLoginSearchUI(!!loggedIn);
 
-    /* Scroll to top so user immediately sees session state and search */
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
+/* Scroll to top so user immediately sees session state and search */
+window.scrollTo({
+  top: 0,
+  behavior: "smooth"
+});
 
-    const q = document.getElementById("q");
-    if (q) q.focus();
+const q = document.getElementById("q");
+if (q) q.focus();
   }
 
   async function doLogout() {
@@ -1468,8 +1469,9 @@ async function doLogin() {
       credentials: "include"
     }).catch(() => null);
 
-    setStatus("", "Logged out.");
-    setSessionPill(false, null);
+setStatus("", "Logged out.");
+setSessionPill(false, null);
+toggleLoginSearchUI(false);
   }
 
   
