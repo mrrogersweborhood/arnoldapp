@@ -23,6 +23,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
 
   let currentSearchController = null;
   let lastCustomerResult = null;
+  let radarPage = 1;
 
   // --------------------------------------------------
   // Status / UI helpers
@@ -277,8 +278,6 @@ function getCachedCustomerShellPayloadForQuery(q) {
         }, 1200);
       });
     });
-  }
-
   function bindNotesToggles(container) {
     if (!container) return;
 
@@ -926,6 +925,8 @@ if (cachedShellPayload) {
 
 async function doRadar() {
 
+  radarPage = 1;
+
   setStatus("busy", "Loading support radar…");
 
   if (rawVisible) {
@@ -935,7 +936,12 @@ async function doRadar() {
 
   $("results").innerHTML = "";
 
-  const r = await fetch(`${WORKER_BASE}/admin/radar`, {
+  await loadRadarPage();
+}
+
+async function loadRadarPage() {
+
+  const r = await fetch(`${WORKER_BASE}/admin/radar?page=${radarPage}`, {
     method: "GET",
     credentials: "include"
   });
@@ -957,6 +963,40 @@ async function doRadar() {
   $("results").innerHTML = renderRadar(j);
 
   bindOpenCandidateButtons($("results"));
+
+  const prev = document.querySelector(".aa-radar-prev");
+  const next = document.querySelector(".aa-radar-next");
+  const pageLabel = document.querySelector(".aa-radar-page");
+
+  const pageSize = Number(j?.visible_limit || 25) || 25;
+  const totalItems = Number(j?.total_actionable_items || 0) || 0;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  if (pageLabel) {
+    pageLabel.textContent = `Page ${radarPage} of ${totalPages}`;
+  }
+
+  if (prev) {
+    prev.disabled = radarPage <= 1;
+    prev.addEventListener("click", async () => {
+      if (radarPage <= 1) return;
+      radarPage -= 1;
+      setStatus("busy", "Loading support radar…");
+      $("results").innerHTML = "";
+      await loadRadarPage();
+    });
+  }
+
+  if (next) {
+    next.disabled = radarPage >= totalPages;
+    next.addEventListener("click", async () => {
+      if (radarPage >= totalPages) return;
+      radarPage += 1;
+      setStatus("busy", "Loading support radar…");
+      $("results").innerHTML = "";
+      await loadRadarPage();
+    });
+  }
 
   renderRawJson();
 }
