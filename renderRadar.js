@@ -1,3 +1,6 @@
+// 🟢 renderRadar.js
+// Arnold Admin — Radar renderer (clickable ID -> lookup)
+
 window.renderRadar = function (data) {
 
   const items = Array.isArray(data?.items) ? data.items : [];
@@ -22,12 +25,25 @@ window.renderRadar = function (data) {
     const date = r.date ? new Date(r.date).toLocaleDateString() : "—";
     const reason = r.reason || "—";
 
+    // Determine lookup query
+    let query = "";
+    if (r.id_type === "order") {
+      query = `order #${r.id}`;
+    } else if (r.id_type === "subscription") {
+      query = `sub #${r.id}`;
+    }
+
     return `
       <tr>
         <td>
-          <a class="aa-order-id" data-open-query="${id}">
+          <button
+            type="button"
+            class="aa-order-id aa-candidate-open-btn"
+            data-open-query="${query}"
+            style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
+          >
             ${id}
-          </a>
+          </button>
         </td>
         <td>${name}</td>
         <td>${email}</td>
@@ -65,3 +81,5 @@ window.renderRadar = function (data) {
     </section>
   `;
 };
+
+// 🔴 renderRadar.js
