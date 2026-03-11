@@ -14,7 +14,7 @@ function renderCustomerCard(customer) {
       <div class="aa-card">
         <div class="aa-card-title">Customer</div>
 
-        <div class="aa-tiles customer">
+        <div class="aa-tiles customer" style="grid-template-columns:repeat(4, minmax(0, 1fr));">
           <div class="aa-tile">
             <div class="aa-label">Name</div>
             <div class="aa-value">${esc(String(name))}</div>
