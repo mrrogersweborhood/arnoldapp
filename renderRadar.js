@@ -26,12 +26,14 @@ window.renderRadar = function (data) {
     const reason = r.reason || "—";
 
     // Determine lookup query
-    let query = "";
-    if (r.id_type === "order") {
-      query = `order #${r.id}`;
-    } else if (r.id_type === "subscription") {
-      query = `sub #${r.id}`;
-    }
+let query = "";
+
+if (id.toLowerCase().startsWith("order")) {
+  query = id.toLowerCase();
+}
+else if (id.toLowerCase().startsWith("sub")) {
+  query = id.toLowerCase();
+}
 
     return `
       <tr>

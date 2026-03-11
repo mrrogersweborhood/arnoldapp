@@ -956,6 +956,8 @@ async function doRadar() {
 
   $("results").innerHTML = renderRadar(j);
 
+  bindOpenCandidateButtons($("results"));
+
   renderRawJson();
 }
   function init() {
