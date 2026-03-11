@@ -163,6 +163,28 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     if (/(?:\border\s*#?\s*)(\d{3,})\b/i.test(s) || /^#?(\d{3,})$/.test(s)) return false;
     return /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(s);
   }
+function parseDirectLookupQuery(q) {
+
+  const s = String(q ?? "").trim().toLowerCase();
+
+  // order lookup
+  let m = s.match(/^order\s*#?\s*(\d+)$/);
+  if (m) return { type: "order", id: m[1] };
+
+  // #12345
+  m = s.match(/^#(\d+)$/);
+  if (m) return { type: "order", id: m[1] };
+
+  // customer lookup
+  m = s.match(/^customer\s*#?\s*(\d+)$/);
+  if (m) return { type: "customer", id: m[1] };
+
+  // subscription lookup
+  m = s.match(/^sub\s*#?\s*(\d+)$/);
+  if (m) return { type: "subscription", id: m[1] };
+
+  return null;
+}
 function getCachedCustomerShellPayloadForQuery(q) {
   const s = String(q ?? "").trim().toLowerCase();
   if (!s || !lastCustomerResult) return null;
@@ -665,12 +687,47 @@ function getCachedCustomerShellPayloadForQuery(q) {
   async function doSearch() {
 
     const q = $("q")?.value?.trim() || "";
-
+const direct = parseDirectLookupQuery(q);
     if (!q) {
       setStatus("warn", "Enter a query (email or order #).");
       return;
     }
+if (direct) {
 
+  setStatus("busy", `Looking up ${direct.type} #${direct.id}…`);
+
+  const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `${direct.type} #${direct.id}`,
+      mode: "full"
+    })
+  });
+
+  const j = await r.json().catch(() => null);
+
+  if (!r.ok || !j?.ok) {
+    setStatus("warn", friendlyText(j?.error || j?.message) || `Search failed (${r.status})`);
+    return;
+  }
+
+  lastRaw = j;
+  lastMode = "search";
+  lastPayload = j;
+
+  $("results").innerHTML = renderResults(j);
+
+  bindNotesToggles($("results"));
+  bindCopyButtons($("results"));
+  bindOpenCandidateButtons($("results"));
+
+  setStatus("", "Search complete.");
+  renderRawJson();
+
+  return;
+}
     abortActiveSearch();
 
     const controller = new AbortController();
