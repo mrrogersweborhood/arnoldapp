@@ -59,14 +59,12 @@ else if (id.toLowerCase().startsWith("sub")) {
 const visible = items.length;
 const total = data?.total_actionable_items ?? visible;
 
-return `
-  <section class="card aa-section">
-    <div class="aa-section-head">
-      <div class="aa-section-title">Support Radar</div>
-      <div class="aa-section-subtitle">
-        Showing ${visible} of ${total} actionable problems
+  return `
+    <section class="card aa-section">
+      <div class="aa-section-head">
+        <div class="aa-section-title">Support Radar</div>
+        <div class="aa-section-subtitle">Current actionable problems</div>
       </div>
-    </div>
 
       <div class="aa-table-wrap">
         <table class="aa-table">
@@ -85,6 +83,18 @@ return `
           </tbody>
         </table>
       </div>
+
+      <div class="aa-radar-footer">
+  <div class="aa-radar-count">
+    Showing ${visible} of ${total} actionable problems
+  </div>
+
+  <div class="aa-radar-paging">
+    <button class="aa-btn aa-radar-prev">Previous</button>
+    <span class="aa-radar-page">Page 1</span>
+    <button class="aa-btn aa-radar-next">Next</button>
+  </div>
+</div>
     </section>
   `;
 };
