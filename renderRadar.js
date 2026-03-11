@@ -59,12 +59,40 @@ else if (id.toLowerCase().startsWith("sub")) {
 const visible = items.length;
 const total = data?.total_actionable_items ?? visible;
 
-  return `
-    <section class="card aa-section">
-      <div class="aa-section-head">
-        <div class="aa-section-title">Support Radar</div>
-        <div class="aa-section-subtitle">Current actionable problems</div>
+const summary = data?.summary || {};
+const failedRenewals = Number(summary.failedRenewals || 0);
+const onHold = Number(summary.onHold || 0);
+const pendingCancel = Number(summary.pendingCancel || 0);
+const recentExpired = Number(summary.recentExpired || 0);
+
+return `
+  <section class="card aa-section">
+    <div class="aa-section-head">
+      <div class="aa-section-title">Support Radar</div>
+      <div class="aa-section-subtitle">Current actionable problems</div>
+    </div>
+
+    <div class="aa-radar-summary">
+      <div class="aa-radar-tile aa-radar-tile-problem">
+        <div class="aa-radar-tile-label">Failed renewals</div>
+        <div class="aa-radar-tile-value">${failedRenewals}</div>
       </div>
+
+      <div class="aa-radar-tile aa-radar-tile-watch">
+        <div class="aa-radar-tile-label">On hold</div>
+        <div class="aa-radar-tile-value">${onHold}</div>
+      </div>
+
+      <div class="aa-radar-tile aa-radar-tile-watch">
+        <div class="aa-radar-tile-label">Pending cancel</div>
+        <div class="aa-radar-tile-value">${pendingCancel}</div>
+      </div>
+
+      <div class="aa-radar-tile aa-radar-tile-muted">
+        <div class="aa-radar-tile-label">Recent expired</div>
+        <div class="aa-radar-tile-value">${recentExpired}</div>
+      </div>
+    </div>
 
       <div class="aa-table-wrap">
         <table class="aa-table">
