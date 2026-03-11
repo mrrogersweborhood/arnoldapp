@@ -103,9 +103,9 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
       const payment = String(o?.payment_method_title ?? "").trim() || "—";
       const items = getOrderItemsSummary(o).text;
       const notes = Array.isArray(o?.notes) ? o.notes : [];
-      const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id)
-        ? "Parent order"
-        : (isProblemOrderStatus(status) ? "Problem order" : "Renewal");
+const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id)
+  ? "Parent order"
+  : (isProblemOrderStatus(status) ? "🔴 Problem order" : "Renewal");
       const isOpen = id ? __aaOpenOrderNotes().has(id) : false;
       const rowClass = String(status).toLowerCase() === "failed"
         ? "aa-row-problem"

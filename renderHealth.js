@@ -43,12 +43,22 @@ if (latestStatus === "failed") {
   headline = "No subscription found";
 }
 
-    const alertHtml = tone === "problem" ? `
-      <div class="aa-health-alert aa-health-alert-problem">
-        <span class="aa-health-alert-icon">🔴</span>
-        <span class="aa-health-alert-text">${esc(headline)}${latestOrderId !== "—" ? ` • ${latestOrderId}` : ""}</span>
-      </div>
-    ` : "";
+let alertHtml = "";
+
+if (tone === "problem" || tone === "watch") {
+
+  const icon = tone === "problem" ? "🔴" : "⚠️";
+
+  alertHtml = `
+    <div class="aa-health-alert aa-health-alert-${esc(tone)}">
+      <span class="aa-health-alert-icon">${icon}</span>
+      <span class="aa-health-alert-text">
+        ${esc(headline)}
+        ${latestOrderId !== "—" ? ` • ${latestOrderId}` : ""}
+      </span>
+    </div>
+  `;
+}
 
     return `
       <section class="card aa-section">
