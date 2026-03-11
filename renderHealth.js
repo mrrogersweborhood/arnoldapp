@@ -21,13 +21,23 @@ let tone = "healthy";
 let headline = "Subscription looks healthy";
 
 const latestStatus = String(latestOrder?.status ?? "").toLowerCase();
+const subStatusLower = String(primarySub?.status ?? "").toLowerCase();
 
 if (latestStatus === "failed") {
   tone = "problem";
   headline = "Latest payment failed";
 } else if (failedCount > 0) {
   tone = "problem";
-  headline = "Customer has failed payments";
+  headline = "Customer has failed/problem payments";
+} else if (subStatusLower === "on-hold") {
+  tone = "problem";
+  headline = "Subscription is on hold";
+} else if (subStatusLower === "pending-cancel") {
+  tone = "problem";
+  headline = "Subscription pending cancellation";
+} else if (subStatusLower === "expired") {
+  tone = "problem";
+  headline = "Subscription expired";
 } else if (!primarySub) {
   tone = "watch";
   headline = "No subscription found";

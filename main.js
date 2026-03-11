@@ -163,7 +163,41 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     if (/(?:\border\s*#?\s*)(\d{3,})\b/i.test(s) || /^#?(\d{3,})$/.test(s)) return false;
     return /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(s);
   }
+function getCachedCustomerShellPayloadForQuery(q) {
+  const s = String(q ?? "").trim().toLowerCase();
+  if (!s || !lastCustomerResult) return null;
 
+  const email = String(
+    lastCustomerResult?.email ||
+    lastCustomerResult?.billing?.email ||
+    ""
+  ).trim().toLowerCase();
+
+  const id = String(lastCustomerResult?.id ?? "").trim().toLowerCase();
+  const username = String(lastCustomerResult?.username ?? "").trim().toLowerCase();
+  const fullName = [
+    lastCustomerResult?.first_name,
+    lastCustomerResult?.last_name
+  ].map((v) => String(v ?? "").trim().toLowerCase()).filter(Boolean).join(" ");
+
+  const matches =
+    (email && s === email) ||
+    (id && (s === id || s === `#${id}` || s === `customer #${id}`)) ||
+    (username && s === username) ||
+    (fullName && s === fullName);
+
+  if (!matches) return null;
+
+  return {
+    ok: true,
+    context: {
+      customer: lastCustomerResult,
+      subscriptions: [],
+      orders: [],
+      notes: []
+    }
+  };
+}
   // --------------------------------------------------
   // Event binding helpers
   // --------------------------------------------------
@@ -642,16 +676,25 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     const controller = new AbortController();
     currentSearchController = controller;
 
-    setStatus("busy", "Searching…");
+setStatus("busy", "Searching…");
 
-    if (rawVisible) {
-      rawVisible = false;
-      renderRawJson();
-    }
+if (rawVisible) {
+  rawVisible = false;
+  renderRawJson();
+}
 
-    $("results").innerHTML = "";
+$("results").innerHTML = "";
 
-    const shouldProgressiveLoad = isLikelyEmailLookupQuery(q);
+const shouldProgressiveLoad = isLikelyEmailLookupQuery(q);
+const cachedShellPayload = shouldProgressiveLoad
+  ? getCachedCustomerShellPayloadForQuery(q)
+  : null;
+
+if (cachedShellPayload) {
+  $("results").innerHTML = renderProgressiveShell(cachedShellPayload);
+  bindCopyButtons($("results"));
+  setStatus("busy", "Loaded cached customer. Refreshing subscriptions, orders, and notes…");
+}
 
     try {
 

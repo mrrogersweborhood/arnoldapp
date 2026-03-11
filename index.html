@@ -810,10 +810,17 @@ table.aa-totals-table tr.aa-totals-total td{
   gap:12px;
 }
 .aa-health-card{
-  border:1px solid var(--border);
-  border-radius:12px;
+  border:1px solid rgba(15,23,42,.10);
+  border-radius:14px;
   background:#fff;
   padding:12px;
+  box-shadow:0 2px 8px rgba(15,23,42,.05);
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+
+.aa-health-card:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 16px rgba(15,23,42,.08);
 }
 .aa-health-card-healthy{
   background:#f0fdf4;
@@ -1018,11 +1025,11 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-049"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-049"></script>
-  <script src="./renderHealth.js?v=2026-03-10-049"></script>
-  <script src="./renderActivity.js?v=2026-03-10-049"></script>
-  <script src="./main.js?v=2026-03-10-049"></script>
+  <script src="./formatters.js?v=2026-03-10-051"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-051"></script>
+  <script src="./renderHealth.js?v=2026-03-10-051"></script>
+  <script src="./renderActivity.js?v=2026-03-10-051"></script>
+  <script src="./main.js?v=2026-03-10-051"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
