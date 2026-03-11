@@ -278,6 +278,8 @@ function getCachedCustomerShellPayloadForQuery(q) {
         }, 1200);
       });
     });
+  }
+
   function bindNotesToggles(container) {
     if (!container) return;
 
