@@ -264,16 +264,7 @@ if (r.date) {
         <td class="aa-radar-col-reason">${reason}</td>
         <td class="aa-radar-col-date">${date}</td>
         <td class="aa-radar-col-customer">${name}${repeatBadge}</td>
-        <td class="aa-radar-col-email">
-  <button
-    type="button"
-    class="aa-order-id aa-candidate-open-btn"
-    data-open-query="${email}"
-    style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
-  >
-    ${email}
-  </button>
-</td>
+        <td class="aa-radar-col-email">${email}</td>
       </tr>
     `;
   }).join("");
