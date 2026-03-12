@@ -100,8 +100,20 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
     for (const o of orderArr) {
       const id = String(o?.id ?? "").trim();
       const status = String(o?.status ?? "");
-      const payment = String(o?.payment_method_title ?? "").trim() || "—";
-      const items = getOrderItemsSummary(o).text;
+      let payment = String(o?.payment_method_title ?? "").trim() || "—";
+
+if (String(o?.status || "").toLowerCase() === "failed") {
+  const noteText = Array.isArray(o?.notes) && o.notes.length
+    ? o.notes.map((n) => stripHtml(n?.note || "")).join(" \n ")
+    : "";
+
+  const match = noteText.match(/CARD_[A-Z_]+|INSUFFICIENT_FUNDS|DECLINED|EXPIRED/i);
+  if (match) {
+    payment = match[0];
+  }
+}
+
+const items = getOrderItemsSummary(o).text;
       const notes = Array.isArray(o?.notes) ? o.notes : [];
 const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id)
   ? "Parent order"
