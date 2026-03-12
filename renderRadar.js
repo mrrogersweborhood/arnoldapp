@@ -133,7 +133,7 @@ const rows = [...items]
     const aIsRepeat = aRepeatCount > 1 ? 1 : 0;
     const bIsRepeat = bRepeatCount > 1 ? 1 : 0;
 
-    if (aIsRepeat !== bIsRepeat) return aIsRepeat - bIsRepeat;
+    if (aIsRepeat !== bIsRepeat) return bIsRepeat - aIsRepeat;
 
     return bTs - aTs;
   })
