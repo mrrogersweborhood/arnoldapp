@@ -97,7 +97,13 @@ window.renderRadar = function (data) {
     `;
   }
 
-  const rows = items.map((r) => {
+  const rows = [...items]
+  .sort((a, b) => {
+    const aTs = a?.date ? new Date(a.date).getTime() : 0;
+    const bTs = b?.date ? new Date(b.date).getTime() : 0;
+    return bTs - aTs;
+  })
+  .map((r) => {
     const id = r.display_id || "";
     const name = r.customer_name || "—";
     const email = r.email || "—";
