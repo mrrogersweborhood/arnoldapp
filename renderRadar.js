@@ -136,11 +136,14 @@ window.renderRadar = function (data) {
     `;
 
     let query = "";
+    const idLower = String(id).toLowerCase().trim();
 
-    if (id.toLowerCase().startsWith("order")) {
-      query = id.toLowerCase();
-    } else if (id.toLowerCase().startsWith("sub")) {
-      query = id.toLowerCase();
+    if (idLower.startsWith("order")) {
+      query = idLower;
+    } else if (idLower.startsWith("sub")) {
+      query = idLower;
+    } else if (/^\d+$/.test(String(id).trim())) {
+      query = `order ${String(id).trim()}`;
     }
 
     return `
