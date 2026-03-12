@@ -1033,6 +1033,15 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-table tbody tr:hover td{
   background:rgba(30,144,255,.05);
 }
+/* OkObserver-style radar row separation */
+
+.aa-table tbody tr{
+  border-bottom:1px solid rgba(15,23,42,.06);
+}
+
+.aa-table tbody tr:nth-child(even) td{
+  background:#fafcff;
+}
 .aa-radar-col-issue{
   font-weight:950;
   color:#0f172a;
@@ -1219,7 +1228,33 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-radar-col-customer{
   font-weight:950;
 }
+/* Radar customer hierarchy */
 
+.aa-radar-col-customer{
+  font-weight:950;
+  color:#0b1220;
+}
+
+.aa-radar-col-customer .aa-pill{
+  font-size:11px;
+  padding:3px 8px;
+  margin-left:6px;
+  vertical-align:middle;
+}
+
+/* Make repeat problems stand out slightly */
+
+.aa-radar-col-customer .aa-pill-danger{
+  background:#fee2e2;
+  color:#991b1b;
+  border:1px solid #fecaca;
+}
+
+/* Subtle zebra striping like OkObserver cards */
+
+.aa-table tbody tr:nth-child(even) td{
+  background:#fafcff;
+}
 .aa-radar-col-email{
   font-weight:800;
 }
@@ -1238,6 +1273,36 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-radar-col-reason{
   font-weight:900;
   color:#334155;
+}
+/* Radar reason emphasis */
+
+.aa-radar-col-reason{
+  font-weight:950;
+  letter-spacing:.01em;
+}
+
+/* Expired card */
+
+.aa-radar-col-reason[data-reason="CARD_EXPIRED"]{
+  color:#b45309;
+}
+
+/* Declined */
+
+.aa-radar-col-reason[data-reason="CARD_DECLINED"]{
+  color:#b91c1c;
+}
+
+/* Insufficient funds */
+
+.aa-radar-col-reason[data-reason="INSUFFICIENT_FUNDS"]{
+  color:#854d0e;
+}
+
+/* Square failures */
+
+.aa-radar-col-reason[data-reason="SQUARE"]{
+  color:#991b1b;
 }
 .aa-radar-col-reason[data-reason="SQUARE"]{
   color:#991b1b;
