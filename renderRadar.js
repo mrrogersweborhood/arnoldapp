@@ -61,11 +61,10 @@ window.renderRadar = function (data) {
 
       <button
         type="button"
-        class="aa-radar-tile aa-radar-tile-muted aa-radar-summary-filter${activeIssue === "expired" ? " is-active" : ""}"
-        data-issue="expired"
+        class="aa-radar-tile aa-radar-tile-muted"
       >
-        <div class="aa-radar-tile-label">Recent expired</div>
-        <div class="aa-radar-tile-value">${recentExpired}</div>
+        <div class="aa-radar-tile-label">Total Problems</div>
+        <div class="aa-radar-tile-value">${total}</div>
       </button>
     </div>
   `;
