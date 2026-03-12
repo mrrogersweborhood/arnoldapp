@@ -96,17 +96,63 @@ window.renderRadar = function (data) {
       </section>
     `;
   }
+// Build repeat-customer index
+const repeatIndex = {};
 
-  const rows = [...items]
+items.forEach((r) => {
+  const email = String(r?.email || "").trim().toLowerCase();
+  if (!email) return;
+  repeatIndex[email] = (repeatIndex[email] || 0) + 1;
+});
+const rows = [...items]
   .sort((a, b) => {
     const aTs = a?.date ? new Date(a.date).getTime() : 0;
     const bTs = b?.date ? new Date(b.date).getTime() : 0;
+
+    const aAgeHours = aTs ? (Date.now() - aTs) / 3600000 : Number.POSITIVE_INFINITY;
+    const bAgeHours = bTs ? (Date.now() - bTs) / 3600000 : Number.POSITIVE_INFINITY;
+
+    const getBand = (ageHours) => {
+      if (ageHours < 24) return 0;
+      if (ageHours < 72) return 1;
+      if (ageHours < 168) return 2;
+      return 3;
+    };
+
+    const aBand = getBand(aAgeHours);
+    const bBand = getBand(bAgeHours);
+
+    if (aBand !== bBand) return aBand - bBand;
+
+    const aEmail = String(a?.email || "").trim().toLowerCase();
+    const bEmail = String(b?.email || "").trim().toLowerCase();
+
+    const aRepeatCount = repeatIndex[aEmail] || 0;
+    const bRepeatCount = repeatIndex[bEmail] || 0;
+
+    const aIsRepeat = aRepeatCount > 1 ? 1 : 0;
+    const bIsRepeat = bRepeatCount > 1 ? 1 : 0;
+
+    if (aIsRepeat !== bIsRepeat) return aIsRepeat - bIsRepeat;
+
     return bTs - aTs;
   })
   .map((r) => {
     const id = r.display_id || "";
     const name = r.customer_name || "—";
     const email = r.email || "—";
+let repeatBadge = "";
+
+const emailKey = String(email).trim().toLowerCase();
+const repeatCount = repeatIndex[emailKey] || 0;
+
+if (repeatCount > 1) {
+  repeatBadge = `
+    <span class="aa-pill aa-pill-danger" style="margin-left:6px">
+      Repeat (${repeatCount})
+    </span>
+  `;
+}
     const rawIssue = r.issue || "";
     const reason = r.reason || "—";
 let date = "—";
@@ -182,7 +228,7 @@ if (r.date) {
         <td class="aa-radar-col-issue">${issue}</td>
         <td class="aa-radar-col-reason">${reason}</td>
         <td class="aa-radar-col-date">${date}</td>
-        <td class="aa-radar-col-customer">${name}</td>
+        <td class="aa-radar-col-customer">${name}${repeatBadge}</td>
         <td class="aa-radar-col-email">${email}</td>
       </tr>
     `;
