@@ -24,6 +24,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
   let currentSearchController = null;
   let lastCustomerResult = null;
   let radarPage = 1;
+  let radarIssueFilter = "";
 
   // --------------------------------------------------
   // Status / UI helpers
@@ -928,6 +929,8 @@ if (cachedShellPayload) {
 async function doRadar() {
 
   radarPage = 1;
+  radarIssueFilter = "";
+  
 
   setStatus("busy", "Loading support radar…");
 
@@ -943,7 +946,13 @@ async function doRadar() {
 
 async function loadRadarPage() {
 
-  const r = await fetch(`${WORKER_BASE}/admin/radar?page=${radarPage}`, {
+  const radarUrl = new URL(`${WORKER_BASE}/admin/radar`);
+radarUrl.searchParams.set("page", String(radarPage));
+if (radarIssueFilter) {
+  radarUrl.searchParams.set("issue", radarIssueFilter);
+}
+
+const r = await fetch(radarUrl.toString(), {
     method: "GET",
     credentials: "include"
   });
@@ -962,9 +971,26 @@ async function loadRadarPage() {
 
   setStatus("", "Radar loaded.");
 
-  $("results").innerHTML = renderRadar(j);
+$("results").innerHTML = renderRadar(j);
 
-  bindOpenCandidateButtons($("results"));
+bindOpenCandidateButtons($("results"));
+
+  document.querySelectorAll(".aa-radar-issue-filter[data-issue], .aa-radar-summary-filter[data-issue]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const nextIssue = String(btn.getAttribute("data-issue") || "").trim();
+
+      if (radarIssueFilter === nextIssue) {
+        radarIssueFilter = "";
+      } else {
+        radarIssueFilter = nextIssue;
+      }
+
+      radarPage = 1;
+      setStatus("busy", "Loading support radar…");
+      $("results").innerHTML = "";
+      await loadRadarPage();
+    });
+  });
 
   const prev = document.querySelector(".aa-radar-prev");
   const next = document.querySelector(".aa-radar-next");
