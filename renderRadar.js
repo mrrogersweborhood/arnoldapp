@@ -104,6 +104,41 @@ items.forEach((r) => {
   if (!email) return;
   repeatIndex[email] = (repeatIndex[email] || 0) + 1;
 });
+const repeatSubscribers = Object.entries(repeatIndex)
+  .filter(([, count]) => count > 1)
+  .map(([emailKey, count]) => {
+    const match = items.find((r) => String(r?.email || "").trim().toLowerCase() === emailKey);
+    const displayEmail = match?.email || emailKey;
+    const displayName = match?.customer_name || "Subscriber";
+    return {
+      emailKey,
+      displayEmail,
+      displayName,
+      count
+    };
+  })
+  .sort((a, b) => b.count - a.count || a.displayEmail.localeCompare(b.displayEmail));
+
+const repeatSubscribersStrip = repeatSubscribers.length
+  ? `
+      <div class="aa-health-alert aa-health-alert-watch" style="margin-top:12px; margin-bottom:12px; display:block">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">
+          <strong>Repeat Problem Subscribers: ${repeatSubscribers.length}</strong>
+          ${repeatSubscribers.slice(0, 8).map((s) => `
+            <button
+              type="button"
+              class="aa-order-id aa-candidate-open-btn"
+              data-open-query="${s.displayEmail}"
+              title="${s.displayName}"
+              style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
+            >
+              ${s.displayEmail} (${s.count})
+            </button>
+          `).join("")}
+        </div>
+      </div>
+    `
+  : "";
 const rows = [...items]
   .sort((a, b) => {
     const aTs = a?.date ? new Date(a.date).getTime() : 0;
@@ -229,7 +264,16 @@ if (r.date) {
         <td class="aa-radar-col-reason">${reason}</td>
         <td class="aa-radar-col-date">${date}</td>
         <td class="aa-radar-col-customer">${name}${repeatBadge}</td>
-        <td class="aa-radar-col-email">${email}</td>
+        <td class="aa-radar-col-email">
+  <button
+    type="button"
+    class="aa-order-id aa-candidate-open-btn"
+    data-open-query="${email}"
+    style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
+  >
+    ${email}
+  </button>
+</td>
       </tr>
     `;
   }).join("");
@@ -243,6 +287,7 @@ if (r.date) {
 
       ${radarAlert}
       ${summaryTiles}
+      ${repeatSubscribersStrip}
 
       <div class="aa-table-wrap">
         <table class="aa-table">
