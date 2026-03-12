@@ -103,8 +103,23 @@ window.renderRadar = function (data) {
     const email = r.email || "—";
     const rawIssue = r.issue || "";
     const reason = r.reason || "—";
-    const date = r.date ? new Date(r.date).toLocaleDateString() : "—";
+let date = "—";
+let recentClass = "";
 
+if (r.date) {
+  const d = new Date(r.date);
+  date = d.toLocaleDateString();
+
+  const ageHours = (Date.now() - d.getTime()) / 3600000;
+
+  if (ageHours < 24) {
+    recentClass = " aa-radar-recent-urgent";
+  } else if (ageHours < 72) {
+    recentClass = " aa-radar-recent";
+  } else if (ageHours < 168) {
+    recentClass = " aa-radar-recent-soft";
+  }
+}
     let issueLabel = "—";
     let issueClass = "aa-pill-neutral";
 
@@ -147,7 +162,7 @@ window.renderRadar = function (data) {
     }
 
     return `
-      <tr>
+      <tr class="${recentClass}">
         <td class="aa-radar-col-id">
           <button
             type="button"

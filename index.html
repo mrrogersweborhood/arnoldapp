@@ -1201,6 +1201,93 @@ table.aa-totals-table tr.aa-totals-total td{
     grid-template-columns:1fr;
   }
 }
+/* Radar table readability polish */
+.aa-table thead th{
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+.aa-radar-col-id .aa-order-id{
+  font-weight:950;
+}
+
+.aa-radar-col-reason{
+  color:#334155;
+  font-weight:900;
+}
+
+.aa-radar-col-customer{
+  font-weight:950;
+}
+
+.aa-radar-col-email{
+  font-weight:800;
+}
+/* Radar table readability polish */
+
+.aa-table thead th{
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  font-size:12px;
+}
+
+.aa-radar-col-id .aa-order-id{
+  font-weight:600;
+}
+
+.aa-radar-col-reason{
+  font-weight:900;
+  color:#334155;
+}
+.aa-radar-col-reason[data-reason="SQUARE"]{
+  color:#991b1b;
+  font-weight:950;
+}
+/* Radar recent failures highlight */
+
+.aa-radar-recent-urgent td{
+  background:rgba(239,68,68,.12);
+}
+
+.aa-radar-recent td{
+  background:rgba(251,191,36,.12);
+}
+
+.aa-radar-recent-soft td{
+  background:rgba(59,130,246,.08);
+}
+.aa-radar-col-reason{
+  font-weight:900;
+  color:#334155;
+}
+/* Radar reason highlighting */
+
+.aa-radar-col-reason:has(:contains("CARD_EXPIRED")),
+.aa-radar-col-reason[data-reason="CARD_EXPIRED"]{
+  color:#b45309;
+  font-weight:950;
+}
+
+.aa-radar-col-reason:has(:contains("CARD_DECLINED")),
+.aa-radar-col-reason[data-reason="CARD_DECLINED"]{
+  color:#b91c1c;
+  font-weight:950;
+}
+
+.aa-radar-col-reason:has(:contains("INSUFFICIENT_FUNDS")),
+.aa-radar-col-reason[data-reason="INSUFFICIENT_FUNDS"]{
+  color:#854d0e;
+  font-weight:950;
+}
+
+.aa-radar-col-reason:has(:contains("SQUARE")),
+.aa-radar-col-reason[data-reason="SQUARE"]{
+  color:#991b1b;
+  font-weight:950;
+}
+.aa-radar-col-customer{
+  font-weight:950;
+}
 .aa-radar-footer{
   display:flex;
   justify-content:space-between;
@@ -1312,12 +1399,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-065"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-065"></script>
-  <script src="./renderHealth.js?v=2026-03-10-065"></script>
-  <script src="./renderActivity.js?v=2026-03-10-065"></script>
-<script src="./renderRadar.js?v=2026-03-10-065"></script>  
-<script src="./main.js?v=2026-03-10-065"></script>
+  <script src="./formatters.js?v=2026-03-10-066"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-066"></script>
+  <script src="./renderHealth.js?v=2026-03-10-066"></script>
+  <script src="./renderActivity.js?v=2026-03-10-066"></script>
+<script src="./renderRadar.js?v=2026-03-10-066"></script>  
+<script src="./main.js?v=2026-03-10-066"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
