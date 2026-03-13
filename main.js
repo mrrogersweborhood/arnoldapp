@@ -25,7 +25,18 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
   let lastCustomerResult = null;
   let radarPage = 1;
   let radarIssueFilter = "";
+  let radarLoadingTimer = null;
+  let radarLoadingIndex = 0;
 
+  const RADAR_LOADING_MESSAGES = [
+    "Loading support radar…",
+    "Scanning failed renewals…",
+    "Checking on-hold subscriptions…",
+    "Reviewing pending cancellations…",
+    "Comparing active subscription recoveries…",
+    "Prioritizing repeat problem subscribers…",
+    "Preparing radar page…"
+  ];
   // --------------------------------------------------
   // Status / UI helpers
   // --------------------------------------------------
@@ -35,7 +46,113 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     sl.className = "msg" + (kind ? ` ${kind}` : "");
     sl.textContent = friendlyText(text ?? "");
   }
+  function stopRadarLoadingUI() {
+    if (radarLoadingTimer) {
+      window.clearInterval(radarLoadingTimer);
+      radarLoadingTimer = null;
+    }
 
+    const sl = $("statusLine");
+    if (sl) sl.classList.remove("aa-status-center");
+  }
+
+  function setRadarLoadingStatus(text) {
+    const sl = $("statusLine");
+    if (!sl) return;
+    sl.className = "msg busy aa-status-center";
+    sl.textContent = friendlyText(text ?? "");
+  }
+
+  function renderRadarLoadingShell() {
+    return `
+      <section class="card aa-section aa-loading-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Support Radar</div>
+          <div class="aa-section-subtitle">Preparing subscriber issues and paging…</div>
+        </div>
+
+        <div class="aa-radar-summary">
+          <div class="aa-radar-tile aa-radar-tile-problem"><div class="aa-loading-row" style="width:120px"></div><div class="aa-loading-row" style="width:56px; margin-top:10px"></div></div>
+          <div class="aa-radar-tile aa-radar-tile-watch"><div class="aa-loading-row" style="width:80px"></div><div class="aa-loading-row" style="width:56px; margin-top:10px"></div></div>
+          <div class="aa-radar-tile aa-radar-tile-watch"><div class="aa-loading-row" style="width:110px"></div><div class="aa-loading-row" style="width:56px; margin-top:10px"></div></div>
+        </div>
+
+        <div class="aa-radar-repeat-subscribers" style="margin-top:12px; margin-bottom:12px">
+          <div class="aa-loading-row" style="width:220px"></div>
+        </div>
+
+        <div class="aa-table-wrap">
+          <table class="aa-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Issue</th>
+                <th>Reason</th>
+                <th>Dates</th>
+                <th>Subscriber</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:110px"></div></td>
+                <td><div class="aa-loading-row" style="width:130px"></div></td>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:150px"></div></td>
+                <td><div class="aa-loading-row" style="width:180px"></div></td>
+              </tr>
+              <tr>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:100px"></div></td>
+                <td><div class="aa-loading-row" style="width:120px"></div></td>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:140px"></div></td>
+                <td><div class="aa-loading-row" style="width:170px"></div></td>
+              </tr>
+              <tr>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:95px"></div></td>
+                <td><div class="aa-loading-row" style="width:140px"></div></td>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:145px"></div></td>
+                <td><div class="aa-loading-row" style="width:175px"></div></td>
+              </tr>
+              <tr>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:105px"></div></td>
+                <td><div class="aa-loading-row" style="width:125px"></div></td>
+                <td><div class="aa-loading-row" style="width:90px"></div></td>
+                <td><div class="aa-loading-row" style="width:150px"></div></td>
+                <td><div class="aa-loading-row" style="width:180px"></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `;
+  }
+
+  function startRadarLoadingUI() {
+    stopRadarLoadingUI();
+
+    radarLoadingIndex = 0;
+
+    const tick = () => {
+      const msg = RADAR_LOADING_MESSAGES[radarLoadingIndex % RADAR_LOADING_MESSAGES.length];
+      const pageSuffix = radarPage > 1 ? ` (page ${radarPage})` : "";
+      setRadarLoadingStatus(msg + pageSuffix);
+      radarLoadingIndex += 1;
+    };
+
+    tick();
+    radarLoadingTimer = window.setInterval(tick, 900);
+
+    const results = $("results");
+    if (results) {
+      results.innerHTML = renderRadarLoadingShell();
+    }
+  }
   function applyLoginUserMask(isLoggedIn) {
     const u = $("loginUser");
     if (!u) return;
@@ -932,14 +1049,12 @@ async function doRadar() {
   radarIssueFilter = "";
   
 
-  setStatus("busy", "Loading support radar…");
-
   if (rawVisible) {
     rawVisible = false;
     renderRawJson();
   }
 
-  $("results").innerHTML = "";
+  startRadarLoadingUI();
 
   await loadRadarPage();
 }
@@ -964,11 +1079,13 @@ const r = await fetch(radarUrl.toString(), {
   lastPayload = j;
 
   if (!r.ok || !j?.ok) {
+    stopRadarLoadingUI();
     setStatus("warn", j?.error || `Radar failed (${r.status})`);
     renderRawJson();
     return;
   }
 
+    stopRadarLoadingUI();
   setStatus("", "Radar loaded.");
 
 $("results").innerHTML = renderRadar(j);
@@ -988,6 +1105,7 @@ bindOpenCandidateButtons($("results"));
       radarPage = 1;
       setStatus("busy", "Loading support radar…");
       $("results").innerHTML = "";
+      startRadarLoadingUI();
       await loadRadarPage();
     });
   });
@@ -1011,6 +1129,7 @@ bindOpenCandidateButtons($("results"));
       radarPage -= 1;
       setStatus("busy", "Loading support radar…");
       $("results").innerHTML = "";
+      startRadarLoadingUI();
       await loadRadarPage();
     });
   }
@@ -1022,6 +1141,7 @@ bindOpenCandidateButtons($("results"));
       radarPage += 1;
       setStatus("busy", "Loading support radar…");
       $("results").innerHTML = "";
+      startRadarLoadingUI();
       await loadRadarPage();
     });
   }
