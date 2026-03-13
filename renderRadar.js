@@ -30,38 +30,56 @@ window.renderRadar = function (data) {
     `;
   }
 
-  const summaryTiles = `
-    <div class="aa-radar-summary">
-      <button
-        type="button"
-        class="aa-radar-tile aa-radar-tile-problem aa-radar-summary-filter${activeIssue === "failed-renewal" ? " is-active" : ""}"
-        data-issue="failed-renewal"
-      >
-        <div class="aa-radar-tile-label">Failed renewals</div>
-        <div class="aa-radar-tile-value">${failedRenewals}</div>
-      </button>
+  const repeatCount = Array.from(
+  new Set(
+    items
+      .map((r) => String(r?.email || "").trim().toLowerCase())
+      .filter(Boolean)
+  )
+).filter((emailKey) => {
+  return items.filter((r) => String(r?.email || "").trim().toLowerCase() === emailKey).length > 1;
+}).length;
 
-      <button
-        type="button"
-        class="aa-radar-tile aa-radar-tile-watch aa-radar-summary-filter${activeIssue === "on-hold" ? " is-active" : ""}"
-        data-issue="on-hold"
-      >
-        <div class="aa-radar-tile-label">On hold</div>
-        <div class="aa-radar-tile-value">${onHold}</div>
-      </button>
+const summaryTiles = `
+  <div class="aa-radar-summary">
+    <button
+      type="button"
+      class="aa-radar-tile aa-radar-tile-problem aa-radar-summary-filter${activeIssue === "failed-renewal" ? " is-active" : ""}"
+      data-issue="failed-renewal"
+    >
+      <div class="aa-radar-tile-label">Failed renewals</div>
+      <div class="aa-radar-tile-value">${failedRenewals}</div>
+    </button>
 
-      <button
-        type="button"
-        class="aa-radar-tile aa-radar-tile-watch aa-radar-summary-filter${activeIssue === "pending-cancel" ? " is-active" : ""}"
-        data-issue="pending-cancel"
-      >
-        <div class="aa-radar-tile-label">Pending cancel</div>
-        <div class="aa-radar-tile-value">${pendingCancel}</div>
-      </button>
+    <button
+      type="button"
+      class="aa-radar-tile aa-radar-tile-watch aa-radar-summary-filter${activeIssue === "on-hold" ? " is-active" : ""}"
+      data-issue="on-hold"
+    >
+      <div class="aa-radar-tile-label">On hold</div>
+      <div class="aa-radar-tile-value">${onHold}</div>
+    </button>
 
-      
+    <button
+      type="button"
+      class="aa-radar-tile aa-radar-tile-watch aa-radar-summary-filter${activeIssue === "pending-cancel" ? " is-active" : ""}"
+      data-issue="pending-cancel"
+    >
+      <div class="aa-radar-tile-label">Pending cancel</div>
+      <div class="aa-radar-tile-value">${pendingCancel}</div>
+    </button>
+
+    <div class="aa-radar-tile aa-radar-tile-muted">
+      <div class="aa-radar-tile-label">Repeat offenders</div>
+      <div class="aa-radar-tile-value">${repeatCount}</div>
     </div>
-  `;
+
+    <div class="aa-radar-tile aa-radar-tile-muted">
+      <div class="aa-radar-tile-label">Recent expired</div>
+      <div class="aa-radar-tile-value">${recentExpired}</div>
+    </div>
+  </div>
+`;
 
   if (!items.length) {
     return `
