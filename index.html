@@ -206,26 +206,37 @@
       animation: aaSpin 0.9s linear infinite;
     }
 .aa-status-center{
-  width:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:14px;
-  color:#ffffff;
-  font-size:20px;
-  font-weight:900;
-  text-align:center;
+  width:100% !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:14px !important;
+  color:#ffffff !important;
+  font-size:20px !important;
+  font-weight:900 !important;
+  text-align:center !important;
+  box-sizing:border-box !important;
+}
+
+.msg.busy.aa-status-center{
+  padding-left:16px !important;
+  padding-right:16px !important;
 }
 
 .msg.busy.aa-status-center::before{
-  content:"";
-  display:inline-block;
-  width:20px;
-  height:20px;
-  border-radius:50%;
-  border:3px solid rgba(255,255,255,.35);
-  border-top-color:#ffffff;
-  animation:aaSpin 0.8s linear infinite;
+  content:"" !important;
+  position:static !important;
+  left:auto !important;
+  top:auto !important;
+  margin:0 !important;
+  display:inline-block !important;
+  width:22px !important;
+  height:22px !important;
+  border-radius:50% !important;
+  border:3px solid rgba(255,255,255,.35) !important;
+  border-top-color:#ffffff !important;
+  animation:aaSpin 0.8s linear infinite !important;
+  flex:0 0 auto !important;
 }
     @keyframes aaSpin { to { transform: rotate(360deg); } }
 
