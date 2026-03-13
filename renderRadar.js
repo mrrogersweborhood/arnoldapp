@@ -75,7 +75,7 @@ const summaryTiles = `
     </div>
 
     <div class="aa-radar-tile aa-radar-tile-muted">
-      <div class="aa-radar-tile-label">Recent expired</div>
+      <div class="aa-radar-tile-label">Recently expired</div>
       <div class="aa-radar-tile-value">${recentExpired}</div>
     </div>
   </div>

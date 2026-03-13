@@ -148,7 +148,10 @@
   background:rgba(255,255,255,.08);
   color:#fff;
 }
-
+.sidebar-nav button.is-active{
+  background:rgba(255,255,255,.15);
+  color:#fff;
+}
 .main-panel{
   padding:18px;
 }
@@ -1112,9 +1115,8 @@ table.aa-totals-table tr.aa-totals-total td{
 /* Radar footer (paging + counts) */
 .aa-radar-summary{
   display:grid;
-  grid-template-columns:repeat(4, minmax(0, 1fr));
+  grid-template-columns:repeat(5,1fr);
   gap:12px;
-  margin-bottom:12px;
 }
 
 .aa-radar-tile{
@@ -1611,13 +1613,13 @@ table.aa-totals-table tr.aa-totals-total td{
   <div class="sidebar">
     <div class="sidebar-title">Radar</div>
 
-    <div class="sidebar-nav">
-      <button>Recovery Queue</button>
-      <button>Radar</button>
-      <button>Subscribers</button>
-      <button>Revenue at Risk</button>
-      <button>Settings</button>
-    </div>
+<div class="sidebar-nav">
+  <button>Recovery Queue</button>
+  <button class="is-active">Radar</button>
+  <button>Subscribers</button>
+  <button>Revenue at Risk</button>
+  <button>Settings</button>
+</div>
   </div>
 
   <div class="main-panel">
@@ -1669,12 +1671,12 @@ table.aa-totals-table tr.aa-totals-total td{
 </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-083"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-083"></script>
-  <script src="./renderHealth.js?v=2026-03-10-083"></script>
-  <script src="./renderActivity.js?v=2026-03-10-083"></script>
-<script src="./renderRadar.js?v=2026-03-10-083"></script>  
-<script src="./main.js?v=2026-03-10-083"></script>
+  <script src="./formatters.js?v=2026-03-10-084"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-084"></script>
+  <script src="./renderHealth.js?v=2026-03-10-084"></script>
+  <script src="./renderActivity.js?v=2026-03-10-084"></script>
+<script src="./renderRadar.js?v=2026-03-10-084"></script>  
+<script src="./main.js?v=2026-03-10-084"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
