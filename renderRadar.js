@@ -59,13 +59,7 @@ window.renderRadar = function (data) {
         <div class="aa-radar-tile-value">${pendingCancel}</div>
       </button>
 
-      <button
-        type="button"
-        class="aa-radar-tile aa-radar-tile-muted"
-      >
-        <div class="aa-radar-tile-label">Total Problems</div>
-        <div class="aa-radar-tile-value">${total}</div>
-      </button>
+      
     </div>
   `;
 
@@ -74,13 +68,13 @@ window.renderRadar = function (data) {
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Support Radar</div>
-          <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Current actionable problems"}</div>
+          <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Subscribers requiring attention"}</div>
         </div>
 
         ${radarAlert}
         ${summaryTiles}
 
-        <div class="aa-muted">No current actionable problems.</div>
+        <div class="aa-muted">No Subscribers requiring attention.</div>
 
         <div class="aa-radar-footer">
           <div class="aa-radar-count">
@@ -121,7 +115,7 @@ const repeatSubscribers = Object.entries(repeatIndex)
 
 const repeatSubscribersStrip = repeatSubscribers.length
   ? `
-      <div class="aa-health-alert aa-health-alert-watch" style="margin-top:12px; margin-bottom:12px; display:block">
+<div class="aa-radar-repeat-subscribers" style="margin-top:12px; margin-bottom:12px">
         <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">
           <strong>Repeat Problem Subscribers: ${repeatSubscribers.length}</strong>
           ${repeatSubscribers.slice(0, 8).map((s) => `
@@ -273,7 +267,7 @@ if (r.date) {
     <section class="card aa-section">
       <div class="aa-section-head">
         <div class="aa-section-title">Support Radar</div>
-        <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Current actionable problems"}</div>
+        <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Subscribers requiring attention"}</div>
       </div>
 
       ${radarAlert}
@@ -288,7 +282,7 @@ if (r.date) {
               <th class="aa-radar-th-issue">Issue</th>
               <th class="aa-radar-th-reason">Reason</th>
               <th class="aa-radar-th-date">Dates</th>
-              <th class="aa-radar-th-customer">Customer</th>
+              <th class="aa-radar-th-customer">Subscriber</th>
               <th class="aa-radar-th-email">Email</th>
             </tr>
           </thead>

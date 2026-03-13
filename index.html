@@ -261,6 +261,42 @@
       background:rgba(15,23,42,.02);
       box-shadow:none;
     }
+/* Subscriber overview hero card */
+.aa-subscriber-hero{
+  padding:18px;
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 6px 18px rgba(15,23,42,.06);
+}
+
+.aa-subscriber-name{
+  font-size:22px;
+  font-weight:950;
+  color:#0b1220;
+  margin-bottom:4px;
+}
+
+.aa-subscriber-meta{
+  font-size:14px;
+  font-weight:800;
+  color:#475569;
+}
+
+.aa-subscriber-stats{
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+
+.aa-subscriber-stat{
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:8px 12px;
+  background:#f8fafc;
+  font-weight:900;
+}
     .aa-card-title{
       font-weight:900;
       font-size:14px;
@@ -1067,6 +1103,14 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-table tbody tr:nth-child(even) td{
   background:#fafcff;
 }
+/* subtle row card separation like OkObserver cards */
+.aa-table tbody tr{
+  transition: background .12s ease, transform .08s ease;
+}
+
+.aa-table tbody tr:hover{
+  transform:translateY(-1px);
+}
 .aa-radar-col-issue{
   font-weight:950;
   color:#0f172a;
@@ -1121,10 +1165,11 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 
 .aa-radar-col-id .aa-order-id{
-  font-size:15px;
+  font-size:17px;
   font-weight:950;
   color:var(--brand);
   text-decoration:none;
+  letter-spacing:.01em;
 }
 
 .aa-radar-col-id .aa-order-id:hover{
@@ -1274,7 +1319,10 @@ table.aa-totals-table tr.aa-totals-total td{
   color:#991b1b;
   border:1px solid #fecaca;
 }
-
+/* highlight repeat offender rows */
+.aa-table tbody tr:has(.aa-pill-danger){
+  border-left:4px solid #ef4444;
+}
 /* Subtle zebra striping like OkObserver cards */
 
 .aa-table tbody tr:nth-child(even) td{
@@ -1490,12 +1538,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-072"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-072"></script>
-  <script src="./renderHealth.js?v=2026-03-10-072"></script>
-  <script src="./renderActivity.js?v=2026-03-10-072"></script>
-<script src="./renderRadar.js?v=2026-03-10-072"></script>  
-<script src="./main.js?v=2026-03-10-072"></script>
+  <script src="./formatters.js?v=2026-03-10-073"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-073"></script>
+  <script src="./renderHealth.js?v=2026-03-10-073"></script>
+  <script src="./renderActivity.js?v=2026-03-10-073"></script>
+<script src="./renderRadar.js?v=2026-03-10-073"></script>  
+<script src="./main.js?v=2026-03-10-073"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
