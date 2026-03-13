@@ -53,14 +53,19 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     }
 
     const sl = $("statusLine");
-    if (sl) sl.classList.remove("aa-status-center");
+    if (!sl) return;
+    sl.classList.remove("aa-status-center");
+    sl.innerHTML = "";
   }
 
   function setRadarLoadingStatus(text) {
     const sl = $("statusLine");
     if (!sl) return;
     sl.className = "msg busy aa-status-center";
-    sl.textContent = friendlyText(text ?? "");
+    sl.innerHTML = `
+      <span class="aa-inline-spinner" aria-hidden="true"></span>
+      <span class="aa-status-center-text">${esc(friendlyText(text ?? ""))}</span>
+    `;
   }
 
   function renderRadarLoadingShell() {

@@ -210,12 +210,14 @@
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-  gap:14px !important;
+  gap:12px !important;
   color:#ffffff !important;
   font-size:20px !important;
   font-weight:900 !important;
   text-align:center !important;
   box-sizing:border-box !important;
+  padding-left:16px !important;
+  padding-right:16px !important;
 }
 
 .msg.busy.aa-status-center{
@@ -224,19 +226,23 @@
 }
 
 .msg.busy.aa-status-center::before{
-  content:"" !important;
-  position:static !important;
-  left:auto !important;
-  top:auto !important;
-  margin:0 !important;
-  display:inline-block !important;
-  width:22px !important;
-  height:22px !important;
-  border-radius:50% !important;
-  border:3px solid rgba(255,255,255,.35) !important;
-  border-top-color:#ffffff !important;
-  animation:aaSpin 0.8s linear infinite !important;
-  flex:0 0 auto !important;
+  content:none !important;
+  display:none !important;
+}
+
+.aa-inline-spinner{
+  display:inline-block;
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.30);
+  border-top-color:#ffffff;
+  animation:aaSpin 0.8s linear infinite;
+  flex:0 0 auto;
+}
+
+.aa-status-center-text{
+  display:inline-block;
 }
     @keyframes aaSpin { to { transform: rotate(360deg); } }
 
@@ -1584,12 +1590,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-081"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-081"></script>
-  <script src="./renderHealth.js?v=2026-03-10-081"></script>
-  <script src="./renderActivity.js?v=2026-03-10-081"></script>
-<script src="./renderRadar.js?v=2026-03-10-081"></script>  
-<script src="./main.js?v=2026-03-10-081"></script>
+  <script src="./formatters.js?v=2026-03-10-082"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-082"></script>
+  <script src="./renderHealth.js?v=2026-03-10-082"></script>
+  <script src="./renderActivity.js?v=2026-03-10-082"></script>
+<script src="./renderRadar.js?v=2026-03-10-082"></script>  
+<script src="./main.js?v=2026-03-10-082"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
