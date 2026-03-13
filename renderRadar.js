@@ -167,7 +167,13 @@ const rows = [...items]
     return bTs - aTs;
   })
   .map((r) => {
-    const id = r.display_id || "";
+    const displayId = String(r.display_id || "").trim();
+    const orderIdMatch = displayId.match(/order\s*#?\s*(\d+)/i);
+    const subIdMatch = displayId.match(/sub\s*#?\s*(\d+)/i);
+
+    const orderId = orderIdMatch ? orderIdMatch[1] : "";
+    const subId = subIdMatch ? subIdMatch[1] : "";
+
     const name = r.customer_name || "—";
     const email = r.email || "—";
 let repeatBadge = "";
@@ -231,28 +237,34 @@ if (r.date) {
       </button>
     `;
 
-    let query = "";
-    const idLower = String(id).toLowerCase().trim();
-
-    if (idLower.startsWith("order")) {
-      query = idLower;
-    } else if (idLower.startsWith("sub")) {
-      query = idLower;
-    } else if (/^\d+$/.test(String(id).trim())) {
-      query = `order ${String(id).trim()}`;
-    }
+    const orderQuery = orderId ? `order ${orderId}` : "";
+    const subQuery = subId ? `subscription ${subId}` : "";
 
     return `
       <tr class="${recentClass}">
         <td class="aa-radar-col-id">
+          ${orderId ? `
           <button
             type="button"
             class="aa-order-id aa-candidate-open-btn"
-            data-open-query="${query}"
+            data-open-query="${orderQuery}"
             style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
           >
-            ${id}
+            ${orderId}
           </button>
+          ` : "—"}
+        </td>
+        <td class="aa-radar-col-sub">
+          ${subId ? `
+          <button
+            type="button"
+            class="aa-order-id aa-candidate-open-btn"
+            data-open-query="${subQuery}"
+            style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
+          >
+            ${subId}
+          </button>
+          ` : "—"}
         </td>
         <td class="aa-radar-col-issue">${issue}</td>
         <td class="aa-radar-col-reason">${reason}</td>
@@ -276,9 +288,10 @@ if (r.date) {
 
       <div class="aa-table-wrap">
         <table class="aa-table">
-          <thead>
+                    <thead>
             <tr>
               <th class="aa-radar-th-id">Order</th>
+              <th class="aa-radar-th-sub">Subscription</th>
               <th class="aa-radar-th-issue">Issue</th>
               <th class="aa-radar-th-reason">Reason</th>
               <th class="aa-radar-th-date">Dates</th>
