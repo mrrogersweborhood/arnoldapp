@@ -205,34 +205,28 @@
       border-top-color: #fff;
       animation: aaSpin 0.9s linear infinite;
     }
-    .aa-status-center{
-      width:100%;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:12px;
-      text-align:center;
-      color:#fff;
-      font-size:20px;
-      font-weight:950;
-      padding-left:16px !important;
-      padding-right:16px;
-      box-sizing:border-box;
-    }
+.aa-status-center{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  color:#ffffff;
+  font-size:20px;
+  font-weight:900;
+  text-align:center;
+}
 
-    .msg.busy.aa-status-center::before{
-      content:"";
-      position:static;
-      display:block;
-      width:16px;
-      height:16px;
-      margin:0;
-      border-radius:50%;
-      border:2px solid rgba(255,255,255,.55);
-      border-top-color:#fff;
-      animation:aaSpin 0.9s linear infinite;
-      flex:0 0 auto;
-    }
+.msg.busy.aa-status-center::before{
+  content:"";
+  display:inline-block;
+  width:20px;
+  height:20px;
+  border-radius:50%;
+  border:3px solid rgba(255,255,255,.35);
+  border-top-color:#ffffff;
+  animation:aaSpin 0.8s linear infinite;
+}
     @keyframes aaSpin { to { transform: rotate(360deg); } }
 
     .results{ display:flex; flex-direction:column; gap:14px; }
@@ -1579,12 +1573,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-080"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-080"></script>
-  <script src="./renderHealth.js?v=2026-03-10-080"></script>
-  <script src="./renderActivity.js?v=2026-03-10-080"></script>
-<script src="./renderRadar.js?v=2026-03-10-080"></script>  
-<script src="./main.js?v=2026-03-10-080"></script>
+  <script src="./formatters.js?v=2026-03-10-081"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-081"></script>
+  <script src="./renderHealth.js?v=2026-03-10-081"></script>
+  <script src="./renderActivity.js?v=2026-03-10-081"></script>
+<script src="./renderRadar.js?v=2026-03-10-081"></script>  
+<script src="./main.js?v=2026-03-10-081"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
