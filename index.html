@@ -206,6 +206,10 @@
       animation: aaSpin 0.9s linear infinite;
     }
     .aa-status-center{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:12px;
       text-align:center;
       color:#fff;
       font-size:18px;
@@ -215,8 +219,12 @@
     }
 
     .msg.busy.aa-status-center::before{
-      left:50%;
-      margin-left:-140px;
+      position:static;
+      left:auto;
+      top:auto;
+      margin-top:0;
+      margin-left:0;
+      flex:0 0 auto;
     }
     @keyframes aaSpin { to { transform: rotate(360deg); } }
 
@@ -1564,12 +1572,12 @@ table.aa-totals-table tr.aa-totals-total td{
   </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-076"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-076"></script>
-  <script src="./renderHealth.js?v=2026-03-10-076"></script>
-  <script src="./renderActivity.js?v=2026-03-10-076"></script>
-<script src="./renderRadar.js?v=2026-03-10-076"></script>  
-<script src="./main.js?v=2026-03-10-076"></script>
+  <script src="./formatters.js?v=2026-03-10-080"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-080"></script>
+  <script src="./renderHealth.js?v=2026-03-10-080"></script>
+  <script src="./renderActivity.js?v=2026-03-10-080"></script>
+<script src="./renderRadar.js?v=2026-03-10-080"></script>  
+<script src="./main.js?v=2026-03-10-080"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
