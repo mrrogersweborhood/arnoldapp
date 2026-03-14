@@ -220,6 +220,11 @@ if (repeatCount > 1) {
 }
     const rawIssue = r.issue || "";
     const reason = r.reason || "—";
+let severityClass = "";
+
+if (rawIssue === "failed-renewal") severityClass = " aa-radar-row-failure";
+else if (rawIssue === "on-hold") severityClass = " aa-radar-row-warning";
+else if (rawIssue === "pending-cancel") severityClass = " aa-radar-row-neutral";
 const itemValue = Number(r?.total || r?._source_order?.total || 0);
 
 let valueClass = "";
@@ -234,29 +239,37 @@ const itemValueDisplay = itemValue > 0
     }).format(itemValue)
   : "—";
 let suggestedAction = "Review subscriber";
+let actionClass = " aa-pill-retention";
 
 const reasonLower = String(reason).toLowerCase();
 
 if (reasonLower.includes("expired")) {
   suggestedAction = "Update payment method";
+  actionClass = " aa-pill-update";
 }
 else if (reasonLower.includes("saved payment")) {
   suggestedAction = "Update payment method";
+  actionClass = " aa-pill-update";
 }
 else if (reasonLower.includes("declined")) {
   suggestedAction = "Contact customer";
+  actionClass = " aa-pill-contact";
 }
 else if (reasonLower.includes("insufficient")) {
   suggestedAction = "Retry tomorrow";
+  actionClass = " aa-pill-retry";
 }
 else if (reasonLower.includes("square")) {
   suggestedAction = "Investigate gateway";
+  actionClass = " aa-pill-gateway";
 }
 else if (rawIssue === "on-hold") {
   suggestedAction = "Resume subscription";
+  actionClass = " aa-pill-retry";
 }
 else if (rawIssue === "pending-cancel") {
   suggestedAction = "Retention follow-up";
+  actionClass = " aa-pill-retention";
 }
 let date = "—";
 let recentClass = "";
@@ -309,7 +322,7 @@ if (r.date) {
     const subQuery = subId ? `subscription ${subId}` : "";
 
     return `
-      <tr class="${recentClass}">
+      <tr class="${recentClass}${severityClass}">
         <td class="aa-radar-col-id">
           ${orderId ? `
           <button
@@ -338,11 +351,20 @@ if (r.date) {
         <td class="aa-radar-col-issue">${issue}</td>
 <td class="aa-radar-col-reason">${reason}</td>
 <td class="aa-radar-col-action">
-  <span class="aa-pill aa-pill-info">${suggestedAction}</span>
+  <span class="aa-pill${actionClass}">${suggestedAction}</span>
 </td>
 <td class="aa-radar-col-date">${date}</td>
         <td class="aa-radar-col-customer">${name}${repeatBadge}</td>
-        <td class="aa-radar-col-email">${email}</td>
+        <td class="aa-radar-col-email">
+  <button
+    type="button"
+    class="aa-radar-email-link aa-candidate-open-btn"
+    data-open-query="${email}"
+    title="Open subscriber by email"
+  >
+    ${email}
+  </button>
+</td>
       </tr>
     `;
   }).join("");
