@@ -58,14 +58,20 @@ if (oppGrid) {
           }).format(displayValue)
         : "—";
 
-      return `
-        <div class="aa-opp-card">
-          <div class="aa-opp-title">${displayName}</div>
-          <div class="aa-opp-value">${valueText}</div>
-          <div class="aa-opp-reason">${displayReason}</div>
-          <div class="aa-opp-email">${displayEmail}</div>
-        </div>
-      `;
+return `
+  <button
+    type="button"
+    class="aa-opp-card aa-candidate-open-btn"
+    data-open-query="${displayEmail}"
+    title="Open subscriber by email"
+    style="cursor:pointer"
+  >
+    <div class="aa-opp-title">${displayName}</div>
+    <div class="aa-opp-value">${valueText}</div>
+    <div class="aa-opp-reason">${displayReason}</div>
+    <div class="aa-opp-email">${displayEmail}</div>
+  </button>
+`;
     }).join("");
   }
 }  const visible = items.length;
