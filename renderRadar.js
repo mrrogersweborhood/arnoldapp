@@ -98,6 +98,14 @@ const revenueAtRiskDisplay = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2
 }).format(revenueAtRisk);
   const activeIssue = String(data?.active_issue_filter || "").trim();
+const squareFailureCount = items.filter((r) =>
+  String(r?.reason || "").toLowerCase().includes("square")
+).length;
+
+const authFailureCount = items.filter((r) => {
+  const reason = String(r?.reason || "").toLowerCase();
+  return reason.includes("authentication required") || reason.includes("authentication failed");
+}).length;
   const repeatCount = Array.from(
   new Set(
     items
@@ -121,22 +129,52 @@ if (kpiOnHold) kpiOnHold.textContent = onHold;
 if (kpiPendingCancel) kpiPendingCancel.textContent = pendingCancel;
 if (kpiRepeat) kpiRepeat.textContent = repeatCount;
 if (kpiRevenue) kpiRevenue.textContent = revenueAtRiskDisplay;
-if (kpiExpired) kpiExpired.textContent = recentExpired;  let radarAlert = "";
+if (kpiExpired) kpiExpired.textContent = recentExpired;  
+let radarAlert = "";
 
-  if (failedRenewals > 0) {
-    radarAlert = `
-      <div class="aa-health-alert aa-health-alert-problem">
-        ⚠ ${failedRenewals} failed renewal${failedRenewals === 1 ? "" : "s"} require attention
-      </div>
-    `;
-  } else if (onHold > 0) {
-    radarAlert = `
-      <div class="aa-health-alert aa-health-alert-watch">
-        ${onHold} subscription${onHold === 1 ? "" : "s"} currently on hold
-      </div>
-    `;
-  }
-
+// Recovery / gateway trend detection
+if (squareFailureCount >= 3) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-problem">
+      ⚠ Square gateway failures detected across multiple subscribers
+    </div>
+  `;
+}
+else if (authFailureCount >= 3) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-watch">
+      ⚠ Payment authentication failures increasing
+    </div>
+  `;
+}
+else if (failedRenewals >= 10) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-problem">
+      ⚠ High volume of failed renewals detected today
+    </div>
+  `;
+}
+else if (failedRenewals > 0) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-problem">
+      ⚠ ${failedRenewals} failed renewal${failedRenewals === 1 ? "" : "s"} require attention
+    </div>
+  `;
+}
+else if (onHold >= 10) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-watch">
+      ⚠ Unusual number of subscriptions moved to On Hold
+    </div>
+  `;
+}
+else if (onHold > 0) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-watch">
+      ${onHold} subscription${onHold === 1 ? "" : "s"} currently on hold
+    </div>
+  `;
+}
 
 
 const summaryTiles = `
