@@ -4,6 +4,44 @@
 window.renderRadar = function (data) {
 
   const items = Array.isArray(data?.items) ? data.items : [];
+// Top Recovery Opportunities
+const oppGrid = document.getElementById("radarOppsGrid");
+
+if (oppGrid && items.length) {
+
+  const recoveryRank = (r) => {
+    const reason = String(r?.reason || "").toUpperCase();
+
+    if (reason.includes("PAYMENT") || reason.includes("CARD_EXPIRED")) return 1;
+    if (reason.includes("DECLINED")) return 2;
+    if (reason.includes("INSUFFICIENT")) return 3;
+    if (reason.includes("HOLD")) return 4;
+
+    return 10;
+  };
+
+  const ranked = [...items]
+    .sort((a,b) => {
+      const rankDiff = recoveryRank(a) - recoveryRank(b);
+      if (rankDiff !== 0) return rankDiff;
+
+      const valueDiff = Number(b.value || 0) - Number(a.value || 0);
+      if (valueDiff !== 0) return valueDiff;
+
+      return new Date(b.date || 0) - new Date(a.date || 0);
+    })
+    .slice(0,3);
+
+  oppGrid.innerHTML = ranked.map(r => `
+    <div class="aa-opp-card">
+      <div class="aa-opp-title">${r.customer || "Subscriber"}</div>
+      <div class="aa-opp-value">$${Number(r.value || 0).toFixed(2)}</div>
+      <div class="aa-opp-reason">${r.reason || "Payment issue"}</div>
+      <div class="aa-opp-email">${r.email || ""}</div>
+    </div>
+  `).join("");
+
+}
   const visible = items.length;
   const total = data?.total_actionable_items ?? visible;
 
