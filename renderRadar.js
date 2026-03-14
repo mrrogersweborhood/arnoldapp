@@ -240,6 +240,9 @@ const reasonLower = String(reason).toLowerCase();
 if (reasonLower.includes("expired")) {
   suggestedAction = "Update payment method";
 }
+else if (reasonLower.includes("saved payment")) {
+  suggestedAction = "Update payment method";
+}
 else if (reasonLower.includes("declined")) {
   suggestedAction = "Contact customer";
 }
@@ -250,7 +253,7 @@ else if (reasonLower.includes("square")) {
   suggestedAction = "Investigate gateway";
 }
 else if (rawIssue === "on-hold") {
-  suggestedAction = "Review subscriber";
+  suggestedAction = "Resume subscription";
 }
 else if (rawIssue === "pending-cancel") {
   suggestedAction = "Retention follow-up";
