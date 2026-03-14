@@ -312,9 +312,7 @@ const tablePriorityRank = (r) => {
 
   return 5;
 };
-const tablePriorityRank = (r) => {
-  const reason = String(r?.reason || "").toLowerCase();
-  const issue = String(r?.issue || "").toLowerCase();
+
 
   if (reason.includes("square") || reason.includes("gateway")) return 1;
 
