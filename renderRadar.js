@@ -67,7 +67,10 @@ return `
     style="cursor:pointer"
   >
     <div class="aa-opp-title">${displayName}</div>
-    <div class="aa-opp-value">${valueText}</div>
+    <div class="aa-opp-value">
+  <span class="aa-opp-revenue">${valueText}</span>
+  <span class="aa-opp-risk-label">at risk</span>
+</div>
     <div class="aa-opp-reason">${displayReason}</div>
     <div class="aa-opp-email">${displayEmail}</div>
   </button>
