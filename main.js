@@ -1096,6 +1096,7 @@ const r = await fetch(radarUrl.toString(), {
 $("results").innerHTML = renderRadar(j);
 
 bindOpenCandidateButtons($("results"));
+bindOpenCandidateButtons($("radarRecoveryOpps"));
 
   document.querySelectorAll(".aa-radar-issue-filter[data-issue], .aa-radar-summary-filter[data-issue]").forEach((btn) => {
     btn.addEventListener("click", async () => {
