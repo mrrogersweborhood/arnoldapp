@@ -57,7 +57,12 @@ if (oppGrid) {
             maximumFractionDigits: 2
           }).format(displayValue)
         : "—";
-
+const failureDate = r?.date
+  ? new Date(r.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric"
+    })
+  : "";
 return `
   <button
     type="button"
@@ -66,13 +71,14 @@ return `
     title="Open subscriber by email"
     style="cursor:pointer"
   >
-    <div class="aa-opp-title">${displayName}</div>
-    <div class="aa-opp-value">
+<div class="aa-opp-title">${displayName}</div>
+<div class="aa-opp-value">
   <span class="aa-opp-revenue">${valueText}</span>
   <span class="aa-opp-risk-label">at risk</span>
 </div>
-    <div class="aa-opp-reason">${displayReason}</div>
-    <div class="aa-opp-email">${displayEmail}</div>
+<div class="aa-opp-reason">${displayReason}</div>
+<div class="aa-opp-date">Failed ${failureDate}</div>
+<div class="aa-opp-email">${displayEmail}</div>
   </button>
 `;
     }).join("");
