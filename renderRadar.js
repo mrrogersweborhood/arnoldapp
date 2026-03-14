@@ -292,8 +292,54 @@ const repeatSubscribersStrip = repeatSubscribers.length
       </div>
     `
   : "";
+const tablePriorityRank = (r) => {
+  const reasonLower = String(r?.reason || "").toLowerCase();
+  const rawIssue = String(r?.issue || "").toLowerCase();
+
+  if (reasonLower.includes("square")) return 1;
+  if (reasonLower.includes("gateway")) return 1;
+  if (reasonLower.includes("authentication required")) return 1;
+  if (reasonLower.includes("authentication failed")) return 1;
+
+  if (reasonLower.includes("expired")) return 2;
+  if (reasonLower.includes("declined")) return 2;
+  if (reasonLower.includes("insufficient")) return 2;
+  if (reasonLower.includes("card on file needs update")) return 2;
+
+  if (rawIssue === "on-hold") return 3;
+  if (rawIssue === "pending-cancel") return 3;
+  if (rawIssue === "expired") return 4;
+
+  return 5;
+};
+const tablePriorityRank = (r) => {
+  const reason = String(r?.reason || "").toLowerCase();
+  const issue = String(r?.issue || "").toLowerCase();
+
+  if (reason.includes("square") || reason.includes("gateway")) return 1;
+
+  if (
+    reason.includes("expired") ||
+    reason.includes("declined") ||
+    reason.includes("insufficient") ||
+    reason.includes("card on file needs update")
+  ) return 2;
+
+  if (issue === "on-hold" || issue === "pending-cancel") return 3;
+
+  if (issue === "expired") return 4;
+
+  return 5;
+};
+
 const rows = [...items]
   .sort((a, b) => {
+
+    const aPriority = tablePriorityRank(a);
+    const bPriority = tablePriorityRank(b);
+
+    if (aPriority !== bPriority) return aPriority - bPriority;
+
     const aTs = a?.date ? new Date(a.date).getTime() : 0;
     const bTs = b?.date ? new Date(b.date).getTime() : 0;
 
