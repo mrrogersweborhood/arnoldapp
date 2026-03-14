@@ -132,7 +132,18 @@
   flex-direction:column;
   gap:6px;
 }
+.sidebar-group{
+  margin-bottom:14px;
+}
 
+.sidebar-group-label{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#94a3b8;
+  padding:4px 10px 6px;
+}
 .sidebar-nav button{
   border:0;
   background:transparent;
@@ -154,6 +165,104 @@
 }
 .main-panel{
   padding:18px;
+}
+.radar-kpi-band{
+  padding:16px;
+  margin-bottom:14px;
+}
+
+.radar-kpi-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+  flex-wrap:wrap;
+}
+
+.radar-kpi-kicker{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--brand);
+  margin-bottom:4px;
+}
+
+.radar-kpi-title{
+  font-size:24px;
+  font-weight:950;
+  color:#0b1220;
+  line-height:1.05;
+}
+
+.radar-kpi-subtitle{
+  font-size:13px;
+  font-weight:800;
+  color:#64748b;
+}
+
+.radar-kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(6, minmax(0, 1fr));
+  gap:12px;
+}
+
+.radar-kpi-card{
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:#fff;
+  padding:14px;
+  box-shadow:0 4px 14px rgba(15,23,42,.05);
+}
+
+.radar-kpi-label{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  color:var(--brand);
+  margin-bottom:8px;
+}
+
+.radar-kpi-value{
+  font-size:24px;
+  font-weight:950;
+  color:#0b1220;
+  line-height:1;
+}
+
+.radar-kpi-problem{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+
+.radar-kpi-watch{
+  background:#fefce8;
+  border-color:#fde68a;
+}
+
+.radar-kpi-muted{
+  background:#f8fafc;
+  border-color:rgba(15,23,42,.10);
+}
+
+@media (max-width: 1200px){
+  .radar-kpi-grid{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px){
+  .radar-kpi-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px){
+  .radar-kpi-grid{
+    grid-template-columns:1fr;
+  }
 }
     .wrap{
       max-width:1500px;
@@ -1686,16 +1795,75 @@ table.aa-totals-table tr.aa-totals-total td{
     <div class="sidebar-title">Radar</div>
 
 <div class="sidebar-nav">
-  <button>Recovery Queue</button>
-  <button class="is-active">Radar</button>
-  <button>Subscribers</button>
-  <button>Revenue at Risk</button>
-  <button>Settings</button>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Recovery</div>
+    <button class="is-active">Radar</button>
+    <button>Recovery Queue</button>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Subscribers</div>
+    <button>Subscribers</button>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">Insights</div>
+    <button>Revenue at Risk</button>
+  </div>
+
+  <div class="sidebar-group">
+    <div class="sidebar-group-label">System</div>
+    <button>Settings</button>
+  </div>
+
 </div>
   </div>
 
   <div class="main-panel">
     <div class="wrap">
+
+      <div class="card radar-kpi-band">
+        <div class="radar-kpi-head">
+          <div>
+            <div class="radar-kpi-kicker">Recovery Overview</div>
+            <div class="radar-kpi-title">Radar Dashboard</div>
+          </div>
+          <div class="radar-kpi-subtitle">Subscription recovery health and priority signals</div>
+        </div>
+
+        <div class="radar-kpi-grid">
+          <div class="radar-kpi-card radar-kpi-problem">
+            <div class="radar-kpi-label">Failed Renewals</div>
+            <div class="radar-kpi-value" id="radarKpiFailed">--</div>
+          </div>
+
+          <div class="radar-kpi-card radar-kpi-watch">
+            <div class="radar-kpi-label">On Hold</div>
+            <div class="radar-kpi-value" id="radarKpiOnHold">--</div>
+          </div>
+
+          <div class="radar-kpi-card radar-kpi-watch">
+            <div class="radar-kpi-label">Pending Cancel</div>
+            <div class="radar-kpi-value" id="radarKpiPendingCancel">--</div>
+          </div>
+
+          <div class="radar-kpi-card radar-kpi-problem">
+            <div class="radar-kpi-label">Repeat Offenders</div>
+            <div class="radar-kpi-value" id="radarKpiRepeat">--</div>
+          </div>
+
+          <div class="radar-kpi-card radar-kpi-muted">
+            <div class="radar-kpi-label">Revenue at Risk</div>
+            <div class="radar-kpi-value" id="radarKpiRevenue">$--</div>
+          </div>
+
+          <div class="radar-kpi-card radar-kpi-muted">
+            <div class="radar-kpi-label">Recently Expired</div>
+            <div class="radar-kpi-value" id="radarKpiExpired">--</div>
+          </div>
+        </div>
+      </div>
     <div class="card search-card">
       <div class="grid">
 <div id="loginFields">
@@ -1743,12 +1911,12 @@ table.aa-totals-table tr.aa-totals-total td{
 </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-089"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-089"></script>
-  <script src="./renderHealth.js?v=2026-03-10-089"></script>
-  <script src="./renderActivity.js?v=2026-03-10-089"></script>
-<script src="./renderRadar.js?v=2026-03-10-089"></script>  
-<script src="./main.js?v=2026-03-10-089"></script>
+  <script src="./formatters.js?v=2026-03-10-090"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-090"></script>
+  <script src="./renderHealth.js?v=2026-03-10-090"></script>
+  <script src="./renderActivity.js?v=2026-03-10-090"></script>
+<script src="./renderRadar.js?v=2026-03-10-090"></script>  
+<script src="./main.js?v=2026-03-10-090"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

@@ -19,8 +19,30 @@ const revenueAtRiskDisplay = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2
 }).format(revenueAtRisk);
   const activeIssue = String(data?.active_issue_filter || "").trim();
+  const repeatCount = Array.from(
+  new Set(
+    items
+      .map((r) => String(r?.email || "").trim().toLowerCase())
+      .filter(Boolean)
+  )
+).filter((emailKey) => {
+  return items.filter((r) => String(r?.email || "").trim().toLowerCase() === emailKey).length > 1;
+}).length;
 
-  let radarAlert = "";
+// Populate dashboard KPI header band
+const kpiFailed = document.getElementById("radarKpiFailed");
+const kpiOnHold = document.getElementById("radarKpiOnHold");
+const kpiPendingCancel = document.getElementById("radarKpiPendingCancel");
+const kpiRepeat = document.getElementById("radarKpiRepeat");
+const kpiRevenue = document.getElementById("radarKpiRevenue");
+const kpiExpired = document.getElementById("radarKpiExpired");
+
+if (kpiFailed) kpiFailed.textContent = failedRenewals;
+if (kpiOnHold) kpiOnHold.textContent = onHold;
+if (kpiPendingCancel) kpiPendingCancel.textContent = pendingCancel;
+if (kpiRepeat) kpiRepeat.textContent = repeatCount;
+if (kpiRevenue) kpiRevenue.textContent = revenueAtRiskDisplay;
+if (kpiExpired) kpiExpired.textContent = recentExpired;  let radarAlert = "";
 
   if (failedRenewals > 0) {
     radarAlert = `
@@ -36,15 +58,7 @@ const revenueAtRiskDisplay = new Intl.NumberFormat("en-US", {
     `;
   }
 
-  const repeatCount = Array.from(
-  new Set(
-    items
-      .map((r) => String(r?.email || "").trim().toLowerCase())
-      .filter(Boolean)
-  )
-).filter((emailKey) => {
-  return items.filter((r) => String(r?.email || "").trim().toLowerCase() === emailKey).length > 1;
-}).length;
+
 
 const summaryTiles = `
   <div class="aa-radar-summary">
