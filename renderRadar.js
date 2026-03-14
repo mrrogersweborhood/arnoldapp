@@ -12,6 +12,12 @@ window.renderRadar = function (data) {
   const onHold = Number(summary.onHold || 0);
   const pendingCancel = Number(summary.pendingCancel || 0);
   const recentExpired = Number(summary.recentExpired || 0);
+const revenueAtRisk = Number(summary.revenueAtRisk || 0);
+const revenueAtRiskDisplay = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2
+}).format(revenueAtRisk);
   const activeIssue = String(data?.active_issue_filter || "").trim();
 
   let radarAlert = "";
@@ -78,6 +84,10 @@ const summaryTiles = `
       <div class="aa-radar-tile-label">Recently expired</div>
       <div class="aa-radar-tile-value">${recentExpired}</div>
     </div>
+<div class="aa-radar-tile aa-radar-tile-problem">
+  <div class="aa-radar-tile-label">Revenue at risk</div>
+  <div class="aa-radar-tile-value">${revenueAtRiskDisplay}</div>
+</div>
   </div>
 `;
 
@@ -176,12 +186,14 @@ const rows = [...items]
 
     const aRepeatCount = repeatIndex[aEmail] || 0;
     const bRepeatCount = repeatIndex[bEmail] || 0;
-
+const aValue = Number(a?.total || a?._source_order?.total || 0);
+const bValue = Number(b?.total || b?._source_order?.total || 0);
     const aIsRepeat = aRepeatCount > 1 ? 1 : 0;
     const bIsRepeat = bRepeatCount > 1 ? 1 : 0;
 
     if (aIsRepeat !== bIsRepeat) return bIsRepeat - aIsRepeat;
-
+// prioritize higher-value recoveries
+if (aValue !== bValue) return bValue - aValue;
     return bTs - aTs;
   })
   .map((r) => {
@@ -208,6 +220,41 @@ if (repeatCount > 1) {
 }
     const rawIssue = r.issue || "";
     const reason = r.reason || "—";
+const itemValue = Number(r?.total || r?._source_order?.total || 0);
+
+let valueClass = "";
+if (itemValue >= 100) valueClass = " aa-radar-value-high";
+else if (itemValue >= 50) valueClass = " aa-radar-value-medium";
+
+const itemValueDisplay = itemValue > 0
+  ? new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 2
+    }).format(itemValue)
+  : "—";
+let suggestedAction = "Review subscriber";
+
+const reasonLower = String(reason).toLowerCase();
+
+if (reasonLower.includes("expired")) {
+  suggestedAction = "Update payment method";
+}
+else if (reasonLower.includes("declined")) {
+  suggestedAction = "Contact customer";
+}
+else if (reasonLower.includes("insufficient")) {
+  suggestedAction = "Retry tomorrow";
+}
+else if (reasonLower.includes("square")) {
+  suggestedAction = "Investigate gateway";
+}
+else if (rawIssue === "on-hold") {
+  suggestedAction = "Review subscriber";
+}
+else if (rawIssue === "pending-cancel") {
+  suggestedAction = "Retention follow-up";
+}
 let date = "—";
 let recentClass = "";
 
@@ -284,9 +331,13 @@ if (r.date) {
           </button>
           ` : "—"}
         </td>
+<td class="aa-radar-col-value${valueClass}">${itemValueDisplay}</td>
         <td class="aa-radar-col-issue">${issue}</td>
-        <td class="aa-radar-col-reason">${reason}</td>
-        <td class="aa-radar-col-date">${date}</td>
+<td class="aa-radar-col-reason">${reason}</td>
+<td class="aa-radar-col-action">
+  <span class="aa-pill aa-pill-info">${suggestedAction}</span>
+</td>
+<td class="aa-radar-col-date">${date}</td>
         <td class="aa-radar-col-customer">${name}${repeatBadge}</td>
         <td class="aa-radar-col-email">${email}</td>
       </tr>
@@ -309,10 +360,12 @@ if (r.date) {
                     <thead>
             <tr>
               <th class="aa-radar-th-id">Order</th>
-              <th class="aa-radar-th-sub">Subscription</th>
-              <th class="aa-radar-th-issue">Issue</th>
-              <th class="aa-radar-th-reason">Reason</th>
-              <th class="aa-radar-th-date">Dates</th>
+<th class="aa-radar-th-sub">Subscription</th>
+<th class="aa-radar-th-value">Value</th>
+<th class="aa-radar-th-issue">Issue</th>
+<th class="aa-radar-th-reason">Reason</th>
+<th class="aa-radar-th-action">Action</th>
+<th class="aa-radar-th-date">Dates</th>
               <th class="aa-radar-th-customer">Subscriber</th>
               <th class="aa-radar-th-email">Email</th>
             </tr>
