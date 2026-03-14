@@ -314,22 +314,7 @@ const tablePriorityRank = (r) => {
 };
 
 
-  if (reason.includes("square") || reason.includes("gateway")) return 1;
-
-  if (
-    reason.includes("expired") ||
-    reason.includes("declined") ||
-    reason.includes("insufficient") ||
-    reason.includes("card on file needs update")
-  ) return 2;
-
-  if (issue === "on-hold" || issue === "pending-cancel") return 3;
-
-  if (issue === "expired") return 4;
-
-  return 5;
-};
-
+  
 const rows = [...items]
   .sort((a, b) => {
 
