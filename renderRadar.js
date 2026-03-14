@@ -5,44 +5,70 @@ window.renderRadar = function (data) {
 
   const items = Array.isArray(data?.items) ? data.items : [];
 // Top Recovery Opportunities
+// Top Recovery Opportunities
 const oppGrid = document.getElementById("radarOppsGrid");
 
-if (oppGrid && items.length) {
+if (oppGrid) {
+  if (!items.length) {
+    oppGrid.innerHTML = `
+      <div class="aa-opp-card aa-opp-placeholder">
+        <div class="aa-opp-title">No recovery opportunities right now.</div>
+      </div>
+    `;
+  } else {
+    const recoveryRank = (r) => {
+      const reasonUpper = String(r?.reason || "").toUpperCase();
+      const rawIssue = String(r?.issue || "").toLowerCase();
 
-  const recoveryRank = (r) => {
-    const reason = String(r?.reason || "").toUpperCase();
+      if (reasonUpper.includes("SAVED PAYMENT") || reasonUpper.includes("CARD_EXPIRED") || reasonUpper.includes("EXPIRED")) return 1;
+      if (reasonUpper.includes("DECLINED")) return 2;
+      if (reasonUpper.includes("INSUFFICIENT")) return 3;
+      if (rawIssue === "on-hold") return 4;
+      if (rawIssue === "pending-cancel") return 5;
+      if (reasonUpper.includes("SQUARE")) return 8;
 
-    if (reason.includes("PAYMENT") || reason.includes("CARD_EXPIRED")) return 1;
-    if (reason.includes("DECLINED")) return 2;
-    if (reason.includes("INSUFFICIENT")) return 3;
-    if (reason.includes("HOLD")) return 4;
+      return 10;
+    };
 
-    return 10;
-  };
+    const ranked = [...items]
+      .sort((a, b) => {
+        const rankDiff = recoveryRank(a) - recoveryRank(b);
+        if (rankDiff !== 0) return rankDiff;
 
-  const ranked = [...items]
-    .sort((a,b) => {
-      const rankDiff = recoveryRank(a) - recoveryRank(b);
-      if (rankDiff !== 0) return rankDiff;
+        const aValue = Number(a?.total || a?._source_order?.total || 0);
+        const bValue = Number(b?.total || b?._source_order?.total || 0);
+        if (aValue !== bValue) return bValue - aValue;
 
-      const valueDiff = Number(b.value || 0) - Number(a.value || 0);
-      if (valueDiff !== 0) return valueDiff;
+        const aTs = a?.date ? new Date(a.date).getTime() : 0;
+        const bTs = b?.date ? new Date(b.date).getTime() : 0;
+        return bTs - aTs;
+      })
+      .slice(0, 3);
 
-      return new Date(b.date || 0) - new Date(a.date || 0);
-    })
-    .slice(0,3);
+    oppGrid.innerHTML = ranked.map((r) => {
+      const displayName = r?.customer_name || "Subscriber";
+      const displayEmail = r?.email || "";
+      const displayReason = r?.reason || "Payment issue";
+      const displayValue = Number(r?.total || r?._source_order?.total || 0);
+      const valueText = displayValue > 0
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 2
+          }).format(displayValue)
+        : "—";
 
-  oppGrid.innerHTML = ranked.map(r => `
-    <div class="aa-opp-card">
-      <div class="aa-opp-title">${r.customer || "Subscriber"}</div>
-      <div class="aa-opp-value">$${Number(r.value || 0).toFixed(2)}</div>
-      <div class="aa-opp-reason">${r.reason || "Payment issue"}</div>
-      <div class="aa-opp-email">${r.email || ""}</div>
-    </div>
-  `).join("");
-
-}
-  const visible = items.length;
+      return `
+        <div class="aa-opp-card">
+          <div class="aa-opp-title">${displayName}</div>
+          <div class="aa-opp-value">${valueText}</div>
+          <div class="aa-opp-reason">${displayReason}</div>
+          <div class="aa-opp-email">${displayEmail}</div>
+        </div>
+      `;
+    }).join("");
+  }
+}  const visible = items.length;
   const total = data?.total_actionable_items ?? visible;
 
   const summary = data?.summary || {};
