@@ -57,12 +57,19 @@ if (oppGrid) {
             maximumFractionDigits: 2
           }).format(displayValue)
         : "—";
-const failureDate = r?.date
-  ? new Date(r.date).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric"
-    })
-  : "";
+let failureDate = "";
+
+if (r?.date) {
+  const d = new Date(r.date);
+  const now = new Date();
+
+  const opts =
+    d.getFullYear() === now.getFullYear()
+      ? { month: "short", day: "numeric" }
+      : { month: "short", day: "numeric", year: "numeric" };
+
+  failureDate = d.toLocaleDateString("en-US", opts);
+}
 return `
   <button
     type="button"
@@ -92,6 +99,12 @@ return `
   const pendingCancel = Number(summary.pendingCancel || 0);
   const recentExpired = Number(summary.recentExpired || 0);
 const revenueAtRisk = Number(summary.revenueAtRisk || 0);
+
+const heroRecoverable = document.getElementById("heroRecoverable");
+const heroAtRisk = document.getElementById("heroAtRisk");
+const heroFailed = document.getElementById("heroFailed");
+const heroGateway = document.getElementById("heroGateway");
+
 const revenueAtRiskDisplay = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -130,10 +143,86 @@ if (kpiPendingCancel) kpiPendingCancel.textContent = pendingCancel;
 if (kpiRepeat) kpiRepeat.textContent = repeatCount;
 if (kpiRevenue) kpiRevenue.textContent = revenueAtRiskDisplay;
 if (kpiExpired) kpiExpired.textContent = recentExpired;  
-let radarAlert = "";
+const gatewaySignals = data?.radar_signals || {};
+const gatewayFailureCount5m = Number(gatewaySignals.gateway_failure_count_5m || 0);
+const gatewayFailureCount30m = Number(gatewaySignals.gateway_failure_count_30m || 0);
+const gatewayFailureCount60m = Number(gatewaySignals.gateway_failure_count_60m || 0);
+const gatewayFailureTrend = String(gatewaySignals.gateway_failure_trend || "stable").toLowerCase();
+const gatewayOutage = !!gatewaySignals.gateway_outage_detected;
+const gatewayEscalating = !!gatewaySignals.gateway_escalating;
 
-// Recovery / gateway trend detection
-if (squareFailureCount >= 3) {
+let squareStatus = "OK";
+if (gatewayOutage) {
+  squareStatus = "DEGRADED";
+} else if (gatewayFailureCount5m >= 3) {
+  squareStatus = "ELEVATED";
+}
+
+const gatewayHealthPanel = `
+  <div class="aa-health-alert aa-health-alert-muted" style="margin-bottom:12px">
+    <strong>Gateway Health</strong><br>
+    Square — ${squareStatus}
+  </div>
+`;
+const gatewayIncidents = Array.isArray(data?.gateway_incidents)
+  ? data.gateway_incidents
+  : [];
+
+const gatewayIncidentPanel = gatewayIncidents.length
+  ? gatewayIncidents.map((incident) => {
+      const gatewayNameRaw = String(incident?.gateway || "gateway").trim();
+      const gatewayName =
+        gatewayNameRaw.charAt(0).toUpperCase() + gatewayNameRaw.slice(1);
+
+      const status = String(incident?.status || "elevated").toUpperCase();
+      const failures5m = Number(incident?.failures_5m || 0);
+      const failures30m = Number(incident?.failures_30m || 0);
+      const failures60m = Number(incident?.failures_60m || 0);
+      const trend = String(incident?.failure_trend || "stable").toLowerCase();
+      const affectedSubscribers5m = Number(incident?.affected_subscribers_5m || 0);
+      const revenueAtRisk5m = Number(incident?.revenue_at_risk_5m || 0);
+
+      const revenueText = new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 2
+      }).format(revenueAtRisk5m);
+
+      const trendLabel =
+        trend === "increasing"
+          ? "↑ increasing"
+          : trend === "cooling"
+            ? "↓ cooling"
+            : "→ stable";
+
+      return `
+        <div class="aa-health-alert aa-health-alert-problem" style="margin-bottom:12px">
+          <strong>⚠ Gateway Incident</strong><br>
+          ${gatewayName} — ${status}<br>
+          5m: ${failures5m} • 30m: ${failures30m} • 60m: ${failures60m}<br>
+          Trend: ${trendLabel}<br>
+          ${affectedSubscribers5m} subscriber${affectedSubscribers5m === 1 ? "" : "s"} affected in 5m •
+          ${revenueText} at risk in 5m
+        </div>
+      `;
+    }).join("")
+  : "";let radarAlert = "";
+
+if (gatewayEscalating) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-problem">
+      ⚠ Escalating gateway outage detected — ${gatewayFailureCount5m} failure${gatewayFailureCount5m === 1 ? "" : "s"} in 5m, ${gatewayFailureCount30m} in 30m, ${gatewayFailureCount60m} in 60m • trend ${gatewayFailureTrend}
+    </div>
+  `;
+}
+else if (gatewayOutage) {
+  radarAlert = `
+    <div class="aa-health-alert aa-health-alert-problem">
+      ⚠ Possible gateway outage — ${gatewayFailureCount5m} gateway failure${gatewayFailureCount5m === 1 ? "" : "s"} in the last 5 minutes
+    </div>
+  `;
+}
+else if (squareFailureCount >= 3) {
   radarAlert = `
     <div class="aa-health-alert aa-health-alert-problem">
       ⚠ Square gateway failures detected across multiple subscribers
@@ -176,6 +265,51 @@ else if (onHold > 0) {
   `;
 }
 
+const recoverableItems = items.filter((r) => {
+  const type = String(r?.recovery_type || "").trim().toLowerCase();
+  return (
+    type === "update_payment_method" ||
+    type === "retry_payment"
+  );
+});
+
+let recoverableRevenue = 0;
+for (const r of recoverableItems) {
+  const value = Number(r?.total || r?._source_order?.total || 0);
+  if (!Number.isNaN(value)) recoverableRevenue += value;
+}
+
+const recoverableRevenueDisplay = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2
+}).format(recoverableRevenue);
+
+const recoveryTypeCounts = {};
+for (const r of recoverableItems) {
+  const label = String(r?.recovery_label || "Review subscription").trim();
+  recoveryTypeCounts[label] = (recoveryTypeCounts[label] || 0) + 1;
+}
+
+const topRecoveryActions = Object.entries(recoveryTypeCounts)
+  .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  .slice(0, 3);
+
+const recoveryInsightPanel = recoverableItems.length
+  ? `
+    <div class="aa-health-alert aa-health-alert-watch" style="margin-bottom:12px">
+      <strong>Recovery Insight</strong><br>
+      ${recoverableRevenueDisplay} recoverable revenue detected across ${recoverableItems.length} recoverable payment failure${recoverableItems.length === 1 ? "" : "s"}.
+      ${topRecoveryActions.length ? `<br>Primary recovery actions: ${topRecoveryActions.map(([label, count]) => `${label} (${count})`).join(" • ")}` : ""}
+    </div>
+  `
+  : "";
+
+
+if (heroRecoverable) heroRecoverable.textContent = recoverableRevenueDisplay;
+if (heroAtRisk) heroAtRisk.textContent = revenueAtRiskDisplay;
+if (heroFailed) heroFailed.textContent = failedRenewals;
+if (heroGateway) heroGateway.textContent = squareStatus;
 
 const summaryTiles = `
   <div class="aa-radar-summary">
@@ -230,8 +364,13 @@ const summaryTiles = `
           <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Subscribers requiring attention"}</div>
         </div>
 
-        ${radarAlert}
-        ${summaryTiles}
+${gatewayHealthPanel}
+${gatewayIncidentPanel}
+${radarAlert}
+${recoveryInsightPanel}
+${summaryTiles}
+
+
 
         <div class="aa-muted">No Subscribers requiring attention.</div>
 
@@ -292,77 +431,109 @@ const repeatSubscribersStrip = repeatSubscribers.length
       </div>
     `
   : "";
-const tablePriorityRank = (r) => {
-  const reasonLower = String(r?.reason || "").toLowerCase();
-  const rawIssue = String(r?.issue || "").toLowerCase();
 
-  if (reasonLower.includes("square")) return 1;
-  if (reasonLower.includes("gateway")) return 1;
-  if (reasonLower.includes("authentication required")) return 1;
-  if (reasonLower.includes("authentication failed")) return 1;
+const recoveryScore = (r) => {
+  let score = 0;
 
-  if (reasonLower.includes("expired")) return 2;
-  if (reasonLower.includes("declined")) return 2;
-  if (reasonLower.includes("insufficient")) return 2;
-  if (reasonLower.includes("card on file needs update")) return 2;
+  const reason = String(r?.reason || "").toLowerCase();
+  const email = String(r?.email || "").trim().toLowerCase();
+  const value = Number(r?.total || r?._source_order?.total || 0);
 
-  if (rawIssue === "on-hold") return 3;
-  if (rawIssue === "pending-cancel") return 3;
-  if (rawIssue === "expired") return 4;
+  if (reason.includes("square") || reason.includes("gateway")) score += 50;
+  else if (reason.includes("expired")) score += 40;
+  else if (reason.includes("declined")) score += 35;
+  else if (reason.includes("insufficient")) score += 30;
 
-  return 5;
+  if ((repeatIndex[email] || 0) > 1) score += 25;
+
+  if (value >= 100) score += 20;
+  else if (value >= 50) score += 10;
+
+if (r?.date) {
+  const ageHours = (Date.now() - new Date(r.date).getTime()) / 3600000;
+
+  if (ageHours < 24) {
+    score += 20;
+  }
+  else if (ageHours < 72) {
+    score += 10;
+  }
+  else if (ageHours < 168) { // 7 days
+    score += 5;
+  }
+  else if (ageHours > 720) { // 30 days
+    score -= 20;
+  }
+}
+
+  return score;
 };
 
-
-  
-const rows = [...items]
+const topRecoveryQueue = [...items]
+  .filter((r) => {
+    const type = String(r?.recovery_type || "").trim().toLowerCase();
+    return (
+      type === "update_payment_method" ||
+      type === "retry_payment" ||
+      type === "investigate_gateway"
+    );
+  })
   .sort((a, b) => {
+    const aScore = recoveryScore(a);
+    const bScore = recoveryScore(b);
+    if (aScore !== bScore) return bScore - aScore;
 
-    const aPriority = tablePriorityRank(a);
-    const bPriority = tablePriorityRank(b);
-
-    if (aPriority !== bPriority) return aPriority - bPriority;
+    const aValue = Number(a?.total || a?._source_order?.total || 0);
+    const bValue = Number(b?.total || b?._source_order?.total || 0);
+    if (aValue !== bValue) return bValue - aValue;
 
     const aTs = a?.date ? new Date(a.date).getTime() : 0;
     const bTs = b?.date ? new Date(b.date).getTime() : 0;
-
-    const aAgeHours = aTs ? (Date.now() - aTs) / 3600000 : Number.POSITIVE_INFINITY;
-    const bAgeHours = bTs ? (Date.now() - bTs) / 3600000 : Number.POSITIVE_INFINITY;
-
-    const getBand = (ageHours) => {
-      if (ageHours < 24) return 0;
-      if (ageHours < 72) return 1;
-      if (ageHours < 168) return 2;
-      return 3;
-    };
-
-    const aBand = getBand(aAgeHours);
-    const bBand = getBand(bAgeHours);
-
-    if (aBand !== bBand) return aBand - bBand;
-
-    const aEmail = String(a?.email || "").trim().toLowerCase();
-    const bEmail = String(b?.email || "").trim().toLowerCase();
-
-    const aRepeatCount = repeatIndex[aEmail] || 0;
-    const bRepeatCount = repeatIndex[bEmail] || 0;
-const aValue = Number(a?.total || a?._source_order?.total || 0);
-const bValue = Number(b?.total || b?._source_order?.total || 0);
-    const aIsRepeat = aRepeatCount > 1 ? 1 : 0;
-    const bIsRepeat = bRepeatCount > 1 ? 1 : 0;
-
-    if (aIsRepeat !== bIsRepeat) return bIsRepeat - aIsRepeat;
-// prioritize higher-value recoveries
-if (aValue !== bValue) return bValue - aValue;
     return bTs - aTs;
   })
-  .map((r) => {
-    const displayId = String(r.display_id || "").trim();
-    const orderIdMatch = displayId.match(/order\s*#?\s*(\d+)/i);
-    const subIdMatch = displayId.match(/sub\s*#?\s*(\d+)/i);
+  .slice(0, 5);
 
-    const orderId = orderIdMatch ? orderIdMatch[1] : "";
-    const subId = subIdMatch ? subIdMatch[1] : "";
+const recoveryQueueStrip = topRecoveryQueue.length
+  ? `
+<div class="aa-radar-repeat-subscribers" style="margin-top:12px; margin-bottom:12px">
+  <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center">
+    <strong>Top Recovery Queue:</strong>
+    ${topRecoveryQueue.map((r) => {
+      const email = String(r?.email || "").trim();
+      const name = String(r?.customer_name || "Subscriber").trim();
+      const score = recoveryScore(r);
+      const value = Number(r?.total || r?._source_order?.total || 0);
+      const valueText = value > 0
+        ? new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            maximumFractionDigits: 2
+          }).format(value)
+        : "—";
+
+      return `
+        <button
+          type="button"
+          class="aa-order-id aa-candidate-open-btn"
+          data-open-query="${email}"
+          title="${name}"
+          style="background:none;border:none;cursor:pointer;padding:0;font:inherit"
+        >
+          ${name} (${valueText}, score ${score})
+        </button>
+      `;
+    }).join("")}
+  </div>
+</div>
+`
+  : "";
+const rows = items.map((r) => {
+  const displayId = String(r.display_id || "").trim();
+  const orderIdMatch = displayId.match(/order\s*#?\s*(\d+)/i);
+  const subIdMatch = displayId.match(/sub\s*#?\s*(\d+)/i);
+
+  const orderId = orderIdMatch ? orderIdMatch[1] : "";
+  const subId = subIdMatch ? subIdMatch[1] : "";
 
     const name = r.customer_name || "—";
     const email = r.email || "—";
@@ -403,40 +574,72 @@ let actionClass = " aa-pill-retention";
 
 const reasonLower = String(reason).toLowerCase();
 
-if (reasonLower.includes("expired")) {
+/* ---------------------------------------------------
+   Gateway outage protection
+   --------------------------------------------------- */
+
+if (gatewayOutage) {
+
+  suggestedAction = "Investigate gateway outage";
+  actionClass = " aa-pill-gateway";
+
+}
+
+else if (reasonLower.includes("expired")) {
+
   suggestedAction = "Update payment method";
   actionClass = " aa-pill-update";
+
 }
 else if (reasonLower.includes("saved payment")) {
+
   suggestedAction = "Update payment method";
   actionClass = " aa-pill-update";
+
 }
 else if (reasonLower.includes("declined")) {
+
   suggestedAction = "Contact customer";
   actionClass = " aa-pill-contact";
+
 }
 else if (reasonLower.includes("insufficient")) {
+
   suggestedAction = "Retry tomorrow";
   actionClass = " aa-pill-retry";
+
 }
 else if (reasonLower.includes("square")) {
+
   suggestedAction = "Investigate gateway";
   actionClass = " aa-pill-gateway";
+
 }
 else if (rawIssue === "on-hold") {
+
   suggestedAction = "Resume subscription";
   actionClass = " aa-pill-retry";
+
 }
 else if (rawIssue === "pending-cancel") {
+
   suggestedAction = "Retention follow-up";
   actionClass = " aa-pill-retention";
+
 }
 let date = "—";
 let recentClass = "";
 
 if (r.date) {
   const d = new Date(r.date);
-  date = d.toLocaleDateString();
+  const now = new Date();
+
+  const opts =
+    d.getFullYear() === now.getFullYear()
+      ? { month: "short", day: "numeric" }
+      : { month: "short", day: "numeric", year: "numeric" };
+
+  date = d.toLocaleDateString("en-US", opts);
 
   const ageHours = (Date.now() - d.getTime()) / 3600000;
 
@@ -536,9 +739,12 @@ if (r.date) {
         <div class="aa-section-subtitle">${activeIssue ? `Filtered: ${activeIssue}` : "Subscribers requiring attention"}</div>
       </div>
 
-      ${radarAlert}
-      ${summaryTiles}
-      ${repeatSubscribersStrip}
+${gatewayHealthPanel}
+${gatewayIncidentPanel}
+${radarAlert}
+${recoveryInsightPanel}
+${summaryTiles}
+${recoveryQueueStrip}
 
       <div class="aa-table-wrap">
         <table class="aa-table">
@@ -550,7 +756,7 @@ if (r.date) {
 <th class="aa-radar-th-issue">Issue</th>
 <th class="aa-radar-th-reason">Reason</th>
 <th class="aa-radar-th-action">Action</th>
-<th class="aa-radar-th-date">Dates</th>
+<th class="aa-radar-th-date">Date</th>
               <th class="aa-radar-th-customer">Subscriber</th>
               <th class="aa-radar-th-email">Email</th>
             </tr>

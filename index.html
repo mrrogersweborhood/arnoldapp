@@ -1119,6 +1119,11 @@ table.aa-totals-table tr.aa-totals-total td{
   border:1px solid #fde68a;
   color:#854d0e;
 }
+.aa-health-alert-muted{
+  background:#f8fafc;
+  border:1px solid rgba(15,23,42,.10);
+  color:#334155;
+}
 @media (max-width: 1100px){
   .aa-health-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
 }
@@ -1835,6 +1840,59 @@ button.aa-opp-card{
 .aa-radar-email-link:hover{
   color:#0f6ad8;
 }
+
+/* Radar Status Banner */
+.aa-radar-status{
+  border:1px solid var(--border);
+  border-radius:16px;
+  background:#ffffff;
+  padding:14px 16px;
+  margin-bottom:14px;
+  box-shadow:0 4px 14px rgba(15,23,42,.05);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.aa-radar-status-title{
+  font-size:13px;
+  font-weight:950;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  color:var(--brand);
+}
+.aa-radar-status-text{
+  font-size:15px;
+  font-weight:900;
+  color:#0b1220;
+}
+.aa-radar-status-meta{
+  font-size:13px;
+  font-weight:800;
+  color:#64748b;
+}
+.aa-radar-status-healthy{
+  background:#f0fdf4;
+  border-color:#bbf7d0;
+}
+.aa-radar-status-warning{
+  background:#fefce8;
+  border-color:#fde68a;
+}
+.aa-radar-status-incident{
+  background:#fef2f2;
+  border-color:#fecaca;
+}
+
+
+/* Radar Hero Metrics */
+.aa-radar-hero{margin-bottom:14px;padding:16px}
+.aa-radar-hero-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.aa-hero-metric{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
+.aa-hero-label{font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase}
+.aa-hero-value{font-size:22px;font-weight:900;margin-top:4px}
+
 </style>
 </head>
 
@@ -1889,6 +1947,40 @@ button.aa-opp-card{
 
   <div class="main-panel">
     <div class="wrap">
+
+      
+      <!-- Radar Status Banner -->
+      <div id="radarStatusBanner" class="aa-radar-status aa-radar-status-healthy">
+        <div>
+          <div class="aa-radar-status-title">Radar Status</div>
+          <div class="aa-radar-status-text" id="radarStatusText">Healthy</div>
+        </div>
+        <div class="aa-radar-status-meta" id="radarStatusMeta">
+          No unusual payment failure patterns detected.
+        </div>
+      </div>
+      
+      <!-- Radar Hero Metrics -->
+      <div class="card aa-radar-hero">
+        <div class="aa-radar-hero-grid">
+          <div class="aa-hero-metric">
+            <div class="aa-hero-label">Recoverable Revenue</div>
+            <div id="heroRecoverable" class="aa-hero-value">$0</div>
+          </div>
+          <div class="aa-hero-metric">
+            <div class="aa-hero-label">Revenue At Risk</div>
+            <div id="heroAtRisk" class="aa-hero-value">$0</div>
+          </div>
+          <div class="aa-hero-metric">
+            <div class="aa-hero-label">Failed Renewals</div>
+            <div id="heroFailed" class="aa-hero-value">0</div>
+          </div>
+          <div class="aa-hero-metric">
+            <div class="aa-hero-label">Gateway Health</div>
+            <div id="heroGateway" class="aa-hero-value">OK</div>
+          </div>
+        </div>
+      </div>
 
       <div class="card radar-kpi-band">
         <div class="radar-kpi-head">
@@ -1991,12 +2083,12 @@ button.aa-opp-card{
 </div>
 
   <!-- Cache-bust MUST match modular build -->
-  <script src="./formatters.js?v=2026-03-10-103"></script>
-  <script src="./renderCustomer.js?v=2026-03-10-103"></script>
-  <script src="./renderHealth.js?v=2026-03-10-103"></script>
-  <script src="./renderActivity.js?v=2026-03-10-103"></script>
-<script src="./renderRadar.js?v=2026-03-10-103"></script>  
-<script src="./main.js?v=2026-03-10-103"></script>
+  <script src="./formatters.js?v=2026-03-10-107"></script>
+  <script src="./renderCustomer.js?v=2026-03-10-107"></script>
+  <script src="./renderHealth.js?v=2026-03-10-107"></script>
+  <script src="./renderActivity.js?v=2026-03-10-107"></script>
+<script src="./renderRadar.js?v=2026-03-10-107"></script>  
+<script src="./main.js?v=2026-03-10-107"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->

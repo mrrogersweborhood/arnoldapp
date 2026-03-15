@@ -46,6 +46,65 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     sl.className = "msg" + (kind ? ` ${kind}` : "");
     sl.textContent = friendlyText(text ?? "");
   }
+  function updateRadarStatus(data) {
+    const banner = $("radarStatusBanner");
+    const textEl = $("radarStatusText");
+    const metaEl = $("radarStatusMeta");
+
+    if (!banner || !textEl || !metaEl) return;
+
+    banner.classList.remove(
+      "aa-radar-status-healthy",
+      "aa-radar-status-warning",
+      "aa-radar-status-incident"
+    );
+
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const actionableCount = Number(data?.total_actionable_items || items.length || 0) || 0;
+
+    const hasGatewaySignal = items.some((item) => {
+      const reason = String(item?.reason || "").toUpperCase();
+      const issue = String(item?.issue || "").toLowerCase();
+      const action = String(item?.action || "").toLowerCase();
+
+      return (
+        reason.includes("SQUARE") ||
+        reason.includes("AUTH") ||
+        reason.includes("3D") ||
+        action.includes("gateway") ||
+        issue.includes("gateway")
+      );
+    });
+
+    const recentFailures = items.filter((item) => {
+      const issue = String(item?.issue || "").toLowerCase();
+      return (
+        issue.includes("failed") ||
+        issue.includes("hold") ||
+        issue.includes("cancel") ||
+        issue.includes("expired")
+      );
+    }).length;
+
+    if (hasGatewaySignal) {
+      banner.classList.add("aa-radar-status-incident");
+      textEl.textContent = "Gateway Incident Suspected";
+      metaEl.textContent = "Gateway-related payment failures detected in recent Radar results.";
+      return;
+    }
+
+    if (actionableCount >= 8 || recentFailures >= 5) {
+      banner.classList.add("aa-radar-status-warning");
+      textEl.textContent = "Elevated Failures";
+      metaEl.textContent = "Recent payment failures are above the normal baseline.";
+      return;
+    }
+
+    banner.classList.add("aa-radar-status-healthy");
+    textEl.textContent = "Healthy";
+    metaEl.textContent = "No unusual payment failure patterns detected.";
+  }
+
   function stopRadarLoadingUI() {
     if (radarLoadingTimer) {
       window.clearInterval(radarLoadingTimer);
@@ -807,6 +866,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     setStatus("", "Logged out.");
     setSessionPill(false, null);
     toggleLoginSearchUI(false);
+    updateRadarStatus(null);
   }
   async function doSearch() {
 
@@ -865,6 +925,8 @@ if (rawVisible) {
 }
 
 $("results").innerHTML = "";
+
+    updateRadarStatus(null);
 
 const shouldProgressiveLoad = isLikelyEmailLookupQuery(q);
 const cachedShellPayload = shouldProgressiveLoad
@@ -1025,6 +1087,8 @@ if (cachedShellPayload) {
 
     $("results").innerHTML = "";
 
+    updateRadarStatus(null);
+
     const r = await fetch(`${WORKER_BASE}/admin/stats`, {
       method: "GET",
       credentials: "include"
@@ -1094,6 +1158,8 @@ const r = await fetch(radarUrl.toString(), {
   setStatus("", "Radar loaded.");
 
 $("results").innerHTML = renderRadar(j);
+
+  updateRadarStatus(j);
 
 bindOpenCandidateButtons($("results"));
 bindOpenCandidateButtons($("radarRecoveryOpps"));
