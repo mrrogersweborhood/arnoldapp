@@ -1,10 +1,10 @@
+// 🟢 main.js
 var openSubNotes = window.openSubNotes || new Set();
 var openOrderNotes = window.openOrderNotes || new Set();
 window.openSubNotes = openSubNotes;
 window.openOrderNotes = openOrderNotes;
 window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php";
 
-// 🟢 main.js
 // Arnold Admin — FULL REPLACEMENT (Build 2026-03-17R1 — Pulse Dashboard Entry + SaaS Render)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
@@ -328,8 +328,42 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
 
   function formatPulseReasonName(value) {
     const raw = String(value || "unknown").trim();
+    const token = raw.toUpperCase();
     if (!raw) return "Unknown";
+    if (token === "FAILED_GENERIC") return "Payment Failed";
+    if (token === "CARD_EXPIRED") return "Card Expired";
+    if (token === "INSUFFICIENT_FUNDS") return "Insufficient Funds";
+    if (token === "DO_NOT_HONOR") return "Do Not Honor";
+    if (token === "CVV_DECLINE") return "CVV Decline";
+    if (token === "AVS_DECLINE") return "AVS Decline";
+    if (token === "AUTHENTICATION_REQUIRED") return "Authentication Required";
+    if (token === "GATEWAY_ERROR") return "Gateway Error";
+    if (token === "GATEWAY_TIMEOUT") return "Gateway Timeout";
+    if (token === "NETWORK_ERROR") return "Network Error";
+    if (token === "FRAUD_SUSPECTED") return "Fraud Suspected";
+    if (token === "PROCESSOR_DECLINED") return "Processor Declined";
     return pulseTitleCase(raw);
+  }
+
+  function getPulseReasonToken(value) {
+    const token = String(value || "").trim().toUpperCase();
+    if (token === "CARD_EXPIRED") return "danger";
+    if (token === "FAILED_GENERIC") return "warning";
+    if (token === "INSUFFICIENT_FUNDS") return "warning";
+    if (token === "DO_NOT_HONOR") return "warning";
+    if (token === "CVV_DECLINE") return "warning";
+    if (token === "AVS_DECLINE") return "warning";
+    if (token === "AUTHENTICATION_REQUIRED") return "warning";
+    if (token === "GATEWAY_ERROR" || token === "GATEWAY_TIMEOUT" || token === "NETWORK_ERROR") return "neutral";
+    if (token === "FRAUD_SUSPECTED") return "danger";
+    if (token === "PROCESSOR_DECLINED") return "warning";
+    return "neutral";
+  }
+
+  function renderPulseReasonPill(value) {
+    const label = formatPulseReasonName(value);
+    const token = getPulseReasonToken(value);
+    return `<span class="pulse-reason-pill pulse-reason-pill-${token}">${esc(label)}</span>`;
   }
 
   function getPulsePriorityToken(priority) {
@@ -435,7 +469,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     const reasonRows = reasons.length
       ? reasons.map((reason) => `
           <div class="pulse-reason-row">
-            <div class="pulse-reason-name">${esc(formatPulseReasonName(reason?.reason))}</div>
+            <div class="pulse-reason-name">${renderPulseReasonPill(reason?.reason)}</div>
             <div class="pulse-reason-value pulse-right">${esc(formatPulseInteger(reason?.incident_count))}</div>
             <div class="pulse-reason-value pulse-right">${esc(formatPulseMoney(reason?.recoverable_revenue))}</div>
           </div>
@@ -452,8 +486,8 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
               <div class="pulse-subtitle">Live gateway recommendations, recoverable revenue totals, and failure reasons from the Pulse worker.</div>
             </div>
             <div class="pulse-source-row">
-              <span class="pulse-chip">Live endpoint: /pulse/summary</span>
-              <span class="pulse-chip">Live endpoint: /pulse/failure-analysis</span>
+              <span class="pulse-chip">Live endpoint: https://pulse-worker.bob-b5c.workers.dev/pulse/summary</span>
+              <span class="pulse-chip">Live endpoint: https://pulse-worker.bob-b5c.workers.dev/pulse/failure-analysis</span>
             </div>
           </div>
 
@@ -826,22 +860,21 @@ function getCachedCustomerShellPayloadForQuery(q) {
       : "";
 
     const billingCard = typeof window.renderAddressBlock === "function"
-      ? window.renderAddressBlock("Billing", billing, null)
+      ? window.renderAddressBlock("Billing", billing)
       : "";
 
     const shippingCard = typeof window.renderAddressBlock === "function"
-      ? window.renderAddressBlock("Shipping", shipping, billing)
+      ? window.renderAddressBlock("Shipping", shipping)
       : "";
 
     return `
+      ${customerCard}
+
       <section class="card aa-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Subscriber</div>
-          <div class="aa-section-subtitle">Customer loaded first</div>
+          <div class="aa-section-title">Addresses</div>
+          <div class="aa-section-subtitle">Billing and shipping details</div>
         </div>
-
-        ${customerCard}
-
         <div class="aa-grid-2">
           ${billingCard}
           ${shippingCard}
@@ -850,8 +883,20 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
       <section class="card aa-section aa-loading-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Loading subscription(s) / order(s)</div>
-          <div class="aa-section-subtitle">Fetching subscriptions, orders, and notes…</div>
+          <div class="aa-section-title">Loading subscriptions</div>
+          <div class="aa-section-subtitle">Pulling subscription records for this customer</div>
+        </div>
+        <div class="aa-loading-rows">
+          <div class="aa-loading-row"></div>
+          <div class="aa-loading-row"></div>
+          <div class="aa-loading-row"></div>
+        </div>
+      </section>
+
+      <section class="card aa-section aa-loading-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Loading orders</div>
+          <div class="aa-section-subtitle">Fetching recent order history</div>
         </div>
         <div class="aa-loading-rows">
           <div class="aa-loading-row"></div>
@@ -862,737 +907,575 @@ function getCachedCustomerShellPayloadForQuery(q) {
     `;
   }
 
-  function renderResults(payload) {
-    if (payload?.intent === "customer_candidates_by_name") {
-      return renderCandidateMatches(payload);
-    }
+  function renderTotals(payload) {
+    const totals = payload?.totals || {};
+    const all = totals?.all || {};
+    const wc = totals?.subscriptions || {};
+    const sus = totals?.orders || {};
 
-    if (payload?.intent === "unknown") {
-      const note = String(payload?.note || "Try an email address, customer #123, or order #12345.").trim();
-      return `
-        <section class="card aa-section">
-          <div class="aa-section-head">
-            <div class="aa-section-title">No supported match yet</div>
-            <div class="aa-section-subtitle">${esc(note)}</div>
-          </div>
-          <div class="aa-muted">Try an email address, a customer lookup like customer #123, or an order lookup like order #12345.</div>
-        </section>
-      `;
-    }
+    const subRows = [
+      ["Active", wc.active],
+      ["On hold", wc.on_hold],
+      ["Pending cancel", wc.pending_cancel],
+      ["Expired", wc.expired],
+      ["Cancelled", wc.cancelled],
+      ["Pending", wc.pending]
+    ];
 
-    const ctx = payload?.context || {};
-    const customer = ctx.customer || null;
-    const subs = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
-    const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
-    const billing = customer?.billing || null;
-    const shipping = customer?.shipping || null;
-
-    const customerCard = customer && typeof window.renderCustomerCard === "function"
-      ? window.renderCustomerCard(customer)
-      : "";
-
-    const billingCard = typeof window.renderAddressBlock === "function"
-      ? window.renderAddressBlock("Billing", billing, null)
-      : "";
-
-    const shippingCard = typeof window.renderAddressBlock === "function"
-      ? window.renderAddressBlock("Shipping", shipping, billing)
-      : "";
-
-    const activity = typeof window.renderCustomerActivity === "function"
-      ? window.renderCustomerActivity(customer, subs, orders)
-      : "";
-
-    const healthSummary = typeof window.renderSubscriptionHealthSummary === "function"
-      ? window.renderSubscriptionHealthSummary(customer, subs, orders)
-      : "";
+    const orderRows = [
+      ["Completed", sus.completed],
+      ["Processing", sus.processing],
+      ["Pending", sus.pending],
+      ["On hold", sus.on_hold],
+      ["Cancelled", sus.cancelled],
+      ["Failed", sus.failed],
+      ["Refunded", sus.refunded]
+    ];
 
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Subscriber</div>
+          <div class="aa-section-title">Store Totals</div>
+          <div class="aa-section-subtitle">Subscription and order counts for the store</div>
         </div>
 
-        ${customerCard}
+        <div class="aa-totals-grid">
+          <div class="card aa-card aa-totals-card">
+            <div class="aa-card-title">Subscriptions</div>
+            <table class="aa-totals-table">
+              <tbody>
+                ${subRows.map(([label, value]) => `
+                  <tr>
+                    <td>${esc(label)}</td>
+                    <td class="aa-num">${esc(formatCount(value))}</td>
+                  </tr>
+                `).join("")}
+                <tr class="aa-totals-divider"><td colspan="2"></td></tr>
+                <tr class="aa-totals-total">
+                  <td><strong>Total</strong></td>
+                  <td class="aa-num"><strong>${esc(formatCount(all.subscriptions))}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
+          <div class="card aa-card aa-totals-card">
+            <div class="aa-card-title">Orders</div>
+            <table class="aa-totals-table">
+              <tbody>
+                ${orderRows.map(([label, value]) => `
+                  <tr>
+                    <td>${esc(label)}</td>
+                    <td class="aa-num">${esc(formatCount(value))}</td>
+                  </tr>
+                `).join("")}
+                <tr class="aa-totals-divider"><td colspan="2"></td></tr>
+                <tr class="aa-totals-total">
+                  <td><strong>Total</strong></td>
+                  <td class="aa-num"><strong>${esc(formatCount(all.orders))}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderResults(payload) {
+    const ctx = payload?.context || {};
+    const customer = ctx.customer || null;
+    const subscriptions = Array.isArray(ctx.subscriptions) ? ctx.subscriptions : [];
+    const orders = Array.isArray(ctx.orders) ? ctx.orders : [];
+    const notes = Array.isArray(ctx.notes) ? ctx.notes : [];
+
+    if (payload?.possible_matches?.length) {
+      return renderCandidateMatches(payload);
+    }
+
+    if (!customer) {
+      return `
+        <section class="card aa-section">
+          <div class="aa-section-head">
+            <div class="aa-section-title">Search Result</div>
+            <div class="aa-section-subtitle">No customer context was returned</div>
+          </div>
+          <div class="aa-muted">No customer found.</div>
+        </section>
+      `;
+    }
+
+    const customerCard = typeof window.renderCustomerCard === "function"
+      ? window.renderCustomerCard(customer)
+      : "";
+
+    const billingCard = typeof window.renderAddressBlock === "function"
+      ? window.renderAddressBlock("Billing", customer?.billing)
+      : "";
+
+    const shippingCard = typeof window.renderAddressBlock === "function"
+      ? window.renderAddressBlock("Shipping", customer?.shipping)
+      : "";
+
+    const subscriptionsCard = typeof window.renderSubscriptionsTable === "function"
+      ? window.renderSubscriptionsTable(subscriptions, openSubNotes)
+      : "";
+
+    const ordersCard = typeof window.renderOrdersTable === "function"
+      ? window.renderOrdersTable(orders, openOrderNotes)
+      : "";
+
+    const totalsCard = typeof window.renderTotalsCard === "function"
+      ? window.renderTotalsCard(payload)
+      : "";
+
+    const healthCard = typeof window.renderHealthCard === "function"
+      ? window.renderHealthCard(payload)
+      : "";
+
+    const activityCard = typeof window.renderCustomerActivity === "function"
+      ? window.renderCustomerActivity(payload)
+      : "";
+
+    return `
+      ${customerCard}
+
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Addresses</div>
+          <div class="aa-section-subtitle">Billing and shipping details</div>
+        </div>
         <div class="aa-grid-2">
           ${billingCard}
           ${shippingCard}
         </div>
       </section>
 
-      ${activity || ""}
-      ${healthSummary || ""}
+      ${subscriptionsCard}
+      ${ordersCard}
+      ${totalsCard}
+      ${healthCard}
+      ${activityCard}
     `;
   }
 
-  function renderTotals(data) {
-    const d = data || {};
-
-    const subsByLabel = (d.subscriptions_by_status && typeof d.subscriptions_by_status === "object")
-      ? d.subscriptions_by_status
-      : {};
-
-    const ordersBlock = (d.orders_last_30d && typeof d.orders_last_30d === "object")
-      ? d.orders_last_30d
-      : (d.orders_by_status && typeof d.orders_by_status === "object")
-        ? { by_status: d.orders_by_status, total: d.orders_total || null }
-        : {};
-
-    const ordersByStatus = (ordersBlock.by_status && typeof ordersBlock.by_status === "object")
-      ? ordersBlock.by_status
-      : {};
-
-    const SUB_STATUS_ORDER = [
-      "Trash",
-      "Active",
-      "Expired",
-      "On hold",
-      "Pending payment",
-      "Pending cancellation",
-      "Cancelled"
-    ];
-
-    const ORDER_STATUS_ORDER = [
-      ["Pending", "pending"],
-      ["Processing", "processing"],
-      ["On hold", "on-hold"],
-      ["Completed", "completed"],
-      ["Cancelled", "cancelled"],
-      ["Refunded", "refunded"],
-      ["Failed", "failed"]
-    ];
-    const subRows = SUB_STATUS_ORDER
-      .map((label) => {
-        const countRaw = subsByLabel[label];
-        const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
-
-        return `
-          <tr>
-            <td>${esc(label)}</td>
-            <td class="aa-num">${esc(String(count))}</td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    const subTotal = SUB_STATUS_ORDER.reduce((acc, label) => {
-      const v = Number(subsByLabel[label] ?? 0);
-      return acc + (Number.isFinite(v) ? v : 0);
-    }, 0);
-
-    const orderRows = ORDER_STATUS_ORDER
-      .map(([label, slug]) => {
-        const countRaw = ordersByStatus[slug];
-        const count = Number.isFinite(Number(countRaw)) ? Number(countRaw) : 0;
-
-        return `
-          <tr>
-            <td>${esc(label)}</td>
-            <td class="aa-num">${esc(String(count))}</td>
-          </tr>
-        `;
-      })
-      .join("");
-
-    let orderTotal = Number(ordersBlock.total);
-
-    if (!Number.isFinite(orderTotal)) {
-      orderTotal = ORDER_STATUS_ORDER.reduce((acc, [, slug]) => {
-        const v = Number(ordersByStatus[slug] ?? 0);
-        return acc + (Number.isFinite(v) ? v : 0);
-      }, 0);
+  // --------------------------------------------------
+  // Radar render
+  // --------------------------------------------------
+  function renderRadar(payload) {
+    if (typeof window.renderRadarResults === "function") {
+      return window.renderRadarResults(payload, {
+        radarPage,
+        radarIssueFilter
+      });
     }
 
     return `
-      <div class="aa-totals-grid">
-
-        <div class="aa-card aa-totals-card">
-          <div class="aa-card-title">Subscriptions (all time)</div>
-
-          <table class="aa-totals-table">
-            <tbody>
-              ${subRows}
-
-              <tr class="aa-totals-divider">
-                <td colspan="2"></td>
-              </tr>
-
-              <tr class="aa-totals-total">
-                <td>Total</td>
-                <td class="aa-num">${esc(String(subTotal))}</td>
-              </tr>
-
-            </tbody>
-          </table>
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Radar</div>
+          <div class="aa-section-subtitle">Renderer not loaded</div>
         </div>
-
-        <div class="aa-card aa-totals-card">
-          <div class="aa-card-title">Orders (all time)</div>
-
-          <table class="aa-totals-table">
-            <tbody>
-              ${orderRows}
-
-              <tr class="aa-totals-divider">
-                <td colspan="2"></td>
-              </tr>
-
-              <tr class="aa-totals-total">
-                <td>Total</td>
-                <td class="aa-num">${esc(String(orderTotal))}</td>
-              </tr>
-
-            </tbody>
-          </table>
-        </div>
-
-      </div>
+        <div class="aa-muted">renderRadarResults is not available.</div>
+      </section>
     `;
   }
 
-  async function doPulseDashboard() {
-    abortActiveSearch();
-    stopRadarLoadingUI();
-    setDashboardChrome("pulse");
-
-    if (rawVisible) {
-      rawVisible = false;
-      renderRawJson();
-    }
-
-    setStatus("busy", "Loading Pulse dashboard…");
-    $("results").innerHTML = renderPulseLoadingShell();
-
-    const [analysisResp, summaryResp] = await Promise.all([
-      fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
-      fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" })
-    ]);
-
-    const analysisJson = await analysisResp.json().catch(() => null);
-    const summaryJson = await summaryResp.json().catch(() => null);
-
-    lastRaw = {
-      failure_analysis: analysisJson,
-      summary: summaryJson
-    };
-    lastMode = "pulse";
-    lastPayload = {
-      failureAnalysis: analysisJson,
-      summary: summaryJson
-    };
-
-    if (!analysisResp.ok || !analysisJson?.ok) {
-      setStatus("warn", analysisJson?.error || `Pulse failure analysis failed (${analysisResp.status})`);
-      renderRawJson();
-      return;
-    }
-
-    if (!summaryResp.ok || !summaryJson?.ok) {
-      setStatus("warn", summaryJson?.error || `Pulse summary failed (${summaryResp.status})`);
-      renderRawJson();
-      return;
-    }
-
-    $("results").innerHTML = renderPulseDashboard(analysisJson, summaryJson);
-    setStatus("", "Pulse dashboard loaded.");
-    renderRawJson();
-  }
-
+  // --------------------------------------------------
+  // Fetch actions
+  // --------------------------------------------------
   async function doLogin() {
+    abortActiveSearch();
 
-    const u = $("loginUser")?.value?.trim() || "";
-    const p = $("loginPass")?.value?.trim() || "";
+    const user = String($("loginUser")?.value || "").trim();
+    const pass = String($("loginPassInput")?.value || "").trim();
 
-    if (!u || !p) {
-      setStatus("warn", "Username and password required.");
+    if (!user || !pass) {
+      setStatus("warn", "Enter username and password.");
       return;
     }
 
-    setStatus("busy", "Logging in…");
+    setStatus("busy aa-status-center", "");
+    const sl = $("statusLine");
+    if (sl) {
+      sl.innerHTML = `
+        <span class="aa-inline-spinner" aria-hidden="true"></span>
+        <span class="aa-status-center-text">Logging in…</span>
+      `;
+    }
 
     const r = await fetch(`${WORKER_BASE}/admin/login`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: u,
-        password: p
-      })
+      body: JSON.stringify({ username: user, password: pass })
     });
 
     const j = await r.json().catch(() => null);
 
-    if (!r.ok || !j?.success) {
-      setStatus("warn", j?.message || `Login failed (${r.status})`);
+    if (!r.ok || !j?.ok) {
       setSessionPill(false, null);
+      toggleLoginSearchUI(false);
+      setStatus("warn", friendlyText(j?.error || "Login failed."));
       return;
     }
 
+    setSessionPill(true, j?.user?.name || j?.user?.slug || user);
+    toggleLoginSearchUI(true);
     setStatus("", "Logged in.");
-
-    const loggedIn = await refreshSession();
-    toggleLoginSearchUI(!!loggedIn);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth"
-    });
-
-    const q = $("q");
-    if (q) q.focus();
   }
-
 
   async function doLogout() {
-
-    setDashboardChrome("radar");
-    setStatus("busy", "Logging out…");
-
-    await fetch(`${WORKER_BASE}/admin/logout`, {
-      method: "POST",
-      credentials: "include"
-    }).catch(() => null);
-
-    setStatus("", "Logged out.");
-    setSessionPill(false, null);
-    toggleLoginSearchUI(false);
-    updateRadarStatus(null);
-  }
-  async function doSearch() {
-
-    setDashboardChrome("radar");
-    const q = $("q")?.value?.trim() || "";
-const direct = parseDirectLookupQuery(q);
-    if (!q) {
-      setStatus("warn", "Enter a query (email or order #).");
-      return;
-    }
-if (direct) {
-
-  setStatus("busy", `Looking up ${direct.type} #${direct.id}…`);
-
-  const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: `${direct.type} #${direct.id}`,
-      mode: "full"
-    })
-  });
-
-  const j = await r.json().catch(() => null);
-
-  if (!r.ok || !j?.ok) {
-    setStatus("warn", friendlyText(j?.error || j?.message) || `Search failed (${r.status})`);
-    return;
-  }
-
-  lastRaw = j;
-  lastMode = "search";
-  lastPayload = j;
-
-  $("results").innerHTML = renderResults(j);
-
-  bindNotesToggles($("results"));
-  bindCopyButtons($("results"));
-  bindOpenCandidateButtons($("results"));
-
-  setStatus("", "Search complete.");
-  renderRawJson();
-
-  return;
-}
     abortActiveSearch();
 
-    const controller = new AbortController();
-    currentSearchController = controller;
+    try {
+      await fetch(`${WORKER_BASE}/admin/logout`, {
+        method: "POST",
+        credentials: "include"
+      });
+    } catch (_) {}
 
-setStatus("busy", "Searching…");
+    setSessionPill(false, null);
+    toggleLoginSearchUI(false);
+    setStatus("", "Logged out.");
 
-if (rawVisible) {
-  rawVisible = false;
-  renderRawJson();
-}
+    const results = $("results");
+    if (results) results.innerHTML = "";
+    lastPayload = null;
+    lastRaw = null;
+    renderRawJson();
+  }
 
-$("results").innerHTML = "";
+  async function doSearch() {
+    abortActiveSearch();
 
-    updateRadarStatus(null);
+    const q = String($("q")?.value || "").trim();
 
-const shouldProgressiveLoad = isLikelyEmailLookupQuery(q);
-const cachedShellPayload = shouldProgressiveLoad
-  ? getCachedCustomerShellPayloadForQuery(q)
-  : null;
+    if (!q) {
+      setStatus("warn", "Enter a search query.");
+      return;
+    }
 
-if (cachedShellPayload) {
-  $("results").innerHTML = renderProgressiveShell(cachedShellPayload);
-  bindCopyButtons($("results"));
-  setStatus("busy", "Loaded cached customer. Refreshing subscriptions, orders, and notes…");
-}
+    currentSearchController = new AbortController();
+    const signal = currentSearchController.signal;
+
+    lastMode = "search";
+    setDashboardChrome("search");
+    setStatus("busy aa-status-center", "");
+    const sl = $("statusLine");
+    if (sl) {
+      sl.innerHTML = `
+        <span class="aa-inline-spinner" aria-hidden="true"></span>
+        <span class="aa-status-center-text">Searching…</span>
+      `;
+    }
+
+    const results = $("results");
+    if (results) {
+      results.innerHTML = "";
+    }
+
+    const cachedShell = isLikelyEmailLookupQuery(q) ? getCachedCustomerShellPayloadForQuery(q) : null;
+    if (results && cachedShell) {
+      results.innerHTML = renderProgressiveShell(cachedShell);
+      bindNotesToggles(results);
+      bindCopyButtons(results);
+      bindOpenCandidateButtons(results);
+    }
 
     try {
+      const direct = parseDirectLookupQuery(q);
 
-      if (shouldProgressiveLoad) {
-
-        const partialResp = await fetch(`${WORKER_BASE}/admin/nl-search`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: q,
-            mode: "customer_only"
-          }),
-          signal: controller.signal
-        });
-
-        const partialJson = await partialResp.json().catch(() => null);
-
-        if (controller !== currentSearchController) return;
-
-        if (!partialResp.ok || !partialJson?.ok) {
-
-          setStatus("warn", friendlyText(partialJson?.error || partialJson?.message) || `Search failed (${partialResp.status})`);
-
-          lastRaw = partialJson;
-          lastMode = "search";
-          lastPayload = partialJson;
-
-          renderRawJson();
-          return;
-        }
-
-        lastRaw = partialJson;
-        lastMode = "search";
-        lastPayload = partialJson;
-
-        cacheLastCustomerFromPayload(partialJson);
-
-        $("results").innerHTML = renderProgressiveShell(partialJson);
-        bindCopyButtons($("results"));
-
-        setStatus("busy", "Customer found. Loading subscriptions, orders, and notes…");
-        const fullResp = await fetch(`${WORKER_BASE}/admin/nl-search`, {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: q,
-            mode: "full"
-          }),
-          signal: controller.signal
-        });
-
-        const fullJson = await fullResp.json().catch(() => null);
-
-        if (controller !== currentSearchController) return;
-
-        lastRaw = fullJson;
-        lastMode = "search";
-        lastPayload = fullJson;
-
-        if (!fullResp.ok || !fullJson?.ok) {
-
-          setStatus("warn", friendlyText(fullJson?.error || fullJson?.message) || `Search failed (${fullResp.status})`);
-          renderRawJson();
-          return;
-        }
-
-        cacheLastCustomerFromPayload(fullJson);
-
-        setStatus("", "Search complete.");
-
-        $("results").innerHTML = renderResults(fullJson);
-
-        bindNotesToggles($("results"));
-        bindCopyButtons($("results"));
-        bindOpenCandidateButtons($("results"));
-
-        renderRawJson();
-        return;
+      let url = `${WORKER_BASE}/admin/search?q=${encodeURIComponent(q)}`;
+      if (direct) {
+        url += `&type=${encodeURIComponent(direct.type)}&id=${encodeURIComponent(direct.id)}`;
       }
 
-      const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
-        method: "POST",
+      const r = await fetch(url, {
+        method: "GET",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: q,
-          mode: "full"
-        }),
-        signal: controller.signal
+        signal
       });
 
       const j = await r.json().catch(() => null);
 
-      if (controller !== currentSearchController) return;
-
-      lastRaw = j;
-      lastMode = "search";
-      lastPayload = j;
+      if (signal.aborted) return;
 
       if (!r.ok || !j?.ok) {
-
-        setStatus("warn", friendlyText(j?.error || j?.message) || `Search failed (${r.status})`);
-        renderRawJson();
+        setStatus("warn", friendlyText(j?.error || "Search failed."));
+        if (results && !cachedShell) results.innerHTML = "";
         return;
       }
 
+      lastPayload = j;
+      lastRaw = j;
       cacheLastCustomerFromPayload(j);
 
-      setStatus("", "Search complete.");
-
-      $("results").innerHTML = renderResults(j);
-
-      bindNotesToggles($("results"));
-      bindCopyButtons($("results"));
-      bindOpenCandidateButtons($("results"));
-
-      renderRawJson();
-      return;
-
-    } catch (err) {
-
-      if (err?.name === "AbortError") {
-        return;
+      if (results) {
+        results.innerHTML = renderResults(j);
+        bindNotesToggles(results);
+        bindCopyButtons(results);
+        bindOpenCandidateButtons(results);
       }
 
-      setStatus("warn", friendlyText(err) || "Search failed.");
-
+      setStatus("", "Search complete.");
+      renderRawJson();
+    } catch (err) {
+      if (signal.aborted) return;
+      setStatus("warn", friendlyText(err?.message || "Search failed."));
+      if (results && !cachedShell) results.innerHTML = "";
     } finally {
-
-      if (currentSearchController === controller) {
+      if (currentSearchController?.signal === signal) {
         currentSearchController = null;
       }
     }
   }
 
-
   async function doTotals() {
-
-    setStatus("busy", "Loading totals…");
-
-    if (rawVisible) {
-      rawVisible = false;
-      renderRawJson();
+    abortActiveSearch();
+    lastMode = "totals";
+    setDashboardChrome("totals");
+    setStatus("busy aa-status-center", "");
+    const sl = $("statusLine");
+    if (sl) {
+      sl.innerHTML = `
+        <span class="aa-inline-spinner" aria-hidden="true"></span>
+        <span class="aa-status-center-text">Loading totals…</span>
+      `;
     }
 
-    $("results").innerHTML = "";
-
-    updateRadarStatus(null);
-
-    const r = await fetch(`${WORKER_BASE}/admin/stats`, {
+    const r = await fetch(`${WORKER_BASE}/admin/totals`, {
       method: "GET",
       credentials: "include"
     });
 
     const j = await r.json().catch(() => null);
 
-    lastRaw = j;
-    lastMode = "totals";
-    lastPayload = j;
-
     if (!r.ok || !j?.ok) {
-      setStatus("warn", j?.error || `Totals failed (${r.status})`);
-      renderRawJson();
+      setStatus("warn", friendlyText(j?.error || "Totals failed."));
       return;
     }
 
-    setStatus("", "Totals loaded.");
-
+    lastPayload = j;
+    lastRaw = j;
     $("results").innerHTML = renderTotals(j);
+    setStatus("", "Totals loaded.");
     renderRawJson();
   }
 
-async function doRadar() {
+  async function doRadar(page = 1, issue = "") {
+    abortActiveSearch();
+    radarPage = page;
+    radarIssueFilter = issue || "";
+    lastMode = "radar";
+    setDashboardChrome("radar");
+    startRadarLoadingUI();
 
-  setDashboardChrome("radar");
-  radarPage = 1;
-  radarIssueFilter = "";
-  
+    try {
+      const params = new URLSearchParams();
+      params.set("page", String(radarPage));
+      if (radarIssueFilter) params.set("issue", radarIssueFilter);
 
-  if (rawVisible) {
-    rawVisible = false;
-    renderRawJson();
-  }
+      const r = await fetch(`${WORKER_BASE}/admin/radar?${params.toString()}`, {
+        method: "GET",
+        credentials: "include"
+      });
 
-  startRadarLoadingUI();
+      const j = await r.json().catch(() => null);
 
-  await loadRadarPage();
-}
-
-async function loadRadarPage() {
-
-  const radarUrl = new URL(`${WORKER_BASE}/admin/radar`);
-radarUrl.searchParams.set("page", String(radarPage));
-if (radarIssueFilter) {
-  radarUrl.searchParams.set("issue", radarIssueFilter);
-}
-
-const r = await fetch(radarUrl.toString(), {
-    method: "GET",
-    credentials: "include"
-  });
-
-  const j = await r.json().catch(() => null);
-
-  lastRaw = j;
-  lastMode = "radar";
-  lastPayload = j;
-
-  if (!r.ok || !j?.ok) {
-    stopRadarLoadingUI();
-    setStatus("warn", j?.error || `Radar failed (${r.status})`);
-    renderRawJson();
-    return;
-  }
-
-    stopRadarLoadingUI();
-  setStatus("", "Radar loaded.");
-
-$("results").innerHTML = renderRadar(j);
-
-  updateRadarStatus(j);
-
-bindOpenCandidateButtons($("results"));
-bindOpenCandidateButtons($("radarRecoveryOpps"));
-
-  document.querySelectorAll(".aa-radar-issue-filter[data-issue], .aa-radar-summary-filter[data-issue]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const nextIssue = String(btn.getAttribute("data-issue") || "").trim();
-
-      if (radarIssueFilter === nextIssue) {
-        radarIssueFilter = "";
-      } else {
-        radarIssueFilter = nextIssue;
+      if (!r.ok || !j?.ok) {
+        stopRadarLoadingUI();
+        setStatus("warn", friendlyText(j?.error || "Radar failed."));
+        return;
       }
 
-      radarPage = 1;
-      setStatus("busy", "Loading support radar…");
-      $("results").innerHTML = "";
-      startRadarLoadingUI();
-      await loadRadarPage();
-    });
+      lastPayload = j;
+      lastRaw = j;
+
+      const results = $("results");
+      if (results) {
+        results.innerHTML = renderRadar(j);
+        bindNotesToggles(results);
+        bindCopyButtons(results);
+        bindOpenCandidateButtons(results);
+
+        results.querySelectorAll("[data-radar-page]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const next = Number(btn.getAttribute("data-radar-page") || "1") || 1;
+            doRadar(next, radarIssueFilter).catch(console.error);
+          });
+        });
+
+        results.querySelectorAll("[data-radar-issue]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const nextIssue = String(btn.getAttribute("data-radar-issue") || "");
+            radarPage = 1;
+            doRadar(1, nextIssue).catch(console.error);
+          });
+        });
+      }
+
+      updateRadarStatus(j);
+      stopRadarLoadingUI();
+      setStatus("", "Radar loaded.");
+      renderRawJson();
+    } catch (err) {
+      stopRadarLoadingUI();
+      setStatus("warn", friendlyText(err?.message || "Radar failed."));
+    }
+  }
+
+  async function doPulseDashboard() {
+    abortActiveSearch();
+    lastMode = "pulse";
+    setDashboardChrome("pulse");
+    setStatus("busy aa-status-center", "");
+    const sl = $("statusLine");
+    if (sl) {
+      sl.innerHTML = `
+        <span class="aa-inline-spinner" aria-hidden="true"></span>
+        <span class="aa-status-center-text">Loading Pulse dashboard…</span>
+      `;
+    }
+
+    const results = $("results");
+    if (results) {
+      results.innerHTML = renderPulseLoadingShell();
+    }
+
+    try {
+      const [analysisRes, summaryRes] = await Promise.all([
+        fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
+        fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" })
+      ]);
+
+      const analysisJson = await analysisRes.json().catch(() => null);
+      const summaryJson = await summaryRes.json().catch(() => null);
+
+      if (!analysisRes.ok || !analysisJson?.ok) {
+        setStatus("warn", friendlyText(analysisJson?.error || "Pulse analysis failed."));
+        return;
+      }
+
+      if (!summaryRes.ok || !summaryJson?.ok) {
+        setStatus("warn", friendlyText(summaryJson?.error || "Pulse summary failed."));
+        return;
+      }
+
+      lastPayload = {
+        ok: true,
+        pulse: {
+          analysis: analysisJson,
+          summary: summaryJson
+        }
+      };
+      lastRaw = lastPayload;
+
+      if (results) {
+        results.innerHTML = renderPulseDashboard(analysisJson, summaryJson);
+      }
+
+      setStatus("", "Pulse dashboard loaded.");
+      renderRawJson();
+    } catch (err) {
+      setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
+    }
+  }
+
+  // --------------------------------------------------
+  // Helpers
+  // --------------------------------------------------
+  function esc(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function friendlyText(value) {
+    const s = String(value ?? "").trim();
+    if (!s) return "";
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  function formatCount(value) {
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value || 0) || 0);
+  }
+
+  // --------------------------------------------------
+  // Init / events
+  // --------------------------------------------------
+  $("btnSearch")?.addEventListener("click", (e) => {
+    e.preventDefault();
+
+    const loginVisible = $("loginFields") && $("loginFields").style.display !== "none";
+    if (loginVisible) {
+      doLogin().catch(console.error);
+      return;
+    }
+
+    doSearch().catch(console.error);
   });
 
-  const prev = document.querySelector(".aa-radar-prev");
-  const next = document.querySelector(".aa-radar-next");
-  const pageLabel = document.querySelector(".aa-radar-page");
+  $("btnTotals")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doTotals().catch(console.error);
+  });
 
-  const pageSize = Number(j?.visible_limit || 25) || 25;
-  const totalItems = Number(j?.total_actionable_items || 0) || 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  $("btnRadar")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doRadar(1, "").catch(console.error);
+  });
 
-  if (pageLabel) {
-    pageLabel.textContent = `Page ${radarPage} of ${totalPages}`;
-  }
+  $("btnPulse")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doPulseDashboard().catch(console.error);
+  });
 
-  if (prev) {
-    prev.disabled = radarPage <= 1;
-    prev.addEventListener("click", async () => {
-      if (radarPage <= 1) return;
-      radarPage -= 1;
-      setStatus("busy", "Loading support radar…");
-      $("results").innerHTML = "";
-      startRadarLoadingUI();
-      await loadRadarPage();
-    });
-  }
+  $("btnLogout")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doLogout().catch(console.error);
+  });
 
-  if (next) {
-    next.disabled = radarPage >= totalPages;
-    next.addEventListener("click", async () => {
-      if (radarPage >= totalPages) return;
-      radarPage += 1;
-      setStatus("busy", "Loading support radar…");
-      $("results").innerHTML = "";
-      startRadarLoadingUI();
-      await loadRadarPage();
-    });
-  }
+  $("btnRawJson")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleRawJson();
+  });
 
-  renderRawJson();
-}
-  function init() {
-
-    $("btnLogin")?.addEventListener("click", (e) => {
+  $("loginPassInput")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
       e.preventDefault();
       doLogin().catch(console.error);
-    });
+    }
+  });
 
-    $("btnLogout")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      doLogout().catch(console.error);
-    });
-
-    $("btnLogout2")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      doLogout().catch(console.error);
-    });
-
-    $("btnSearch")?.addEventListener("click", (e) => {
+  $("q")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
       e.preventDefault();
       doSearch().catch(console.error);
-    });
-// Allow Enter key in search box to trigger search
-$("q")?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+    }
+  });
+
+  $("navRadar")?.addEventListener("click", (e) => {
     e.preventDefault();
-    doSearch().catch(console.error);
-  }
-});
-    $("btnTotals")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      doTotals().catch(console.error);
-    });
-$("btnRadar")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  doRadar().catch(console.error);
-});
-$("btnPulse")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  doPulseDashboard().catch(console.error);
-});
-$("navRadar")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  doRadar().catch(console.error);
-});
-$("navPulse")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  doPulseDashboard().catch(console.error);
-});
-    $("btnRawJson")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      toggleRawJson();
-    });
+    doRadar(1, "").catch(console.error);
+  });
 
-    const u = $("loginUser");
+  $("navPulse")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doPulseDashboard().catch(console.error);
+  });
 
-    u?.addEventListener("focus", () => {
-      if (u.type !== "text") u.type = "text";
-    });
+  window.addEventListener("DOMContentLoaded", async () => {
+    const loggedIn = await refreshSession().catch(() => false);
 
-    u?.addEventListener("blur", () => {
-      const loggedInNow = $("sessionPill")?.classList?.contains("ok");
-      applyLoginUserMask(!!loggedInNow);
-    });
-
-    toggleLoginSearchUI(false);
-    setDashboardChrome("radar");
-
-    refreshSession()
-      .then((loggedIn) => {
-        setSessionPill(!!loggedIn);
-        toggleLoginSearchUI(!!loggedIn);
-      })
-      .catch(() => {
-        setSessionPill(false, null);
-        toggleLoginSearchUI(false);
-      });
-  }
-
-  init();
-
+    if (loggedIn) {
+      doPulseDashboard().catch(console.error);
+    } else {
+      setStatus("", "Enter WordPress credentials to begin.");
+    }
+  });
 })();
-
 // 🔴 main.js

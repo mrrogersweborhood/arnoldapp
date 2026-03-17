@@ -1,4 +1,8 @@
 // 🟢 worker.js
+const ALLOWED_ORIGINS = new Set([
+  "https://mrrogersweborhood.github.io"
+]);
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -6,8 +10,12 @@ export default {
       const path = url.pathname;
       const method = request.method;
 
+      if (method === "OPTIONS") {
+        return handleOptions(request);
+      }
+
       if (path === "/" && method === "GET") {
-        return json({
+        return json(request, {
           ok: true,
           app: "Pulse Revenue Intelligence",
           worker: "pulse-worker",
@@ -20,29 +28,29 @@ export default {
       }
 
       if (path === "/radar/incidents" && method === "GET") {
-        return await handleListIncidents(env);
+        return await handleListIncidents(request, env);
       }
 
       if (path === "/radar/test-create" && method === "GET") {
-        return await handleTestIncident(env);
+        return await handleTestIncident(request, env);
       }
 
       if (path === "/scanner/run" && method === "GET") {
-        return await runPulseScanner(env);
+        return await runPulseScanner(request, env);
       }
 
       if (path === "/pulse/summary" && method === "GET") {
-        return await handlePulseSummary(env);
+        return await handlePulseSummary(request, env);
       }
 
       if (path === "/pulse/failure-analysis" && method === "GET") {
-        return await handleFailureAnalysis(env);
+        return await handleFailureAnalysis(request, env);
       }
 
-      return json({ ok: false, error: "Not found" }, 404);
+      return json(request, { ok: false, error: "Not found" }, 404);
 
     } catch (error) {
-      return json({
+      return json(request, {
         ok: false,
         error: error.message || "Unexpected error"
       }, 500);
@@ -51,9 +59,16 @@ export default {
 
   async scheduled(event, env, ctx) {
     console.log("CRON TRIGGER FIRED", new Date().toISOString());
-    ctx.waitUntil(runPulseScanner(env));
+    ctx.waitUntil(runPulseScanner(null, env));
   }
 };
+
+function handleOptions(request) {
+  return new Response(null, {
+    status: 204,
+    headers: buildCorsHeaders(request)
+  });
+}
 
 async function handleCreateIncident(request, env) {
   const body = await request.json();
@@ -98,13 +113,13 @@ async function handleCreateIncident(request, env) {
     )
     .run();
 
-  return json({
+  return json(request, {
     ok: true,
     incident_id: result.meta.last_row_id
   });
 }
 
-async function handleListIncidents(env) {
+async function handleListIncidents(request, env) {
   const result = await env.DB.prepare(`
     SELECT *
     FROM radar_incidents
@@ -112,13 +127,13 @@ async function handleListIncidents(env) {
     LIMIT 100
   `).all();
 
-  return json({
+  return json(request, {
     ok: true,
     incidents: result.results || []
   });
 }
 
-async function handleTestIncident(env) {
+async function handleTestIncident(request, env) {
   const detected_at = new Date().toISOString();
 
   const result = await env.DB.prepare(`
@@ -150,13 +165,13 @@ async function handleTestIncident(env) {
     )
     .run();
 
-  return json({
+  return json(request, {
     ok: true,
     test_incident: result.meta.last_row_id
   });
 }
 
-async function runPulseScanner(env) {
+async function runPulseScanner(request, env) {
   const stores = await loadActiveStores(env);
 
   let totalScanned = 0;
@@ -182,7 +197,7 @@ async function runPulseScanner(env) {
     }
   }
 
-  return json({
+  return json(request, {
     ok: true,
     stores_scanned: stores.length,
     scanned: totalScanned,
@@ -249,6 +264,9 @@ async function scanStoreFailedOrders(env, store) {
       continue;
     }
 
+    const orderNotes = await fetchOrderNotesForOrder(baseUrl, consumerKey, consumerSecret, orderId);
+    const reason = classifyFailureReason(order, gateway, store, orderNotes);
+
     await env.DB.prepare(`
       INSERT INTO radar_incidents (
         store_id,
@@ -270,7 +288,7 @@ async function scanStoreFailedOrders(env, store) {
         orderId,
         email,
         gateway,
-        orderStatus,
+        reason,
         amount,
         "USD",
         "pending",
@@ -290,7 +308,222 @@ async function scanStoreFailedOrders(env, store) {
   };
 }
 
-async function handlePulseSummary(env) {
+async function fetchOrderNotesForOrder(baseUrl, consumerKey, consumerSecret, orderId) {
+  if (!orderId) return [];
+
+  try {
+    const url = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes?per_page=100`;
+
+    const response = await fetch(url, {
+      headers: {
+        Authorization: "Basic " + btoa(consumerKey + ":" + consumerSecret)
+      }
+    });
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+    const notes = Array.isArray(data) ? data : [];
+
+    return notes.map((note) => ({
+      id: note?.id ?? null,
+      added_by_user: !!note?.added_by_user,
+      date_created: note?.date_created || null,
+      note: asText(note?.note)
+    }));
+  } catch (_) {
+    return [];
+  }
+}
+
+function classifyFailureReason(order, gateway, store, orderNotes = []) {
+  const text = buildFailureText(order, gateway, store, orderNotes);
+
+  if (matchesAny(text, [
+    "card expired",
+    "expired card",
+    "expiration date",
+    "expiry date",
+    "expired",
+    "card_expired",
+    "expired_card"
+  ])) {
+    return "CARD_EXPIRED";
+  }
+
+  if (matchesAny(text, [
+    "insufficient funds",
+    "not sufficient funds",
+    "insufficient_funds",
+    "insufficientfunds",
+    "funds unavailable"
+  ])) {
+    return "INSUFFICIENT_FUNDS";
+  }
+
+  if (matchesAny(text, [
+    "do not honor",
+    "do_not_honor",
+    "do not honour",
+    "generic decline",
+    "decline code do not honor"
+  ])) {
+    return "DO_NOT_HONOR";
+  }
+
+  if (matchesAny(text, [
+    "cvv",
+    "cvc",
+    "security code",
+    "incorrect_cvc",
+    "incorrect cvv",
+    "cvv mismatch"
+  ])) {
+    return "CVV_DECLINE";
+  }
+
+  if (matchesAny(text, [
+    "avs",
+    "address verification",
+    "zip mismatch",
+    "postal code mismatch",
+    "street mismatch"
+  ])) {
+    return "AVS_DECLINE";
+  }
+
+  if (matchesAny(text, [
+    "3d secure",
+    "3ds",
+    "authentication required",
+    "sca_required",
+    "strong customer authentication",
+    "secure authentication",
+    "verification required"
+  ])) {
+    return "AUTHENTICATION_REQUIRED";
+  }
+
+  if (matchesAny(text, [
+    "processor unavailable",
+    "gateway unavailable",
+    "gateway down",
+    "gateway error",
+    "processor error",
+    "payment gateway error",
+    "internal gateway error",
+    "api error"
+  ])) {
+    return "GATEWAY_ERROR";
+  }
+
+  if (matchesAny(text, [
+    "timeout",
+    "timed out",
+    "request timeout",
+    "gateway timeout"
+  ])) {
+    return "GATEWAY_TIMEOUT";
+  }
+
+  if (matchesAny(text, [
+    "network error",
+    "connection error",
+    "connection timed out",
+    "dns error",
+    "socket error"
+  ])) {
+    return "NETWORK_ERROR";
+  }
+
+  if (matchesAny(text, [
+    "stolen card",
+    "pickup card",
+    "pick up card",
+    "lost card",
+    "fraud",
+    "fraudulent"
+  ])) {
+    return "FRAUD_SUSPECTED";
+  }
+
+  if (matchesAny(text, [
+    "processor declined",
+    "payment declined",
+    "card declined",
+    "declined",
+    "soft decline",
+    "hard decline"
+  ])) {
+    return "PROCESSOR_DECLINED";
+  }
+
+  return "FAILED_GENERIC";
+}
+
+function buildFailureText(order, gateway, store, orderNotes = []) {
+  const parts = [];
+
+  const push = (value) => {
+    const text = asText(value);
+    if (text) parts.push(text.toLowerCase());
+  };
+
+  push(order?.status);
+  push(order?.payment_method);
+  push(order?.payment_method_title);
+  push(order?.transaction_id);
+  push(order?.customer_note);
+  push(order?.payment_details?.result);
+  push(order?.payment_details?.message);
+  push(order?.payment_details?.error);
+  push(order?.payment_result?.result);
+  push(order?.payment_result?.message);
+  push(order?.payment_result?.error);
+  push(gateway);
+  push(store?.gateway);
+
+  if (Array.isArray(order?.meta_data)) {
+    for (const item of order.meta_data) {
+      push(item?.key);
+      if (typeof item?.value === "string" || typeof item?.value === "number" || typeof item?.value === "boolean") {
+        push(item.value);
+      } else if (item?.value && typeof item.value === "object") {
+        try {
+          push(JSON.stringify(item.value));
+        } catch (_) {}
+      }
+    }
+  }
+
+  if (Array.isArray(order?.fee_lines)) {
+    for (const item of order.fee_lines) {
+      push(item?.name);
+      push(item?.total);
+    }
+  }
+
+  if (Array.isArray(order?.coupon_lines)) {
+    for (const item of order.coupon_lines) {
+      push(item?.code);
+    }
+  }
+
+  if (Array.isArray(orderNotes)) {
+    for (const note of orderNotes) {
+      push(note?.note);
+      push(note?.date_created);
+    }
+  }
+
+  return parts.join(" | ");
+}
+
+function matchesAny(text, needles) {
+  return needles.some((needle) => text.includes(String(needle).toLowerCase()));
+}
+
+async function handlePulseSummary(request, env) {
   const revenue = await env.DB.prepare(`
     SELECT SUM(amount) AS total FROM radar_incidents WHERE status = 'pending'
   `).first();
@@ -299,14 +532,14 @@ async function handlePulseSummary(env) {
     SELECT COUNT(*) AS count FROM radar_incidents WHERE status = 'pending'
   `).first();
 
-  return json({
+  return json(request, {
     ok: true,
     recoverable_revenue: Number(revenue?.total || 0),
     failed_subscriptions: Number(incidentCount?.count || 0)
   });
 }
 
-async function handleFailureAnalysis(env) {
+async function handleFailureAnalysis(request, env) {
   const rows = await env.DB.prepare(`
     SELECT
       gateway,
@@ -348,7 +581,7 @@ async function handleFailureAnalysis(env) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 
-  return json({
+  return json(request, {
     ok: true,
     total_pending_incidents: totalPending,
     gateways,
@@ -437,10 +670,26 @@ function normalizeGatewayName(value) {
   return raw || "unknown";
 }
 
-function json(data, status = 200) {
+function buildCorsHeaders(request) {
+  const origin = request?.headers?.get("Origin") || "";
+  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "*";
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin"
+  };
+}
+
+function json(request, data, status = 200) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
-    headers: { "Content-Type": "application/json;charset=UTF-8" }
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      ...buildCorsHeaders(request)
+    }
   });
 }
 
