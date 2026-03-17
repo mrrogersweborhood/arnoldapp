@@ -5,18 +5,19 @@ window.openOrderNotes = openOrderNotes;
 window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php";
 
 // 🟢 main.js
-// Arnold Admin — FULL REPLACEMENT (Build 2026-03-11R2-controllerOnlyAbortCache)
+// Arnold Admin — FULL REPLACEMENT (Build 2026-03-17R1 — Pulse Dashboard Entry + SaaS Render)
 // (Markers are comments only: 🟢 main.js ... 🔴 main.js)
 (() => {
   "use strict";
 
   const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+  const PULSE_WORKER_BASE = "https://pulse-worker.bob-b5c.workers.dev";
   const $ = (id) => document.getElementById(id);
 
   // --------------------------------------------------
   // Session / view state
   // --------------------------------------------------
-  let lastMode = null; // 'search' | 'totals'
+  let lastMode = null; // 'search' | 'totals' | 'radar' | 'pulse'
   let lastPayload = null;
   let lastRaw = null;
   let rawVisible = false;
@@ -272,6 +273,246 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     toggleLoginSearchUI(false);
     return false;
   }
+
+
+  function setDashboardChrome(view) {
+    const isPulse = view === "pulse";
+    ["radarStatusBanner", "radarHeroMetrics", "radarKpiBand", "radarRecoveryOpps"].forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.classList.toggle("is-hidden", isPulse);
+    });
+
+    const navRadar = $("navRadar");
+    const navPulse = $("navPulse");
+
+    navRadar?.classList.toggle("is-active", !isPulse);
+    navPulse?.classList.toggle("is-active", isPulse);
+  }
+
+  function formatPulseMoney(value, currency = "USD") {
+    const amount = Number(value || 0) || 0;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 2
+    }).format(amount);
+  }
+
+  function formatPulseInteger(value) {
+    const amount = Number(value || 0) || 0;
+    return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
+  }
+
+  function formatPulsePercent(value) {
+    const amount = Number(value || 0) || 0;
+    return `${amount.toFixed(2)}%`;
+  }
+
+  function pulseTitleCase(value) {
+    return String(value || "")
+      .replace(/[_-]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  function formatPulseGatewayName(value) {
+    const raw = String(value || "unknown").trim();
+    if (!raw) return "Unknown";
+    if (raw.toLowerCase() === "unknown") return "Unknown";
+    return pulseTitleCase(raw);
+  }
+
+  function formatPulseReasonName(value) {
+    const raw = String(value || "unknown").trim();
+    if (!raw) return "Unknown";
+    return pulseTitleCase(raw);
+  }
+
+  function getPulsePriorityToken(priority) {
+    const token = String(priority || "LOW").trim().toUpperCase();
+    if (token === "HIGH") return "high";
+    if (token === "MEDIUM") return "medium";
+    return "low";
+  }
+
+  function renderPulseLoadingShell() {
+    return `
+      <section class="card pulse-hero">
+        <div class="pulse-hero-top">
+          <div>
+            <div class="pulse-kicker">Pulse Revenue Intelligence</div>
+            <div class="pulse-title">Loading dashboard…</div>
+            <div class="pulse-subtitle">Pulling live gateway and failure data from the Pulse worker.</div>
+          </div>
+        </div>
+        <div class="pulse-stat-grid">
+          <div class="pulse-stat-card pulse-stat-accent-danger"><div class="aa-loading-row" style="width:120px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
+          <div class="pulse-stat-card pulse-stat-accent-warning"><div class="aa-loading-row" style="width:100px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
+          <div class="pulse-stat-card pulse-stat-accent-neutral"><div class="aa-loading-row" style="width:130px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
+          <div class="pulse-stat-card pulse-stat-accent-neutral"><div class="aa-loading-row" style="width:110px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
+        </div>
+      </section>
+      <section class="card pulse-section">
+        <div class="pulse-section-head">
+          <div>
+            <div class="pulse-section-title">Gateway intelligence</div>
+            <div class="pulse-section-subtitle">Preparing live recovery recommendations…</div>
+          </div>
+        </div>
+        <div class="pulse-grid">
+          <div class="pulse-gateway-card"><div class="aa-loading-row" style="width:150px"></div><div class="aa-loading-row" style="width:90px; margin-top:10px"></div><div class="aa-loading-row" style="width:100%; margin-top:12px"></div><div class="aa-loading-row" style="width:85%; margin-top:8px"></div></div>
+          <div class="pulse-gateway-card"><div class="aa-loading-row" style="width:150px"></div><div class="aa-loading-row" style="width:90px; margin-top:10px"></div><div class="aa-loading-row" style="width:100%; margin-top:12px"></div><div class="aa-loading-row" style="width:85%; margin-top:8px"></div></div>
+        </div>
+      </section>
+    `;
+  }
+
+  function renderPulseDashboard(analysis, summary) {
+    const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
+    const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
+
+    gateways.sort((a, b) => Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0));
+    reasons.sort((a, b) => {
+      const revDelta = Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0);
+      if (revDelta !== 0) return revDelta;
+      return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
+    });
+
+    const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
+    const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
+    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+    const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
+
+    const gatewayCards = gateways.length
+      ? gateways.map((gateway) => {
+          const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
+          const priorityToken = getPulsePriorityToken(priorityLabel);
+          return `
+            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+              <div class="pulse-gateway-top">
+                <div>
+                  <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
+                  <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct))} of tracked failures</div>
+                </div>
+                <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priorityLabel)}</div>
+              </div>
+
+              <div class="pulse-gateway-metrics">
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Incidents</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.incident_count))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Revenue</div>
+                  <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Customers at risk</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.customers_at_risk))}</div>
+                </div>
+              </div>
+
+              <div class="pulse-action-pill">${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}</div>
+
+              <div class="pulse-message-block">
+                <div class="pulse-message-label">Recommended message</div>
+                <div class="pulse-message-text">${esc(String(gateway?.recommended_message || "No message returned."))}</div>
+              </div>
+
+              <div class="pulse-message-block">
+                <div class="pulse-message-label">Playbook</div>
+                <div class="pulse-message-text">${esc(String(gateway?.playbook || "No playbook returned."))}</div>
+              </div>
+            </article>
+          `;
+        }).join("")
+      : `<div class="pulse-empty">No gateway data was returned by the live Pulse endpoint.</div>`;
+
+    const reasonRows = reasons.length
+      ? reasons.map((reason) => `
+          <div class="pulse-reason-row">
+            <div class="pulse-reason-name">${esc(formatPulseReasonName(reason?.reason))}</div>
+            <div class="pulse-reason-value pulse-right">${esc(formatPulseInteger(reason?.incident_count))}</div>
+            <div class="pulse-reason-value pulse-right">${esc(formatPulseMoney(reason?.recoverable_revenue))}</div>
+          </div>
+        `).join("")
+      : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
+
+    return `
+      <div class="pulse-shell">
+        <section class="card pulse-hero">
+          <div class="pulse-hero-top">
+            <div>
+              <div class="pulse-kicker">Pulse Revenue Intelligence</div>
+              <div class="pulse-title">Revenue recovery dashboard</div>
+              <div class="pulse-subtitle">Live gateway recommendations, recoverable revenue totals, and failure reasons from the Pulse worker.</div>
+            </div>
+            <div class="pulse-source-row">
+              <span class="pulse-chip">Live endpoint: /pulse/summary</span>
+              <span class="pulse-chip">Live endpoint: /pulse/failure-analysis</span>
+            </div>
+          </div>
+
+          <div class="pulse-stat-grid">
+            <div class="pulse-stat-card pulse-stat-accent-danger">
+              <div class="pulse-stat-label">Recoverable revenue</div>
+              <div class="pulse-stat-value">${esc(formatPulseMoney(totalRevenue))}</div>
+              <div class="pulse-stat-meta">Current total across tracked failed subscriptions.</div>
+            </div>
+            <div class="pulse-stat-card pulse-stat-accent-warning">
+              <div class="pulse-stat-label">Failed subscriptions</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(failedSubscriptions))}</div>
+              <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
+            </div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Pending incidents</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
+              <div class="pulse-stat-meta">Open incidents returned by failure analysis.</div>
+            </div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">High-priority gateways</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
+              <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card pulse-section">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Gateway intelligence</div>
+              <div class="pulse-section-subtitle">Backend-provided actions, priorities, messages, and playbooks rendered exactly as returned.</div>
+            </div>
+          </div>
+          <div class="pulse-grid">
+            ${gatewayCards}
+          </div>
+        </section>
+
+        <section class="card pulse-section pulse-reasons-card">
+          <div class="pulse-section-head" style="padding:16px 16px 0;">
+            <div>
+              <div class="pulse-section-title">Reasons breakdown</div>
+              <div class="pulse-section-subtitle">Sorted by recoverable revenue impact from the verified live response contract.</div>
+            </div>
+          </div>
+          <div class="pulse-reason-list">
+            <div class="pulse-reason-row pulse-reason-head">
+              <div>Reason</div>
+              <div class="pulse-right">Incident count</div>
+              <div class="pulse-right">Recoverable revenue</div>
+            </div>
+            ${reasonRows}
+          </div>
+        </section>
+      </div>
+    `;
+  }
+
 
   // --------------------------------------------------
   // Raw JSON viewer
@@ -809,6 +1050,55 @@ function getCachedCustomerShellPayloadForQuery(q) {
       </div>
     `;
   }
+
+  async function doPulseDashboard() {
+    abortActiveSearch();
+    stopRadarLoadingUI();
+    setDashboardChrome("pulse");
+
+    if (rawVisible) {
+      rawVisible = false;
+      renderRawJson();
+    }
+
+    setStatus("busy", "Loading Pulse dashboard…");
+    $("results").innerHTML = renderPulseLoadingShell();
+
+    const [analysisResp, summaryResp] = await Promise.all([
+      fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
+      fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" })
+    ]);
+
+    const analysisJson = await analysisResp.json().catch(() => null);
+    const summaryJson = await summaryResp.json().catch(() => null);
+
+    lastRaw = {
+      failure_analysis: analysisJson,
+      summary: summaryJson
+    };
+    lastMode = "pulse";
+    lastPayload = {
+      failureAnalysis: analysisJson,
+      summary: summaryJson
+    };
+
+    if (!analysisResp.ok || !analysisJson?.ok) {
+      setStatus("warn", analysisJson?.error || `Pulse failure analysis failed (${analysisResp.status})`);
+      renderRawJson();
+      return;
+    }
+
+    if (!summaryResp.ok || !summaryJson?.ok) {
+      setStatus("warn", summaryJson?.error || `Pulse summary failed (${summaryResp.status})`);
+      renderRawJson();
+      return;
+    }
+
+    $("results").innerHTML = renderPulseDashboard(analysisJson, summaryJson);
+    setStatus("", "Pulse dashboard loaded.");
+    renderRawJson();
+  }
+
   async function doLogin() {
 
     const u = $("loginUser")?.value?.trim() || "";
@@ -856,6 +1146,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
   async function doLogout() {
 
+    setDashboardChrome("radar");
     setStatus("busy", "Logging out…");
 
     await fetch(`${WORKER_BASE}/admin/logout`, {
@@ -870,6 +1161,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
   }
   async function doSearch() {
 
+    setDashboardChrome("radar");
     const q = $("q")?.value?.trim() || "";
 const direct = parseDirectLookupQuery(q);
     if (!q) {
@@ -1114,6 +1406,7 @@ if (cachedShellPayload) {
 
 async function doRadar() {
 
+  setDashboardChrome("radar");
   radarPage = 1;
   radarIssueFilter = "";
   
@@ -1256,6 +1549,18 @@ $("btnRadar")?.addEventListener("click", (e) => {
   e.preventDefault();
   doRadar().catch(console.error);
 });
+$("btnPulse")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doPulseDashboard().catch(console.error);
+});
+$("navRadar")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doRadar().catch(console.error);
+});
+$("navPulse")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doPulseDashboard().catch(console.error);
+});
     $("btnRawJson")?.addEventListener("click", (e) => {
       e.preventDefault();
       toggleRawJson();
@@ -1273,6 +1578,7 @@ $("btnRadar")?.addEventListener("click", (e) => {
     });
 
     toggleLoginSearchUI(false);
+    setDashboardChrome("radar");
 
     refreshSession()
       .then((loggedIn) => {
