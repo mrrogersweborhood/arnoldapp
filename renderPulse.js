@@ -116,58 +116,7 @@
           <div class="pulse-stat-card pulse-stat-accent-neutral"><div class="aa-loading-row" style="width:110px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
         </div>
       </section>
-<!-- Recovery Actions (NEW) -->
-<section class="card pulse-section">
-  <div class="pulse-section-head">
-    <div>
-      <div class="pulse-section-title">Recovery actions</div>
-      <div class="pulse-section-subtitle">What to do right now to recover revenue.</div>
-    </div>
-  </div>
 
-  <div class="pulse-grid">
-    ${
-      gateways
-        .filter(g => Number(g?.recoverable_revenue || 0) > 0)
-        .slice(0, 3)
-        .map(gateway => {
-          const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
-          const priorityToken = getPulsePriorityToken(priority);
-
-          return `
-            <div class="pulse-gateway-card pulse-priority-${priorityToken}-card">
-              <div class="pulse-gateway-top">
-                <div>
-                  <div class="pulse-gateway-name">
-                    ${esc(formatPulseGatewayName(gateway?.gateway))}
-                  </div>
-                  <div class="pulse-gateway-share">
-                    ${esc(formatPulseInteger(gateway?.incident_count))} incidents • 
-                    ${esc(formatPulseMoney(gateway?.recoverable_revenue))}
-                  </div>
-                </div>
-                <div class="pulse-priority-pill pulse-priority-${priorityToken}">
-                  ${esc(priority)}
-                </div>
-              </div>
-
-              <div class="pulse-action-pill">
-                ${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}
-              </div>
-
-              <div class="pulse-message-block">
-                <div class="pulse-message-label">Action</div>
-                <div class="pulse-message-text">
-                  ${esc(String(gateway?.recommended_message || "No action provided."))}
-                </div>
-              </div>
-            </div>
-          `;
-        })
-        .join("")
-    }
-  </div>
-</section>
       <section class="card pulse-section">
         <div class="pulse-section-head">
           <div>
