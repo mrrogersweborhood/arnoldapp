@@ -962,6 +962,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     toggleLoginSearchUI(true);
     setLoggedOutLanding(true);
     setStatus("", "Logged in.");
+    await doPulseDashboard();
   }
 
   async function doLogout() {
