@@ -309,18 +309,6 @@ function setDashboardChrome(view) {
     rawBtn.style.display = isPulse ? "none" : "";
   }
 }
-    ["radarStatusBanner", "radarHeroMetrics", "radarKpiBand", "radarRecoveryOpps"].forEach((id) => {
-      const el = $(id);
-      if (!el) return;
-      el.classList.toggle("is-hidden", isPulse);
-    });
-
-    const navRadar = $("navRadar");
-    const navPulse = $("navPulse");
-
-    navRadar?.classList.toggle("is-active", !isPulse);
-    navPulse?.classList.toggle("is-active", isPulse);
-  }
   // --------------------------------------------------
   // Pulse renderer contract
   // --------------------------------------------------
