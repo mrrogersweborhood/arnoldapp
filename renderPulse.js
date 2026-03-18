@@ -29,62 +29,7 @@
     const amount = Number(value || 0) || 0;
     return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
   }
-function getLastScanInfo() {
-  try {
-    const raw = localStorage.getItem("pulse_last_scan");
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch (_) {
-    return null;
-  }
-}
-function getScanDelta(summary) {
-function getRepeatOffenders(incidents) {
-  try {
-    const map = {};
 
-    for (const item of incidents || []) {
-      const email = (item?.customer_email || "").toLowerCase();
-      if (!email) continue;
-
-      map[email] = map[email] || {
-        email,
-        count: 0,
-        total: 0
-      };
-
-      map[email].count += 1;
-      map[email].total += Number(item?.amount || 0);
-    }
-
-    return Object.values(map)
-      .filter(x => x.count > 1)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5); // top offenders only
-  } catch {
-    return [];
-  }
-}
-function getOffenderPriority(offender) {
-  const count = Number(offender?.count || 0);
-  const total = Number(offender?.total || 0);
-
-  if (count >= 4 || total >= 300) return "HIGH";
-  if (count >= 2 || total >= 100) return "MEDIUM";
-  return "LOW";
-}
-  try {
-    const prev = JSON.parse(localStorage.getItem("pulse_last_scan") || "null");
-    if (!prev) return null;
-
-    return {
-      failedDelta: (summary?.failed_subscriptions || 0) - (prev.failed || 0),
-      revenueDelta: (summary?.recoverable_revenue || 0) - (prev.recoverable || 0)
-    };
-  } catch (_) {
-    return null;
-  }
-}
   function formatPulsePercent(value) {
     const amount = Number(value || 0) || 0;
     return `${amount.toFixed(2)}%`;
@@ -154,6 +99,72 @@ function getOffenderPriority(offender) {
     return "low";
   }
 
+  function getLastScanInfo() {
+    try {
+      const raw = localStorage.getItem("pulse_last_scan");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getScanDelta(summary) {
+    try {
+      const prev = JSON.parse(localStorage.getItem("pulse_last_scan") || "null");
+      if (!prev) return null;
+
+      return {
+        failedDelta: (summary?.failed_subscriptions || 0) - (prev.failed || 0),
+        revenueDelta: (summary?.recoverable_revenue || 0) - (prev.recoverable || 0)
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getRepeatOffenders(incidents) {
+    try {
+      const map = {};
+
+      for (const item of incidents || []) {
+        const email = String(item?.customer_email || "").trim().toLowerCase();
+        if (!email) continue;
+
+        if (!map[email]) {
+          map[email] = {
+            email,
+            count: 0,
+            total: 0
+          };
+        }
+
+        map[email].count += 1;
+        map[email].total += Number(item?.amount || 0) || 0;
+      }
+
+      return Object.values(map)
+        .filter((x) => x.count > 1)
+        .sort((a, b) => {
+          const countDelta = Number(b?.count || 0) - Number(a?.count || 0);
+          if (countDelta !== 0) return countDelta;
+          return Number(b?.total || 0) - Number(a?.total || 0);
+        })
+        .slice(0, 5);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function getOffenderPriority(offender) {
+    const count = Number(offender?.count || 0);
+    const total = Number(offender?.total || 0);
+
+    if (count >= 4 || total >= 300) return "HIGH";
+    if (count >= 2 || total >= 100) return "MEDIUM";
+    return "LOW";
+  }
+
   function renderPulseLoadingShell() {
     return `
       <section class="card pulse-hero">
@@ -190,6 +201,9 @@ function getOffenderPriority(offender) {
   function renderPulseDashboard(analysis, summary) {
     const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
     const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
+    const repeatOffenders = getRepeatOffenders(analysis?.incidents);
+    const lastScanInfo = getLastScanInfo();
+    const scanDelta = getScanDelta(summary);
 
     gateways.sort((a, b) => Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0));
     reasons.sort((a, b) => {
@@ -202,8 +216,38 @@ function getOffenderPriority(offender) {
     const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
     const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
-const scanDelta = getScanDelta(summary);
-const repeatOffenders = getRepeatOffenders(analysis?.incidents);
+
+    const lastScanCard = lastScanInfo
+      ? `
+          <section class="card pulse-section" style="margin-bottom:16px;">
+            <div class="pulse-section-head">
+              <div>
+                <div class="pulse-section-title">Last scan</div>
+                <div class="pulse-section-subtitle">Most recent scan execution</div>
+              </div>
+            </div>
+            <div style="padding:16px; display:flex; gap:24px; flex-wrap:wrap;">
+              <div>
+                <div class="pulse-metric-label">Time</div>
+                <div class="pulse-metric-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+              </div>
+              <div>
+                <div class="pulse-metric-label">Processed</div>
+                <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+              </div>
+              <div>
+                <div class="pulse-metric-label">Revenue</div>
+                <div class="pulse-metric-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
+              </div>
+              <div>
+                <div class="pulse-metric-label">Failed</div>
+                <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+              </div>
+            </div>
+          </section>
+        `
+      : "";
+
     const gatewayCards = gateways.length
       ? gateways.map((gateway) => {
           const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
@@ -213,24 +257,6 @@ const repeatOffenders = getRepeatOffenders(analysis?.incidents);
               <div class="pulse-gateway-top">
                 <div>
                   <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
-${repeatOffenders?.length ? `
-  <div class="pulse-card">
-    <div class="pulse-card-header">Repeat offenders</div>
-    <div class="pulse-card-body">
-      ${repeatOffenders.map(o => {
-        const priority = getOffenderPriority(o);
-        return `
-          <div class="pulse-row">
-            <div><strong>${esc(o.email)}</strong></div>
-            <div>${esc(o.count)} failures</div>
-            <div>${esc(formatPulseMoney(o.total))}</div>
-            <div><strong>${esc(priority)}</strong></div>
-          </div>
-        `;
-      }).join("")}
-    </div>
-  </div>
-` : ""}
                   <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct))} of tracked failures</div>
                 </div>
                 <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priorityLabel)}</div>
@@ -276,41 +302,52 @@ ${repeatOffenders?.length ? `
           </div>
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
-const lastScanInfo = getLastScanInfo();
 
-const lastScanCard = lastScanInfo
-  ? `
-      <section class="card pulse-section" style="margin-bottom:16px;">
-        <div class="pulse-section-head">
-          <div>
-            <div class="pulse-section-title">Last scan</div>
-            <div class="pulse-section-subtitle">Most recent scan execution</div>
-          </div>
-        </div>
-        <div style="padding:16px; display:flex; gap:24px; flex-wrap:wrap;">
-          <div>
-            <div class="pulse-metric-label">Time</div>
-            <div class="pulse-metric-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
-          </div>
-          <div>
-            <div class="pulse-metric-label">Processed</div>
-            <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
-          </div>
-          <div>
-            <div class="pulse-metric-label">Revenue</div>
-            <div class="pulse-metric-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
-          </div>
-          <div>
-            <div class="pulse-metric-label">Failed</div>
-            <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
-          </div>
-        </div>
-      </section>
-    `
-  : "";
-return `
-  <div class="pulse-shell">
-${lastScanCard}
+    const repeatOffenderSection = repeatOffenders.length
+      ? `
+          <section class="card pulse-section">
+            <div class="pulse-section-head">
+              <div>
+                <div class="pulse-section-title">Repeat offenders</div>
+                <div class="pulse-section-subtitle">Subscribers with repeated payment failures.</div>
+              </div>
+            </div>
+            <div class="pulse-grid">
+              ${repeatOffenders.map((offender) => {
+                const priority = getOffenderPriority(offender);
+                const priorityToken = getPulsePriorityToken(priority);
+                return `
+                  <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+                    <div class="pulse-gateway-top">
+                      <div>
+                        <div class="pulse-gateway-name">${esc(offender.email)}</div>
+                        <div class="pulse-gateway-share">${esc(String(offender.count))} failures</div>
+                      </div>
+                      <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
+                    </div>
+
+                    <div class="pulse-gateway-metrics">
+                      <div class="pulse-metric">
+                        <div class="pulse-metric-label">Failures</div>
+                        <div class="pulse-metric-value">${esc(formatPulseInteger(offender.count))}</div>
+                      </div>
+                      <div class="pulse-metric">
+                        <div class="pulse-metric-label">Revenue at risk</div>
+                        <div class="pulse-metric-value">${esc(formatPulseMoney(offender.total))}</div>
+                      </div>
+                    </div>
+                  </article>
+                `;
+              }).join("")}
+            </div>
+          </section>
+        `
+      : "";
+
+    return `
+      <div class="pulse-shell">
+        ${lastScanCard}
+
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
             <div>
@@ -342,17 +379,18 @@ ${lastScanCard}
               <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
               <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
             </div>
-${scanDelta ? `
-  <div class="pulse-stat-card pulse-stat-accent-neutral">
-    <div class="pulse-stat-label">Since last scan</div>
-    <div class="pulse-stat-value">
-      ${esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`)}
-    </div>
-    <div class="pulse-stat-meta">
-      ${esc(`Revenue ${scanDelta.revenueDelta >= 0 ? "+" : ""}${formatPulseMoney(scanDelta.revenueDelta)}`)}
-    </div>
-  </div>
-` : ""}
+
+            ${scanDelta ? `
+              <div class="pulse-stat-card pulse-stat-accent-neutral">
+                <div class="pulse-stat-label">Since last scan</div>
+                <div class="pulse-stat-value">
+                  ${esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`)}
+                </div>
+                <div class="pulse-stat-meta">
+                  ${esc(`Revenue ${scanDelta.revenueDelta >= 0 ? "+" : ""}${formatPulseMoney(scanDelta.revenueDelta)}`)}
+                </div>
+              </div>
+            ` : ""}
           </div>
         </section>
 
@@ -367,6 +405,8 @@ ${scanDelta ? `
             ${gatewayCards}
           </div>
         </section>
+
+        ${repeatOffenderSection}
 
         <section class="card pulse-section pulse-reasons-card">
           <div class="pulse-section-head" style="padding:16px 16px 0;">
@@ -391,5 +431,4 @@ ${scanDelta ? `
   window.renderPulseLoadingShell = renderPulseLoadingShell;
   window.renderPulseDashboard = renderPulseDashboard;
 })();
-
 // 🔴 renderPulse.js
