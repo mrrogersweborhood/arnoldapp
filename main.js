@@ -307,7 +307,13 @@ if (btnRunScan) {
       const data = await res.json();
 
       setStatus("", `Scan complete — ${data?.processed || 0} items`);
-
+// store last scan result
+try {
+  localStorage.setItem("pulse_last_scan", JSON.stringify({
+    time: Date.now(),
+    processed: data?.processed || 0
+  }));
+} catch (_) {}
       // refresh Pulse after scan
       await doPulseDashboard();
 

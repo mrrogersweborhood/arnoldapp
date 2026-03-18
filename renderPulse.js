@@ -29,7 +29,15 @@
     const amount = Number(value || 0) || 0;
     return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(amount);
   }
-
+function getLastScanInfo() {
+  try {
+    const raw = localStorage.getItem("pulse_last_scan");
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (_) {
+    return null;
+  }
+}
   function formatPulsePercent(value) {
     const amount = Number(value || 0) || 0;
     return `${amount.toFixed(2)}%`;
@@ -203,8 +211,33 @@
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
 
-    return `
-      <div class="pulse-shell">
+${(() => {
+  const scan = getLastScanInfo();
+  if (!scan) return "";
+
+  const time = new Date(scan.time).toLocaleString();
+
+  return `
+    <section class="card pulse-section" style="margin-bottom:16px;">
+      <div class="pulse-section-head">
+        <div>
+          <div class="pulse-section-title">Last scan</div>
+          <div class="pulse-section-subtitle">Most recent scan execution</div>
+        </div>
+      </div>
+      <div style="padding:16px; display:flex; gap:24px; flex-wrap:wrap;">
+        <div>
+          <div class="pulse-metric-label">Time</div>
+          <div class="pulse-metric-value">${esc(time)}</div>
+        </div>
+        <div>
+          <div class="pulse-metric-label">Processed</div>
+          <div class="pulse-metric-value">${esc(formatPulseInteger(scan.processed))}</div>
+        </div>
+      </div>
+    </section>
+  `;
+})()}
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
             <div>
