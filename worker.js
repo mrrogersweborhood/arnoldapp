@@ -1,4 +1,8 @@
 // 🟢 worker.js
+// ⚠️ SECURITY RULE:
+// This file MUST NOT contain secrets.
+// All credentials must come from Cloudflare env bindings.
+// If you see a hardcoded key, remove it immediately.
 const ALLOWED_ORIGINS = new Set([
   "https://mrrogersweborhood.github.io"
 ]);
