@@ -281,8 +281,34 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
   }
 
 
-  function setDashboardChrome(view) {
-    const isPulse = view === "pulse";
+function setDashboardChrome(view) {
+  const isPulse = view === "pulse";
+
+  // Existing radar chrome behavior (unchanged)
+  ["radarStatusBanner", "radarHeroMetrics", "radarKpiBand", "radarRecoveryOpps"].forEach((id) => {
+    const el = $(id);
+    if (!el) return;
+    el.classList.toggle("is-hidden", isPulse);
+  });
+
+  const navRadar = $("navRadar");
+  const navPulse = $("navPulse");
+
+  navRadar?.classList.toggle("is-active", !isPulse);
+  navPulse?.classList.toggle("is-active", isPulse);
+
+  // ✅ NEW — Pulse UI cleanup
+  const statusLine = $("statusLine");
+  const rawBtn = $("btnRawJson");
+
+  if (statusLine) {
+    statusLine.style.display = isPulse ? "none" : "";
+  }
+
+  if (rawBtn) {
+    rawBtn.style.display = isPulse ? "none" : "";
+  }
+}
     ["radarStatusBanner", "radarHeroMetrics", "radarKpiBand", "radarRecoveryOpps"].forEach((id) => {
       const el = $(id);
       if (!el) return;
