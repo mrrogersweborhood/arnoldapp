@@ -202,6 +202,11 @@
     const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
     const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
     const repeatOffenders = getRepeatOffenders(analysis?.incidents);
+const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
+  ? analysis.gateway_incidents
+  : [];
+
+const activeIncident = gatewayIncidents.find(g => g.status === "outage" || g.status === "spike");
     const lastScanInfo = getLastScanInfo();
     const scanDelta = getScanDelta(summary);
 
@@ -344,8 +349,36 @@
         `
       : "";
 
-    return `
-      <div class="pulse-shell">
+return `
+  <div class="pulse-shell">
+
+    ${activeIncident ? `
+      <section class="card pulse-section" style="border:2px solid #dc2626; background:#fff5f5;">
+        <div class="pulse-section-head">
+          <div>
+            <div class="pulse-section-title" style="color:#b91c1c;">
+              ⚠️ Gateway Incident Detected
+            </div>
+            <div class="pulse-section-subtitle">
+              ${esc(formatPulseGatewayName(activeIncident.gateway))} is experiencing abnormal failure rates.
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:16px;">
+          <div><strong>Status:</strong> ${esc(activeIncident.status.toUpperCase())}</div>
+          <div><strong>Severity:</strong> ${esc(activeIncident.severity.toUpperCase())}</div>
+          <div><strong>Confidence:</strong> ${esc(formatPulsePercent(activeIncident.confidence * 100))}</div>
+          <div><strong>Customers at risk:</strong> ${esc(formatPulseInteger(activeIncident.customers_at_risk))}</div>
+          <div style="margin-top:10px;">
+            <strong>Recommended Action:</strong> ${esc(activeIncident.recommended_action)}
+          </div>
+          <div style="margin-top:6px;">
+            ${esc(activeIncident.recommended_message)}
+          </div>
+        </div>
+      </section>
+    ` : ""}
         ${lastScanCard}
 
         <section class="card pulse-hero">

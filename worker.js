@@ -557,7 +557,7 @@ async function handleFailureAnalysis(request, env) {
   const incidents = rows.results || [];
   const totalPending = incidents.length;
   const gateways = aggregateByGatewayForActions(incidents);
-
+const gatewayIncidents = buildGatewayIncidents(gateways, totalPending);
   const reasonsMap = new Map();
 
   for (const row of incidents) {
@@ -585,14 +585,15 @@ async function handleFailureAnalysis(request, env) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 
-  return json(request, {
-    ok: true,
-    total_pending_incidents: totalPending,
-    gateways,
-    reasons,
-    top_gateway: gateways[0] || null,
-    top_reason: reasons[0] || null
-  });
+return json(request, {
+  ok: true,
+  total_pending_incidents: totalPending,
+  gateways,
+  gateway_incidents: gatewayIncidents, // ✅ NEW
+  reasons,
+  top_gateway: gateways[0] || null,
+  top_reason: reasons[0] || null
+});
 }
 
 function aggregateByGatewayForActions(incidents) {
@@ -663,7 +664,51 @@ function aggregateByGatewayForActions(incidents) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 }
+function buildGatewayIncidents(gateways, totalPending) {
+  try {
+    if (!Array.isArray(gateways) || !gateways.length) return [];
 
+    return gateways.map((g) => {
+      const count = Number(g?.incident_count || 0);
+      const revenue = Number(g?.recoverable_revenue || 0);
+      const customers = Number(g?.customers_at_risk || 0);
+      const share = Number(g?.share_of_failures_pct || 0);
+
+      let status = "normal";
+      let severity = "low";
+      let confidence = 0.5;
+
+      // 🚨 Outage detection (dominant + high volume)
+      if (share >= 70 && count >= 10) {
+        status = "outage";
+        severity = "high";
+        confidence = Math.min(0.95, 0.7 + (share / 100));
+      }
+
+      // ⚠️ Spike detection
+      else if (count >= 5 || share >= 30) {
+        status = "spike";
+        severity = count >= 10 ? "high" : "medium";
+        confidence = Math.min(0.9, 0.5 + (count / 20));
+      }
+
+      return {
+        gateway: g.gateway,
+        status,
+        severity,
+        confidence: Number(confidence.toFixed(2)),
+        incident_count: count,
+        recoverable_revenue: Number(revenue.toFixed(2)),
+        customers_at_risk: customers,
+        recommended_action: g.recommended_action,
+        recommended_message: g.recommended_message
+      };
+    });
+  } catch (err) {
+    console.error("buildGatewayIncidents failed", err);
+    return [];
+  }
+}
 function normalizeGatewayName(value) {
   const raw = String(value || "").toLowerCase();
 
