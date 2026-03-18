@@ -273,7 +273,14 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     idsToToggle.forEach((id) => {
       const el = $(id);
       if (!el) return;
-      el.style.display = isLoggedIn ? "" : "none";
+
+      if (isLoggedIn) {
+        el.classList.remove("is-hidden");
+        el.style.display = "";
+      } else {
+        el.classList.add("is-hidden");
+        el.style.display = "none";
+      }
     });
   }
 let sessionCache = null;
