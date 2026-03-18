@@ -26,6 +26,9 @@
   --signal:#FF5A6B;
 }
     html,body{height:100%}
+.is-hidden {
+  display: none !important;
+}
 body{
   margin:0;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -2119,7 +2122,7 @@ button.aa-opp-card{
 
       
       <!-- Radar Status Banner -->
-      <div id="radarStatusBanner" class="aa-radar-status aa-radar-status-healthy">
+      <div id="radarStatusBanner" class="aa-radar-status aa-radar-status-healthy is-hidden">
         <div>
           <div class="aa-radar-status-title">Radar Status</div>
           <div class="aa-radar-status-text" id="radarStatusText">Healthy</div>
@@ -2130,7 +2133,7 @@ button.aa-opp-card{
       </div>
       
       <!-- Radar Hero Metrics -->
-      <div id="radarHeroMetrics" class="card aa-radar-hero">
+      <div id="radarHeroMetrics" class="card aa-radar-hero is-hidden">
         <div class="aa-radar-hero-grid">
           <div class="aa-hero-metric">
             <div class="aa-hero-label">Recoverable Revenue</div>
@@ -2151,7 +2154,7 @@ button.aa-opp-card{
         </div>
       </div>
 
-      <div id="radarKpiBand" class="card radar-kpi-band">
+      <div id="radarKpiBand" class="card radar-kpi-band is-hidden">
         <div class="radar-kpi-head">
           <div>
             <div class="radar-kpi-kicker">Recovery Overview</div>
@@ -2231,7 +2234,7 @@ button.aa-opp-card{
         </div>
       </div>
     </div>
-<div class="aa-card aa-recovery-opps" id="radarRecoveryOpps">
+<div class="aa-card aa-recovery-opps is-hidden" id="radarRecoveryOpps">
   <div class="aa-section-head">
     <div class="aa-section-title">Top Recovery Opportunities</div>
     <div class="aa-section-subtitle">Most recoverable subscribers right now</div>
@@ -2245,22 +2248,22 @@ button.aa-opp-card{
 
   </div>
 </div>
-    <div id="results" class="results"></div>
+<div id="results" class="results is-hidden"></div>
 
-<button id="btnRawJson" class="rawjson-toggle">Toggle Raw JSON</button>
+<button id="btnRawJson" class="rawjson-toggle is-hidden">Toggle Raw JSON</button>
 </div>
 </div>
 </div>
 
   <!-- Cache-bust MUST match modular build -->
    <!-- Cache-bust MUST match modular build -->
-    <script src="./formatters.js?v=2026-03-18-335"></script>
-<script src="./renderCustomer.js?v=2026-03-18-335"></script>
-  <script src="./renderHealth.js?v=2026-03-18-335"></script>
-<script src="./renderActivity.js?v=2026-03-18-335"></script>
-   <script src="./renderRadar.js?v=2026-03-18-335"></script>
-   <script src="./renderPulse.js?v=2026-03-18-335"></script>
-          <script src="./main.js?v=2026-03-18-335"></script>
+    <script src="./formatters.js?v=2026-03-18-336"></script>
+<script src="./renderCustomer.js?v=2026-03-18-336"></script>
+  <script src="./renderHealth.js?v=2026-03-18-336"></script>
+<script src="./renderActivity.js?v=2026-03-18-336"></script>
+   <script src="./renderRadar.js?v=2026-03-18-336"></script>
+   <script src="./renderPulse.js?v=2026-03-18-336"></script>
+          <script src="./main.js?v=2026-03-18-336"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
