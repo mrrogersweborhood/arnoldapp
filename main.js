@@ -305,6 +305,10 @@ async function refreshSession() {
       setSessionPill(false, null);
       toggleLoginSearchUI(false);
       setLoggedOutLanding(false);
+
+      // 🔥 HARD RESET UI STATE
+      setDashboardChrome("search");
+
       return false;
 
     } catch (err) {
