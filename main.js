@@ -327,6 +327,7 @@ async function refreshSession() {
 }
 
 
+  function setDashboardChrome(view) {
   const isPulse = view === "pulse";
   const isRadar = view === "radar";
 
@@ -339,12 +340,13 @@ async function refreshSession() {
   if (hero) hero.classList.toggle("is-hidden", true);
   if (kpi) kpi.classList.toggle("is-hidden", true);
   if (opps) opps.classList.toggle("is-hidden", true);
-  const navRadar = $("navRadar");
-const navPulse = $("navPulse");
 
-navRadar?.classList.toggle("is-active", !isPulse);
-navPulse?.classList.toggle("is-active", isPulse);
-  // ✅ NEW — Pulse UI cleanup
+  const navRadar = $("navRadar");
+  const navPulse = $("navPulse");
+
+  navRadar?.classList.toggle("is-active", isRadar);
+  navPulse?.classList.toggle("is-active", isPulse);
+
   const statusLine = $("statusLine");
   const rawBtn = $("btnRawJson");
 
