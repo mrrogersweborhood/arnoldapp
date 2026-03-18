@@ -210,34 +210,41 @@ function getLastScanInfo() {
           </div>
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
+const lastScanInfo = getLastScanInfo();
 
-${(() => {
-  const scan = getLastScanInfo();
-  if (!scan) return "";
-
-  const time = new Date(scan.time).toLocaleString();
-
-  return `
-    <section class="card pulse-section" style="margin-bottom:16px;">
-      <div class="pulse-section-head">
-        <div>
-          <div class="pulse-section-title">Last scan</div>
-          <div class="pulse-section-subtitle">Most recent scan execution</div>
+const lastScanCard = lastScanInfo
+  ? `
+      <section class="card pulse-section" style="margin-bottom:16px;">
+        <div class="pulse-section-head">
+          <div>
+            <div class="pulse-section-title">Last scan</div>
+            <div class="pulse-section-subtitle">Most recent scan execution</div>
+          </div>
         </div>
-      </div>
-      <div style="padding:16px; display:flex; gap:24px; flex-wrap:wrap;">
-        <div>
-          <div class="pulse-metric-label">Time</div>
-          <div class="pulse-metric-value">${esc(time)}</div>
+        <div style="padding:16px; display:flex; gap:24px; flex-wrap:wrap;">
+          <div>
+            <div class="pulse-metric-label">Time</div>
+            <div class="pulse-metric-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+          </div>
+          <div>
+            <div class="pulse-metric-label">Processed</div>
+            <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+          </div>
+          <div>
+            <div class="pulse-metric-label">Revenue</div>
+            <div class="pulse-metric-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
+          </div>
+          <div>
+            <div class="pulse-metric-label">Failed</div>
+            <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+          </div>
         </div>
-        <div>
-          <div class="pulse-metric-label">Processed</div>
-          <div class="pulse-metric-value">${esc(formatPulseInteger(scan.processed))}</div>
-        </div>
-      </div>
-    </section>
-  `;
-})()}
+      </section>
+    `
+  : "";
+return `
+  <div class="pulse-shell">
+${lastScanCard}
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
             <div>
