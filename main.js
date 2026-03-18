@@ -1214,10 +1214,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     doSearch().catch(console.error);
   });
 
-  $("btnTotals")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    doTotals().catch(console.error);
-  });
+
 
   $("btnRadar")?.addEventListener("click", (e) => {
     e.preventDefault();
