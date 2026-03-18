@@ -293,7 +293,30 @@ function setDashboardChrome(view) {
 
   const navRadar = $("navRadar");
   const navPulse = $("navPulse");
+const btnRunScan = $("btnRunScan");
 
+if (btnRunScan) {
+  btnRunScan.addEventListener("click", async () => {
+    try {
+      setStatus("busy", "Running scan…");
+
+      const res = await fetch(`${PULSE_WORKER_BASE}/scanner/run`, {
+        method: "POST"
+      });
+
+      const data = await res.json();
+
+      setStatus("", `Scan complete — ${data?.processed || 0} items`);
+
+      // refresh Pulse after scan
+      await doPulseDashboard();
+
+    } catch (err) {
+      console.error(err);
+      setStatus("warn", "Scan failed");
+    }
+  });
+}
   navRadar?.classList.toggle("is-active", !isPulse);
   navPulse?.classList.toggle("is-active", isPulse);
 
