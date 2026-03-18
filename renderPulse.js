@@ -38,6 +38,19 @@ function getLastScanInfo() {
     return null;
   }
 }
+function getScanDelta(summary) {
+  try {
+    const prev = JSON.parse(localStorage.getItem("pulse_last_scan") || "null");
+    if (!prev) return null;
+
+    return {
+      failedDelta: (summary?.failed_subscriptions || 0) - (prev.failed || 0),
+      revenueDelta: (summary?.recoverable_revenue || 0) - (prev.recoverable || 0)
+    };
+  } catch (_) {
+    return null;
+  }
+}
   function formatPulsePercent(value) {
     const amount = Number(value || 0) || 0;
     return `${amount.toFixed(2)}%`;
@@ -155,7 +168,7 @@ function getLastScanInfo() {
     const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
     const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
-
+const scanDelta = getScanDelta(summary);
     const gatewayCards = gateways.length
       ? gateways.map((gateway) => {
           const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
@@ -276,6 +289,17 @@ ${lastScanCard}
               <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
               <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
             </div>
+${scanDelta ? `
+  <div class="pulse-stat-card pulse-stat-accent-neutral">
+    <div class="pulse-stat-label">Since last scan</div>
+    <div class="pulse-stat-value">
+      ${esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`)}
+    </div>
+    <div class="pulse-stat-meta">
+      ${esc(`Revenue ${scanDelta.revenueDelta >= 0 ? "+" : ""}${formatPulseMoney(scanDelta.revenueDelta)}`)}
+    </div>
+  </div>
+` : ""}
           </div>
         </section>
 
