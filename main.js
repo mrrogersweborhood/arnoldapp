@@ -261,24 +261,49 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     if (btnLogout2) btnLogout2.style.display = isLoggedIn ? "" : "none";
   }
 
-  async function refreshSession() {
-    const r = await fetch(`${WORKER_BASE}/admin/status`, {
-      method: "GET",
-      credentials: "include"
-    });
+let sessionCache = null;
 
-    const j = await r.json().catch(() => null);
+async function refreshSession() {
+  // ✅ prevent overlapping calls (THIS is the fix)
+  if (sessionCache) return sessionCache;
 
-    if (j && j.loggedIn) {
-      setSessionPill(true, j?.user?.name || j?.user?.slug || "admin");
-      toggleLoginSearchUI(true);
-      return true;
+  sessionCache = (async () => {
+    try {
+      const r = await fetch(`${WORKER_BASE}/admin/status`, {
+        method: "GET",
+        credentials: "include"
+      });
+
+      if (!r.ok) throw new Error("status not ok");
+
+      const j = await r.json().catch(() => null);
+
+      const loggedIn = !!j?.loggedIn;
+
+      if (loggedIn) {
+        setSessionPill(true, j?.user?.name || j?.user?.slug || "admin");
+        toggleLoginSearchUI(true);
+        return true;
+      }
+
+      setSessionPill(false, null);
+      toggleLoginSearchUI(false);
+      return false;
+
+    } catch (err) {
+      console.warn("refreshSession failed", err);
+
+      // ⚠️ DO NOT nuke session on transient failure
+      return false;
+
+    } finally {
+      // allow future refresh after short delay
+      setTimeout(() => { sessionCache = null; }, 2000);
     }
+  })();
 
-    setSessionPill(false, null);
-    toggleLoginSearchUI(false);
-    return false;
-  }
+  return sessionCache;
+}
 
 
 function setDashboardChrome(view) {
