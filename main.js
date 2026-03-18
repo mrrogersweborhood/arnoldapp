@@ -260,7 +260,22 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     if (btnLogout) btnLogout.style.display = isLoggedIn ? "" : "none";
     if (btnLogout2) btnLogout2.style.display = isLoggedIn ? "" : "none";
   }
+  function setLoggedOutLanding(isLoggedIn) {
+    const idsToToggle = [
+      "radarStatusBanner",
+      "radarHeroMetrics",
+      "radarKpiBand",
+      "radarRecoveryOpps",
+      "results",
+      "btnRawJson"
+    ];
 
+    idsToToggle.forEach((id) => {
+      const el = $(id);
+      if (!el) return;
+      el.style.display = isLoggedIn ? "" : "none";
+    });
+  }
 let sessionCache = null;
 
 async function refreshSession() {
@@ -283,11 +298,13 @@ async function refreshSession() {
       if (loggedIn) {
         setSessionPill(true, j?.user?.name || j?.user?.slug || "admin");
         toggleLoginSearchUI(true);
+        setLoggedOutLanding(true);
         return true;
       }
 
       setSessionPill(false, null);
       toggleLoginSearchUI(false);
+      setLoggedOutLanding(false);
       return false;
 
     } catch (err) {
@@ -943,6 +960,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
     setSessionPill(true, j?.user?.name || j?.user?.slug || user);
     toggleLoginSearchUI(true);
+    setLoggedOutLanding(true);
     setStatus("", "Logged in.");
   }
 
@@ -958,6 +976,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
     setSessionPill(false, null);
     toggleLoginSearchUI(false);
+    setLoggedOutLanding(false);
     setStatus("", "Logged out.");
 
     const results = $("results");
