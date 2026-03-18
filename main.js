@@ -489,12 +489,9 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
             <div>
               <div class="pulse-kicker">Pulse Revenue Intelligence</div>
               <div class="pulse-title">Revenue recovery dashboard</div>
-              <div class="pulse-subtitle">Live gateway recommendations, recoverable revenue totals, and failure reasons from the Pulse worker.</div>
+<div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
             </div>
-            <div class="pulse-source-row">
-              <span class="pulse-chip">Live endpoint: https://pulse-worker.bob-b5c.workers.dev/pulse/summary</span>
-              <span class="pulse-chip">Live endpoint: https://pulse-worker.bob-b5c.workers.dev/pulse/failure-analysis</span>
-            </div>
+<!-- removed endpoint debug row for production UI -->
           </div>
 
           <div class="pulse-stat-grid">
@@ -525,7 +522,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
           <div class="pulse-section-head">
             <div>
               <div class="pulse-section-title">Gateway intelligence</div>
-              <div class="pulse-section-subtitle">Backend-provided actions, priorities, messages, and playbooks rendered exactly as returned.</div>
+<div class="pulse-section-subtitle">Recommended recovery actions, priorities, and next steps.</div>
             </div>
           </div>
           <div class="pulse-grid">
@@ -537,7 +534,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
           <div class="pulse-section-head" style="padding:16px 16px 0;">
             <div>
               <div class="pulse-section-title">Reasons breakdown</div>
-              <div class="pulse-section-subtitle">Sorted by recoverable revenue impact from the verified live response contract.</div>
+<div class="pulse-section-subtitle">Sorted by revenue impact.</div>
             </div>
           </div>
           <div class="pulse-reason-list">
