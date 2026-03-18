@@ -250,9 +250,15 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
   function toggleLoginSearchUI(isLoggedIn) {
     const login = $("loginFields");
     const search = $("searchFields");
+    const btnLogin = $("btnLogin");
+    const btnLogout = $("btnLogout");
+    const btnLogout2 = $("btnLogout2");
 
-    if (login) login.style.display = isLoggedIn ? "none" : "contents";
-    if (search) search.style.display = isLoggedIn ? "contents" : "none";
+    if (login) login.style.display = isLoggedIn ? "none" : "grid";
+    if (search) search.style.display = isLoggedIn ? "grid" : "none";
+    if (btnLogin) btnLogin.style.display = isLoggedIn ? "none" : "";
+    if (btnLogout) btnLogout.style.display = isLoggedIn ? "" : "none";
+    if (btnLogout2) btnLogout2.style.display = isLoggedIn ? "" : "none";
   }
 
   async function refreshSession() {
@@ -1088,7 +1094,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     abortActiveSearch();
 
     const user = String($("loginUser")?.value || "").trim();
-    const pass = String($("loginPassInput")?.value || "").trim();
+    const pass = String($("loginPass")?.value || "").trim();
 
     if (!user || !pass) {
       setStatus("warn", "Enter username and password.");
@@ -1407,15 +1413,13 @@ function getCachedCustomerShellPayloadForQuery(q) {
   // --------------------------------------------------
   // Init / events
   // --------------------------------------------------
+  $("btnLogin")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doLogin().catch(console.error);
+  });
+
   $("btnSearch")?.addEventListener("click", (e) => {
     e.preventDefault();
-
-    const loginVisible = $("loginFields") && $("loginFields").style.display !== "none";
-    if (loginVisible) {
-      doLogin().catch(console.error);
-      return;
-    }
-
     doSearch().catch(console.error);
   });
 
@@ -1439,12 +1443,24 @@ function getCachedCustomerShellPayloadForQuery(q) {
     doLogout().catch(console.error);
   });
 
+  $("btnLogout2")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doLogout().catch(console.error);
+  });
+
   $("btnRawJson")?.addEventListener("click", (e) => {
     e.preventDefault();
     toggleRawJson();
   });
 
-  $("loginPassInput")?.addEventListener("keydown", (e) => {
+  $("loginPass")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      doLogin().catch(console.error);
+    }
+  });
+
+  $("loginUser")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       doLogin().catch(console.error);
