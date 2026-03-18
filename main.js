@@ -317,42 +317,10 @@ function setDashboardChrome(view) {
   });
 
   const navRadar = $("navRadar");
-  const navPulse = $("navPulse");
-const btnRunScan = $("btnRunScan");
+const navPulse = $("navPulse");
 
-if (btnRunScan) {
-  btnRunScan.addEventListener("click", async () => {
-    try {
-      setStatus("busy", "Running scan…");
-
-      const res = await fetch(`${PULSE_WORKER_BASE}/scanner/run`, {
-        method: "POST"
-      });
-
-      const data = await res.json();
-
-      setStatus("", `Scan complete — ${data?.processed || 0} items`);
-// store last scan result
-try {
-localStorage.setItem("pulse_last_scan", JSON.stringify({
-  time: Date.now(),
-  processed: data?.processed || 0,
-  recoverable: data?.summary?.recoverable_revenue || 0,
-  failed: data?.summary?.failed_subscriptions || 0
-}));
-} catch (_) {}
-      // refresh Pulse after scan
-      await doPulseDashboard();
-
-    } catch (err) {
-      console.error(err);
-      setStatus("warn", "Scan failed");
-    }
-  });
-}
-  navRadar?.classList.toggle("is-active", !isPulse);
-  navPulse?.classList.toggle("is-active", isPulse);
-
+navRadar?.classList.toggle("is-active", !isPulse);
+navPulse?.classList.toggle("is-active", isPulse);
   // ✅ NEW — Pulse UI cleanup
   const statusLine = $("statusLine");
   const rawBtn = $("btnRawJson");
@@ -1251,7 +1219,35 @@ function getCachedCustomerShellPayloadForQuery(q) {
     e.preventDefault();
     doPulseDashboard().catch(console.error);
   });
+$("btnRunScan")?.addEventListener("click", async (e) => {
+  e.preventDefault();
 
+  try {
+    setStatus("busy", "Running scan…");
+
+    const res = await fetch(`${PULSE_WORKER_BASE}/scanner/run`, {
+      method: "POST"
+    });
+
+    const data = await res.json();
+
+    setStatus("", `Scan complete — ${data?.processed || 0} items`);
+
+    try {
+      localStorage.setItem("pulse_last_scan", JSON.stringify({
+        time: Date.now(),
+        processed: data?.processed || 0,
+        recoverable: data?.summary?.recoverable_revenue || 0,
+        failed: data?.summary?.failed_subscriptions || 0
+      }));
+    } catch (_) {}
+
+    await doPulseDashboard();
+  } catch (err) {
+    console.error(err);
+    setStatus("warn", "Scan failed");
+  }
+});
   $("btnLogout")?.addEventListener("click", (e) => {
     e.preventDefault();
     doLogout().catch(console.error);
