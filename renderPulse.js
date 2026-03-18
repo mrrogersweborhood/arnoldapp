@@ -232,9 +232,38 @@
             <div class="pulse-incident-strip-head">
               <div>
                 <div class="pulse-incident-strip-title">⚠️ Elevated Failure Activity</div>
-                <div class="pulse-incident-strip-subtitle">
-                  ${esc(formatPulseGatewayName(activeIncident.gateway))} showing abnormal failure behavior
-                </div>
+<div class="pulse-incident-strip-subtitle">
+  ${esc((() => {
+    const gatewayName = formatPulseGatewayName(activeIncident.gateway);
+
+    if (!lastSuccessAt) {
+      return `${gatewayName} showing abnormal failure behavior. No successful payments detected — investigate immediately.`;
+    }
+
+    const lastSuccessDate = new Date(lastSuccessAt);
+    const now = new Date();
+    const diffMs = now - lastSuccessDate;
+    const diffMinutes = Math.floor(diffMs / 60000);
+
+    let timeText = "";
+
+    if (diffMinutes < 60) {
+      timeText = `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
+    } else if (diffMinutes < 1440) {
+      const hours = Math.floor(diffMinutes / 60);
+      timeText = `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+    } else {
+      const days = Math.floor(diffMinutes / 1440);
+      timeText = `${days} day${days !== 1 ? "s" : ""} ago`;
+    }
+
+    if (diffMinutes < 60) {
+      return `${gatewayName} showing elevated failures, but successful payments occurred recently (${timeText}). Likely not a gateway outage.`;
+    }
+
+    return `${gatewayName} showing abnormal failure behavior. No recent successful payments (last success ${timeText}) — possible gateway issue.`;
+  })())}
+</div>
               </div>
               <div class="pulse-incident-strip-action">${esc(activeIncident.recommended_action)}</div>
             </div>
