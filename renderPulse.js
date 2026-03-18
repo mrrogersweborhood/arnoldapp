@@ -357,10 +357,10 @@ return `
         <div class="pulse-section-head">
           <div>
             <div class="pulse-section-title" style="color:#b91c1c;">
-              ⚠️ Gateway Incident Detected
+              ⚠️ Elevated Failure Activity
             </div>
             <div class="pulse-section-subtitle">
-              ${esc(formatPulseGatewayName(activeIncident.gateway))} is experiencing abnormal failure rates.
+              ${esc(formatPulseGatewayName(activeIncident.gateway))} is showing an increase in failed transactions.
             </div>
           </div>
         </div>
@@ -374,7 +374,7 @@ return `
             <strong>Recommended Action:</strong> ${esc(activeIncident.recommended_action)}
           </div>
           <div style="margin-top:6px;">
-            ${esc(activeIncident.recommended_message)}
+            ${esc("Recent activity suggests a higher-than-normal number of payment failures. Verify gateway status before taking action.")}
           </div>
         </div>
       </section>
