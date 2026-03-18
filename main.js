@@ -1028,37 +1028,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     }
   }
 
-  async function doTotals() {
-    abortActiveSearch();
-    lastMode = "totals";
-    setDashboardChrome("totals");
-    setStatus("busy aa-status-center", "");
-    const sl = $("statusLine");
-    if (sl) {
-      sl.innerHTML = `
-        <span class="aa-inline-spinner" aria-hidden="true"></span>
-        <span class="aa-status-center-text">Loading totals…</span>
-      `;
-    }
 
-    const r = await fetch(`${WORKER_BASE}/admin/totals`, {
-      method: "GET",
-      credentials: "include"
-    });
-
-    const j = await r.json().catch(() => null);
-
-    if (!r.ok || !j?.ok) {
-      setStatus("warn", friendlyText(j?.error || "Totals failed."));
-      return;
-    }
-
-    lastPayload = j;
-    lastRaw = j;
-    $("results").innerHTML = renderTotals(j);
-    setStatus("", "Totals loaded.");
-    renderRawJson();
-  }
 
   async function doRadar(page = 1, issue = "") {
     abortActiveSearch();
