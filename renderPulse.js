@@ -206,7 +206,7 @@
       ? analysis.gateway_incidents
       : [];
 
-    const activeIncident = gatewayIncidents.find(g => g.status === "outage" || g.status === "spike");
+    const activeIncident = gatewayIncidents.find((g) => g.status === "outage" || g.status === "spike");
     const lastScanInfo = getLastScanInfo();
     const scanDelta = getScanDelta(summary);
 
@@ -226,44 +226,80 @@
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
     const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
 
+    const incidentStrip = activeIncident
+      ? `
+          <section class="card pulse-incident-strip">
+            <div class="pulse-incident-strip-head">
+              <div>
+                <div class="pulse-incident-strip-title">⚠️ Elevated Failure Activity</div>
+                <div class="pulse-incident-strip-subtitle">
+                  ${esc(formatPulseGatewayName(activeIncident.gateway))} showing abnormal failure behavior
+                </div>
+              </div>
+              <div class="pulse-incident-strip-action">${esc(activeIncident.recommended_action)}</div>
+            </div>
+
+            <div class="pulse-incident-strip-metrics">
+              <div class="pulse-incident-chip">
+                <span class="pulse-incident-chip-label">Status</span>
+                <span class="pulse-incident-chip-value">${esc(activeIncident.status.toUpperCase())}</span>
+              </div>
+              <div class="pulse-incident-chip">
+                <span class="pulse-incident-chip-label">Severity</span>
+                <span class="pulse-incident-chip-value">${esc(activeIncident.severity.toUpperCase())}</span>
+              </div>
+              <div class="pulse-incident-chip">
+                <span class="pulse-incident-chip-label">Confidence</span>
+                <span class="pulse-incident-chip-value">${esc(formatPulsePercent(activeIncident.confidence * 100))}</span>
+              </div>
+              <div class="pulse-incident-chip">
+                <span class="pulse-incident-chip-label">Customers at risk</span>
+                <span class="pulse-incident-chip-value">${esc(formatPulseInteger(activeIncident.customers_at_risk))}</span>
+              </div>
+            </div>
+          </section>
+        `
+      : "";
+
     const lastScanCard = lastScanInfo
       ? `
-          <section class="card pulse-section" style="margin-bottom:16px;">
+          <section class="card pulse-section pulse-scan-panel">
             <div class="pulse-section-head">
               <div>
                 <div class="pulse-section-title">Last scan</div>
                 <div class="pulse-section-subtitle">Most recent scan execution</div>
               </div>
             </div>
-            <div class="pulse-stat-grid">
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Time</div>
-                <div class="pulse-stat-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+
+            <div class="pulse-scan-grid">
+              <div class="pulse-scan-item pulse-scan-item-wide">
+                <div class="pulse-scan-label">Time</div>
+                <div class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
               </div>
 
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Processed</div>
-                <div class="pulse-stat-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Processed</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
               </div>
 
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Revenue</div>
-                <div class="pulse-stat-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Revenue</div>
+                <div class="pulse-scan-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
               </div>
 
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Failed</div>
-                <div class="pulse-stat-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Failed</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
               </div>
 
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Last Successful Payment</div>
-                <div class="pulse-stat-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
+              <div class="pulse-scan-item pulse-scan-item-wide">
+                <div class="pulse-scan-label">Last Successful Payment</div>
+                <div class="pulse-scan-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
               </div>
 
-              <div class="pulse-stat-card">
-                <div class="pulse-stat-label">Recent Successful Payments</div>
-                <div class="pulse-stat-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Recent Successful Payments</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
               </div>
             </div>
           </section>
@@ -368,46 +404,7 @@
 
     return `
       <div class="pulse-shell">
-
-        ${activeIncident ? `
-          <section class="card pulse-section pulse-stat-accent-danger">
-            <div class="pulse-section-head">
-              <div>
-                <div class="pulse-section-title">⚠️ Elevated Failure Activity</div>
-                <div class="pulse-section-subtitle">
-                  ${esc(formatPulseGatewayName(activeIncident.gateway))} showing abnormal failure behavior
-                </div>
-              </div>
-            </div>
-
-            <div class="pulse-stat-grid">
-              <div class="pulse-stat-card pulse-stat-accent-danger">
-                <div class="pulse-stat-label">Status</div>
-                <div class="pulse-stat-value">${esc(activeIncident.status.toUpperCase())}</div>
-              </div>
-
-              <div class="pulse-stat-card pulse-stat-accent-danger">
-                <div class="pulse-stat-label">Severity</div>
-                <div class="pulse-stat-value">${esc(activeIncident.severity.toUpperCase())}</div>
-              </div>
-
-              <div class="pulse-stat-card pulse-stat-accent-danger">
-                <div class="pulse-stat-label">Confidence</div>
-                <div class="pulse-stat-value">${esc(formatPulsePercent(activeIncident.confidence * 100))}</div>
-              </div>
-
-              <div class="pulse-stat-card pulse-stat-accent-danger">
-                <div class="pulse-stat-label">Customers at risk</div>
-                <div class="pulse-stat-value">${esc(formatPulseInteger(activeIncident.customers_at_risk))}</div>
-              </div>
-            </div>
-
-            <div class="pulse-message-block">
-              <div class="pulse-message-label">Recommended action</div>
-              <div class="pulse-message-text">${esc(activeIncident.recommended_action)}</div>
-            </div>
-          </section>
-        ` : ""}
+        ${incidentStrip}
         ${lastScanCard}
 
         <section class="card pulse-hero">
