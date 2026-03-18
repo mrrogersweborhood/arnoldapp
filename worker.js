@@ -178,6 +178,7 @@ async function handleTestIncident(request, env) {
 async function runPulseScanner(request, env) {
   const stores = await loadActiveStores(env);
 
+
   let totalScanned = 0;
   let totalCreated = 0;
   let totalSkipped = 0;
@@ -311,7 +312,39 @@ async function scanStoreFailedOrders(env, store) {
     incidents_skipped: skipped
   };
 }
+async function fetchRecentSuccessfulOrders(baseUrl, consumerKey, consumerSecret) {
+  try {
+    const statuses = ["completed", "processing"];
 
+    let allOrders = [];
+
+    for (const status of statuses) {
+      const url = `${baseUrl}/wp-json/wc/v3/orders?status=${status}&per_page=20`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: "Basic " + btoa(consumerKey + ":" + consumerSecret)
+        }
+      });
+
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const orders = Array.isArray(data) ? data : [];
+
+      allOrders = allOrders.concat(
+        orders.map(o => ({
+          ...o,
+          __status: status
+        }))
+      );
+    }
+
+    return allOrders;
+  } catch (_) {
+    return [];
+  }
+}
 async function fetchOrderNotesForOrder(baseUrl, consumerKey, consumerSecret, orderId) {
   if (!orderId) return [];
 
@@ -544,6 +577,34 @@ async function handlePulseSummary(request, env) {
 }
 
 async function handleFailureAnalysis(request, env) {
+  let lastSuccessAt = null;
+  let recentSuccessCount = 0;
+  const stores = await loadActiveStores(env);
+
+  for (const store of stores) {
+    try {
+      const baseUrl = store.store_url.replace(/\/+$/, "");
+
+      const orders = await fetchRecentSuccessfulOrders(
+        baseUrl,
+        env.WC_KEY,
+        env.WC_SECRET
+      );
+
+      for (const order of orders) {
+        const created = order?.date_created;
+
+        if (created) {
+          recentSuccessCount++;
+
+          if (!lastSuccessAt || new Date(created) > new Date(lastSuccessAt)) {
+            lastSuccessAt = created;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   const rows = await env.DB.prepare(`
     SELECT
       gateway,
@@ -589,10 +650,19 @@ return json(request, {
   ok: true,
   total_pending_incidents: totalPending,
   gateways,
-  gateway_incidents: gatewayIncidents, // ✅ NEW
+  gateway_incidents: gatewayIncidents,
   reasons,
   top_gateway: gateways[0] || null,
-  top_reason: reasons[0] || null
+  top_reason: reasons[0] || null,
+
+success_summary: {
+  last_success_at: lastSuccessAt,
+  recent_success_count: recentSuccessCount,
+  debug: {
+    note: "temporary debug data",
+    has_success: recentSuccessCount > 0
+  }
+}
 });
 }
 

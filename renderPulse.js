@@ -207,8 +207,12 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
   : [];
 
 const activeIncident = gatewayIncidents.find(g => g.status === "outage" || g.status === "spike");
-    const lastScanInfo = getLastScanInfo();
-    const scanDelta = getScanDelta(summary);
+const lastScanInfo = getLastScanInfo();
+const scanDelta = getScanDelta(summary);
+
+const successSummary = analysis?.success_summary || null;
+const lastSuccessAt = successSummary?.last_success_at || null;
+const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
 
     gateways.sort((a, b) => Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0));
     reasons.sort((a, b) => {
@@ -245,9 +249,24 @@ const activeIncident = gatewayIncidents.find(g => g.status === "outage" || g.sta
                 <div class="pulse-metric-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
               </div>
               <div>
-                <div class="pulse-metric-label">Failed</div>
-                <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
-              </div>
+<div>
+  <div class="pulse-metric-label">Failed</div>
+  <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+</div>
+
+<div>
+  <div class="pulse-metric-label">Last Successful Payment</div>
+  <div class="pulse-metric-value">
+    ${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}
+  </div>
+</div>
+
+<div>
+  <div class="pulse-metric-label">Recent Successful Payments</div>
+  <div class="pulse-metric-value">
+    ${esc(formatPulseInteger(recentSuccessCount))}
+  </div>
+</div>
             </div>
           </section>
         `
