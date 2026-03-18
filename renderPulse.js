@@ -39,6 +39,40 @@ function getLastScanInfo() {
   }
 }
 function getScanDelta(summary) {
+function getRepeatOffenders(incidents) {
+  try {
+    const map = {};
+
+    for (const item of incidents || []) {
+      const email = (item?.customer_email || "").toLowerCase();
+      if (!email) continue;
+
+      map[email] = map[email] || {
+        email,
+        count: 0,
+        total: 0
+      };
+
+      map[email].count += 1;
+      map[email].total += Number(item?.amount || 0);
+    }
+
+    return Object.values(map)
+      .filter(x => x.count > 1)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // top offenders only
+  } catch {
+    return [];
+  }
+}
+function getOffenderPriority(offender) {
+  const count = Number(offender?.count || 0);
+  const total = Number(offender?.total || 0);
+
+  if (count >= 4 || total >= 300) return "HIGH";
+  if (count >= 2 || total >= 100) return "MEDIUM";
+  return "LOW";
+}
   try {
     const prev = JSON.parse(localStorage.getItem("pulse_last_scan") || "null");
     if (!prev) return null;
@@ -169,6 +203,7 @@ function getScanDelta(summary) {
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
     const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
 const scanDelta = getScanDelta(summary);
+const repeatOffenders = getRepeatOffenders(analysis?.incidents);
     const gatewayCards = gateways.length
       ? gateways.map((gateway) => {
           const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
@@ -178,6 +213,24 @@ const scanDelta = getScanDelta(summary);
               <div class="pulse-gateway-top">
                 <div>
                   <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
+${repeatOffenders?.length ? `
+  <div class="pulse-card">
+    <div class="pulse-card-header">Repeat offenders</div>
+    <div class="pulse-card-body">
+      ${repeatOffenders.map(o => {
+        const priority = getOffenderPriority(o);
+        return `
+          <div class="pulse-row">
+            <div><strong>${esc(o.email)}</strong></div>
+            <div>${esc(o.count)} failures</div>
+            <div>${esc(formatPulseMoney(o.total))}</div>
+            <div><strong>${esc(priority)}</strong></div>
+          </div>
+        `;
+      }).join("")}
+    </div>
+  </div>
+` : ""}
                   <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct))} of tracked failures</div>
                 </div>
                 <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priorityLabel)}</div>
