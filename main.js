@@ -1230,10 +1230,16 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
 
 
-  $("btnRadar")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    doRadar(1, "").catch(console.error);
-  });
+$("btnRadar")?.addEventListener("click", async (e) => {
+  e.preventDefault();
+
+  try {
+    await doPulseDashboard(); // refresh shared UI layer first
+    await doRadar(1, "");
+  } catch (err) {
+    console.error(err);
+  }
+});
 
   $("btnPulse")?.addEventListener("click", (e) => {
     e.preventDefault();
