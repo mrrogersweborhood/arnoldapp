@@ -323,16 +323,18 @@ async function refreshSession() {
 }
 
 
-function setDashboardChrome(view) {
   const isPulse = view === "pulse";
+  const isRadar = view === "radar";
 
-  // Existing radar chrome behavior (unchanged)
-  ["radarStatusBanner", "radarHeroMetrics", "radarKpiBand", "radarRecoveryOpps"].forEach((id) => {
-    const el = $(id);
-    if (!el) return;
-    el.classList.toggle("is-hidden", isPulse);
-  });
+  const banner = $("radarStatusBanner");
+  const hero = $("radarHeroMetrics");
+  const kpi = $("radarKpiBand");
+  const opps = $("radarRecoveryOpps");
 
+  if (banner) banner.classList.toggle("is-hidden", !isRadar);
+  if (hero) hero.classList.toggle("is-hidden", true);
+  if (kpi) kpi.classList.toggle("is-hidden", true);
+  if (opps) opps.classList.toggle("is-hidden", true);
   const navRadar = $("navRadar");
 const navPulse = $("navPulse");
 
@@ -1230,15 +1232,9 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
 
 
-$("btnRadar")?.addEventListener("click", async (e) => {
+$("btnRadar")?.addEventListener("click", (e) => {
   e.preventDefault();
-
-  try {
-    await doPulseDashboard(); // refresh shared UI layer first
-    await doRadar(1, "");
-  } catch (err) {
-    console.error(err);
-  }
+  doRadar(1, "").catch(console.error);
 });
 
   $("btnPulse")?.addEventListener("click", (e) => {
