@@ -934,10 +934,10 @@ function getCachedCustomerShellPayloadForQuery(q) {
 
     const j = await r.json().catch(() => null);
 
-    if (!r.ok || !j?.ok) {
+    if (!r.ok || !j?.success) {
       setSessionPill(false, null);
       toggleLoginSearchUI(false);
-      setStatus("warn", friendlyText(j?.error || "Login failed."));
+      setStatus("warn", friendlyText(j?.message || j?.error || "Login failed."));
       return;
     }
 

@@ -676,15 +676,21 @@ function normalizeGatewayName(value) {
 
 function buildCorsHeaders(request) {
   const origin = request?.headers?.get("Origin") || "";
-  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "*";
+  const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "";
 
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
+  const headers = {
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Credentials": "true",
     "Access-Control-Max-Age": "86400",
     "Vary": "Origin"
   };
+
+  if (allowOrigin) {
+    headers["Access-Control-Allow-Origin"] = allowOrigin;
+  }
+
+  return headers;
 }
 
 function json(request, data, status = 200) {
