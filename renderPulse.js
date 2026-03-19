@@ -538,10 +538,14 @@ document.addEventListener("click", function (e) {
 
   if (!action || !gateway) return;
 
-  alert(
 openPulseModal(
-  `${gateway.toUpperCase()} ACTION`,
+  gateway.toUpperCase() + " ACTION",
   action === "RETRY_LATER"
+    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+    : action === "RETRY_NOW"
+    ? "Retry failed payments immediately."
+    : "Monitor gateway activity."
+);
     ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
     : action === "RETRY_NOW"
     ? "Retry failed payments immediately."
@@ -564,10 +568,14 @@ document.addEventListener("click", function (e) {
   if (!action || !gateway) return;
 
   // Simple action panel (safe + expandable)
-  alert(
-   openPulseModal(
-  `${gateway.toUpperCase()} ACTION`,
+openPulseModal(
+  gateway.toUpperCase() + " ACTION",
   action === "RETRY_LATER"
+    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+    : action === "RETRY_NOW"
+    ? "Retry failed payments immediately."
+    : "Monitor gateway activity."
+);
     ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
     : action === "RETRY_NOW"
     ? "Retry failed payments immediately."
