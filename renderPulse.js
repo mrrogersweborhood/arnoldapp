@@ -257,11 +257,14 @@
                       timeText = `${days} day${days !== 1 ? "s" : ""} ago`;
                     }
 
-                    if (diffMinutes < 60) {
-                      return `${gatewayName} showing elevated failures, but successful payments occurred recently (${timeText}). Likely not a gateway outage.`;
-                    }
+                    // 36-hour gateway activity window (low-volume safe)
+const GATEWAY_ACTIVITY_WINDOW_MINUTES = 2160;
 
-                    return `${gatewayName} showing abnormal failure behavior. No recent successful payments (last success ${timeText}) — possible gateway issue.`;
+if (diffMinutes < GATEWAY_ACTIVITY_WINDOW_MINUTES) {
+  return `${gatewayName} showing elevated failures, but successful payments occurred within the last 36 hours (${timeText}). Likely not a gateway outage.`;
+}
+
+return `${gatewayName} showing abnormal failure behavior. No successful payments in the last 36 hours (last success ${timeText}) — possible gateway issue.`;
                   })())}
                 </div>
               </div>
