@@ -295,59 +295,36 @@
           <section class="card pulse-section pulse-scan-panel">
             <div class="pulse-section-head">
               <div>
-                <div class="pulse-section-title">Recent operational snapshot</div>
-                <div class="pulse-section-subtitle">Compact scan and payment activity summary</div>
+                <div class="pulse-section-title">Recent activity</div>
+                <div class="pulse-section-subtitle">Latest scan + payment signal</div>
               </div>
             </div>
 
-            <div class="pulse-grid">
-              <article class="pulse-gateway-card">
-                <div class="pulse-gateway-top">
-                  <div>
-                    <div class="pulse-gateway-name">Last scan</div>
-                    <div class="pulse-gateway-share">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
-                  </div>
-                </div>
+            <div class="pulse-scan-grid">
+              <div class="pulse-scan-item pulse-scan-item-wide">
+                <div class="pulse-scan-label">Last scan</div>
+                <div class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+              </div>
 
-                <div class="pulse-gateway-metrics">
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Processed</div>
-                    <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
-                  </div>
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Failed</div>
-                    <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
-                  </div>
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Change</div>
-                    <div class="pulse-metric-value">${scanDelta ? esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`) : "—"}</div>
-                  </div>
-                </div>
-              </article>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Processed</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+              </div>
 
-              <article class="pulse-gateway-card">
-                <div class="pulse-gateway-top">
-                  <div>
-                    <div class="pulse-gateway-name">Payment activity</div>
-                    <div class="pulse-gateway-share">Recent successes and live recovery total</div>
-                  </div>
-                </div>
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Failed</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+              </div>
 
-                <div class="pulse-gateway-metrics">
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Last success</div>
-                    <div class="pulse-metric-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
-                  </div>
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Recent successes</div>
-                    <div class="pulse-metric-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
-                  </div>
-                  <div class="pulse-metric">
-                    <div class="pulse-metric-label">Recoverable now</div>
-                    <div class="pulse-metric-value">${esc(formatPulseMoney(totalRevenue))}</div>
-                  </div>
-                </div>
-              </article>
+              <div class="pulse-scan-item pulse-scan-item-wide">
+                <div class="pulse-scan-label">Last successful payment</div>
+                <div class="pulse-scan-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
+              </div>
+
+              <div class="pulse-scan-item">
+                <div class="pulse-scan-label">Recent successes</div>
+                <div class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
+              </div>
             </div>
           </section>
         `
