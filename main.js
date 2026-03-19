@@ -1260,20 +1260,36 @@ $("btnRunScan")?.addEventListener("click", async (e) => {
   try {
     setStatus("busy", "Running scan…");
 
-    const res = await fetch(`${PULSE_WORKER_BASE}/scanner/run`, {
-      method: "POST"
+    const scanRes = await fetch(`${PULSE_WORKER_BASE}/scanner/run`, {
+      method: "GET"
     });
 
-    const data = await res.json();
+    const scanData = await scanRes.json().catch(() => null);
 
-    setStatus("", `Scan complete — ${data?.processed || 0} items`);
+    if (!scanRes.ok || !scanData?.ok) {
+      setStatus("warn", friendlyText(scanData?.error || "Scan failed."));
+      return;
+    }
+
+    const summaryRes = await fetch(`${PULSE_WORKER_BASE}/pulse/summary`, {
+      method: "GET"
+    });
+
+    const summaryData = await summaryRes.json().catch(() => null);
+
+    if (!summaryRes.ok || !summaryData?.ok) {
+      setStatus("warn", friendlyText(summaryData?.error || "Pulse summary failed after scan."));
+      return;
+    }
+
+    setStatus("", `Scan complete — ${scanData?.scanned || 0} scanned, ${scanData?.incidents_created || 0} incidents created.`);
 
     try {
       localStorage.setItem("pulse_last_scan", JSON.stringify({
         time: Date.now(),
-        processed: data?.processed || 0,
-        recoverable: data?.summary?.recoverable_revenue || 0,
-        failed: data?.summary?.failed_subscriptions || 0
+        processed: scanData?.scanned || 0,
+        recoverable: summaryData?.recoverable_revenue || 0,
+        failed: summaryData?.failed_subscriptions || 0
       }));
     } catch (_) {}
 
@@ -1282,8 +1298,7 @@ $("btnRunScan")?.addEventListener("click", async (e) => {
     console.error(err);
     setStatus("warn", "Scan failed");
   }
-});
-  $("btnLogout")?.addEventListener("click", (e) => {
+});  $("btnLogout")?.addEventListener("click", (e) => {
     e.preventDefault();
     doLogout().catch(console.error);
   });

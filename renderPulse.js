@@ -232,38 +232,38 @@
             <div class="pulse-incident-strip-head">
               <div>
                 <div class="pulse-incident-strip-title">⚠️ Elevated Failure Activity</div>
-<div class="pulse-incident-strip-subtitle">
-  ${esc((() => {
-    const gatewayName = formatPulseGatewayName(activeIncident.gateway);
+                <div class="pulse-incident-strip-subtitle">
+                  ${esc((() => {
+                    const gatewayName = formatPulseGatewayName(activeIncident.gateway);
 
-    if (!lastSuccessAt) {
-      return `${gatewayName} showing abnormal failure behavior. No successful payments detected — investigate immediately.`;
-    }
+                    if (!lastSuccessAt) {
+                      return `${gatewayName} showing abnormal failure behavior. No successful payments detected — investigate immediately.`;
+                    }
 
-    const lastSuccessDate = new Date(lastSuccessAt);
-    const now = new Date();
-    const diffMs = now - lastSuccessDate;
-    const diffMinutes = Math.floor(diffMs / 60000);
+                    const lastSuccessDate = new Date(lastSuccessAt);
+                    const now = new Date();
+                    const diffMs = now - lastSuccessDate;
+                    const diffMinutes = Math.floor(diffMs / 60000);
 
-    let timeText = "";
+                    let timeText = "";
 
-    if (diffMinutes < 60) {
-      timeText = `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
-    } else if (diffMinutes < 1440) {
-      const hours = Math.floor(diffMinutes / 60);
-      timeText = `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-    } else {
-      const days = Math.floor(diffMinutes / 1440);
-      timeText = `${days} day${days !== 1 ? "s" : ""} ago`;
-    }
+                    if (diffMinutes < 60) {
+                      timeText = `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
+                    } else if (diffMinutes < 1440) {
+                      const hours = Math.floor(diffMinutes / 60);
+                      timeText = `${hours} hour${hours !== 1 ? "s" : ""} ago`;
+                    } else {
+                      const days = Math.floor(diffMinutes / 1440);
+                      timeText = `${days} day${days !== 1 ? "s" : ""} ago`;
+                    }
 
-    if (diffMinutes < 60) {
-      return `${gatewayName} showing elevated failures, but successful payments occurred recently (${timeText}). Likely not a gateway outage.`;
-    }
+                    if (diffMinutes < 60) {
+                      return `${gatewayName} showing elevated failures, but successful payments occurred recently (${timeText}). Likely not a gateway outage.`;
+                    }
 
-    return `${gatewayName} showing abnormal failure behavior. No recent successful payments (last success ${timeText}) — possible gateway issue.`;
-  })())}
-</div>
+                    return `${gatewayName} showing abnormal failure behavior. No recent successful payments (last success ${timeText}) — possible gateway issue.`;
+                  })())}
+                </div>
               </div>
               <div class="pulse-incident-strip-action">${esc(activeIncident.recommended_action)}</div>
             </div>
@@ -295,41 +295,59 @@
           <section class="card pulse-section pulse-scan-panel">
             <div class="pulse-section-head">
               <div>
-                <div class="pulse-section-title">Last scan</div>
-                <div class="pulse-section-subtitle">Most recent scan execution</div>
+                <div class="pulse-section-title">Recent operational snapshot</div>
+                <div class="pulse-section-subtitle">Compact scan and payment activity summary</div>
               </div>
             </div>
 
-            <div class="pulse-scan-grid">
-              <div class="pulse-scan-item pulse-scan-item-wide">
-                <div class="pulse-scan-label">Time</div>
-                <div class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
-              </div>
+            <div class="pulse-grid">
+              <article class="pulse-gateway-card">
+                <div class="pulse-gateway-top">
+                  <div>
+                    <div class="pulse-gateway-name">Last scan</div>
+                    <div class="pulse-gateway-share">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+                  </div>
+                </div>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Processed</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
-              </div>
+                <div class="pulse-gateway-metrics">
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Processed</div>
+                    <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+                  </div>
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Failed</div>
+                    <div class="pulse-metric-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+                  </div>
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Change</div>
+                    <div class="pulse-metric-value">${scanDelta ? esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`) : "—"}</div>
+                  </div>
+                </div>
+              </article>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Revenue</div>
-                <div class="pulse-scan-value">${esc(formatPulseMoney(lastScanInfo.recoverable))}</div>
-              </div>
+              <article class="pulse-gateway-card">
+                <div class="pulse-gateway-top">
+                  <div>
+                    <div class="pulse-gateway-name">Payment activity</div>
+                    <div class="pulse-gateway-share">Recent successes and live recovery total</div>
+                  </div>
+                </div>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Failed</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
-              </div>
-
-              <div class="pulse-scan-item pulse-scan-item-wide">
-                <div class="pulse-scan-label">Last Successful Payment</div>
-                <div class="pulse-scan-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
-              </div>
-
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Recent Successful Payments</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
-              </div>
+                <div class="pulse-gateway-metrics">
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Last success</div>
+                    <div class="pulse-metric-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
+                  </div>
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Recent successes</div>
+                    <div class="pulse-metric-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
+                  </div>
+                  <div class="pulse-metric">
+                    <div class="pulse-metric-label">Recoverable now</div>
+                    <div class="pulse-metric-value">${esc(formatPulseMoney(totalRevenue))}</div>
+                  </div>
+                </div>
+              </article>
             </div>
           </section>
         `
