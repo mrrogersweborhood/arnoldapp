@@ -1287,9 +1287,11 @@ $("btnRunScan")?.addEventListener("click", async (e) => {
     try {
       localStorage.setItem("pulse_last_scan", JSON.stringify({
         time: Date.now(),
-        processed: scanData?.scanned || 0,
-        recoverable: summaryData?.recoverable_revenue || 0,
-        failed: summaryData?.failed_subscriptions || 0
+        processed: Number(scanData?.scanned || 0),
+        incidents_created: Number(scanData?.incidents_created || 0),
+        incidents_skipped: Number(scanData?.incidents_skipped || 0),
+        recoverable: Number(summaryData?.recoverable_revenue || 0),
+        failed_total: Number(summaryData?.failed_subscriptions || 0)
       }));
     } catch (_) {}
 
@@ -1298,8 +1300,9 @@ $("btnRunScan")?.addEventListener("click", async (e) => {
     console.error(err);
     setStatus("warn", "Scan failed");
   }
-});  $("btnLogout")?.addEventListener("click", (e) => {
-    e.preventDefault();
+});
+
+$("btnLogout")?.addEventListener("click", (e) => {    e.preventDefault();
     doLogout().catch(console.error);
   });
 
