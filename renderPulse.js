@@ -502,14 +502,22 @@
   }
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
-  window.renderPulseDashboard = renderPulseDashboard;
+window.renderPulseDashboard = renderPulseDashboard;
+
 // ===== Pulse Modal System =====
 function openPulseModal(title, body) {
   const modal = document.getElementById("pulse-modal");
   if (!modal) return;
 
   document.getElementById("pulse-modal-title").textContent = title;
-  document.getElementById("pulse-modal-body").innerHTML = body;
+  document.getElementById("pulse-modal-body").innerHTML = `
+    <div style="margin-bottom:16px;">${body}</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="pulse-modal-action-btn" data-action="pause">Pause Automations</button>
+      <button class="pulse-modal-action-btn" data-action="retry">Retry Payments</button>
+      <button class="pulse-modal-action-btn" data-action="customers">View Customers</button>
+    </div>
+  `;
 
   modal.classList.remove("hidden");
 }
@@ -529,27 +537,25 @@ document.addEventListener("click", function (e) {
     closePulseModal();
   }
 });
+
 document.addEventListener("click", function (e) {
   const btn = e.target.closest(".pulse-modal-action-btn");
   if (!btn) return;
 
-  const action = btn.getAttribute("data-action");
+  const action = String(btn.getAttribute("data-action") || "").trim();
 
   if (action === "pause") {
     console.log("PAUSE AUTOMATIONS triggered");
     alert("Automations paused (next step: call Worker)");
-  }
-
-  if (action === "retry") {
+  } else if (action === "retry") {
     console.log("RETRY PAYMENTS triggered");
     alert("Retry flow coming next");
-  }
-
-  if (action === "customers") {
+  } else if (action === "customers") {
     console.log("VIEW CUSTOMERS triggered");
     alert("Customer list coming next");
   }
 });
+
 document.addEventListener("click", function (e) {
   const incidentAction = e.target.closest(".pulse-incident-strip-action");
   if (!incidentAction) return;
@@ -568,24 +574,10 @@ document.addEventListener("click", function (e) {
       : "Monitor gateway activity."
   );
 });
+
 document.addEventListener("click", function (e) {
   const pill = e.target.closest(".pulse-action-pill");
   if (!pill) return;
-
-  const action = String(pill.getAttribute("data-action") || "").trim();
-  const gateway = String(pill.getAttribute("data-gateway") || "").trim();
-
-  if (!action || !gateway) return;
-
-  openPulseModal(
-    gateway.toUpperCase() + " ACTION",
-    action === "RETRY_LATER"
-      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-      : action === "RETRY_NOW"
-      ? "Retry failed payments immediately."
-      : "Monitor gateway activity."
-  );
-});
 
   const action = String(pill.getAttribute("data-action") || "").trim();
   const gateway = String(pill.getAttribute("data-gateway") || "").trim();
