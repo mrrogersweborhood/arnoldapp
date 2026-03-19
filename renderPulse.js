@@ -335,7 +335,14 @@
                 </div>
               </div>
 
-              <div class="pulse-action-pill">${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}</div>
+<div 
+  class="pulse-action-pill"
+  data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
+  data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
+  style="cursor:pointer;"
+>
+  ${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}
+</div>
 
               <div class="pulse-message-block">
                 <div class="pulse-message-label">Recommended message</div>
@@ -489,5 +496,24 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
   window.renderPulseDashboard = renderPulseDashboard;
+document.addEventListener("click", function (e) {
+  const pill = e.target.closest(".pulse-action-pill");
+  if (!pill) return;
+
+  const action = pill.getAttribute("data-action");
+  const gateway = pill.getAttribute("data-gateway");
+
+  if (!action || !gateway) return;
+
+  // Simple action panel (safe + expandable)
+  alert(
+    `${gateway.toUpperCase()} ACTION:\n\n` +
+    (action === "RETRY_LATER"
+      ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
+      : action === "RETRY_NOW"
+      ? "Retry failed payments immediately."
+      : "Monitor gateway activity.")
+  );
+});
 })();
 // 🔴 renderPulse.js
