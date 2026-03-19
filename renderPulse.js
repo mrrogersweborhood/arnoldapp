@@ -291,44 +291,26 @@
       : "";
 
     const lastScanCard = lastScanInfo
-      ? `
-          <section class="card pulse-section pulse-scan-panel">
-            <div class="pulse-section-head">
-              <div>
-                <div class="pulse-section-title">Recent activity</div>
-                <div class="pulse-section-subtitle">Latest scan + payment signal</div>
-              </div>
-            </div>
+  ? `
+      <section class="card pulse-scan-inline">
+        <div class="pulse-scan-inline-row">
 
-            <div class="pulse-scan-grid">
-              <div class="pulse-scan-item pulse-scan-item-wide">
-                <div class="pulse-scan-label">Last scan</div>
-                <div class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
-              </div>
+          <div><strong>Last scan:</strong> ${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Processed</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</div>
-              </div>
+          <div><strong>Processed:</strong> ${esc(formatPulseInteger(lastScanInfo.processed))}</div>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Failed</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</div>
-              </div>
+          <div><strong>Failed:</strong> ${esc(formatPulseInteger(lastScanInfo.failed))}</div>
 
-              <div class="pulse-scan-item pulse-scan-item-wide">
-                <div class="pulse-scan-label">Last successful payment</div>
-                <div class="pulse-scan-value">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "Not available")}</div>
-              </div>
+          <div><strong>Last success:</strong> ${
+            esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "—")
+          }</div>
 
-              <div class="pulse-scan-item">
-                <div class="pulse-scan-label">Recent successes</div>
-                <div class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
-              </div>
-            </div>
-          </section>
-        `
-      : "";
+          <div><strong>Successes:</strong> ${esc(formatPulseInteger(recentSuccessCount))}</div>
+
+        </div>
+      </section>
+    `
+  : "";
 
     const gatewayCards = gateways.length
       ? gateways.map((gateway) => {

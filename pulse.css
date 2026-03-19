@@ -308,6 +308,27 @@
   line-height:1.2;
   word-break:break-word;
 }
+.pulse-scan-inline {
+  padding: 10px 16px;
+}
+
+.pulse-scan-inline-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.pulse-scan-inline-row > div {
+  white-space: nowrap;
+  color: #475569;
+}
+
+.pulse-scan-inline-row strong {
+  color: #0f172a;
+}
 .pulse-reasons-card{
   padding:0;
   overflow:hidden;
