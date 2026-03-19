@@ -503,6 +503,32 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
   window.renderPulseDashboard = renderPulseDashboard;
+// ===== Pulse Modal System =====
+function openPulseModal(title, body) {
+  const modal = document.getElementById("pulse-modal");
+  if (!modal) return;
+
+  document.getElementById("pulse-modal-title").textContent = title;
+  document.getElementById("pulse-modal-body").innerHTML = body;
+
+  modal.classList.remove("hidden");
+}
+
+function closePulseModal() {
+  const modal = document.getElementById("pulse-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+}
+
+document.addEventListener("click", function (e) {
+  if (
+    e.target.id === "pulse-modal-close" ||
+    e.target.id === "pulse-modal-ok" ||
+    e.target.classList.contains("pulse-modal-backdrop")
+  ) {
+    closePulseModal();
+  }
+});
 document.addEventListener("click", function (e) {
   const incidentAction = e.target.closest(".pulse-incident-strip-action");
   if (!incidentAction) return;
@@ -513,7 +539,14 @@ document.addEventListener("click", function (e) {
   if (!action || !gateway) return;
 
   alert(
-    `${gateway.toUpperCase()} ACTION:\n\n` +
+openPulseModal(
+  `${gateway.toUpperCase()} ACTION`,
+  action === "RETRY_LATER"
+    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+    : action === "RETRY_NOW"
+    ? "Retry failed payments immediately."
+    : "Monitor gateway activity."
+);
     (action === "RETRY_LATER"
       ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
       : action === "RETRY_NOW"
@@ -532,7 +565,14 @@ document.addEventListener("click", function (e) {
 
   // Simple action panel (safe + expandable)
   alert(
-    `${gateway.toUpperCase()} ACTION:\n\n` +
+   openPulseModal(
+  `${gateway.toUpperCase()} ACTION`,
+  action === "RETRY_LATER"
+    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+    : action === "RETRY_NOW"
+    ? "Retry failed payments immediately."
+    : "Monitor gateway activity."
+);
     (action === "RETRY_LATER"
       ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
       : action === "RETRY_NOW"
