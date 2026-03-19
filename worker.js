@@ -35,6 +35,14 @@ export default {
         return await handleListIncidents(request, env);
       }
 
+      if (path === "/radar/action/pause" && method === "POST") {
+        return await handlePauseGatewayAction(request, env);
+      }
+
+      if (path === "/radar/action/retry" && method === "POST") {
+        return await handleRetryGatewayAction(request, env);
+      }
+
       if (path === "/radar/test-create" && method === "GET") {
         return await handleTestIncident(request, env);
       }
@@ -133,6 +141,82 @@ async function handleListIncidents(request, env) {
   return json(request, {
     ok: true,
     incidents: result.results || []
+  });
+}
+
+async function handlePauseGatewayAction(request, env) {
+  const body = await safeReadJson(request);
+  const gateway = normalizeGatewayName(body?.gateway);
+  const incidentIds = normalizeIncidentIds(body?.incident_ids);
+  const targetIds = await findIncidentIdsForAction(env, {
+    gateway,
+    allowedStatuses: ["pending"],
+    incidentIds
+  });
+
+  if (!gateway || gateway === "unknown") {
+    return json(request, {
+      ok: false,
+      error: "Valid gateway is required."
+    }, 400);
+  }
+
+  if (!targetIds.length) {
+    return json(request, {
+      ok: true,
+      gateway,
+      updated_status: "paused",
+      affected_count: 0,
+      incident_ids: []
+    });
+  }
+
+  await updateIncidentStatuses(env, targetIds, "paused");
+
+  return json(request, {
+    ok: true,
+    gateway,
+    updated_status: "paused",
+    affected_count: targetIds.length,
+    incident_ids: targetIds
+  });
+}
+
+async function handleRetryGatewayAction(request, env) {
+  const body = await safeReadJson(request);
+  const gateway = normalizeGatewayName(body?.gateway);
+  const incidentIds = normalizeIncidentIds(body?.incident_ids);
+  const targetIds = await findIncidentIdsForAction(env, {
+    gateway,
+    allowedStatuses: ["pending", "paused"],
+    incidentIds
+  });
+
+  if (!gateway || gateway === "unknown") {
+    return json(request, {
+      ok: false,
+      error: "Valid gateway is required."
+    }, 400);
+  }
+
+  if (!targetIds.length) {
+    return json(request, {
+      ok: true,
+      gateway,
+      updated_status: "retrying",
+      affected_count: 0,
+      incident_ids: []
+    });
+  }
+
+  await updateIncidentStatuses(env, targetIds, "retrying");
+
+  return json(request, {
+    ok: true,
+    gateway,
+    updated_status: "retrying",
+    affected_count: targetIds.length,
+    incident_ids: targetIds
   });
 }
 
@@ -945,6 +1029,72 @@ function normalizeGatewayName(value) {
   if (raw.includes("paypal")) return "paypal";
 
   return raw || "unknown";
+}
+
+async function safeReadJson(request) {
+  try {
+    return await request.json();
+  } catch (_) {
+    return {};
+  }
+}
+
+function normalizeIncidentIds(value) {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      const num = Number(item);
+      return Number.isInteger(num) && num > 0 ? num : null;
+    })
+    .filter((item) => item !== null);
+}
+
+async function findIncidentIdsForAction(env, options = {}) {
+  const gateway = normalizeGatewayName(options.gateway);
+  const allowedStatuses = Array.isArray(options.allowedStatuses) && options.allowedStatuses.length
+    ? options.allowedStatuses.map((item) => asText(item)).filter(Boolean)
+    : ["pending"];
+  const requestedIncidentIds = Array.isArray(options.incidentIds)
+    ? options.incidentIds.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
+    : [];
+
+  if (!gateway || gateway === "unknown") return [];
+
+  const statusPlaceholders = allowedStatuses.map(() => "?").join(", ");
+  const rows = await env.DB.prepare(`
+    SELECT id, gateway, status
+    FROM radar_incidents
+    WHERE status IN (${statusPlaceholders})
+  `)
+    .bind(...allowedStatuses)
+    .all();
+
+  const incidents = Array.isArray(rows?.results) ? rows.results : [];
+
+  return incidents
+    .filter((row) => normalizeGatewayName(row?.gateway) === gateway)
+    .filter((row) => requestedIncidentIds.length ? requestedIncidentIds.includes(Number(row?.id)) : true)
+    .map((row) => Number(row.id))
+    .filter((id) => Number.isInteger(id) && id > 0);
+}
+
+async function updateIncidentStatuses(env, incidentIds, nextStatus) {
+  const ids = Array.isArray(incidentIds)
+    ? incidentIds.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
+    : [];
+
+  if (!ids.length) return;
+
+  const sql = `
+    UPDATE radar_incidents
+    SET status = ?
+    WHERE id = ?
+  `;
+
+  for (const id of ids) {
+    await env.DB.prepare(sql).bind(nextStatus, id).run();
+  }
 }
 
 function buildCorsHeaders(request) {

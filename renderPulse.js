@@ -556,16 +556,70 @@
 
     const action = String(btn.getAttribute("data-action") || "").trim();
 
-    if (action === "pause") {
-      console.log("PAUSE AUTOMATIONS triggered");
-      alert("Automations paused (next step: call Worker)");
-    } else if (action === "retry") {
-      console.log("RETRY PAYMENTS triggered");
-      alert("Retry flow coming next");
-    } else if (action === "customers") {
-      console.log("VIEW CUSTOMERS triggered");
-      alert("Customer list coming next");
-    }
+const gateway = window.__pulseModalGateway || null;
+
+if (!gateway) {
+  console.warn("No gateway context for modal action");
+  alert("Missing gateway context");
+  return;
+}
+
+if (action === "pause") {
+  console.log("PAUSE AUTOMATIONS → Worker", gateway);
+
+  fetch("https://pulse-worker.bob-b5c.workers.dev/radar/action/pause", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gateway })
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      console.log("Pause response:", data);
+
+      if (!data?.ok) {
+        alert("Failed to pause retries");
+        return;
+      }
+
+      alert("Retries paused successfully");
+      closePulseModal();
+      window.location.reload();
+    })
+    .catch((err) => {
+      console.error("Pause error:", err);
+      alert("Error pausing retries");
+    });
+
+} else if (action === "retry") {
+  console.log("RETRY PAYMENTS → Worker", gateway);
+
+  fetch("https://pulse-worker.bob-b5c.workers.dev/radar/action/retry", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gateway })
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      console.log("Retry response:", data);
+
+      if (!data?.ok) {
+        alert("Failed to queue retries");
+        return;
+      }
+
+      alert("Retry queued successfully");
+      closePulseModal();
+      window.location.reload();
+    })
+    .catch((err) => {
+      console.error("Retry error:", err);
+      alert("Error triggering retry");
+    });
+
+} else if (action === "customers") {
+  console.log("VIEW CUSTOMERS → filter not implemented yet", gateway);
+  alert("Customer filtering coming next");
+}
   });
 
   document.addEventListener("click", function (e) {
@@ -576,7 +630,7 @@
     const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
 
     if (!action || !gateway) return;
-
+window.__pulseModalGateway = gateway;
     openPulseModal(
       gateway.toUpperCase() + " Recovery Action",
       action === "RETRY_LATER"
@@ -595,7 +649,7 @@
     const gateway = String(pill.getAttribute("data-gateway") || "").trim();
 
     if (!action || !gateway) return;
-
+window.__pulseModalGateway = gateway;
     openPulseModal(
       gateway.toUpperCase() + " Recovery Action",
       action === "RETRY_LATER"
