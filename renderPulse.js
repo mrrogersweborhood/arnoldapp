@@ -538,54 +538,31 @@ document.addEventListener("click", function (e) {
 
   if (!action || !gateway) return;
 
-openPulseModal(
-  gateway.toUpperCase() + " ACTION",
-  action === "RETRY_LATER"
-    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-    : action === "RETRY_NOW"
-    ? "Retry failed payments immediately."
-    : "Monitor gateway activity."
-);
-    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-    : action === "RETRY_NOW"
-    ? "Retry failed payments immediately."
-    : "Monitor gateway activity."
-);
-    (action === "RETRY_LATER"
-      ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
+  openPulseModal(
+    gateway.toUpperCase() + " ACTION",
+    action === "RETRY_LATER"
+      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
       : action === "RETRY_NOW"
       ? "Retry failed payments immediately."
-      : "Monitor gateway activity.")
+      : "Monitor gateway activity."
   );
 });
 document.addEventListener("click", function (e) {
   const pill = e.target.closest(".pulse-action-pill");
   if (!pill) return;
 
-  const action = pill.getAttribute("data-action");
-  const gateway = pill.getAttribute("data-gateway");
+  const action = String(pill.getAttribute("data-action") || "").trim();
+  const gateway = String(pill.getAttribute("data-gateway") || "").trim();
 
   if (!action || !gateway) return;
 
-  // Simple action panel (safe + expandable)
-openPulseModal(
-  gateway.toUpperCase() + " ACTION",
-  action === "RETRY_LATER"
-    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-    : action === "RETRY_NOW"
-    ? "Retry failed payments immediately."
-    : "Monitor gateway activity."
-);
-    ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-    : action === "RETRY_NOW"
-    ? "Retry failed payments immediately."
-    : "Monitor gateway activity."
-);
-    (action === "RETRY_LATER"
-      ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
+  openPulseModal(
+    gateway.toUpperCase() + " ACTION",
+    action === "RETRY_LATER"
+      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
       : action === "RETRY_NOW"
       ? "Retry failed payments immediately."
-      : "Monitor gateway activity.")
+      : "Monitor gateway activity."
   );
 });
 })();
