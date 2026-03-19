@@ -549,6 +549,27 @@ document.addEventListener("click", function (e) {
 });
 document.addEventListener("click", function (e) {
   const pill = e.target.closest(".pulse-action-pill");
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".pulse-modal-action-btn");
+  if (!btn) return;
+
+  const action = btn.getAttribute("data-action");
+
+  if (action === "pause") {
+    console.log("PAUSE AUTOMATIONS triggered");
+    alert("Automations paused (next step: call Worker)");
+  }
+
+  if (action === "retry") {
+    console.log("RETRY PAYMENTS triggered");
+    alert("Retry flow coming next");
+  }
+
+  if (action === "customers") {
+    console.log("VIEW CUSTOMERS triggered");
+    alert("Customer list coming next");
+  }
+});
   if (!pill) return;
 
   const action = String(pill.getAttribute("data-action") || "").trim();
