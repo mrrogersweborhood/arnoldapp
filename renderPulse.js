@@ -295,17 +295,32 @@
       <section class="card pulse-scan-inline">
         <div class="pulse-scan-inline-row">
 
-          <div><strong>Last scan:</strong> ${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+          <div class="pulse-scan-chip">
+            <span class="pulse-scan-label">Last scan</span>
+            <span class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</span>
+          </div>
 
-          <div><strong>Processed:</strong> ${esc(formatPulseInteger(lastScanInfo.processed))}</div>
+          <div class="pulse-scan-chip">
+            <span class="pulse-scan-label">Processed</span>
+            <span class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</span>
+          </div>
 
-          <div><strong>Failed:</strong> ${esc(formatPulseInteger(lastScanInfo.failed))}</div>
+          <div class="pulse-scan-chip">
+            <span class="pulse-scan-label">Failed</span>
+            <span class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</span>
+          </div>
 
-          <div><strong>Last success:</strong> ${
-            esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "—")
-          }</div>
+          <div class="pulse-scan-chip">
+            <span class="pulse-scan-label">Last success</span>
+            <span class="pulse-scan-value">${
+              esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "—")
+            }</span>
+          </div>
 
-          <div><strong>Successes:</strong> ${esc(formatPulseInteger(recentSuccessCount))}</div>
+          <div class="pulse-scan-chip">
+            <span class="pulse-scan-label">Successes</span>
+            <span class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</span>
+          </div>
 
         </div>
       </section>
