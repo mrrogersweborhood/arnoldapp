@@ -99,6 +99,18 @@
     return "low";
   }
 
+  function formatPulseActionLabel(action) {
+    const token = String(action || "").trim().toUpperCase();
+
+    if (token === "RETRY_LATER") return "Pause Retries";
+    if (token === "RETRY_NOW") return "Retry Payments";
+    if (token === "REVIEW_GATEWAY_STATUS") return "Review Gateway";
+    if (token === "RETRY_SOFT") return "Soft Retry";
+    if (token === "MONITOR") return "Monitor";
+
+    return pulseTitleCase(token || "Action");
+  }
+
   function getLastScanInfo() {
     try {
       const raw = localStorage.getItem("pulse_last_scan");
@@ -245,13 +257,13 @@
                 </div>
               </div>
               <div
-  class="pulse-incident-strip-action"
-  data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
-  data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
-  style="cursor:pointer"
->
-  ${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}
-</div>
+                class="pulse-incident-strip-action"
+                data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
+                data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
+                style="cursor:pointer"
+              >
+                ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
+              </div>
             </div>
 
             <div class="pulse-incident-strip-metrics">
@@ -277,7 +289,7 @@
       : "";
 
     const lastScanCard = lastScanInfo
-  ? `
+      ? `
       <section class="card pulse-scan-inline">
         <div class="pulse-scan-inline-row">
 
@@ -311,7 +323,7 @@
         </div>
       </section>
     `
-  : "";
+      : "";
 
     const gatewayCards = gateways.length
       ? gateways.map((gateway) => {
@@ -342,14 +354,14 @@
                 </div>
               </div>
 
-<div 
-  class="pulse-action-pill"
-  data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
-  data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
-  style="cursor:pointer;"
->
-  ${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}
-</div>
+              <div 
+                class="pulse-action-pill"
+                data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
+                data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
+                style="cursor:pointer;"
+              >
+                ${esc(formatPulseActionLabel(gateway?.recommended_action))}
+              </div>
 
               <div class="pulse-message-block">
                 <div class="pulse-message-label">Recommended message</div>
@@ -502,96 +514,96 @@
   }
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
-window.renderPulseDashboard = renderPulseDashboard;
+  window.renderPulseDashboard = renderPulseDashboard;
 
-// ===== Pulse Modal System =====
-function openPulseModal(title, body) {
-  const modal = document.getElementById("pulse-modal");
-  if (!modal) return;
+  // ===== Pulse Modal System =====
+  function openPulseModal(title, body) {
+    const modal = document.getElementById("pulse-modal");
+    if (!modal) return;
 
-  document.getElementById("pulse-modal-title").textContent = title;
-  document.getElementById("pulse-modal-body").innerHTML = `
-    <div style="margin-bottom:16px;">${body}</div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <button class="pulse-modal-action-btn" data-action="pause">Pause Automations</button>
-      <button class="pulse-modal-action-btn" data-action="retry">Retry Payments</button>
-      <button class="pulse-modal-action-btn" data-action="customers">View Customers</button>
-    </div>
-  `;
+    document.getElementById("pulse-modal-title").textContent = title;
+    document.getElementById("pulse-modal-body").innerHTML = `
+      <div style="margin-bottom:16px;">${body}</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="pulse-modal-action-btn" data-action="pause">Pause Automations</button>
+        <button class="pulse-modal-action-btn" data-action="retry">Retry Payments</button>
+        <button class="pulse-modal-action-btn" data-action="customers">View Customers</button>
+      </div>
+    `;
 
-  modal.classList.remove("hidden");
-}
-
-function closePulseModal() {
-  const modal = document.getElementById("pulse-modal");
-  if (!modal) return;
-  modal.classList.add("hidden");
-}
-
-document.addEventListener("click", function (e) {
-  if (
-    e.target.id === "pulse-modal-close" ||
-    e.target.id === "pulse-modal-ok" ||
-    e.target.classList.contains("pulse-modal-backdrop")
-  ) {
-    closePulseModal();
+    modal.classList.remove("hidden");
   }
-});
 
-document.addEventListener("click", function (e) {
-  const btn = e.target.closest(".pulse-modal-action-btn");
-  if (!btn) return;
-
-  const action = String(btn.getAttribute("data-action") || "").trim();
-
-  if (action === "pause") {
-    console.log("PAUSE AUTOMATIONS triggered");
-    alert("Automations paused (next step: call Worker)");
-  } else if (action === "retry") {
-    console.log("RETRY PAYMENTS triggered");
-    alert("Retry flow coming next");
-  } else if (action === "customers") {
-    console.log("VIEW CUSTOMERS triggered");
-    alert("Customer list coming next");
+  function closePulseModal() {
+    const modal = document.getElementById("pulse-modal");
+    if (!modal) return;
+    modal.classList.add("hidden");
   }
-});
 
-document.addEventListener("click", function (e) {
-  const incidentAction = e.target.closest(".pulse-incident-strip-action");
-  if (!incidentAction) return;
+  document.addEventListener("click", function (e) {
+    if (
+      e.target.id === "pulse-modal-close" ||
+      e.target.id === "pulse-modal-ok" ||
+      e.target.classList.contains("pulse-modal-backdrop")
+    ) {
+      closePulseModal();
+    }
+  });
 
-  const action = String(incidentAction.getAttribute("data-action") || "").trim();
-  const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest(".pulse-modal-action-btn");
+    if (!btn) return;
 
-  if (!action || !gateway) return;
+    const action = String(btn.getAttribute("data-action") || "").trim();
 
-  openPulseModal(
-    gateway.toUpperCase() + " ACTION",
-    action === "RETRY_LATER"
-      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-      : action === "RETRY_NOW"
-      ? "Retry failed payments immediately."
-      : "Monitor gateway activity."
-  );
-});
+    if (action === "pause") {
+      console.log("PAUSE AUTOMATIONS triggered");
+      alert("Automations paused (next step: call Worker)");
+    } else if (action === "retry") {
+      console.log("RETRY PAYMENTS triggered");
+      alert("Retry flow coming next");
+    } else if (action === "customers") {
+      console.log("VIEW CUSTOMERS triggered");
+      alert("Customer list coming next");
+    }
+  });
 
-document.addEventListener("click", function (e) {
-  const pill = e.target.closest(".pulse-action-pill");
-  if (!pill) return;
+  document.addEventListener("click", function (e) {
+    const incidentAction = e.target.closest(".pulse-incident-strip-action");
+    if (!incidentAction) return;
 
-  const action = String(pill.getAttribute("data-action") || "").trim();
-  const gateway = String(pill.getAttribute("data-gateway") || "").trim();
+    const action = String(incidentAction.getAttribute("data-action") || "").trim();
+    const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
 
-  if (!action || !gateway) return;
+    if (!action || !gateway) return;
 
-  openPulseModal(
-    gateway.toUpperCase() + " ACTION",
-    action === "RETRY_LATER"
-      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-      : action === "RETRY_NOW"
-      ? "Retry failed payments immediately."
-      : "Monitor gateway activity."
-  );
-});
+    openPulseModal(
+      gateway.toUpperCase() + " Recovery Action",
+      action === "RETRY_LATER"
+        ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+        : action === "RETRY_NOW"
+        ? "Retry failed payments immediately."
+        : "Monitor gateway activity."
+    );
+  });
+
+  document.addEventListener("click", function (e) {
+    const pill = e.target.closest(".pulse-action-pill");
+    if (!pill) return;
+
+    const action = String(pill.getAttribute("data-action") || "").trim();
+    const gateway = String(pill.getAttribute("data-gateway") || "").trim();
+
+    if (!action || !gateway) return;
+
+    openPulseModal(
+      gateway.toUpperCase() + " Recovery Action",
+      action === "RETRY_LATER"
+        ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+        : action === "RETRY_NOW"
+        ? "Retry failed payments immediately."
+        : "Monitor gateway activity."
+    );
+  });
 })();
 // 🔴 renderPulse.js
