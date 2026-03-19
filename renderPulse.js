@@ -206,7 +206,7 @@
       ? analysis.gateway_incidents
       : [];
 
-    const activeIncident = gatewayIncidents.find((g) => g.status === "outage" || g.status === "spike");
+    const activeIncident = gatewayIncidents[0] || null;
     const lastScanInfo = getLastScanInfo();
     const scanDelta = getScanDelta(summary);
 
@@ -240,31 +240,7 @@
                       return `${gatewayName} showing abnormal failure behavior. No successful payments detected — investigate immediately.`;
                     }
 
-                    const lastSuccessDate = new Date(lastSuccessAt);
-                    const now = new Date();
-                    const diffMs = now - lastSuccessDate;
-                    const diffMinutes = Math.floor(diffMs / 60000);
-
-                    let timeText = "";
-
-                    if (diffMinutes < 60) {
-                      timeText = `${diffMinutes} minute${diffMinutes !== 1 ? "s" : ""} ago`;
-                    } else if (diffMinutes < 1440) {
-                      const hours = Math.floor(diffMinutes / 60);
-                      timeText = `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-                    } else {
-                      const days = Math.floor(diffMinutes / 1440);
-                      timeText = `${days} day${days !== 1 ? "s" : ""} ago`;
-                    }
-
-                    // 36-hour gateway activity window (low-volume safe)
-const GATEWAY_ACTIVITY_WINDOW_MINUTES = 2160;
-
-if (diffMinutes < GATEWAY_ACTIVITY_WINDOW_MINUTES) {
-  return `${gatewayName} showing elevated failures, but successful payments occurred within the last 36 hours (${timeText}). Likely not a gateway outage.`;
-}
-
-return `${gatewayName} showing abnormal failure behavior. No successful payments in the last 36 hours (last success ${timeText}) — possible gateway issue.`;
+                    return `${gatewayName} status: ${activeIncident.status.toUpperCase()} — ${activeIncident.recommended_message}`;
                   })())}
                 </div>
               </div>

@@ -579,6 +579,8 @@ async function handlePulseSummary(request, env) {
 async function handleFailureAnalysis(request, env) {
   let lastSuccessAt = null;
   let recentSuccessCount = 0;
+  const lastSuccessByGateway = {};
+
   const stores = await loadActiveStores(env);
 
   for (const store of stores) {
@@ -594,19 +596,31 @@ async function handleFailureAnalysis(request, env) {
       for (const order of orders) {
         const created = order?.date_created;
 
+        const gateway = normalizeGatewayName(
+          order?.payment_method_title ||
+          order?.payment_method ||
+          store.gateway
+        );
+
         if (created) {
           recentSuccessCount++;
 
           if (!lastSuccessAt || new Date(created) > new Date(lastSuccessAt)) {
             lastSuccessAt = created;
           }
+
+          if (
+            !lastSuccessByGateway[gateway] ||
+            new Date(created) > new Date(lastSuccessByGateway[gateway])
+          ) {
+            lastSuccessByGateway[gateway] = created;
+          }
         }
       }
     } catch (_) {}
   }
 
-  const rows = await env.DB.prepare(`
-    SELECT
+  const rows = await env.DB.prepare(`    SELECT
       gateway,
       reason,
       amount,
@@ -618,7 +632,11 @@ async function handleFailureAnalysis(request, env) {
   const incidents = rows.results || [];
   const totalPending = incidents.length;
   const gateways = aggregateByGatewayForActions(incidents);
-const gatewayIncidents = buildGatewayIncidents(gateways, totalPending);
+const gatewayIncidents = buildGatewayIncidents(
+  gateways,
+  totalPending,
+  lastSuccessByGateway
+);
   const reasonsMap = new Map();
 
   for (const row of incidents) {
@@ -734,7 +752,7 @@ function aggregateByGatewayForActions(incidents) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 }
-function buildGatewayIncidents(gateways, totalPending) {
+function buildGatewayIncidents(gateways, totalPending, lastSuccessByGateway = {}) {
   try {
     if (!Array.isArray(gateways) || !gateways.length) return [];
 
@@ -748,11 +766,32 @@ function buildGatewayIncidents(gateways, totalPending) {
       let severity = "low";
       let confidence = 0.5;
 
-      // 🚨 Outage detection (dominant + high volume)
+      const GATEWAY_ACTIVITY_WINDOW_MINUTES = 2160;
+      const gatewayLastSuccessAt = lastSuccessByGateway[g.gateway] || null;
+      let minutesSinceSuccess = null;
+
+      if (gatewayLastSuccessAt) {
+        minutesSinceSuccess = Math.floor(
+          (Date.now() - new Date(gatewayLastSuccessAt).getTime()) / 60000
+        );
+      }
+
+      // 🚨 Strong outage: high volume + dominant gateway
       if (share >= 70 && count >= 10) {
         status = "outage";
         severity = "high";
         confidence = Math.min(0.95, 0.7 + (share / 100));
+      }
+
+      // 🚨 Time-based outage: no successful payments within 36 hours
+      else if (
+        minutesSinceSuccess !== null &&
+        minutesSinceSuccess >= GATEWAY_ACTIVITY_WINDOW_MINUTES &&
+        count >= 5
+      ) {
+        status = "outage";
+        severity = "high";
+        confidence = 0.9;
       }
 
       // ⚠️ Spike detection
@@ -761,7 +800,6 @@ function buildGatewayIncidents(gateways, totalPending) {
         severity = count >= 10 ? "high" : "medium";
         confidence = Math.min(0.9, 0.5 + (count / 20));
       }
-
       return {
         gateway: g.gateway,
         status,
