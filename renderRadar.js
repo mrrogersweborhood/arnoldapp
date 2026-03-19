@@ -174,35 +174,43 @@ const gatewayIncidentPanel = gatewayIncidents.length
       const gatewayName =
         gatewayNameRaw.charAt(0).toUpperCase() + gatewayNameRaw.slice(1);
 
-      const status = String(incident?.status || "elevated").toUpperCase();
-      const failures5m = Number(incident?.failures_5m || 0);
-      const failures30m = Number(incident?.failures_30m || 0);
-      const failures60m = Number(incident?.failures_60m || 0);
-      const trend = String(incident?.failure_trend || "stable").toLowerCase();
-      const affectedSubscribers5m = Number(incident?.affected_subscribers_5m || 0);
-      const revenueAtRisk5m = Number(incident?.revenue_at_risk_5m || 0);
+      const status = String(incident?.status || "normal").toLowerCase();
+      const severity = String(incident?.severity || "low").toLowerCase();
+      const confidence = Number(incident?.confidence || 0);
+
+      const incidentCount = Number(incident?.incident_count || 0);
+      const revenueAtRisk = Number(incident?.recoverable_revenue || 0);
+      const customers = Number(incident?.customers_at_risk || 0);
+
+      const recommendedAction = String(incident?.recommended_action || "");
+      const recommendedMessage = String(incident?.recommended_message || "");
 
       const revenueText = new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
         maximumFractionDigits: 2
-      }).format(revenueAtRisk5m);
+      }).format(revenueAtRisk);
 
-      const trendLabel =
-        trend === "increasing"
-          ? "↑ increasing"
-          : trend === "cooling"
-            ? "↓ cooling"
-            : "→ stable";
+      // --- STATUS BADGE ---
+      let statusBadge = "🟢 NORMAL";
+      if (status === "outage") statusBadge = "🔴 OUTAGE";
+      else if (status === "spike") statusBadge = "🟠 SPIKE";
+
+      const confidencePct = Math.round(confidence * 100);
 
       return `
         <div class="aa-health-alert aa-health-alert-problem" style="margin-bottom:12px">
-          <strong>⚠ Gateway Incident</strong><br>
-          ${gatewayName} — ${status}<br>
-          5m: ${failures5m} • 30m: ${failures30m} • 60m: ${failures60m}<br>
-          Trend: ${trendLabel}<br>
-          ${affectedSubscribers5m} subscriber${affectedSubscribers5m === 1 ? "" : "s"} affected in 5m •
-          ${revenueText} at risk in 5m
+          <strong>${statusBadge} ${gatewayName}</strong><br>
+
+          ${incidentCount} failure${incidentCount === 1 ? "" : "s"} •
+          ${customers} subscriber${customers === 1 ? "" : "s"} affected<br>
+
+          ${revenueText} at risk<br>
+
+          Confidence: ${confidencePct}% • Severity: ${severity.toUpperCase()}<br>
+
+          <strong>Action:</strong> ${recommendedAction}<br>
+          ${recommendedMessage}
         </div>
       `;
     }).join("")

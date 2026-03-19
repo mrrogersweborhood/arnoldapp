@@ -52,7 +52,6 @@ export default {
       }
 
       return json(request, { ok: false, error: "Not found" }, 404);
-
     } catch (error) {
       return json(request, {
         ok: false,
@@ -178,7 +177,6 @@ async function handleTestIncident(request, env) {
 async function runPulseScanner(request, env) {
   const stores = await loadActiveStores(env);
 
-
   let totalScanned = 0;
   let totalCreated = 0;
   let totalSkipped = 0;
@@ -214,12 +212,22 @@ async function runPulseScanner(request, env) {
 
 async function loadActiveStores(env) {
   const result = await env.DB.prepare(`
-    SELECT store_id, store_name, store_url, gateway
+    SELECT
+      store_id,
+      store_name,
+      store_url,
+      gateway,
+      gateway_activity_window_hours,
+      timezone
     FROM stores
     ORDER BY id ASC
   `).all();
 
-  return result.results || [];
+  return (result.results || []).map((row) => ({
+    ...row,
+    gateway_activity_window_hours: normalizeStoreWindowHours(row.gateway_activity_window_hours),
+    timezone: asText(row.timezone) || "UTC"
+  }));
 }
 
 async function scanStoreFailedOrders(env, store) {
@@ -312,6 +320,7 @@ async function scanStoreFailedOrders(env, store) {
     incidents_skipped: skipped
   };
 }
+
 async function fetchRecentSuccessfulOrders(baseUrl, consumerKey, consumerSecret) {
   try {
     const statuses = ["completed", "processing"];
@@ -333,7 +342,7 @@ async function fetchRecentSuccessfulOrders(baseUrl, consumerKey, consumerSecret)
       const orders = Array.isArray(data) ? data : [];
 
       allOrders = allOrders.concat(
-        orders.map(o => ({
+        orders.map((o) => ({
           ...o,
           __status: status
         }))
@@ -345,6 +354,7 @@ async function fetchRecentSuccessfulOrders(baseUrl, consumerKey, consumerSecret)
     return [];
   }
 }
+
 async function fetchOrderNotesForOrder(baseUrl, consumerKey, consumerSecret, orderId) {
   if (!orderId) return [];
 
@@ -523,7 +533,11 @@ function buildFailureText(order, gateway, store, orderNotes = []) {
   if (Array.isArray(order?.meta_data)) {
     for (const item of order.meta_data) {
       push(item?.key);
-      if (typeof item?.value === "string" || typeof item?.value === "number" || typeof item?.value === "boolean") {
+      if (
+        typeof item?.value === "string" ||
+        typeof item?.value === "number" ||
+        typeof item?.value === "boolean"
+      ) {
         push(item.value);
       } else if (item?.value && typeof item.value === "object") {
         try {
@@ -580,12 +594,15 @@ async function handleFailureAnalysis(request, env) {
   let lastSuccessAt = null;
   let recentSuccessCount = 0;
   const lastSuccessByGateway = {};
-
+  const successCountsByGateway = {};
+  const windowedSuccessCountsByGateway = {};
   const stores = await loadActiveStores(env);
 
   for (const store of stores) {
     try {
       const baseUrl = store.store_url.replace(/\/+$/, "");
+      const storeWindowMinutes =
+        normalizeStoreWindowHours(store.gateway_activity_window_hours) * 60;
 
       const orders = await fetchRecentSuccessfulOrders(
         baseUrl,
@@ -594,7 +611,16 @@ async function handleFailureAnalysis(request, env) {
       );
 
       for (const order of orders) {
-        const created = order?.date_created;
+        const createdRaw = order?.date_created_gmt || order?.date_created;
+
+        const createdDate = createdRaw
+          ? new Date(order?.date_created_gmt ? `${createdRaw}Z` : createdRaw)
+          : null;
+
+        const created =
+          createdDate && !Number.isNaN(createdDate.getTime())
+            ? createdDate.toISOString()
+            : null;
 
         const gateway = normalizeGatewayName(
           order?.payment_method_title ||
@@ -615,12 +641,24 @@ async function handleFailureAnalysis(request, env) {
           ) {
             lastSuccessByGateway[gateway] = created;
           }
+
+          successCountsByGateway[gateway] = (successCountsByGateway[gateway] || 0) + 1;
+
+          const minutesSinceCreated = Math.floor(
+            (Date.now() - new Date(created).getTime()) / 60000
+          );
+
+          if (minutesSinceCreated <= storeWindowMinutes) {
+            windowedSuccessCountsByGateway[gateway] =
+              (windowedSuccessCountsByGateway[gateway] || 0) + 1;
+          }
         }
       }
     } catch (_) {}
   }
 
-  const rows = await env.DB.prepare(`    SELECT
+  const rows = await env.DB.prepare(`
+    SELECT
       gateway,
       reason,
       amount,
@@ -632,11 +670,15 @@ async function handleFailureAnalysis(request, env) {
   const incidents = rows.results || [];
   const totalPending = incidents.length;
   const gateways = aggregateByGatewayForActions(incidents);
-const gatewayIncidents = buildGatewayIncidents(
-  gateways,
-  totalPending,
-  lastSuccessByGateway
-);
+  const gatewayWindowMinutesByGateway = buildGatewayWindowMinutesByGateway(stores);
+  const gatewayIncidents = buildGatewayIncidents(
+    gateways,
+    totalPending,
+    lastSuccessByGateway,
+    gatewayWindowMinutesByGateway,
+    successCountsByGateway,
+    windowedSuccessCountsByGateway
+  );
   const reasonsMap = new Map();
 
   for (const row of incidents) {
@@ -664,24 +706,19 @@ const gatewayIncidents = buildGatewayIncidents(
       b.recoverable_revenue - a.recoverable_revenue
     );
 
-return json(request, {
-  ok: true,
-  total_pending_incidents: totalPending,
-  gateways,
-  gateway_incidents: gatewayIncidents,
-  reasons,
-  top_gateway: gateways[0] || null,
-  top_reason: reasons[0] || null,
-
-success_summary: {
-  last_success_at: lastSuccessAt,
-  recent_success_count: recentSuccessCount,
-  debug: {
-    note: "temporary debug data",
-    has_success: recentSuccessCount > 0
-  }
-}
-});
+  return json(request, {
+    ok: true,
+    total_pending_incidents: totalPending,
+    gateways,
+    gateway_incidents: gatewayIncidents,
+    reasons,
+    top_gateway: gateways[0] || null,
+    top_reason: reasons[0] || null,
+    success_summary: {
+      last_success_at: lastSuccessAt,
+      recent_success_count: recentSuccessCount
+    }
+  });
 }
 
 function aggregateByGatewayForActions(incidents) {
@@ -721,18 +758,23 @@ function aggregateByGatewayForActions(incidents) {
       if (share >= 80 && item.incident_count >= 20) {
         recommendedAction = "RETRY_LATER";
         recommendedPriority = "HIGH";
-        recommendedMessage = "Large spike in failures suggests possible gateway outage.";
-        playbook = "Pause automated retries and reattempt payments later.";
-      } else if (item.incident_count >= 10) {
+        recommendedMessage = "High-confidence outage detected. Pause retries and wait for gateway recovery.";
+        playbook = "Pause automated retries. Resume once successful payments are observed.";
+      } else if (share >= 60 && item.incident_count >= 10) {
+        recommendedAction = "REVIEW_GATEWAY_STATUS";
+        recommendedPriority = "HIGH";
+        recommendedMessage = "Severe failure concentration detected. Possible gateway instability.";
+        playbook = "Check gateway status dashboard before retrying payments.";
+      } else if (item.incident_count >= 10 || share >= 40) {
         recommendedAction = "REVIEW_GATEWAY_STATUS";
         recommendedPriority = "MEDIUM";
-        recommendedMessage = "Failure spike detected. Check gateway health dashboard.";
-        playbook = "Verify gateway status before retrying payments.";
-      } else if (item.incident_count >= 5) {
+        recommendedMessage = "Elevated failure activity detected. Monitor gateway performance.";
+        playbook = "Verify gateway health and continue controlled retries.";
+      } else if (item.incident_count >= 5 || share >= 20) {
         recommendedAction = "RETRY_SOFT";
         recommendedPriority = "LOW";
-        recommendedMessage = "Small cluster of failures detected.";
-        playbook = "Retry payment attempts with normal retry schedule.";
+        recommendedMessage = "Minor failure cluster detected.";
+        playbook = "Retry payments using normal retry schedule.";
       }
 
       return {
@@ -744,7 +786,7 @@ function aggregateByGatewayForActions(incidents) {
         recommended_action: recommendedAction,
         recommended_priority: recommendedPriority,
         recommended_message: recommendedMessage,
-        playbook: playbook
+        playbook
       };
     })
     .sort((a, b) =>
@@ -752,7 +794,15 @@ function aggregateByGatewayForActions(incidents) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 }
-function buildGatewayIncidents(gateways, totalPending, lastSuccessByGateway = {}) {
+
+function buildGatewayIncidents(
+  gateways,
+  totalPending,
+  lastSuccessByGateway = {},
+  gatewayWindowMinutesByGateway = {},
+  successCountsByGateway = {},
+  windowedSuccessCountsByGateway = {}
+) {
   try {
     if (!Array.isArray(gateways) || !gateways.length) return [];
 
@@ -762,44 +812,86 @@ function buildGatewayIncidents(gateways, totalPending, lastSuccessByGateway = {}
       const customers = Number(g?.customers_at_risk || 0);
       const share = Number(g?.share_of_failures_pct || 0);
 
+      // --- NEW: gateway-specific windowed success awareness ---
+      const gatewaySuccessCount = successCountsByGateway[g.gateway] || 0;
+      const gatewayWindowedSuccessCount = windowedSuccessCountsByGateway[g.gateway] || 0;
+
+      const successSignal = gatewayWindowedSuccessCount > 0 ? 1 : 0;
+
+      // ratio of recent windowed successes to failures for THIS gateway
+      const successToFailureRatio =
+        gatewayWindowedSuccessCount > 0
+          ? gatewayWindowedSuccessCount / Math.max(1, count)
+          : 0;
+
       let status = "normal";
       let severity = "low";
       let confidence = 0.5;
 
-      const GATEWAY_ACTIVITY_WINDOW_MINUTES = 2160;
+      const gatewayActivityWindowMinutes =
+        Number(gatewayWindowMinutesByGateway[g.gateway]) || 2160;
+
       const gatewayLastSuccessAt = lastSuccessByGateway[g.gateway] || null;
+
       let minutesSinceSuccess = null;
 
       if (gatewayLastSuccessAt) {
-        minutesSinceSuccess = Math.floor(
-          (Date.now() - new Date(gatewayLastSuccessAt).getTime()) / 60000
-        );
+        const successMs = new Date(gatewayLastSuccessAt).getTime();
+        if (!Number.isNaN(successMs)) {
+          minutesSinceSuccess = Math.floor((Date.now() - successMs) / 60000);
+        }
       }
 
-      // 🚨 Strong outage: high volume + dominant gateway
-      if (share >= 70 && count >= 10) {
-        status = "outage";
-        severity = "high";
-        confidence = Math.min(0.95, 0.7 + (share / 100));
-      }
-
-      // 🚨 Time-based outage: no successful payments within 36 hours
-      else if (
+      const hasRecentSuccess =
         minutesSinceSuccess !== null &&
-        minutesSinceSuccess >= GATEWAY_ACTIVITY_WINDOW_MINUTES &&
-        count >= 5
-      ) {
-        status = "outage";
-        severity = "high";
-        confidence = 0.9;
+        minutesSinceSuccess < gatewayActivityWindowMinutes;
+
+      const hasStaleSuccess =
+        minutesSinceSuccess !== null &&
+        minutesSinceSuccess >= gatewayActivityWindowMinutes;
+
+      const hasNoKnownSuccess = minutesSinceSuccess === null;
+
+      if (hasRecentSuccess) {
+        if (successToFailureRatio >= 0.5) {
+          status = "spike";
+          severity = "medium";
+          confidence = Math.min(0.75, 0.55 + (count / 40));
+        } else if (count >= 10 || share >= 50) {
+          status = "spike";
+          severity = count >= 15 || share >= 70 ? "high" : "medium";
+          confidence = Math.min(0.9, 0.55 + (count / 25) + (share / 250));
+        } else if (count >= 5 || share >= 25) {
+          status = "spike";
+          severity = "medium";
+          confidence = Math.min(0.82, 0.5 + (count / 30) + (share / 300));
+        }
+      } else if (hasStaleSuccess) {
+        if (count >= 5) {
+          status = "outage";
+          severity = count >= 10 || share >= 60 ? "high" : "medium";
+
+          const base = 0.72 + (count / 30) + (share / 250);
+          confidence = successSignal === 0
+            ? Math.min(0.97, base + 0.1)
+            : Math.min(0.95, base);
+        } else if (share >= 30) {
+          status = "spike";
+          severity = "medium";
+          confidence = Math.min(0.84, 0.58 + (share / 250));
+        }
+      } else if (hasNoKnownSuccess) {
+        if (share >= 80 && count >= 20) {
+          status = "outage";
+          severity = "high";
+          confidence = Math.min(0.9, 0.7 + (share / 200) + (count / 100));
+        } else if (count >= 5 || share >= 30) {
+          status = "spike";
+          severity = count >= 10 || share >= 60 ? "high" : "medium";
+          confidence = Math.min(0.82, 0.52 + (count / 30) + (share / 300));
+        }
       }
 
-      // ⚠️ Spike detection
-      else if (count >= 5 || share >= 30) {
-        status = "spike";
-        severity = count >= 10 ? "high" : "medium";
-        confidence = Math.min(0.9, 0.5 + (count / 20));
-      }
       return {
         gateway: g.gateway,
         status,
@@ -817,6 +909,34 @@ function buildGatewayIncidents(gateways, totalPending, lastSuccessByGateway = {}
     return [];
   }
 }
+
+function buildGatewayWindowMinutesByGateway(stores = []) {
+  const map = {};
+
+  for (const store of stores) {
+    const gateway = normalizeGatewayName(store?.gateway);
+    if (!gateway || gateway === "unknown") continue;
+
+    const minutes = normalizeStoreWindowHours(store?.gateway_activity_window_hours) * 60;
+
+    if (!map[gateway] || minutes > map[gateway]) {
+      map[gateway] = minutes;
+    }
+  }
+
+  return map;
+}
+
+function normalizeStoreWindowHours(value) {
+  const hours = Number(value);
+
+  if (!Number.isFinite(hours)) return 36;
+  if (hours <= 0) return 36;
+  if (hours > 336) return 336;
+
+  return Math.round(hours);
+}
+
 function normalizeGatewayName(value) {
   const raw = String(value || "").toLowerCase();
 
@@ -866,4 +986,5 @@ function asNumber(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 }
+
 // 🔴 worker.js
