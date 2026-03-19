@@ -530,26 +530,6 @@ document.addEventListener("click", function (e) {
   }
 });
 document.addEventListener("click", function (e) {
-  const incidentAction = e.target.closest(".pulse-incident-strip-action");
-  if (!incidentAction) return;
-
-  const action = String(incidentAction.getAttribute("data-action") || "").trim();
-  const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
-
-  if (!action || !gateway) return;
-
-  openPulseModal(
-    gateway.toUpperCase() + " ACTION",
-    action === "RETRY_LATER"
-      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
-      : action === "RETRY_NOW"
-      ? "Retry failed payments immediately."
-      : "Monitor gateway activity."
-  );
-});
-document.addEventListener("click", function (e) {
-  const pill = e.target.closest(".pulse-action-pill");
-document.addEventListener("click", function (e) {
   const btn = e.target.closest(".pulse-modal-action-btn");
   if (!btn) return;
 
@@ -570,7 +550,42 @@ document.addEventListener("click", function (e) {
     alert("Customer list coming next");
   }
 });
+document.addEventListener("click", function (e) {
+  const incidentAction = e.target.closest(".pulse-incident-strip-action");
+  if (!incidentAction) return;
+
+  const action = String(incidentAction.getAttribute("data-action") || "").trim();
+  const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
+
+  if (!action || !gateway) return;
+
+  openPulseModal(
+    gateway.toUpperCase() + " ACTION",
+    action === "RETRY_LATER"
+      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+      : action === "RETRY_NOW"
+      ? "Retry failed payments immediately."
+      : "Monitor gateway activity."
+  );
+});
+document.addEventListener("click", function (e) {
+  const pill = e.target.closest(".pulse-action-pill");
   if (!pill) return;
+
+  const action = String(pill.getAttribute("data-action") || "").trim();
+  const gateway = String(pill.getAttribute("data-gateway") || "").trim();
+
+  if (!action || !gateway) return;
+
+  openPulseModal(
+    gateway.toUpperCase() + " ACTION",
+    action === "RETRY_LATER"
+      ? "Pause retries.<br>Wait for gateway recovery.<br>Retry once successful payments resume."
+      : action === "RETRY_NOW"
+      ? "Retry failed payments immediately."
+      : "Monitor gateway activity."
+  );
+});
 
   const action = String(pill.getAttribute("data-action") || "").trim();
   const gateway = String(pill.getAttribute("data-gateway") || "").trim();
