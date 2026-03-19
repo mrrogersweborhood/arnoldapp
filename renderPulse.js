@@ -244,7 +244,14 @@
                   })())}
                 </div>
               </div>
-              <div class="pulse-incident-strip-action">${esc(activeIncident.recommended_action)}</div>
+              <div
+  class="pulse-incident-strip-action"
+  data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
+  data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
+  style="cursor:pointer"
+>
+  ${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}
+</div>
             </div>
 
             <div class="pulse-incident-strip-metrics">
@@ -496,6 +503,24 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
   window.renderPulseDashboard = renderPulseDashboard;
+document.addEventListener("click", function (e) {
+  const incidentAction = e.target.closest(".pulse-incident-strip-action");
+  if (!incidentAction) return;
+
+  const action = String(incidentAction.getAttribute("data-action") || "").trim();
+  const gateway = String(incidentAction.getAttribute("data-gateway") || "").trim();
+
+  if (!action || !gateway) return;
+
+  alert(
+    `${gateway.toUpperCase()} ACTION:\n\n` +
+    (action === "RETRY_LATER"
+      ? "Pause retries.\nWait for gateway recovery.\nRetry once successful payments resume."
+      : action === "RETRY_NOW"
+      ? "Retry failed payments immediately."
+      : "Monitor gateway activity.")
+  );
+});
 document.addEventListener("click", function (e) {
   const pill = e.target.closest(".pulse-action-pill");
   if (!pill) return;
