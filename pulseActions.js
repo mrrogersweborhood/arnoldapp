@@ -105,7 +105,7 @@
           </thead>
           <tbody>
             ${customers.map((row) => `
-              <tr style="border-top:1px solid rgba(255,255,255,.08);">
+              <tr data-email="${esc(row?.email || "")}" style="border-top:1px solid rgba(255,255,255,.08); cursor:pointer;">
                 <td style="padding:10px 12px;">${esc(row?.email || "—")}</td>
                 <td style="padding:10px 12px;">${esc(formatPulseMoney(row?.amount))}</td>
                 <td style="padding:10px 12px;">${esc(row?.reason || "—")}</td>
@@ -117,6 +117,22 @@
         </table>
       </div>
     `;
+    // CLICK HANDLER: open customer in full UI
+    modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
+      rowEl.addEventListener("click", () => {
+        const email = rowEl.getAttribute("data-email");
+        if (!email) return;
+
+        closePulseModal();
+
+        if (typeof window.doCustomerSearch === "function") {
+          const qEl = document.getElementById("q");
+          if (qEl) qEl.value = email;
+
+          window.doCustomerSearch().catch(console.error);
+        }
+      });
+    });
   }
   // CLOSE HANDLER
   document.addEventListener("click", function (e) {

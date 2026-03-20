@@ -1208,6 +1208,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     }
   }
 window.doPulseDashboard = doPulseDashboard;
+window.doCustomerSearch = doSearch;
   // --------------------------------------------------
   // Helpers
   // --------------------------------------------------
