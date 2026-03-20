@@ -1045,16 +1045,17 @@ function getCachedCustomerShellPayloadForQuery(q) {
     try {
       const direct = parseDirectLookupQuery(q);
 
-      let url = `${WORKER_BASE}/admin/search?q=${encodeURIComponent(q)}`;
-      if (direct) {
-        url += `&type=${encodeURIComponent(direct.type)}&id=${encodeURIComponent(direct.id)}`;
-      }
-
-      const r = await fetch(url, {
-        method: "GET",
-        credentials: "include",
-        signal
-      });
+const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    query: q
+  }),
+  signal
+});
 
       const j = await r.json().catch(() => null);
 
