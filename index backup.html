@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pulse Revenue Intelligence</title>
-<link rel="stylesheet" href="pulse.css?v=2026-03-21a">
+
   <style>
 :root{
   --brand:#A855F7;
@@ -66,13 +66,6 @@
   margin-bottom: 18px;
 }
 
-#pulse-modal-title {
-  font-size: 28px;
-  font-weight: 950;
-  letter-spacing: -.02em;
-  line-height: 1.05;
-}
-
 #pulse-modal-close {
   width: 36px;
   height: 36px;
@@ -85,10 +78,6 @@
   color: #fff;
   font-size: 18px;
   cursor: pointer;
-}
-
-#pulse-modal-close:hover {
-  background: rgba(255,255,255,.12);
 }
 .pulse-action-pill {
   display: inline-flex;
@@ -119,44 +108,6 @@
   font-size: 17px;
   font-weight: 800;
   color: rgba(255,255,255,.96);
-}
-
-.pulse-modal-body strong {
-  color: #ffffff;
-}
-
-.pulse-modal-body > div:first-child {
-  margin-bottom: 18px !important;
-}
-
-.pulse-modal-body > div:nth-child(2) {
-  color: rgba(255,255,255,.72) !important;
-  font-size: 13px !important;
-  font-weight: 800 !important;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  margin-bottom: 18px !important;
-}
-
-.pulse-modal-body > div:nth-child(2) strong {
-  color: #ffffff !important;
-  text-transform: none;
-  letter-spacing: 0;
-  margin-left: 4px;
-}
-
-.pulse-modal-body > div:last-child {
-  display: flex !important;
-  gap: 12px !important;
-  flex-wrap: wrap !important;
-  margin-top: 4px;
-}
-
-.pulse-modal-actions {
-  display: flex;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
 }
 .pulse-incident-strip-action {
   display: inline-flex;
@@ -203,8 +154,6 @@
 }
 .pulse-modal-action-btn {
   appearance: none;
-  flex: 1 1 auto;
-  min-width: 140px;
   border: none;
   border-radius: 14px;
   min-height: 46px;
@@ -2302,7 +2251,134 @@ button.aa-opp-card{
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
-  </style>
+/* === Modal Button Layout Fix === */
+
+.pulse-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pulse-modal-action-btn {
+  flex: 1 1 auto;
+  min-width: 140px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 900;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.pulse-modal-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+/* === Pulse Modal Polish === */
+
+.pulse-modal-box {
+  width: min(680px, calc(100vw - 32px));
+  padding: 28px 28px 20px;
+  border-radius: 24px;
+}
+
+.pulse-modal-header {
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+#pulse-modal-title {
+  font-size: 28px;
+  font-weight: 950;
+  letter-spacing: -.02em;
+  line-height: 1.05;
+}
+
+#pulse-modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+#pulse-modal-close:hover {
+  background: rgba(255,255,255,.12);
+}
+
+.pulse-modal-body {
+  font-size: 17px;
+  line-height: 1.62;
+  font-weight: 800;
+}
+
+.pulse-modal-body strong {
+  color: #ffffff;
+}
+
+.pulse-modal-body > div:first-child {
+  margin-bottom: 18px !important;
+}
+
+.pulse-modal-body > div:nth-child(2) {
+  color: rgba(255,255,255,.72) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  margin-bottom: 18px !important;
+}
+
+.pulse-modal-body > div:nth-child(2) strong {
+  color: #ffffff !important;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 4px;
+}
+
+.pulse-modal-body > div:last-child {
+  display: flex !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-top: 4px;
+}
+
+.pulse-modal-action-btn {
+  min-height: 46px;
+  padding: 12px 18px;
+  font-size: 14px;
+  border-radius: 14px;
+}
+
+.pulse-modal-action-btn[data-action="pause"] {
+  box-shadow: 0 10px 24px rgba(220,38,38,.22);
+}
+
+.pulse-modal-action-btn[data-action="retry"] {
+  box-shadow: 0 10px 24px rgba(124,58,237,.22);
+}
+
+.pulse-modal-action-btn[data-action="customers"] {
+  background: rgba(255,255,255,.05);
+}
+
+.pulse-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+#pulse-modal-ok {
+  min-width: 84px;
+  min-height: 42px;
+}
+</style>
   <link rel="stylesheet" href="./pulse.css?v=2026-03-18-303" />
 </head>
 
@@ -2456,52 +2532,71 @@ button.aa-opp-card{
 </div>
 
 <div id="searchFields">
-  <div class="field">
-    <label for="query">Search</label>
-    <input id="query" placeholder='Try: "find subscription for john@example.com"' />
+  <div class="field" style="grid-column:1 / span 2;">
+    <label for="q">Search</label>
+    <input id="q" placeholder="Find subscription for email, find order #12345, etc." />
   </div>
 
-  <div class="field">
-    <label for="scope">Scope</label>
-    <input id="scope" placeholder="orders, subscriptions, customers..." />
-  </div>
+<div style="display:flex; align-items:end; justify-content:flex-end; gap:10px;">
+  <button id="btnSearch" class="btn">Search</button>
+  
 
-  <div style="display:flex; gap:10px; align-items:end; justify-content:flex-end;">
-    <button id="btnSearch" class="btn">Search</button>
-    <button id="btnLoadMore" class="btn ghost">Load More</button>
-  </div>
+  <button id="btnLogout2" class="btn ghost">Logout</button>
+</div>
 </div>
 
+        <div style="grid-column:1 / -1; display:flex; justify-content:flex-start; gap:10px;">
+          <div id="statusLine" class="msg"></div>
+        </div>
       </div>
-      <div id="statusLine"></div>
+    </div>
+<div class="aa-card aa-recovery-opps is-hidden" id="radarRecoveryOpps">
+  <div class="aa-section-head">
+    <div class="aa-section-title">Top Recovery Opportunities</div>
+    <div class="aa-section-subtitle">Most recoverable subscribers right now</div>
+  </div>
+
+  <div class="aa-opps-grid" id="radarOppsGrid">
+
+    <div class="aa-opp-card aa-opp-placeholder">
+      <div class="aa-opp-title">Loading opportunities…</div>
     </div>
 
-      <div id="results" class="results"></div>
-    </div>
   </div>
 </div>
+<div id="results" class="results is-hidden"></div>
 
+<button id="btnRawJson" class="rawjson-toggle is-hidden">Toggle Raw JSON</button>
+</div>
+</div>
+</div>
+
+  <!-- Cache-bust MUST match modular build -->
+   <!-- Cache-bust MUST match modular build -->
+    <script src="./formatters.js?v=2026-03-18-370"></script>
+<script src="./renderCustomer.js?v=2026-03-18-370"></script>
+  <script src="./renderHealth.js?v=2026-03-18-370"></script>
+<script src="./renderActivity.js?v=2026-03-18-370"></script>
+   <script src="./renderRadar.js?v=2026-03-18-370"></script>
+   <script src="./renderPulse.js?v=2026-03-18-370"></script>
+          <script src="./main.js?v=2026-03-18-370"></script>
+<!-- Pulse Action Modal -->
 <div id="pulse-modal" class="pulse-modal hidden">
   <div class="pulse-modal-backdrop"></div>
+
   <div class="pulse-modal-box">
     <div class="pulse-modal-header">
       <div id="pulse-modal-title">Action</div>
-      <button id="pulse-modal-close" aria-label="Close">✕</button>
+      <button id="pulse-modal-close">×</button>
     </div>
+
     <div id="pulse-modal-body" class="pulse-modal-body"></div>
+
     <div class="pulse-modal-footer">
       <button id="pulse-modal-ok">OK</button>
     </div>
   </div>
 </div>
-
-  <script src="./formatters.js?v=2026-03-10f"></script>
-  <script src="./renderCustomer.js?v=2026-03-10f"></script>
-  <script src="./renderHealth.js?v=2026-03-10f"></script>
-  <script src="./renderActivity.js?v=2026-03-12a"></script>
-  <script src="./renderRadar.js?v=2026-03-14d"></script>
-  <script src="./renderPulse.js?v=2026-03-19f"></script>
-  <script src="./main.js?v=2026-03-19d"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
