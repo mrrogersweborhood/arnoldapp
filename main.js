@@ -1008,7 +1008,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
     const q =
       typeof searchOverride === "string"
         ? String(searchOverride).trim()
-        : String($("q")?.value || "").trim();
+        : String($("query")?.value || "").trim();
 
     if (!q) {
       setStatus("warn", "Enter a search query.");
@@ -1337,7 +1337,7 @@ $("btnLogout")?.addEventListener("click", (e) => {    e.preventDefault();
     }
   });
 
-  $("q")?.addEventListener("keydown", (e) => {
+  $("query")?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       doSearch().catch(console.error);
