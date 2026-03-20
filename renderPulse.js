@@ -244,8 +244,9 @@ const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
 const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
 
 const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
-const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;"").toUpperCase() === "HIGH").length;
-
+const highestPriorityCount = gateways.filter(
+  (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
+).length;
     const incidentStrip = activeIncident
       ? `
           <section class="card pulse-incident-strip">
