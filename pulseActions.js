@@ -163,31 +163,51 @@ modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
       return;
     }
 
-    if (action === "customers") {
-      fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`, {
-        method: "GET"
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          btn.disabled = false;
-          btn.textContent = originalLabel;
+if (action === "customers") {
+  fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`, {
+    method: "GET"
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
 
-          if (!data?.ok) {
-            showPulseBanner(`Failed to load affected customers for ${gateway}`, "error");
-            return;
-          }
+      if (!data?.ok) {
+        showPulseBanner(`Failed to load affected customers for ${gateway}`, "error");
+        return;
+      }
 
-          renderAffectedCustomersModal(gateway, data);
-        })
-        .catch((err) => {
-          console.error(err);
-          btn.disabled = false;
-          btn.textContent = originalLabel;
-          showPulseBanner("Failed to load affected customers", "error");
-        });
+      const customers = Array.isArray(data?.customers) ? data.customers : [];
 
-      return;
-    }
+      if (!customers.length) {
+        showPulseBanner(`No affected customers for ${gateway}`, "error");
+        return;
+      }
+
+      const firstEmail = customers[0]?.email;
+
+      if (!firstEmail) {
+        showPulseBanner("No valid customer email found", "error");
+        return;
+      }
+
+      closePulseModal();
+
+      if (typeof window.doSearch === "function") {
+        window.doSearch(firstEmail);
+      } else {
+        console.error("doSearch is not available on window");
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      showPulseBanner("Failed to load affected customers", "error");
+    });
+
+  return;
+}
 
     const endpoint =
       action === "pause"
