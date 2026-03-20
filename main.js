@@ -1220,6 +1220,7 @@ const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
     }
   }
 window.doPulseDashboard = doPulseDashboard;
+window.doSearch = doSearch;
 window.doCustomerSearch = doSearch;
 window.doCustomerSearchByEmail = function (email) {
   return doSearch(email);
