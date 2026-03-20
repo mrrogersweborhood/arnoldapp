@@ -659,19 +659,38 @@ function matchesAny(text, needles) {
 }
 
 async function handlePulseSummary(request, env) {
-  const revenue = await env.DB.prepare(`
-    SELECT SUM(amount) AS total FROM radar_incidents WHERE status = 'pending'
-  `).first();
+const pending = await env.DB.prepare(`
+  SELECT COUNT(*) AS count, SUM(amount) AS total
+  FROM radar_incidents
+  WHERE status = 'pending'
+`).first();
 
-  const incidentCount = await env.DB.prepare(`
-    SELECT COUNT(*) AS count FROM radar_incidents WHERE status = 'pending'
-  `).first();
+const paused = await env.DB.prepare(`
+  SELECT COUNT(*) AS count, SUM(amount) AS total
+  FROM radar_incidents
+  WHERE status = 'paused'
+`).first();
 
-  return json(request, {
-    ok: true,
-    recoverable_revenue: Number(revenue?.total || 0),
-    failed_subscriptions: Number(incidentCount?.count || 0)
-  });
+const retrying = await env.DB.prepare(`
+  SELECT COUNT(*) AS count, SUM(amount) AS total
+  FROM radar_incidents
+  WHERE status = 'retrying'
+`).first();
+
+return json(request, {
+  ok: true,
+
+  // existing (UNCHANGED behavior)
+  recoverable_revenue: Number(pending?.total || 0),
+  failed_subscriptions: Number(pending?.count || 0),
+
+  // NEW (additive only)
+  paused_subscriptions: Number(paused?.count || 0),
+  paused_revenue: Number(paused?.total || 0),
+
+  retrying_subscriptions: Number(retrying?.count || 0),
+  retrying_revenue: Number(retrying?.total || 0)
+});
 }
 
 async function handleFailureAnalysis(request, env) {
@@ -750,7 +769,13 @@ async function handleFailureAnalysis(request, env) {
     FROM radar_incidents
     WHERE status = 'pending'
   `).all();
+const pausedRows = await env.DB.prepare(`
+  SELECT gateway, amount FROM radar_incidents WHERE status = 'paused'
+`).all();
 
+const retryingRows = await env.DB.prepare(`
+  SELECT gateway, amount FROM radar_incidents WHERE status = 'retrying'
+`).all();
   const incidents = rows.results || [];
   const totalPending = incidents.length;
   const gateways = aggregateByGatewayForActions(incidents);
@@ -790,19 +815,26 @@ async function handleFailureAnalysis(request, env) {
       b.recoverable_revenue - a.recoverable_revenue
     );
 
-  return json(request, {
-    ok: true,
-    total_pending_incidents: totalPending,
-    gateways,
-    gateway_incidents: gatewayIncidents,
-    reasons,
-    top_gateway: gateways[0] || null,
-    top_reason: reasons[0] || null,
-    success_summary: {
-      last_success_at: lastSuccessAt,
-      recent_success_count: recentSuccessCount
-    }
-  });
+return json(request, {
+  ok: true,
+
+  // existing (UNCHANGED)
+  total_pending_incidents: totalPending,
+  gateways,
+  gateway_incidents: gatewayIncidents,
+  reasons,
+  top_gateway: gateways[0] || null,
+  top_reason: reasons[0] || null,
+
+  // NEW visibility
+  paused_total: (pausedRows.results || []).length,
+  retrying_total: (retryingRows.results || []).length,
+
+  success_summary: {
+    last_success_at: lastSuccessAt,
+    recent_success_count: recentSuccessCount
+  }
+});
 }
 
 function aggregateByGatewayForActions(incidents) {

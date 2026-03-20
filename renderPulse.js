@@ -233,10 +233,18 @@
       return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
     });
 
-    const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
-    const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
-    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
-    const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;
+const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
+const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
+
+// NEW
+const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
+const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
+
+const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
+
+const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+const highestPriorityCount = gateways.filter((item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH").length;"").toUpperCase() === "HIGH").length;
 
     const incidentStrip = activeIncident
       ? `
@@ -454,16 +462,29 @@
               <div class="pulse-stat-value">${esc(formatPulseInteger(failedSubscriptions))}</div>
               <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
             </div>
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">Pending incidents</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
-              <div class="pulse-stat-meta">Open incidents returned by failure analysis.</div>
-            </div>
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">High-priority gateways</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
-              <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
-            </div>
+<div class="pulse-stat-card pulse-stat-accent-neutral">
+  <div class="pulse-stat-label">Pending incidents</div>
+  <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
+  <div class="pulse-stat-meta">Open incidents returned by failure analysis.</div>
+</div>
+
+<div class="pulse-stat-card pulse-stat-accent-neutral">
+  <div class="pulse-stat-label">Retry queue</div>
+  <div class="pulse-stat-value">${esc(formatPulseInteger(retryingSubscriptions))}</div>
+  <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)}</div>
+</div>
+
+<div class="pulse-stat-card pulse-stat-accent-neutral">
+  <div class="pulse-stat-label">Paused incidents</div>
+  <div class="pulse-stat-value">${esc(formatPulseInteger(pausedSubscriptions))}</div>
+  <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
+</div>
+
+<div class="pulse-stat-card pulse-stat-accent-neutral">
+  <div class="pulse-stat-label">High-priority gateways</div>
+  <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
+  <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
+</div>
 
             ${scanDelta ? `
               <div class="pulse-stat-card pulse-stat-accent-neutral">
