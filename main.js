@@ -619,13 +619,21 @@ function getCachedCustomerShellPayloadForQuery(q) {
     if (!container) return;
 
     container.querySelectorAll(".aa-candidate-open-btn[data-open-query]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        const query = String(btn.getAttribute("data-open-query") || "").trim();
-        if (!query) return;
-const qEl = $("query");
-if (qEl) qEl.value = query;
-await doSearch(query);
-      });
+btn.addEventListener("click", async () => {
+  const query = String(btn.getAttribute("data-open-query") || "").trim();
+  if (!query) return;
+
+  const qEl = $("query");
+  if (qEl) qEl.value = query;
+
+  // 🔒 prevent race conditions
+  abortActiveSearch();
+
+  // 🔥 run ONE controlled search
+  setTimeout(() => {
+    doSearch(query).catch(console.error);
+  }, 0);
+});
     });
   }
 
