@@ -119,7 +119,7 @@ function showPulseBanner(message, type = "success") {
     const token = String(action || "").trim().toUpperCase();
 
     if (token === "RETRY_LATER") return "Pause Retries";
-    if (token === "RETRY_NOW") return "Retry Payments";
+if (token === "RETRY_NOW") return "Move to Retry Queue";
     if (token === "REVIEW_GATEWAY_STATUS") return "Review Gateway";
     if (token === "RETRY_SOFT") return "Soft Retry";
     if (token === "MONITOR") return "Monitor";

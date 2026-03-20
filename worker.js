@@ -58,7 +58,12 @@ export default {
       if (path === "/pulse/failure-analysis" && method === "GET") {
         return await handleFailureAnalysis(request, env);
       }
-
+if (path === "/pulse/affected-customers" && method === "GET") {
+  return await handleAffectedCustomers(request, env);
+}
+if (path === "/pulse/affected-customers" && method === "GET") {
+  return await handleAffectedCustomers(request, env);
+}
       return json(request, { ok: false, error: "Not found" }, 404);
     } catch (error) {
       return json(request, {
@@ -906,7 +911,52 @@ return json(request, {
   }
 });
 }
+async function handleAffectedCustomers(request, env) {
+  const url = new URL(request.url);
+  const gateway = normalizeGatewayName(url.searchParams.get("gateway"));
 
+  if (!gateway || gateway === "unknown") {
+    return json(request, {
+      ok: false,
+      error: "Valid gateway is required"
+    }, 400);
+  }
+
+  const rows = await env.DB.prepare(`
+    SELECT
+      id,
+      customer_email,
+      amount,
+      reason,
+      status,
+      order_id,
+      subscription_id,
+      detected_at,
+      gateway
+    FROM radar_incidents
+    WHERE status IN ('pending', 'paused', 'retrying')
+  `).all();
+
+  const incidents = (rows.results || []).filter(
+    (row) => normalizeGatewayName(row.gateway) === gateway
+  );
+
+  return json(request, {
+    ok: true,
+    gateway,
+    count: incidents.length,
+    customers: incidents.map((row) => ({
+      id: row.id,
+      email: row.customer_email,
+      amount: Number(row.amount || 0),
+      reason: row.reason,
+      status: row.status,
+      order_id: row.order_id,
+      subscription_id: row.subscription_id,
+      detected_at: row.detected_at
+    }))
+  });
+}
 function aggregateByGatewayForActions(incidents) {
   const totalPending = incidents.length;
   const map = new Map();
