@@ -6,7 +6,23 @@
 
 (() => {
   "use strict";
+function showPulseBanner(message, type = "success") {
+  let banner = document.getElementById("pulse-banner");
 
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "pulse-banner";
+    document.body.appendChild(banner);
+  }
+
+  banner.textContent = message;
+  banner.className = `pulse-banner pulse-banner-${type}`;
+  banner.style.display = "block";
+
+  setTimeout(() => {
+    banner.style.display = "none";
+  }, 3000);
+}
   function esc(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
@@ -588,10 +604,11 @@ const gateway = window.__pulseModalGateway || null;
 
 if (!gateway) {
   console.warn("No gateway context for modal action");
+  btn.disabled = false;
+  btn.textContent = originalLabel;
   alert("Missing gateway context");
   return;
 }
-
 if (action === "pause") {
   console.log("PAUSE AUTOMATIONS → Worker", gateway);
 
@@ -611,8 +628,7 @@ if (!data?.ok) {
   return;
 }
 
-alert(`Retries paused for ${gateway}.`);
-      closePulseModal();
+showPulseBanner(`Retries paused for ${gateway}.`, "success");      closePulseModal();
       if (typeof window.doPulseDashboard === "function") {
   window.doPulseDashboard();
 } else {
@@ -636,15 +652,17 @@ btn.textContent = originalLabel;
     body: JSON.stringify({ gateway })
   })
     .then((r) => r.json())
-    .then((data) => {
-      console.log("Retry response:", data);
+.then((data) => {
+  console.log("Retry response:", data);
+  btn.disabled = false;
+  btn.textContent = originalLabel;
 
-if (!data?.ok) {
-  alert(`Failed to move ${gateway} incidents into retry queue.`);
-  return;
-}
+  if (!data?.ok) {
+    alert(`Failed to move ${gateway} incidents into retry queue.`);
+    return;
+  }
 
-alert(`Moved ${gateway} incidents into retry queue.`);
+  showPulseBanner(`Moved ${gateway} incidents into retry queue.`, "success");
       closePulseModal();
       if (typeof window.doPulseDashboard === "function") {
   window.doPulseDashboard();
@@ -652,10 +670,12 @@ alert(`Moved ${gateway} incidents into retry queue.`);
   console.warn("Pulse refresh function not available");
 }
     })
-    .catch((err) => {
-      console.error("Retry error:", err);
-      alert("Error triggering retry");
-    });
+.catch((err) => {
+  console.error("Retry error:", err);
+  btn.disabled = false;
+  btn.textContent = originalLabel;
+  alert("Error triggering retry");
+});
 
 } else if (action === "customers") {
   console.log("VIEW CUSTOMERS → filter not implemented yet", gateway);

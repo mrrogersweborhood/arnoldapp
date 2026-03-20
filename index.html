@@ -2237,7 +2237,30 @@ button.aa-opp-card{
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* === Modal Button Layout Fix === */
 
+.pulse-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pulse-modal-action-btn {
+  flex: 1 1 auto;
+  min-width: 140px;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 900;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.pulse-modal-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
 </style>
   <link rel="stylesheet" href="./pulse.css?v=2026-03-18-303" />
 </head>
@@ -2433,13 +2456,13 @@ button.aa-opp-card{
 
   <!-- Cache-bust MUST match modular build -->
    <!-- Cache-bust MUST match modular build -->
-    <script src="./formatters.js?v=2026-03-18-369"></script>
-<script src="./renderCustomer.js?v=2026-03-18-369"></script>
-  <script src="./renderHealth.js?v=2026-03-18-369"></script>
-<script src="./renderActivity.js?v=2026-03-18-369"></script>
-   <script src="./renderRadar.js?v=2026-03-18-369"></script>
-   <script src="./renderPulse.js?v=2026-03-18-369"></script>
-          <script src="./main.js?v=2026-03-18-369"></script>
+    <script src="./formatters.js?v=2026-03-18-370"></script>
+<script src="./renderCustomer.js?v=2026-03-18-370"></script>
+  <script src="./renderHealth.js?v=2026-03-18-370"></script>
+<script src="./renderActivity.js?v=2026-03-18-370"></script>
+   <script src="./renderRadar.js?v=2026-03-18-370"></script>
+   <script src="./renderPulse.js?v=2026-03-18-370"></script>
+          <script src="./main.js?v=2026-03-18-370"></script>
 <!-- Pulse Action Modal -->
 <div id="pulse-modal" class="pulse-modal hidden">
   <div class="pulse-modal-backdrop"></div>
