@@ -125,11 +125,13 @@
 
         closePulseModal();
 
-        if (typeof window.doCustomerSearch === "function") {
-          const qEl = document.getElementById("q");
-          if (qEl) qEl.value = email;
+        if (typeof window.doCustomerSearchByEmail === "function") {
+          window.doCustomerSearchByEmail(email).catch(console.error);
+          return;
+        }
 
-          window.doCustomerSearch().catch(console.error);
+        if (typeof window.doCustomerSearch === "function") {
+          window.doCustomerSearch(email).catch(console.error);
         }
       });
     });

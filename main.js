@@ -1002,10 +1002,13 @@ function getCachedCustomerShellPayloadForQuery(q) {
     renderRawJson();
   }
 
-  async function doSearch() {
+  async function doSearch(searchOverride) {
     abortActiveSearch();
 
-    const q = String($("q")?.value || "").trim();
+    const q =
+      typeof searchOverride === "string"
+        ? String(searchOverride).trim()
+        : String($("q")?.value || "").trim();
 
     if (!q) {
       setStatus("warn", "Enter a search query.");
@@ -1209,6 +1212,9 @@ function getCachedCustomerShellPayloadForQuery(q) {
   }
 window.doPulseDashboard = doPulseDashboard;
 window.doCustomerSearch = doSearch;
+window.doCustomerSearchByEmail = function (email) {
+  return doSearch(email);
+};
   // --------------------------------------------------
   // Helpers
   // --------------------------------------------------
