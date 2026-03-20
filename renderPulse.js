@@ -251,6 +251,7 @@ function showPulseBanner(message, type = "success") {
 
 const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
 const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
+const executionMode = String(summary?.execution_mode || "test").toUpperCase();
 
 // NEW
 const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
@@ -465,7 +466,9 @@ const highestPriorityCount = gateways.filter(
               <div class="pulse-title">Revenue recovery dashboard</div>
               <div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
             </div>
-            <!-- removed endpoint debug row for production UI -->
+            <div class="pulse-priority-pill ${executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium"}">
+              ${esc(executionMode)} MODE
+            </div>
           </div>
 
           <div class="pulse-stat-grid">

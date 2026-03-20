@@ -738,8 +738,23 @@ async function handlePulseSummary(request, env) {
     Number(paused?.total || 0) +
     Number(retrying?.total || 0);
 
+  const storeModesResult = await env.DB.prepare(`
+    SELECT execution_mode
+    FROM stores
+    ORDER BY id ASC
+  `).all();
+
+  const storeModes = Array.isArray(storeModesResult?.results)
+    ? storeModesResult.results
+        .map((row) => (asText(row.execution_mode) || "test").toLowerCase())
+        .filter(Boolean)
+    : [];
+
+  const executionMode = storeModes.includes("live") ? "live" : "test";
+
   return json(request, {
     ok: true,
+    execution_mode: executionMode,
     recoverable_revenue: totalFailedRevenue,
     failed_subscriptions: totalFailedCount,
     paused_subscriptions: Number(paused?.count || 0),
