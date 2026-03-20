@@ -1207,7 +1207,7 @@ function getCachedCustomerShellPayloadForQuery(q) {
       setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
     }
   }
-
+window.doPulseDashboard = doPulseDashboard;
   // --------------------------------------------------
   // Helpers
   // --------------------------------------------------

@@ -148,11 +148,11 @@ async function handlePauseGatewayAction(request, env) {
   const body = await safeReadJson(request);
   const gateway = normalizeGatewayName(body?.gateway);
   const incidentIds = normalizeIncidentIds(body?.incident_ids);
-  const targetIds = await findIncidentIdsForAction(env, {
-    gateway,
-    allowedStatuses: ["pending"],
-    incidentIds
-  });
+const targetIds = await findIncidentIdsForAction(env, {
+  gateway,
+  allowedStatuses: ["pending", "retrying"],
+  incidentIds
+});
 
   if (!gateway || gateway === "unknown") {
     return json(request, {
@@ -659,40 +659,44 @@ function matchesAny(text, needles) {
 }
 
 async function handlePulseSummary(request, env) {
-const pending = await env.DB.prepare(`
-  SELECT COUNT(*) AS count, SUM(amount) AS total
-  FROM radar_incidents
-  WHERE status = 'pending'
-`).first();
+  const pending = await env.DB.prepare(`
+    SELECT COUNT(*) AS count, SUM(amount) AS total
+    FROM radar_incidents
+    WHERE status = 'pending'
+  `).first();
 
-const paused = await env.DB.prepare(`
-  SELECT COUNT(*) AS count, SUM(amount) AS total
-  FROM radar_incidents
-  WHERE status = 'paused'
-`).first();
+  const paused = await env.DB.prepare(`
+    SELECT COUNT(*) AS count, SUM(amount) AS total
+    FROM radar_incidents
+    WHERE status = 'paused'
+  `).first();
 
-const retrying = await env.DB.prepare(`
-  SELECT COUNT(*) AS count, SUM(amount) AS total
-  FROM radar_incidents
-  WHERE status = 'retrying'
-`).first();
+  const retrying = await env.DB.prepare(`
+    SELECT COUNT(*) AS count, SUM(amount) AS total
+    FROM radar_incidents
+    WHERE status = 'retrying'
+  `).first();
 
-return json(request, {
-  ok: true,
+  const totalFailedCount =
+    Number(pending?.count || 0) +
+    Number(paused?.count || 0) +
+    Number(retrying?.count || 0);
 
-  // existing (UNCHANGED behavior)
-  recoverable_revenue: Number(pending?.total || 0),
-  failed_subscriptions: Number(pending?.count || 0),
+  const totalFailedRevenue =
+    Number(pending?.total || 0) +
+    Number(paused?.total || 0) +
+    Number(retrying?.total || 0);
 
-  // NEW (additive only)
-  paused_subscriptions: Number(paused?.count || 0),
-  paused_revenue: Number(paused?.total || 0),
-
-  retrying_subscriptions: Number(retrying?.count || 0),
-  retrying_revenue: Number(retrying?.total || 0)
-});
+  return json(request, {
+    ok: true,
+    recoverable_revenue: totalFailedRevenue,
+    failed_subscriptions: totalFailedCount,
+    paused_subscriptions: Number(paused?.count || 0),
+    paused_revenue: Number(paused?.total || 0),
+    retrying_subscriptions: Number(retrying?.count || 0),
+    retrying_revenue: Number(retrying?.total || 0)
+  });
 }
-
 async function handleFailureAnalysis(request, env) {
   let lastSuccessAt = null;
   let recentSuccessCount = 0;
@@ -760,15 +764,15 @@ async function handleFailureAnalysis(request, env) {
     } catch (_) {}
   }
 
-  const rows = await env.DB.prepare(`
-    SELECT
-      gateway,
-      reason,
-      amount,
-      customer_email
-    FROM radar_incidents
-    WHERE status = 'pending'
-  `).all();
+const rows = await env.DB.prepare(`
+  SELECT
+    gateway,
+    reason,
+    amount,
+    customer_email
+  FROM radar_incidents
+  WHERE status IN ('pending', 'paused', 'retrying')
+`).all();
 const pausedRows = await env.DB.prepare(`
   SELECT gateway, amount FROM radar_incidents WHERE status = 'paused'
 `).all();

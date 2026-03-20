@@ -464,9 +464,9 @@ const highestPriorityCount = gateways.filter(
               <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
             </div>
 <div class="pulse-stat-card pulse-stat-accent-neutral">
-  <div class="pulse-stat-label">Pending incidents</div>
+  <div class="pulse-stat-label">Active incidents</div>
   <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
-  <div class="pulse-stat-meta">Open incidents returned by failure analysis.</div>
+  <div class="pulse-stat-meta">Incidents currently in retry or paused state.</div>
 </div>
 
 <div class="pulse-stat-card pulse-stat-accent-neutral">
@@ -544,14 +544,17 @@ const highestPriorityCount = gateways.filter(
     if (!modal) return;
 
     document.getElementById("pulse-modal-title").textContent = title;
-    document.getElementById("pulse-modal-body").innerHTML = `
-      <div style="margin-bottom:16px;">${body}</div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="pulse-modal-action-btn" data-action="pause">Pause Automations</button>
-        <button class="pulse-modal-action-btn" data-action="retry">Retry Payments</button>
-        <button class="pulse-modal-action-btn" data-action="customers">View Customers</button>
-      </div>
-    `;
+document.getElementById("pulse-modal-body").innerHTML = `
+  <div style="margin-bottom:16px;">${body}</div>
+  <div style="font-size:14px; color:#5b5670; margin-bottom:16px;">
+    Gateway: <strong>${esc(window.__pulseModalGateway || "unknown")}</strong>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button class="pulse-modal-action-btn" data-action="pause">Pause Retries</button>
+    <button class="pulse-modal-action-btn" data-action="retry">Move to Retry Queue</button>
+    <button class="pulse-modal-action-btn" data-action="customers">View Customers</button>
+  </div>
+`;
 
     modal.classList.remove("hidden");
   }
@@ -598,14 +601,18 @@ if (action === "pause") {
     .then((data) => {
       console.log("Pause response:", data);
 
-      if (!data?.ok) {
-        alert("Failed to pause retries");
-        return;
-      }
+if (!data?.ok) {
+  alert(`Failed to pause retries for ${gateway}.`);
+  return;
+}
 
-      alert("Retries paused successfully");
+alert(`Retries paused for ${gateway}.`);
       closePulseModal();
-      window.location.reload();
+      if (typeof window.doPulseDashboard === "function") {
+  window.doPulseDashboard();
+} else {
+  console.warn("Pulse refresh function not available");
+}
     })
     .catch((err) => {
       console.error("Pause error:", err);
@@ -624,14 +631,18 @@ if (action === "pause") {
     .then((data) => {
       console.log("Retry response:", data);
 
-      if (!data?.ok) {
-        alert("Failed to queue retries");
-        return;
-      }
+if (!data?.ok) {
+  alert(`Failed to move ${gateway} incidents into retry queue.`);
+  return;
+}
 
-      alert("Retry queued successfully");
+alert(`Moved ${gateway} incidents into retry queue.`);
       closePulseModal();
-      window.location.reload();
+      if (typeof window.doPulseDashboard === "function") {
+  window.doPulseDashboard();
+} else {
+  console.warn("Pulse refresh function not available");
+}
     })
     .catch((err) => {
       console.error("Retry error:", err);
@@ -640,7 +651,7 @@ if (action === "pause") {
 
 } else if (action === "customers") {
   console.log("VIEW CUSTOMERS → filter not implemented yet", gateway);
-  alert("Customer filtering coming next");
+  alert(`Customer filtering for ${gateway} is the next pass.`);
 }
   });
 
