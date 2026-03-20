@@ -580,7 +580,10 @@ document.getElementById("pulse-modal-body").innerHTML = `
     if (!btn) return;
 
     const action = String(btn.getAttribute("data-action") || "").trim();
-
+// --- UI: lock button + show loading state ---
+btn.disabled = true;
+const originalLabel = btn.textContent;
+btn.textContent = "Processing...";
 const gateway = window.__pulseModalGateway || null;
 
 if (!gateway) {
@@ -600,7 +603,9 @@ if (action === "pause") {
     .then((r) => r.json())
     .then((data) => {
       console.log("Pause response:", data);
-
+// --- UI: restore button ---
+btn.disabled = false;
+btn.textContent = originalLabel;
 if (!data?.ok) {
   alert(`Failed to pause retries for ${gateway}.`);
   return;
@@ -616,6 +621,9 @@ alert(`Retries paused for ${gateway}.`);
     })
     .catch((err) => {
       console.error("Pause error:", err);
+// --- UI: restore button ---
+btn.disabled = false;
+btn.textContent = originalLabel;
       alert("Error pausing retries");
     });
 
