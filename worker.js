@@ -148,12 +148,36 @@ async function handlePauseGatewayAction(request, env) {
   const body = await safeReadJson(request);
   const gateway = normalizeGatewayName(body?.gateway);
   const incidentIds = normalizeIncidentIds(body?.incident_ids);
-const targetIds = await findIncidentIdsForAction(env, {
-  gateway,
-  allowedStatuses: ["pending", "retrying"],
-  incidentIds
-});
 
+  const store = await env.DB.prepare(`
+    SELECT store_id, execution_mode
+    FROM stores
+    WHERE LOWER(TRIM(gateway)) = ?
+    LIMIT 1
+  `)
+    .bind(gateway)
+    .first();
+
+  const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  if (executionMode !== "live") {
+    return json(request, {
+      ok: true,
+      mode: executionMode || "test",
+      simulated: true,
+      gateway,
+      updated_status: "paused",
+      affected_count: 0,
+      incident_ids: [],
+      message: `TEST MODE: Pause simulated for ${gateway}. No live records were changed.`
+    });
+  }
+
+  const targetIds = await findIncidentIdsForAction(env, {
+    gateway,
+    allowedStatuses: ["pending", "retrying"],
+    incidentIds
+  });
   if (!gateway || gateway === "unknown") {
     return json(request, {
       ok: false,
@@ -186,6 +210,31 @@ async function handleRetryGatewayAction(request, env) {
   const body = await safeReadJson(request);
   const gateway = normalizeGatewayName(body?.gateway);
   const incidentIds = normalizeIncidentIds(body?.incident_ids);
+
+  const store = await env.DB.prepare(`
+    SELECT store_id, execution_mode
+    FROM stores
+    WHERE LOWER(TRIM(gateway)) = ?
+    LIMIT 1
+  `)
+    .bind(gateway)
+    .first();
+
+  const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  if (executionMode !== "live") {
+    return json(request, {
+      ok: true,
+      mode: executionMode || "test",
+      simulated: true,
+      gateway,
+      updated_status: "retrying",
+      affected_count: 0,
+      incident_ids: [],
+      message: `TEST MODE: Retry simulated for ${gateway}. No live records were changed.`
+    });
+  }
+
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
     allowedStatuses: ["pending", "paused"],
@@ -302,7 +351,8 @@ async function loadActiveStores(env) {
       store_url,
       gateway,
       gateway_activity_window_hours,
-      timezone
+      timezone,
+      execution_mode
     FROM stores
     ORDER BY id ASC
   `).all();
@@ -310,7 +360,8 @@ async function loadActiveStores(env) {
   return (result.results || []).map((row) => ({
     ...row,
     gateway_activity_window_hours: normalizeStoreWindowHours(row.gateway_activity_window_hours),
-    timezone: asText(row.timezone) || "UTC"
+    timezone: asText(row.timezone) || "UTC",
+    execution_mode: (asText(row.execution_mode) || "test").toLowerCase()
   }));
 }
 

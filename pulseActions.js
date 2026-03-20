@@ -117,7 +117,14 @@
           return;
         }
 
-        showPulseBanner(`Updated ${gateway} successfully`, "success");
+        if (data?.simulated === true) {
+          showPulseBanner(
+            data?.message || `TEST MODE: Simulated action for ${gateway}. No live records were changed.`,
+            "success"
+          );
+        } else {
+          showPulseBanner(`Updated ${gateway} successfully`, "success");
+        }
 
         closePulseModal();
 
