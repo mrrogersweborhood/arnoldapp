@@ -622,9 +622,9 @@ function getCachedCustomerShellPayloadForQuery(q) {
       btn.addEventListener("click", async () => {
         const query = String(btn.getAttribute("data-open-query") || "").trim();
         if (!query) return;
-        const qEl = $("q");
-        if (qEl) qEl.value = query;
-        await doSearch();
+const qEl = $("query");
+if (qEl) qEl.value = query;
+await doSearch(query);
       });
     });
   }
