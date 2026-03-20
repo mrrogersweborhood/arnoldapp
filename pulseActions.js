@@ -118,23 +118,20 @@
       </div>
     `;
     // CLICK HANDLER: open customer in full UI
-    modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
-      rowEl.addEventListener("click", () => {
-        const email = rowEl.getAttribute("data-email");
-        if (!email) return;
+modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
+  rowEl.addEventListener("click", () => {
+    const email = rowEl.getAttribute("data-email");
+    if (!email) return;
 
-        closePulseModal();
+    closePulseModal();
 
-        if (typeof window.doCustomerSearchByEmail === "function") {
-          window.doCustomerSearchByEmail(email).catch(console.error);
-          return;
-        }
-
-        if (typeof window.doCustomerSearch === "function") {
-          window.doCustomerSearch(email).catch(console.error);
-        }
-      });
-    });
+    if (typeof window.doSearch === "function") {
+      window.doSearch(email);
+    } else {
+      console.error("doSearch is not available on window");
+    }
+  });
+});
   }
   // CLOSE HANDLER
   document.addEventListener("click", function (e) {
