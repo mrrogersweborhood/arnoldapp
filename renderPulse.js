@@ -362,16 +362,21 @@
             String(window.__pulseAffectedGateway || "").toLowerCase() ===
             String(gateway?.gateway || "").toLowerCase();
 
-                    const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
+                             const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
             ? window.__pulseAffectedCustomers
             : [];
+
+          const MAX_VISIBLE = 3;
+          const visibleCustomers = inlineCustomers.slice(0, MAX_VISIBLE);
+          const hiddenCount = inlineCustomers.length - visibleCustomers.length;
 
           const inlineCustomersTable = inlineCustomers.length
             ? `
                 <div class="pulse-message-block">
                   <div class="pulse-message-label">Affected Customers</div>
+
                   <div class="pulse-customer-list">
-                    ${inlineCustomers.map((row) => `
+                    ${visibleCustomers.map((row) => `
                       <div
                         data-email="${esc(row?.email || "")}"
                         class="pulse-customer-item"
@@ -394,6 +399,12 @@
                       </div>
                     `).join("")}
                   </div>
+
+                  ${hiddenCount > 0 ? `
+                    <div class="pulse-view-all" style="margin-top:8px; font-size:12px; font-weight:800; color:#1d4ed8; cursor:pointer;">
+                      View all (${inlineCustomers.length})
+                    </div>
+                  ` : ""}
                 </div>
               `
             : "";
