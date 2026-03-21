@@ -357,8 +357,71 @@
       ? gateways.map((gateway) => {
           const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
           const priorityToken = getPulsePriorityToken(priorityLabel);
+
+          const isActiveGateway =
+            String(window.__pulseAffectedGateway || "").toLowerCase() ===
+            String(gateway?.gateway || "").toLowerCase();
+
+          const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
+            ? window.__pulseAffectedCustomers
+            : [];
+
+          const inlineCustomersTable = inlineCustomers.length
+            ? `
+                <div class="pulse-message-block" style="margin-top:14px;">
+                  <div class="pulse-message-label">Affected Customers</div>
+                  <div class="aa-table-wrap" style="margin-top:10px;">
+                    <table class="aa-table pulse-customers-table" style="min-width:760px; table-layout:fixed;">
+                      <thead>
+                        <tr>
+                          <th style="text-align:left;">Customer</th>
+                          <th style="text-align:right;">Amount</th>
+                          <th style="text-align:left;">Reason</th>
+                          <th style="text-align:left;">Status</th>
+                          <th style="text-align:left;">Order</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${inlineCustomers.map((row) => `
+                          <tr
+                            data-email="${esc(row?.email || "")}"
+                            class="pulse-customer-row"
+                            style="cursor:pointer;"
+                          >
+                            <td>
+                              <div style="font-weight:600;">${esc(row?.email || "—")}</div>
+                            </td>
+                            <td style="text-align:right; font-weight:600;">
+                              ${esc(formatPulseMoney(row?.amount))}
+                            </td>
+                            <td>
+                              ${renderPulseReasonPill(row?.reason || "—")}
+                            </td>
+                            <td>
+                              <span style="
+                                display:inline-block;
+                                padding:4px 10px;
+                                border-radius:999px;
+                                font-size:12px;
+                                font-weight:700;
+                                letter-spacing:.02em;
+                                background:rgba(255,255,255,.08);
+                              ">
+                                ${esc(String(row?.status || "").toUpperCase() || "—")}
+                              </span>
+                            </td>
+                            <td>${esc(row?.order_id || "—")}</td>
+                          </tr>
+                        `).join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `
+            : "";
+
           return `
-            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+<article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
               <div class="pulse-gateway-top">
                 <div>
                   <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
@@ -400,6 +463,8 @@
                 <div class="pulse-message-label">Playbook</div>
                 <div class="pulse-message-text">${esc(String(gateway?.playbook || "No playbook returned."))}</div>
               </div>
+
+              ${inlineCustomersTable}
             </article>
           `;
         }).join("")
@@ -415,75 +480,7 @@
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
 
-    // 🆕 Inline affected customers section
-    const affectedCustomers = Array.isArray(window.__pulseAffectedCustomers)
-      ? window.__pulseAffectedCustomers
-      : [];
-
-    const affectedGateway = window.__pulseAffectedGateway || null;
-
-    const affectedCustomersSection = affectedCustomers.length
-      ? `
-    <section class="card pulse-section">
-      <div class="pulse-section-head">
-        <div>
-          <div class="pulse-section-title">Affected Customers</div>
-          <div class="pulse-section-subtitle">
-            ${esc(String(affectedGateway || "").toUpperCase())} gateway
-          </div>
-        </div>
-      </div>
-
-      <div class="aa-table-wrap" style="margin-top:10px;">
-        <table class="aa-table pulse-customers-table" style="min-width:760px; table-layout:fixed;">
-          <thead>
-            <tr>
-              <th style="text-align:left;">Customer</th>
-              <th style="text-align:right;">Amount</th>
-              <th style="text-align:left;">Reason</th>
-              <th style="text-align:left;">Status</th>
-              <th style="text-align:left;">Order</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${affectedCustomers.map((row) => `
-              <tr
-                data-email="${esc(row?.email || "")}"
-                class="pulse-customer-row"
-                style="cursor:pointer;"
-              >
-                <td>
-                  <div style="font-weight:600;">${esc(row?.email || "—")}</div>
-                </td>
-                <td style="text-align:right; font-weight:600;">
-                  ${esc(formatPulseMoney(row?.amount))}
-                </td>
-                <td>
-                  ${renderPulseReasonPill(row?.reason || "—")}
-                </td>
-                <td>
-                  <span style="
-                    display:inline-block;
-                    padding:4px 10px;
-                    border-radius:999px;
-                    font-size:12px;
-                    font-weight:700;
-                    letter-spacing:.02em;
-                    background:rgba(255,255,255,.08);
-                  ">
-                    ${esc(String(row?.status || "").toUpperCase() || "—")}
-                  </span>
-                </td>
-                <td>${esc(row?.order_id || "—")}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  `
-      : "";
-
+    // affected customers now render inline under the active gateway card
     const repeatOffenderSection = repeatOffenders.length
       ? `
           <section class="card pulse-section">
@@ -603,8 +600,7 @@
           </div>
         </section>
 
-        ${affectedCustomersSection}
-        ${repeatOffenderSection}
+           ${repeatOffenderSection}
 
         <section class="card pulse-section pulse-reasons-card">
           <div class="pulse-section-head" style="padding:16px 16px 0;">
