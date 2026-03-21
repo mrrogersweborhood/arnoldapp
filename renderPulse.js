@@ -412,7 +412,52 @@ const highestPriorityCount = gateways.filter(
           </div>
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
+// 🆕 Inline affected customers section
+const affectedCustomers = Array.isArray(window.__pulseAffectedCustomers)
+  ? window.__pulseAffectedCustomers
+  : [];
 
+const affectedGateway = window.__pulseAffectedGateway || null;
+
+const affectedCustomersSection = affectedCustomers.length
+  ? `
+    <section class="card pulse-section">
+      <div class="pulse-section-head">
+        <div>
+          <div class="pulse-section-title">Affected Customers</div>
+          <div class="pulse-section-subtitle">
+            ${esc(String(affectedGateway || "").toUpperCase())} gateway
+          </div>
+        </div>
+      </div>
+
+      <div class="aa-table-wrap">
+        <table class="aa-table" style="min-width:760px; table-layout:fixed;">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Amount</th>
+              <th>Reason</th>
+              <th>Status</th>
+              <th>Order</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${affectedCustomers.map((row) => `
+              <tr data-email="${esc(row?.email || "")}" style="cursor:pointer;">
+                <td>${esc(row?.email || "—")}</td>
+                <td>${esc(formatPulseMoney(row?.amount))}</td>
+                <td>${esc(row?.reason || "—")}</td>
+                <td>${esc(String(row?.status || "").toUpperCase())}</td>
+                <td>${esc(row?.order_id || "—")}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  `
+  : "";
     const repeatOffenderSection = repeatOffenders.length
       ? `
           <section class="card pulse-section">
@@ -532,7 +577,8 @@ const highestPriorityCount = gateways.filter(
           </div>
         </section>
 
-        ${repeatOffenderSection}
+        ${affectedCustomersSection}
+${repeatOffenderSection}
 
         <section class="card pulse-section pulse-reasons-card">
           <div class="pulse-section-head" style="padding:16px 16px 0;">
@@ -555,6 +601,18 @@ const highestPriorityCount = gateways.filter(
   }
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
+// 🆕 click handler for inline affected customers
+document.addEventListener("click", function (e) {
+  const row = e.target.closest("tr[data-email]");
+  if (!row) return;
+
+  const email = row.getAttribute("data-email");
+  if (!email) return;
+
+  if (typeof window.doSearch === "function") {
+    window.doSearch(email);
+  }
+});
   window.renderPulseDashboard = renderPulseDashboard;
 })();
 // 🔴 renderPulse.js

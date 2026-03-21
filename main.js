@@ -383,7 +383,18 @@ async function refreshSession() {
       </section>
     `;
   }
+// 🆕 Pulse inline affected customers state
+window.__pulseAffectedCustomers = null;
+window.__pulseAffectedGateway = null;
 
+window.setPulseAffectedCustomers = function (gateway, data) {
+  window.__pulseAffectedGateway = gateway;
+  window.__pulseAffectedCustomers = Array.isArray(data?.customers) ? data.customers : [];
+
+  if (typeof window.doPulseDashboard === "function") {
+    window.doPulseDashboard();
+  }
+};
   function renderPulseDashboardSafe(analysis, summary) {
     if (typeof window.renderPulseDashboard === "function") {
       return window.renderPulseDashboard(analysis, summary);

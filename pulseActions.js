@@ -184,20 +184,13 @@ if (action === "customers") {
         return;
       }
 
-      const firstEmail = customers[0]?.email;
+closePulseModal();
 
-      if (!firstEmail) {
-        showPulseBanner("No valid customer email found", "error");
-        return;
-      }
-
-      closePulseModal();
-
-      if (typeof window.doSearch === "function") {
-        window.doSearch(firstEmail);
-      } else {
-        console.error("doSearch is not available on window");
-      }
+if (typeof window.setPulseAffectedCustomers === "function") {
+  window.setPulseAffectedCustomers(gateway, data);
+} else {
+  console.error("setPulseAffectedCustomers is not available on window");
+}
     })
     .catch((err) => {
       console.error(err);
