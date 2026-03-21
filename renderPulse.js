@@ -6,23 +6,25 @@
 
 (() => {
   "use strict";
-function showPulseBanner(message, type = "success") {
-  let banner = document.getElementById("pulse-banner");
 
-  if (!banner) {
-    banner = document.createElement("div");
-    banner.id = "pulse-banner";
-    document.body.appendChild(banner);
+  function showPulseBanner(message, type = "success") {
+    let banner = document.getElementById("pulse-banner");
+
+    if (!banner) {
+      banner = document.createElement("div");
+      banner.id = "pulse-banner";
+      document.body.appendChild(banner);
+    }
+
+    banner.textContent = message;
+    banner.className = `pulse-banner pulse-banner-${type}`;
+    banner.style.display = "block";
+
+    setTimeout(() => {
+      banner.style.display = "none";
+    }, 3000);
   }
 
-  banner.textContent = message;
-  banner.className = `pulse-banner pulse-banner-${type}`;
-  banner.style.display = "block";
-
-  setTimeout(() => {
-    banner.style.display = "none";
-  }, 3000);
-}
   function esc(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
@@ -119,7 +121,7 @@ function showPulseBanner(message, type = "success") {
     const token = String(action || "").trim().toUpperCase();
 
     if (token === "RETRY_LATER") return "Pause Retries";
-if (token === "RETRY_NOW") return "Move to Retry Queue";
+    if (token === "RETRY_NOW") return "Move to Retry Queue";
     if (token === "REVIEW_GATEWAY_STATUS") return "Review Gateway";
     if (token === "RETRY_SOFT") return "Soft Retry";
     if (token === "MONITOR") return "Monitor";
@@ -249,21 +251,21 @@ if (token === "RETRY_NOW") return "Move to Retry Queue";
       return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
     });
 
-const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
-const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
-const executionMode = String(summary?.execution_mode || "test").toUpperCase();
+    const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
+    const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
+    const executionMode = String(summary?.execution_mode || "test").toUpperCase();
 
-// NEW
-const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
-const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
+    const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
+    const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
 
-const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
-const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
+    const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+    const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
 
-const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
-const highestPriorityCount = gateways.filter(
-  (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
-).length;
+    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+    const highestPriorityCount = gateways.filter(
+      (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
+    ).length;
+
     const incidentStrip = activeIncident
       ? `
           <section class="card pulse-incident-strip">
@@ -380,7 +382,7 @@ const highestPriorityCount = gateways.filter(
                 </div>
               </div>
 
-              <div 
+              <div
                 class="pulse-action-pill"
                 data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
                 data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
@@ -412,15 +414,16 @@ const highestPriorityCount = gateways.filter(
           </div>
         `).join("")
       : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
-// 🆕 Inline affected customers section
-const affectedCustomers = Array.isArray(window.__pulseAffectedCustomers)
-  ? window.__pulseAffectedCustomers
-  : [];
 
-const affectedGateway = window.__pulseAffectedGateway || null;
+    // 🆕 Inline affected customers section
+    const affectedCustomers = Array.isArray(window.__pulseAffectedCustomers)
+      ? window.__pulseAffectedCustomers
+      : [];
 
-const affectedCustomersSection = affectedCustomers.length
-  ? `
+    const affectedGateway = window.__pulseAffectedGateway || null;
+
+    const affectedCustomersSection = affectedCustomers.length
+      ? `
     <section class="card pulse-section">
       <div class="pulse-section-head">
         <div>
@@ -431,24 +434,46 @@ const affectedCustomersSection = affectedCustomers.length
         </div>
       </div>
 
-      <div class="aa-table-wrap">
-        <table class="aa-table" style="min-width:760px; table-layout:fixed;">
+      <div class="aa-table-wrap" style="margin-top:10px;">
+        <table class="aa-table pulse-customers-table" style="min-width:760px; table-layout:fixed;">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Amount</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Order</th>
+              <th style="text-align:left;">Customer</th>
+              <th style="text-align:right;">Amount</th>
+              <th style="text-align:left;">Reason</th>
+              <th style="text-align:left;">Status</th>
+              <th style="text-align:left;">Order</th>
             </tr>
           </thead>
           <tbody>
             ${affectedCustomers.map((row) => `
-              <tr data-email="${esc(row?.email || "")}" style="cursor:pointer;">
-                <td>${esc(row?.email || "—")}</td>
-                <td>${esc(formatPulseMoney(row?.amount))}</td>
-                <td>${esc(row?.reason || "—")}</td>
-                <td>${esc(String(row?.status || "").toUpperCase())}</td>
+              <tr
+                data-email="${esc(row?.email || "")}"
+                class="pulse-customer-row"
+                style="cursor:pointer;"
+              >
+                <td>
+                  <div style="font-weight:600;">${esc(row?.email || "—")}</div>
+                </td>
+                <td style="text-align:right; font-weight:600;">
+                  ${esc(formatPulseMoney(row?.amount))}
+                </td>
+                <td>
+                  ${renderPulseReasonPill(row?.reason || "—")}
+                </td>
+                <td>
+                  <span style="
+                    display:inline-block;
+                    padding:4px 10px;
+                    border-radius:999px;
+                    font-size:12px;
+                    font-weight:700;
+                    letter-spacing:.02em;
+                    background:rgba(255,255,255,.08);
+                  ">
+                    ${esc(String(row?.status || "").toUpperCase() || "—")}
+                  </span>
+                </td>
                 <td>${esc(row?.order_id || "—")}</td>
               </tr>
             `).join("")}
@@ -457,7 +482,8 @@ const affectedCustomersSection = affectedCustomers.length
       </div>
     </section>
   `
-  : "";
+      : "";
+
     const repeatOffenderSection = repeatOffenders.length
       ? `
           <section class="card pulse-section">
@@ -527,29 +553,29 @@ const affectedCustomersSection = affectedCustomers.length
               <div class="pulse-stat-value">${esc(formatPulseInteger(failedSubscriptions))}</div>
               <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
             </div>
-<div class="pulse-stat-card pulse-stat-accent-neutral">
-  <div class="pulse-stat-label">Active incidents</div>
-  <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
-  <div class="pulse-stat-meta">Incidents currently in retry or paused state.</div>
-</div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Active incidents</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
+              <div class="pulse-stat-meta">Incidents currently in retry or paused state.</div>
+            </div>
 
-<div class="pulse-stat-card pulse-stat-accent-neutral">
-  <div class="pulse-stat-label">Retry queue</div>
-  <div class="pulse-stat-value">${esc(formatPulseInteger(retryingSubscriptions))}</div>
-  <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)}</div>
-</div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Retry queue</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(retryingSubscriptions))}</div>
+              <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)}</div>
+            </div>
 
-<div class="pulse-stat-card pulse-stat-accent-neutral">
-  <div class="pulse-stat-label">Paused incidents</div>
-  <div class="pulse-stat-value">${esc(formatPulseInteger(pausedSubscriptions))}</div>
-  <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
-</div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Paused incidents</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(pausedSubscriptions))}</div>
+              <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
+            </div>
 
-<div class="pulse-stat-card pulse-stat-accent-neutral">
-  <div class="pulse-stat-label">High-priority gateways</div>
-  <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
-  <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
-</div>
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">High-priority gateways</div>
+              <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
+              <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
+            </div>
 
             ${scanDelta ? `
               <div class="pulse-stat-card pulse-stat-accent-neutral">
@@ -578,7 +604,7 @@ const affectedCustomersSection = affectedCustomers.length
         </section>
 
         ${affectedCustomersSection}
-${repeatOffenderSection}
+        ${repeatOffenderSection}
 
         <section class="card pulse-section pulse-reasons-card">
           <div class="pulse-section-head" style="padding:16px 16px 0;">
@@ -601,18 +627,20 @@ ${repeatOffenderSection}
   }
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
-// 🆕 click handler for inline affected customers
-document.addEventListener("click", function (e) {
-  const row = e.target.closest("tr[data-email]");
-  if (!row) return;
 
-  const email = row.getAttribute("data-email");
-  if (!email) return;
+  // 🆕 click handler for inline affected customers
+  document.addEventListener("click", function (e) {
+    const row = e.target.closest("tr[data-email]");
+    if (!row) return;
 
-  if (typeof window.doSearch === "function") {
-    window.doSearch(email);
-  }
-});
+    const email = row.getAttribute("data-email");
+    if (!email) return;
+
+    if (typeof window.doSearch === "function") {
+      window.doSearch(email);
+    }
+  });
+
   window.renderPulseDashboard = renderPulseDashboard;
 })();
 // 🔴 renderPulse.js
