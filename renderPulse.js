@@ -368,10 +368,10 @@
 
           const inlineCustomersTable = inlineCustomers.length
             ? `
-                <div class="pulse-message-block" style="margin-top:14px;">
+                <div class="pulse-message-block">
                   <div class="pulse-message-label">Affected Customers</div>
-                  <div class="aa-table-wrap" style="margin-top:10px;">
-                    <table class="aa-table pulse-customers-table" style="min-width:760px; table-layout:fixed;">
+                  <div class="aa-table-wrap">
+                    <table class="aa-table pulse-customers-table">
                       <thead>
                         <tr>
                           <th style="text-align:left;">Customer</th>

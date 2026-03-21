@@ -197,6 +197,39 @@
   border-top:1px solid rgba(15,23,42,.08);
   padding-top:12px;
 }
+/* Compact affected customers inside gateway cards */
+.pulse-gateway-card .pulse-customers-table {
+  font-size: 12px;
+  min-width: 0;
+  width: 100%;
+  table-layout: auto;
+}
+
+.pulse-gateway-card .pulse-customers-table thead {
+  display: none;
+}
+
+.pulse-gateway-card .pulse-customers-table tbody tr {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(15,23,42,.06);
+}
+
+.pulse-gateway-card .pulse-customers-table td {
+  padding: 0;
+  border: none;
+}
+
+.pulse-gateway-card .pulse-customers-table td:first-child {
+  grid-column: 1 / span 2;
+  font-weight: 700;
+}
+
+.pulse-gateway-card .aa-table-wrap {
+  margin-top: 6px;
+}
 .pulse-message-label{
   font-size:11px;
   font-weight:900;
