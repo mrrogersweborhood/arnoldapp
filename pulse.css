@@ -210,25 +210,22 @@
 }
 
 .pulse-gateway-card .pulse-customers-table tbody tr {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 8px;
-  padding: 6px 0;
   border-bottom: 1px solid rgba(15,23,42,.06);
 }
 
 .pulse-gateway-card .pulse-customers-table td {
-  padding: 0;
+  padding: 8px 10px 8px 0;
   border: none;
+  vertical-align: top;
 }
 
 .pulse-gateway-card .pulse-customers-table td:first-child {
-  grid-column: 1 / span 2;
   font-weight: 700;
 }
 
 .pulse-gateway-card .aa-table-wrap {
   margin-top: 6px;
+  overflow-x: auto;
 }
 .pulse-message-label{
   font-size:11px;
