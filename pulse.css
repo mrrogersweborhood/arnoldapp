@@ -197,36 +197,61 @@
   border-top:1px solid rgba(15,23,42,.08);
   padding-top:12px;
 }
-/* Compact affected customers inside gateway cards */
-.pulse-gateway-card .pulse-customers-table {
-  font-size: 12px;
-  min-width: 0;
-  width: 100%;
-  table-layout: auto;
+
+/* Product-style affected customers list inside gateway cards */
+.pulse-customer-list{
+  margin-top:8px;
+  display:flex;
+  flex-direction:column;
+  gap:0;
 }
 
-.pulse-gateway-card .pulse-customers-table thead {
-  display: none;
+.pulse-customer-item{
+  padding:10px 0;
+  border-bottom:1px solid rgba(15,23,42,.06);
 }
 
-.pulse-gateway-card .pulse-customers-table tbody tr {
-  border-bottom: 1px solid rgba(15,23,42,.06);
+.pulse-customer-item:last-child{
+  border-bottom:0;
 }
 
-.pulse-gateway-card .pulse-customers-table td {
-  padding: 8px 10px 8px 0;
-  border: none;
-  vertical-align: top;
+.pulse-customer-row-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
 }
 
-.pulse-gateway-card .pulse-customers-table td:first-child {
-  font-weight: 700;
+.pulse-customer-email{
+  font-size:14px;
+  font-weight:800;
+  color:#0b1220;
+  min-width:0;
+  overflow-wrap:anywhere;
 }
 
-.pulse-gateway-card .aa-table-wrap {
-  margin-top: 6px;
-  overflow-x: auto;
+.pulse-customer-amount{
+  font-size:14px;
+  font-weight:900;
+  color:#0b1220;
+  white-space:nowrap;
 }
+
+.pulse-customer-row-bottom{
+  margin-top:6px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.pulse-customer-meta{
+  font-size:11px;
+  font-weight:800;
+  color:#64748b;
+  letter-spacing:.02em;
+}
+
 .pulse-message-label{
   font-size:11px;
   font-weight:900;
@@ -234,8 +259,7 @@
   text-transform:uppercase;
   letter-spacing:.05em;
   margin-bottom:4px;
-}
-.pulse-message-text{
+}.pulse-message-text{
   font-size:14px;
   font-weight:850;
   color:#0f172a;

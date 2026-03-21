@@ -362,7 +362,7 @@
             String(window.__pulseAffectedGateway || "").toLowerCase() ===
             String(gateway?.gateway || "").toLowerCase();
 
-          const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
+                    const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
             ? window.__pulseAffectedCustomers
             : [];
 
@@ -370,51 +370,29 @@
             ? `
                 <div class="pulse-message-block">
                   <div class="pulse-message-label">Affected Customers</div>
-                  <div class="aa-table-wrap">
-                    <table class="aa-table pulse-customers-table">
-                      <thead>
-                        <tr>
-                          <th style="text-align:left;">Customer</th>
-                          <th style="text-align:right;">Amount</th>
-                          <th style="text-align:left;">Reason</th>
-                          <th style="text-align:left;">Status</th>
-                          <th style="text-align:left;">Order</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${inlineCustomers.map((row) => `
-                          <tr
-                            data-email="${esc(row?.email || "")}"
-                            class="pulse-customer-row"
-                            style="cursor:pointer;"
-                          >
-                            <td>
-                              <div style="font-weight:600;">${esc(row?.email || "—")}</div>
-                            </td>
-                            <td style="text-align:right; font-weight:600;">
-                              ${esc(formatPulseMoney(row?.amount))}
-                            </td>
-                            <td>
-                              ${renderPulseReasonPill(row?.reason || "—")}
-                            </td>
-                            <td>
-                              <span style="
-                                display:inline-block;
-                                padding:4px 10px;
-                                border-radius:999px;
-                                font-size:12px;
-                                font-weight:700;
-                                letter-spacing:.02em;
-                                background:rgba(255,255,255,.08);
-                              ">
-                                ${esc(String(row?.status || "").toUpperCase() || "—")}
-                              </span>
-                            </td>
-                            <td>${esc(row?.order_id || "—")}</td>
-                          </tr>
-                        `).join("")}
-                      </tbody>
-                    </table>
+                  <div class="pulse-customer-list">
+                    ${inlineCustomers.map((row) => `
+                      <div
+                        data-email="${esc(row?.email || "")}"
+                        class="pulse-customer-item"
+                        style="cursor:pointer;"
+                      >
+                        <div class="pulse-customer-row-top">
+                          <div class="pulse-customer-email">${esc(row?.email || "—")}</div>
+                          <div class="pulse-customer-amount">${esc(formatPulseMoney(row?.amount))}</div>
+                        </div>
+
+                        <div class="pulse-customer-row-bottom">
+                          ${renderPulseReasonPill(row?.reason || "—")}
+                          <span class="pulse-customer-meta">
+                            ${esc(String(row?.status || "").toUpperCase() || "—")}
+                          </span>
+                          <span class="pulse-customer-meta">
+                            #${esc(row?.order_id || "—")}
+                          </span>
+                        </div>
+                      </div>
+                    `).join("")}
                   </div>
                 </div>
               `
@@ -624,9 +602,9 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
 
-  // 🆕 click handler for inline affected customers
+  // inline affected customer click handler
   document.addEventListener("click", function (e) {
-    const row = e.target.closest("tr[data-email]");
+    const row = e.target.closest("[data-email]");
     if (!row) return;
 
     const email = row.getAttribute("data-email");
