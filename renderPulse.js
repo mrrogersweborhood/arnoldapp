@@ -265,17 +265,9 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
 
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
 
-           const optimisticGatewayStats = optimistic && optimistic.gateway
-      ? (analysis?.gateways || []).find(
-          (g) =>
-            String(g?.gateway || "").toLowerCase() ===
-            String(optimistic.gateway).toLowerCase()
-        )
-      : null;
+    const optimistic = window.__pulseOptimisticAction || null;
 
-const optimistic = window.__pulseOptimisticAction || null;
-
-if (optimistic && optimistic.gateway) {
+    if (optimistic && optimistic.gateway) {
   const gw = String(optimistic.gateway).toLowerCase();
 
   const match = (analysis?.gateways || []).find(
@@ -505,11 +497,15 @@ const renderGatewayCard = (gateway) => {
   `;
 };
 const gatewayCards = `
-  ${otherGateways.length ? `
+  ${gateways.length ? `
     <div class="pulse-secondary-gateways">
-      ${otherGateways.map(renderGatewayCard).join("")}
+      ${gateways.map(renderGatewayCard).join("")}
     </div>
-  ` : ""}
+  ` : `
+    <div class="pulse-empty" style="margin:16px;">
+      No gateway data returned.
+    </div>
+  `}
 `;
     const reasonRows = reasons.length
       ? reasons.map((reason) => `
