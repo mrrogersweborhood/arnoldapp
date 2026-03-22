@@ -269,7 +269,7 @@
     const incidentStrip = activeIncident
       ? `
           <section class="card pulse-incident-strip">
-            <div class="pulse-incident-strip-head">
+                        <div class="pulse-incident-strip-head">
               <div>
                 <div class="pulse-incident-strip-title">⚠️ Elevated Failure Activity</div>
                 <div class="pulse-incident-strip-subtitle">
@@ -285,20 +285,13 @@
                 </div>
               </div>
               <div
-<div
-  class="pulse-incident-strip-action"
-  data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
-  data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
-  style="cursor:pointer"
->
-  View Recovery Actions
-</div>
-  data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
-  data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
-  style="cursor:pointer"
->
-  View Recovery Actions
-</div>
+                class="pulse-incident-strip-action"
+                data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
+                data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
+                style="cursor:pointer"
+              >
+                View Recovery Actions
+              </div>
             </div>
 
             <div class="pulse-incident-strip-metrics">
