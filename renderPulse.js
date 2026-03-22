@@ -285,13 +285,14 @@
                 </div>
               </div>
               <div
-                class="pulse-incident-strip-action"
-                data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
-                data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
-                style="cursor:pointer"
-              >
-                ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
-              </div>
+<div
+  class="pulse-incident-strip-action"
+  data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
+  data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
+  style="cursor:pointer"
+>
+  View Recovery Actions
+</div>
             </div>
 
             <div class="pulse-incident-strip-metrics">
