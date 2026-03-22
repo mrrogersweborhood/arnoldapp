@@ -249,19 +249,15 @@ if (data?.simulated === true) {
 closePulseModal();
 
 // 🔥 store optimistic state for UI
-window.__pulseOptimisticAction = {
-  gateway,
-  action,
-  timestamp: Date.now()
-};
+// TEMP: disable optimistic UI until backend sync is stable
+// window.__pulseOptimisticAction = {
+//   gateway,
+//   action,
+//   timestamp: Date.now()
+// };
 
 // 🔥 trigger single render (no duplicate)
 if (typeof window.doPulseDashboard === "function") {
-  window.doPulseDashboard();
-}
-
-// 🔥 Only force full refresh in LIVE mode
-if (!data?.simulated && typeof window.doPulseDashboard === "function") {
   window.doPulseDashboard();
 }
       })
