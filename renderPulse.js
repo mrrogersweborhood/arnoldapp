@@ -368,7 +368,10 @@
 
           const MAX_VISIBLE = 3;
 
-          const isExpanded = window.__pulseExpandCustomers === true;
+          window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+
+          const gatewayKey = String(gateway?.gateway || "").toLowerCase();
+          const isExpanded = window.__pulseExpandedGateways[gatewayKey] === true;
 
           const visibleCustomers = isExpanded
             ? inlineCustomers
@@ -376,48 +379,47 @@
 
           const hiddenCount = inlineCustomers.length - visibleCustomers.length;
 
-          const inlineCustomersTable = inlineCustomers.length
-            ? `
-                <div class="pulse-message-block">
-                  <div class="pulse-message-label">Affected Customers</div>
+const inlineCustomersTable = inlineCustomers.length
+  ? `
+      <div class="pulse-message-block">
+        <div class="pulse-message-label">Affected Customers</div>
 
-                  <div class="pulse-customer-list">
-                    ${visibleCustomers.map((row) => `
-                      <div
-                        data-email="${esc(row?.email || "")}"
-                        class="pulse-customer-item"
-                        style="cursor:pointer;"
-                      >
-                        <div class="pulse-customer-row-top">
-                          <div class="pulse-customer-email">${esc(row?.email || "—")}</div>
-                          <div class="pulse-customer-amount">${esc(formatPulseMoney(row?.amount))}</div>
-                        </div>
+        <div class="pulse-customer-list">
+          ${visibleCustomers.map((row) => `
+            <div
+              data-email="${esc(row?.email || "")}"
+              class="pulse-customer-item"
+            >
+              <div class="pulse-customer-row-top">
+                <div class="pulse-customer-email">${esc(row?.email || "—")}</div>
+                <div class="pulse-customer-amount">${esc(formatPulseMoney(row?.amount))}</div>
+              </div>
 
-                        <div class="pulse-customer-row-bottom">
-                          ${renderPulseReasonPill(row?.reason || "—")}
-                          <span class="pulse-customer-meta">
-                            ${esc(String(row?.status || "").toUpperCase() || "—")}
-                          </span>
-                          <span class="pulse-customer-meta">
-                            #${esc(row?.order_id || "—")}
-                          </span>
-                        </div>
-                      </div>
-                    `).join("")}
-                  </div>
+              <div class="pulse-customer-row-bottom">
+                ${renderPulseReasonPill(row?.reason || "—")}
+                <span class="pulse-customer-meta">
+                  ${esc(String(row?.status || "").toUpperCase() || "—")}
+                </span>
+                <span class="pulse-customer-meta">
+                  #${esc(row?.order_id || "—")}
+                </span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
 
-                  ${hiddenCount > 0 ? `
-                    <div
-                      class="pulse-view-all"
-                      data-action="pulse-expand-customers"
-                      style="margin-top:8px; font-size:12px; font-weight:800; color:#1d4ed8; cursor:pointer;"
-                    >
-                      View all (${inlineCustomers.length})
-                    </div>
-                  ` : ""}
-                </div>
-              `
-            : "";
+        ${inlineCustomers.length > MAX_VISIBLE ? `
+          <div
+            class="pulse-view-all"
+            data-action="pulse-toggle-customers"
+            data-gateway="${esc(String(gateway?.gateway || ""))}"
+          >
+            ${isExpanded ? "Show less" : `View all (${inlineCustomers.length})`}
+          </div>
+        ` : ""}
+      </div>
+    `
+  : "";
 
           return `
 <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
@@ -623,10 +625,10 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
 
-  // inline affected customer + expand handler
+   // inline affected customer + expand handler
   document.addEventListener("click", function (e) {
 
-    // 🔹 customer row click
+    // customer row click
     const row = e.target.closest("[data-email]");
     if (row) {
       const email = row.getAttribute("data-email");
@@ -636,12 +638,15 @@
       return;
     }
 
-    // 🔹 expand customers
-    const expand = e.target.closest('[data-action="pulse-expand-customers"]');
-    if (expand) {
+    // toggle customers for one gateway only
+    const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
+    if (toggle) {
+      const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
+      if (!gateway) return;
 
-      // store expand state globally (simple + safe)
-      window.__pulseExpandCustomers = true;
+      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+      window.__pulseExpandedGateways[gateway] =
+        !window.__pulseExpandedGateways[gateway];
 
       if (typeof window.doPulseDashboard === "function") {
         window.doPulseDashboard();

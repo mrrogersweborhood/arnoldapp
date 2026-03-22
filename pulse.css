@@ -203,12 +203,21 @@
   margin-top:8px;
   display:flex;
   flex-direction:column;
-  gap:0;
+  gap:2px;
 }
 
 .pulse-customer-item{
-  padding:10px 0;
+  padding:10px 8px;
   border-bottom:1px solid rgba(15,23,42,.06);
+  border-radius:10px;
+  transition:background .12s ease, transform .08s ease, box-shadow .12s ease;
+  cursor:pointer;
+}
+
+.pulse-customer-item:hover{
+  background:rgba(168,85,247,.06);
+  transform:translateX(2px);
+  box-shadow:0 4px 10px rgba(15,23,42,.08);
 }
 
 .pulse-customer-item:last-child{
