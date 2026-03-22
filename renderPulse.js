@@ -666,24 +666,7 @@ document.addEventListener("click", function (e) {
     return;
   }
 
-  // ----------------------------
-  // GLOBAL ACTION HANDLER (NEW)
-  // ----------------------------
-  const actionEl = e.target.closest("[data-action][data-gateway]");
-  if (actionEl) {
-    const action = String(actionEl.getAttribute("data-action") || "").toUpperCase();
-    const gateway = String(actionEl.getAttribute("data-gateway") || "").toLowerCase();
 
-    console.log("[Pulse Action Click]", { action, gateway });
-
-    if (typeof window.handlePulseAction === "function") {
-      window.handlePulseAction({ action, gateway });
-    } else {
-      console.warn("handlePulseAction not found");
-    }
-
-    return;
-  }
 
 });
 
