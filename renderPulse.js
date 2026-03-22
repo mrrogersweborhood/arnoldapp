@@ -288,11 +288,15 @@ if (optimistic && optimistic.gateway) {
 
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
 
-    const optimisticGatewayStats = optimistic && optimistic.gateway
-      ? gateways.find((g) => String(g?.gateway || "").toLowerCase() === String(optimistic.gateway).toLowerCase())
+        const optimisticGatewayStats = optimistic && optimistic.gateway
+      ? (analysis?.gateways || []).find(
+          (g) =>
+            String(g?.gateway || "").toLowerCase() ===
+            String(optimistic.gateway).toLowerCase()
+        )
       : null;
 
-    if (optimisticGatewayStats) {
+    if (optimisticGatewayStats && optimistic.__applied !== true) {
       const optimisticCount = Number(optimisticGatewayStats.incident_count || 0) || 0;
       const optimisticRevenue = Number(optimisticGatewayStats.recoverable_revenue || 0) || 0;
 
@@ -311,6 +315,9 @@ if (optimistic && optimistic.gateway) {
         retryingSubscriptions += optimisticCount;
         retryingRevenue += optimisticRevenue;
       }
+
+      // ✅ CRITICAL: prevent double application
+      optimistic.__applied = true;
     }
 
     const highestPriorityCount = gateways.filter(
