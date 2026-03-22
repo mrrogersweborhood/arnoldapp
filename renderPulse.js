@@ -280,13 +280,39 @@ if (optimistic && optimistic.gateway) {
     const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
     const executionMode = String(summary?.execution_mode || "test").toUpperCase();
 
-    const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
-    const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
+    let retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
+    let retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
 
-    const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
-    const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
+    let pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+    let pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
 
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+
+    const optimisticGatewayStats = optimistic && optimistic.gateway
+      ? gateways.find((g) => String(g?.gateway || "").toLowerCase() === String(optimistic.gateway).toLowerCase())
+      : null;
+
+    if (optimisticGatewayStats) {
+      const optimisticCount = Number(optimisticGatewayStats.incident_count || 0) || 0;
+      const optimisticRevenue = Number(optimisticGatewayStats.recoverable_revenue || 0) || 0;
+
+      if (optimistic.action === "pause") {
+        retryingSubscriptions = Math.max(0, retryingSubscriptions - optimisticCount);
+        retryingRevenue = Math.max(0, retryingRevenue - optimisticRevenue);
+
+        pausedSubscriptions += optimisticCount;
+        pausedRevenue += optimisticRevenue;
+      }
+
+      if (optimistic.action === "retry") {
+        pausedSubscriptions = Math.max(0, pausedSubscriptions - optimisticCount);
+        pausedRevenue = Math.max(0, pausedRevenue - optimisticRevenue);
+
+        retryingSubscriptions += optimisticCount;
+        retryingRevenue += optimisticRevenue;
+      }
+    }
+
     const highestPriorityCount = gateways.filter(
       (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
     ).length;
