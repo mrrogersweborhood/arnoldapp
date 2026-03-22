@@ -367,7 +367,13 @@
             : [];
 
           const MAX_VISIBLE = 3;
-          const visibleCustomers = inlineCustomers.slice(0, MAX_VISIBLE);
+
+          const isExpanded = window.__pulseExpandCustomers === true;
+
+          const visibleCustomers = isExpanded
+            ? inlineCustomers
+            : inlineCustomers.slice(0, MAX_VISIBLE);
+
           const hiddenCount = inlineCustomers.length - visibleCustomers.length;
 
           const inlineCustomersTable = inlineCustomers.length
@@ -401,7 +407,11 @@
                   </div>
 
                   ${hiddenCount > 0 ? `
-                    <div class="pulse-view-all" style="margin-top:8px; font-size:12px; font-weight:800; color:#1d4ed8; cursor:pointer;">
+                    <div
+                      class="pulse-view-all"
+                      data-action="pulse-expand-customers"
+                      style="margin-top:8px; font-size:12px; font-weight:800; color:#1d4ed8; cursor:pointer;"
+                    >
                       View all (${inlineCustomers.length})
                     </div>
                   ` : ""}
@@ -613,17 +623,33 @@
 
   window.renderPulseLoadingShell = renderPulseLoadingShell;
 
-  // inline affected customer click handler
+  // inline affected customer + expand handler
   document.addEventListener("click", function (e) {
+
+    // 🔹 customer row click
     const row = e.target.closest("[data-email]");
-    if (!row) return;
-
-    const email = row.getAttribute("data-email");
-    if (!email) return;
-
-    if (typeof window.doSearch === "function") {
-      window.doSearch(email);
+    if (row) {
+      const email = row.getAttribute("data-email");
+      if (email && typeof window.doSearch === "function") {
+        window.doSearch(email);
+      }
+      return;
     }
+
+    // 🔹 expand customers
+    const expand = e.target.closest('[data-action="pulse-expand-customers"]');
+    if (expand) {
+
+      // store expand state globally (simple + safe)
+      window.__pulseExpandCustomers = true;
+
+      if (typeof window.doPulseDashboard === "function") {
+        window.doPulseDashboard();
+      }
+
+      return;
+    }
+
   });
 
   window.renderPulseDashboard = renderPulseDashboard;
