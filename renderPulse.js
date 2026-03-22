@@ -229,12 +229,37 @@
   }
 
   function renderPulseDashboard(analysis, summary) {
-    const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
-    const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
-    const repeatOffenders = getRepeatOffenders(analysis?.incidents);
-    const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
-      ? analysis.gateway_incidents
-      : [];
+const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
+const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
+const repeatOffenders = getRepeatOffenders(analysis?.incidents);
+const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
+  ? analysis.gateway_incidents
+  : [];
+
+// 🔥 APPLY OPTIMISTIC UI STATE
+const optimistic = window.__pulseOptimisticAction || null;
+
+if (optimistic && optimistic.gateway) {
+  const gw = String(optimistic.gateway).toLowerCase();
+
+  if (optimistic.action === "pause") {
+    // remove incidents for this gateway visually
+    for (let i = gatewayIncidents.length - 1; i >= 0; i--) {
+      if (String(gatewayIncidents[i]?.gateway || "").toLowerCase() === gw) {
+        gatewayIncidents.splice(i, 1);
+      }
+    }
+  }
+
+  if (optimistic.action === "retry") {
+    // downgrade priority visually
+    for (const g of gateways) {
+      if (String(g.gateway || "").toLowerCase() === gw) {
+        g.recommended_priority = "LOW";
+      }
+    }
+  }
+}
 
     const activeIncident = gatewayIncidents[0] || null;
     const lastScanInfo = getLastScanInfo();

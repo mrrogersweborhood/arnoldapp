@@ -246,11 +246,24 @@ if (data?.simulated === true) {
   );
 }
 
-        closePulseModal();
+closePulseModal();
 
-        if (typeof window.doPulseDashboard === "function") {
-          window.doPulseDashboard();
-        }
+// 🔥 store optimistic state for UI
+window.__pulseOptimisticAction = {
+  gateway,
+  action,
+  timestamp: Date.now()
+};
+
+// 🔥 trigger local re-render WITHOUT reload
+if (typeof window.doPulseDashboard === "function") {
+  window.doPulseDashboard({ optimistic: true });
+}
+
+// 🔥 Only force full refresh in LIVE mode
+if (!data?.simulated && typeof window.doPulseDashboard === "function") {
+  window.doPulseDashboard();
+}
       })
       .catch((err) => {
         console.error(err);
