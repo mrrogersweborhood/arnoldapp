@@ -265,41 +265,12 @@
     let pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
     let pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
 
-    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+        const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
 
-    const optimistic = window.__pulseOptimisticAction || null;
-
-if (optimistic && optimistic.gateway) {
-  const gw = String(optimistic.gateway).toLowerCase();
-
-  const match = (analysis?.gateways || []).find(
-    (g) => String(g.gateway || "").toLowerCase() === gw
-  );
-
-  if (match) {
-    const count = Number(match.incident_count || 0);
-    const revenue = Number(match.recoverable_revenue || 0);
-
-    if (optimistic.action === "pause") {
-      retryingSubscriptions = Math.max(0, retryingSubscriptions - count);
-      retryingRevenue = Math.max(0, retryingRevenue - revenue);
-
-      pausedSubscriptions += count;
-      pausedRevenue += revenue;
-    }
-
-    if (optimistic.action === "retry") {
-      pausedSubscriptions = Math.max(0, pausedSubscriptions - count);
-      pausedRevenue = Math.max(0, pausedRevenue - revenue);
-
-      retryingSubscriptions += count;
-      retryingRevenue += revenue;
-    }
-  }
-
-  // ✅ CRITICAL FIX — CLEAR AFTER FIRST USE
-  window.__pulseOptimisticAction = null;
-}
+    // Use summary as the single source of truth for paused/retrying totals.
+    // Do not apply optimistic math here because it can double-count against
+    // already-updated summary values returned from the backend.
+    window.__pulseOptimisticAction = null;
 
     const highestPriorityCount = gateways.filter(
       (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
@@ -709,20 +680,14 @@ const gatewayCards = `
       console.log("ACTION → incident_ids:", incident_ids);
 
       let endpoint = "";
-      let optimisticAction = "";
 
       if (action === "RETRY_NOW") {
         endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry";
-        optimisticAction = "retry";
       } else {
         endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause";
-        optimisticAction = "pause";
       }
 
-      window.__pulseOptimisticAction = {
-        gateway,
-        action: optimisticAction
-      };
+      window.__pulseOptimisticAction = null;
 
       fetch(endpoint, {
         method: "POST",
