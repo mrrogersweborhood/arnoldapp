@@ -615,36 +615,59 @@ const gatewayCards = `
   window.renderPulseLoadingShell = renderPulseLoadingShell;
 
    // inline affected customer + expand handler
-  document.addEventListener("click", function (e) {
+document.addEventListener("click", function (e) {
 
-    // customer row click
-    const row = e.target.closest("[data-email]");
-    if (row) {
-      const email = row.getAttribute("data-email");
-      if (email && typeof window.doSearch === "function") {
-        window.doSearch(email);
-      }
-      return;
+  // ----------------------------
+  // CUSTOMER ROW CLICK
+  // ----------------------------
+  const row = e.target.closest("[data-email]");
+  if (row) {
+    const email = row.getAttribute("data-email");
+    if (email && typeof window.doSearch === "function") {
+      window.doSearch(email);
+    }
+    return;
+  }
+
+  // ----------------------------
+  // TOGGLE CUSTOMERS
+  // ----------------------------
+  const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
+  if (toggle) {
+    const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
+    if (!gateway) return;
+
+    window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+    window.__pulseExpandedGateways[gateway] =
+      !window.__pulseExpandedGateways[gateway];
+
+    if (typeof window.doPulseDashboard === "function") {
+      window.doPulseDashboard();
     }
 
-    // toggle customers for one gateway only
-    const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
-    if (toggle) {
-      const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
-      if (!gateway) return;
+    return;
+  }
 
-      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-      window.__pulseExpandedGateways[gateway] =
-        !window.__pulseExpandedGateways[gateway];
+  // ----------------------------
+  // GLOBAL ACTION HANDLER (NEW)
+  // ----------------------------
+  const actionEl = e.target.closest("[data-action][data-gateway]");
+  if (actionEl) {
+    const action = String(actionEl.getAttribute("data-action") || "").toUpperCase();
+    const gateway = String(actionEl.getAttribute("data-gateway") || "").toLowerCase();
 
-      if (typeof window.doPulseDashboard === "function") {
-        window.doPulseDashboard();
-      }
+    console.log("[Pulse Action Click]", { action, gateway });
 
-      return;
+    if (typeof window.handlePulseAction === "function") {
+      window.handlePulseAction({ action, gateway });
+    } else {
+      console.warn("handlePulseAction not found");
     }
 
-  });
+    return;
+  }
+
+});
 
   window.renderPulseDashboard = renderPulseDashboard;
 })();
