@@ -238,18 +238,20 @@
 }
 
 .pulse-customer-row-bottom{
-  margin-top:6px;
+  margin-top:4px;
   display:flex;
   align-items:center;
   gap:8px;
   flex-wrap:wrap;
+  opacity:0.85;
 }
 
 .pulse-customer-meta{
   font-size:11px;
-  font-weight:800;
+  font-weight:700;
   color:#64748b;
   letter-spacing:.02em;
+  opacity:0.85;
 }
 
 .pulse-message-label{
@@ -259,12 +261,21 @@
   text-transform:uppercase;
   letter-spacing:.05em;
   margin-bottom:4px;
-}.pulse-message-text{
-  font-size:14px;
-  font-weight:850;
-  color:#0f172a;
-  line-height:1.4;
 }
+
+.pulse-view-all{
+  font-size:12px;
+  font-weight:900;
+  color:#1d4ed8;
+  cursor:pointer;
+  margin-top:8px;
+  display:inline-block;
+}
+
+.pulse-view-all:hover{
+  text-decoration:underline;
+}
+
 .pulse-incident-strip{
   padding:14px 16px;
   border:1px solid #fecaca;
