@@ -229,14 +229,16 @@
   }
 
   function renderPulseDashboard(analysis, summary) {
-const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
-const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
-const repeatOffenders = getRepeatOffenders(analysis?.incidents);
-const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
-  ? analysis.gateway_incidents
-  : [];
+    window.__pulseLastAnalysis = analysis;
 
-// 🔥 APPLY OPTIMISTIC UI STATE
+    const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
+    const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
+    const repeatOffenders = getRepeatOffenders(analysis?.incidents);
+    const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
+      ? analysis.gateway_incidents
+      : [];
+
+    // 🔥 APPLY OPTIMISTIC UI STATE
 
     const activeIncident = gatewayIncidents[0] || null;
     const lastScanInfo = getLastScanInfo();
@@ -646,45 +648,116 @@ const gatewayCards = `
     `;
   }
 
-  window.renderPulseLoadingShell = renderPulseLoadingShell;
+     window.renderPulseLoadingShell = renderPulseLoadingShell;
 
-   // inline affected customer + expand handler
-document.addEventListener("click", function (e) {
+  // inline affected customer + expand handler + gateway actions
+  document.addEventListener("click", function (e) {
 
-  // ----------------------------
-  // CUSTOMER ROW CLICK
-  // ----------------------------
-  const row = e.target.closest("[data-email]");
-  if (row) {
-    const email = row.getAttribute("data-email");
-    if (email && typeof window.doSearch === "function") {
-      window.doSearch(email);
-    }
-    return;
-  }
-
-  // ----------------------------
-  // TOGGLE CUSTOMERS
-  // ----------------------------
-  const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
-  if (toggle) {
-    const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
-    if (!gateway) return;
-
-    window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-    window.__pulseExpandedGateways[gateway] =
-      !window.__pulseExpandedGateways[gateway];
-
-    if (typeof window.doPulseDashboard === "function") {
-      window.doPulseDashboard();
+    // ----------------------------
+    // CUSTOMER ROW CLICK
+    // ----------------------------
+    const row = e.target.closest("[data-email]");
+    if (row) {
+      const email = row.getAttribute("data-email");
+      if (email && typeof window.doSearch === "function") {
+        window.doSearch(email);
+      }
+      return;
     }
 
-    return;
-  }
+    // ----------------------------
+    // TOGGLE CUSTOMERS
+    // ----------------------------
+    const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
+    if (toggle) {
+      const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
+      if (!gateway) return;
 
+      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+      window.__pulseExpandedGateways[gateway] =
+        !window.__pulseExpandedGateways[gateway];
 
+      if (typeof window.doPulseDashboard === "function") {
+        window.doPulseDashboard();
+      }
 
-});
+      return;
+    }
+
+    // ----------------------------
+    // GATEWAY ACTIONS
+    // ----------------------------
+    const actionEl = e.target.closest(".pulse-action-pill, .pulse-incident-strip-action");
+    if (actionEl) {
+      const action = String(actionEl.getAttribute("data-action") || "").toUpperCase();
+      const gateway = String(actionEl.getAttribute("data-gateway") || "").toLowerCase();
+
+      if (!gateway) {
+        console.warn("Pulse action missing gateway");
+        return;
+      }
+
+      const analysis = window.__pulseLastAnalysis || null;
+      const incidents = Array.isArray(analysis?.incidents) ? analysis.incidents : [];
+
+      const incident_ids = incidents
+        .filter((item) => String(item?.gateway || "").toLowerCase() === gateway)
+        .map((item) => Number(item?.id))
+        .filter((id) => Number.isInteger(id) && id > 0);
+
+      console.log("ACTION → gateway:", gateway);
+      console.log("ACTION → incident_ids:", incident_ids);
+
+      let endpoint = "";
+      let optimisticAction = "";
+
+      if (action === "RETRY_NOW") {
+        endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry";
+        optimisticAction = "retry";
+      } else {
+        endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause";
+        optimisticAction = "pause";
+      }
+
+      window.__pulseOptimisticAction = {
+        gateway,
+        action: optimisticAction
+      };
+
+      fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          gateway,
+          incident_ids
+        })
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          console.log("ACTION RESULT:", res);
+
+          if (!res?.ok) {
+            showPulseBanner("Action failed", "error");
+            return;
+          }
+
+          showPulseBanner("Action applied", "success");
+
+          if (typeof window.doPulseDashboard === "function") {
+            window.doPulseDashboard();
+          }
+        })
+        .catch((err) => {
+          console.error("ACTION ERROR:", err);
+          showPulseBanner("Action failed", "error");
+        });
+
+      return;
+    }
+
+  });
 
   window.renderPulseDashboard = renderPulseDashboard;
 })();
