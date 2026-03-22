@@ -267,7 +267,7 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
 
     const optimistic = window.__pulseOptimisticAction || null;
 
-    if (optimistic && optimistic.gateway) {
+if (optimistic && optimistic.gateway) {
   const gw = String(optimistic.gateway).toLowerCase();
 
   const match = (analysis?.gateways || []).find(
@@ -294,6 +294,9 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
       retryingRevenue += revenue;
     }
   }
+
+  // ✅ CRITICAL FIX — CLEAR AFTER FIRST USE
+  window.__pulseOptimisticAction = null;
 }
 
     const highestPriorityCount = gateways.filter(
