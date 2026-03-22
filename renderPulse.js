@@ -462,7 +462,6 @@ const renderGatewayCard = (gateway) => {
     </article>
   `;
 };
-
 const gatewayCards = `
   ${topGateway ? `
     <div class="pulse-primary-gateway">
@@ -476,121 +475,6 @@ const gatewayCards = `
     </div>
   ` : ""}
 `;
-          const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
-          const priorityToken = getPulsePriorityToken(priorityLabel);
-
-          const isActiveGateway =
-            String(window.__pulseAffectedGateway || "").toLowerCase() ===
-            String(gateway?.gateway || "").toLowerCase();
-
-                             const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
-            ? window.__pulseAffectedCustomers
-            : [];
-
-          const MAX_VISIBLE = 3;
-
-          window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-
-          const gatewayKey = String(gateway?.gateway || "").toLowerCase();
-          const isExpanded = window.__pulseExpandedGateways[gatewayKey] === true;
-
-          const visibleCustomers = isExpanded
-            ? inlineCustomers
-            : inlineCustomers.slice(0, MAX_VISIBLE);
-
-          const hiddenCount = inlineCustomers.length - visibleCustomers.length;
-
-const inlineCustomersTable = inlineCustomers.length
-  ? `
-      <div class="pulse-message-block">
-        <div class="pulse-message-label">Affected Customers</div>
-
-        <div class="pulse-customer-list">
-          ${visibleCustomers.map((row) => `
-            <div
-              data-email="${esc(row?.email || "")}"
-              class="pulse-customer-item"
-            >
-              <div class="pulse-customer-row-top">
-                <div class="pulse-customer-email">${esc(row?.email || "—")}</div>
-                <div class="pulse-customer-amount">${esc(formatPulseMoney(row?.amount))}</div>
-              </div>
-
-              <div class="pulse-customer-row-bottom">
-                ${renderPulseReasonPill(row?.reason || "—")}
-                <span class="pulse-customer-meta">
-                  ${esc(String(row?.status || "").toUpperCase() || "—")}
-                </span>
-                <span class="pulse-customer-meta">
-                  #${esc(row?.order_id || "—")}
-                </span>
-              </div>
-            </div>
-          `).join("")}
-        </div>
-
-        ${inlineCustomers.length > MAX_VISIBLE ? `
-          <div
-            class="pulse-view-all"
-            data-action="pulse-toggle-customers"
-            data-gateway="${esc(String(gateway?.gateway || ""))}"
-          >
-            ${isExpanded ? "Show less" : `View all (${inlineCustomers.length})`}
-          </div>
-        ` : ""}
-      </div>
-    `
-  : "";
-
-          return `
-<article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
-              <div class="pulse-gateway-top">
-                <div>
-                  <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
-                  <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct))} of tracked failures</div>
-                </div>
-                <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priorityLabel)}</div>
-              </div>
-
-              <div class="pulse-gateway-metrics">
-                <div class="pulse-metric">
-                  <div class="pulse-metric-label">Incidents</div>
-                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.incident_count))}</div>
-                </div>
-                <div class="pulse-metric">
-                  <div class="pulse-metric-label">Revenue</div>
-                  <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue))}</div>
-                </div>
-                <div class="pulse-metric">
-                  <div class="pulse-metric-label">Customers at risk</div>
-                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.customers_at_risk))}</div>
-                </div>
-              </div>
-
-              <div
-                class="pulse-action-pill"
-                data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
-                data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
-                style="cursor:pointer;"
-              >
-                ${esc(formatPulseActionLabel(gateway?.recommended_action))}
-              </div>
-
-              <div class="pulse-message-block">
-                <div class="pulse-message-label">Recommended message</div>
-                <div class="pulse-message-text">${esc(String(gateway?.recommended_message || "No message returned."))}</div>
-              </div>
-
-              <div class="pulse-message-block">
-                <div class="pulse-message-label">Playbook</div>
-                <div class="pulse-message-text">${esc(String(gateway?.playbook || "No playbook returned."))}</div>
-              </div>
-
-              ${inlineCustomersTable}
-            </article>
-          `;
-        }).join("")
-      : `<div class="pulse-empty">No gateway data was returned by the live Pulse endpoint.</div>`;
 
     const reasonRows = reasons.length
       ? reasons.map((reason) => `
