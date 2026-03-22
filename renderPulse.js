@@ -574,17 +574,11 @@ const gatewayCards = `
               <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
             </div>
 
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">High-priority gateways</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(highestPriorityCount))}</div>
-              <div class="pulse-stat-meta">Gateways currently flagged with HIGH priority.</div>
-            </div>
-
             ${scanDelta ? `
               <div class="pulse-stat-card pulse-stat-accent-neutral">
                 <div class="pulse-stat-label">Since last scan</div>
                 <div class="pulse-stat-value">
-                  ${esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`)}
+                  ${esc(`${scanDelta.failedDelta >= 0 ? "+" : ""}${formatPulseInteger(scanDelta.failedDelta)}`)}""}${formatPulseInteger(scanDelta.failedDelta)}`)}
                 </div>
                 <div class="pulse-stat-meta">
                   ${esc(`Revenue ${scanDelta.revenueDelta >= 0 ? "+" : ""}${formatPulseMoney(scanDelta.revenueDelta)}`)}
