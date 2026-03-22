@@ -286,10 +286,30 @@
 }
 
 .pulse-incident-strip{
-  padding:14px 16px;
+  padding:22px 24px;
   border:1px solid #fecaca;
   background:linear-gradient(180deg, #fff8f8 0%, #fff5f5 100%);
-  box-shadow:0 10px 24px rgba(11,7,21,.08);
+  box-shadow:0 22px 48px rgba(11,7,21,.18);
+  border-radius:20px;
+  position:relative;
+  margin-bottom:4px;
+}
+
+/* subtle “primary” label */
+.pulse-incident-strip::before{
+  content:"PRIMARY DECISION";
+  position:absolute;
+  top:-10px;
+  left:20px;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  background:#fff;
+  padding:3px 8px;
+  border-radius:6px;
+  color:#991b1b;
+  border:1px solid #fecaca;
 }
 .pulse-incident-strip-head{
   display:flex;
@@ -300,7 +320,7 @@
   margin-bottom:12px;
 }
 .pulse-incident-strip-title{
-  font-size:16px;
+  font-size:22px;
   font-weight:950;
   color:#991b1b;
   line-height:1.1;
@@ -314,14 +334,21 @@
 .pulse-incident-strip-action{
   display:inline-flex;
   align-items:center;
-  padding:7px 12px;
+  padding:11px 20px;
   border-radius:999px;
   background:#ffffff;
   border:1px solid #fecaca;
   color:#991b1b;
-  font-size:12px;
+  font-size:14px;
   font-weight:950;
   white-space:nowrap;
+  box-shadow:0 10px 22px rgba(153,27,27,.18);
+  transition:all .15s ease;
+}
+
+.pulse-incident-strip-action:hover{
+  transform:translateY(-1px);
+  box-shadow:0 16px 30px rgba(153,27,27,.25);
 }
 .pulse-incident-strip-metrics{
   display:grid;

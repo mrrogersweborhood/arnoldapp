@@ -285,8 +285,13 @@
                 </div>
               </div>
               <div
-<div
-  class="pulse-incident-strip-action"
+                class="pulse-incident-strip-action"
+                data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
+                data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
+                style="cursor:pointer"
+              >
+                View Recovery Actions
+              </div>
   data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
   data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
   style="cursor:pointer"
@@ -464,19 +469,12 @@ const renderGatewayCard = (gateway) => {
   `;
 };
 const gatewayCards = `
-  ${topGateway ? `
-    <div class="pulse-primary-gateway">
-      ${renderGatewayCard(topGateway)}
-    </div>
-  ` : ""}
-
   ${otherGateways.length ? `
     <div class="pulse-secondary-gateways">
       ${otherGateways.map(renderGatewayCard).join("")}
     </div>
   ` : ""}
 `;
-
     const reasonRows = reasons.length
       ? reasons.map((reason) => `
           <div class="pulse-reason-row">
