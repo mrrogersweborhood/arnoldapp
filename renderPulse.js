@@ -288,7 +288,7 @@ if (optimistic && optimistic.gateway) {
 
     const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
 
-        const optimisticGatewayStats = optimistic && optimistic.gateway
+           const optimisticGatewayStats = optimistic && optimistic.gateway
       ? (analysis?.gateways || []).find(
           (g) =>
             String(g?.gateway || "").toLowerCase() ===
@@ -296,7 +296,7 @@ if (optimistic && optimistic.gateway) {
         )
       : null;
 
-    if (optimisticGatewayStats && optimistic.__applied !== true) {
+    if (optimisticGatewayStats) {
       const optimisticCount = Number(optimisticGatewayStats.incident_count || 0) || 0;
       const optimisticRevenue = Number(optimisticGatewayStats.recoverable_revenue || 0) || 0;
 
@@ -316,8 +316,8 @@ if (optimistic && optimistic.gateway) {
         retryingRevenue += optimisticRevenue;
       }
 
-      // ✅ CRITICAL: prevent double application
-      optimistic.__applied = true;
+      // apply once, then clear optimistic state completely
+      window.__pulseOptimisticAction = null;
     }
 
     const highestPriorityCount = gateways.filter(
