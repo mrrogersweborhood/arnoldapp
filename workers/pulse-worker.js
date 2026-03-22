@@ -154,16 +154,23 @@ async function handlePauseGatewayAction(request, env) {
   const gateway = normalizeGatewayName(body?.gateway);
   const incidentIds = normalizeIncidentIds(body?.incident_ids);
 
-  const store = await env.DB.prepare(`
-    SELECT store_id, execution_mode
+  const allStores = await env.DB.prepare(`
+    SELECT store_id, gateway, execution_mode
     FROM stores
-    WHERE LOWER(TRIM(gateway)) = ?
-    LIMIT 1
-  `)
-    .bind(gateway)
-    .first();
+  `).all();
+
+  console.log("PAUSE → ALL STORES JSON:", JSON.stringify(allStores.results || []));
+
+  const store = (allStores.results || []).find((s) =>
+    String(s.gateway || "").toLowerCase().includes(gateway)
+  );
+
+  console.log("PAUSE → MATCHED STORE JSON:", JSON.stringify(store || null));
+  console.log("PAUSE → gateway JSON:", JSON.stringify(gateway));
 
   const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  console.log("PAUSE → executionMode JSON:", JSON.stringify(executionMode));
 
   if (executionMode !== "live") {
     return json(request, {
@@ -177,12 +184,13 @@ async function handlePauseGatewayAction(request, env) {
       message: `TEST MODE: Pause simulated for ${gateway}. No live records were changed.`
     });
   }
-
+  console.log("PAUSE → incidentIds JSON:", JSON.stringify(incidentIds || []));
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
     allowedStatuses: ["pending", "retrying"],
     incidentIds
   });
+  console.log("PAUSE → targetIds JSON:", JSON.stringify(targetIds || []));
   if (!gateway || gateway === "unknown") {
     return json(request, {
       ok: false,
@@ -216,16 +224,23 @@ async function handleRetryGatewayAction(request, env) {
   const gateway = normalizeGatewayName(body?.gateway);
   const incidentIds = normalizeIncidentIds(body?.incident_ids);
 
-  const store = await env.DB.prepare(`
-    SELECT store_id, execution_mode
+  const allStores = await env.DB.prepare(`
+    SELECT store_id, gateway, execution_mode
     FROM stores
-    WHERE LOWER(TRIM(gateway)) = ?
-    LIMIT 1
-  `)
-    .bind(gateway)
-    .first();
+  `).all();
+
+  console.log("RETRY → ALL STORES JSON:", JSON.stringify(allStores.results || []));
+
+  const store = (allStores.results || []).find((s) =>
+    String(s.gateway || "").toLowerCase().includes(gateway)
+  );
+
+  console.log("RETRY → MATCHED STORE JSON:", JSON.stringify(store || null));
+  console.log("RETRY → gateway JSON:", JSON.stringify(gateway));
 
   const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  console.log("RETRY → executionMode JSON:", JSON.stringify(executionMode));
 
   if (executionMode !== "live") {
     return json(request, {
@@ -240,11 +255,15 @@ async function handleRetryGatewayAction(request, env) {
     });
   }
 
+  console.log("RETRY → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
     allowedStatuses: ["pending", "paused"],
     incidentIds
   });
+
+  console.log("RETRY → targetIds JSON:", JSON.stringify(targetIds || []));
 
   if (!gateway || gateway === "unknown") {
     return json(request, {
@@ -273,7 +292,6 @@ async function handleRetryGatewayAction(request, env) {
     incident_ids: targetIds
   });
 }
-
 async function handleTestIncident(request, env) {
   const detected_at = new Date().toISOString();
 
