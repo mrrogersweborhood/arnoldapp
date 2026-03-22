@@ -237,34 +237,7 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
   : [];
 
 // 🔥 APPLY OPTIMISTIC UI STATE
-const optimistic = window.__pulseOptimisticAction || null;
 
-// consume immediately so no later render can replay it
-if (optimistic) {
-  window.__pulseOptimisticAction = null;
-}
-
-if (optimistic && optimistic.gateway) {
-  const gw = String(optimistic.gateway).toLowerCase();
-
-  if (optimistic.action === "pause") {
-    // remove incidents for this gateway visually
-    for (let i = gatewayIncidents.length - 1; i >= 0; i--) {
-      if (String(gatewayIncidents[i]?.gateway || "").toLowerCase() === gw) {
-        gatewayIncidents.splice(i, 1);
-      }
-    }
-  }
-
-  if (optimistic.action === "retry") {
-    // downgrade priority visually
-    for (const g of gateways) {
-      if (String(g.gateway || "").toLowerCase() === gw) {
-        g.recommended_priority = "LOW";
-      }
-    }
-  }
-}
     const activeIncident = gatewayIncidents[0] || null;
     const lastScanInfo = getLastScanInfo();
     const scanDelta = getScanDelta(summary);
@@ -300,26 +273,36 @@ if (optimistic && optimistic.gateway) {
         )
       : null;
 
-    if (optimisticGatewayStats) {
-      const optimisticCount = Number(optimisticGatewayStats.incident_count || 0) || 0;
-      const optimisticRevenue = Number(optimisticGatewayStats.recoverable_revenue || 0) || 0;
+const optimistic = window.__pulseOptimisticAction || null;
 
-      if (optimistic.action === "pause") {
-        retryingSubscriptions = Math.max(0, retryingSubscriptions - optimisticCount);
-        retryingRevenue = Math.max(0, retryingRevenue - optimisticRevenue);
+if (optimistic && optimistic.gateway) {
+  const gw = String(optimistic.gateway).toLowerCase();
 
-        pausedSubscriptions += optimisticCount;
-        pausedRevenue += optimisticRevenue;
-      }
+  const match = (analysis?.gateways || []).find(
+    (g) => String(g.gateway || "").toLowerCase() === gw
+  );
 
-      if (optimistic.action === "retry") {
-        pausedSubscriptions = Math.max(0, pausedSubscriptions - optimisticCount);
-        pausedRevenue = Math.max(0, pausedRevenue - optimisticRevenue);
+  if (match) {
+    const count = Number(match.incident_count || 0);
+    const revenue = Number(match.recoverable_revenue || 0);
 
-        retryingSubscriptions += optimisticCount;
-        retryingRevenue += optimisticRevenue;
-      }
+    if (optimistic.action === "pause") {
+      retryingSubscriptions = Math.max(0, retryingSubscriptions - count);
+      retryingRevenue = Math.max(0, retryingRevenue - revenue);
+
+      pausedSubscriptions += count;
+      pausedRevenue += revenue;
     }
+
+    if (optimistic.action === "retry") {
+      pausedSubscriptions = Math.max(0, pausedSubscriptions - count);
+      pausedRevenue = Math.max(0, pausedRevenue - revenue);
+
+      retryingSubscriptions += count;
+      retryingRevenue += revenue;
+    }
+  }
+}
 
     const highestPriorityCount = gateways.filter(
       (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
