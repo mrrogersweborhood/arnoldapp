@@ -239,6 +239,11 @@ const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
 // 🔥 APPLY OPTIMISTIC UI STATE
 const optimistic = window.__pulseOptimisticAction || null;
 
+// consume immediately so no later render can replay it
+if (optimistic) {
+  window.__pulseOptimisticAction = null;
+}
+
 if (optimistic && optimistic.gateway) {
   const gw = String(optimistic.gateway).toLowerCase();
 
@@ -260,7 +265,6 @@ if (optimistic && optimistic.gateway) {
     }
   }
 }
-
     const activeIncident = gatewayIncidents[0] || null;
     const lastScanInfo = getLastScanInfo();
     const scanDelta = getScanDelta(summary);
@@ -315,9 +319,6 @@ if (optimistic && optimistic.gateway) {
         retryingSubscriptions += optimisticCount;
         retryingRevenue += optimisticRevenue;
       }
-
-      // apply once, then clear optimistic state completely
-      window.__pulseOptimisticAction = null;
     }
 
     const highestPriorityCount = gateways.filter(
