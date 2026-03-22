@@ -255,9 +255,9 @@ window.__pulseOptimisticAction = {
   timestamp: Date.now()
 };
 
-// 🔥 trigger local re-render WITHOUT reload
+// 🔥 trigger single render (no duplicate)
 if (typeof window.doPulseDashboard === "function") {
-  window.doPulseDashboard({ optimistic: true });
+  window.doPulseDashboard();
 }
 
 // 🔥 Only force full refresh in LIVE mode
