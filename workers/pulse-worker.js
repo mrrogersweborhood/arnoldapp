@@ -43,6 +43,11 @@ export default {
         return await handleRetryGatewayAction(request, env);
       }
 
+      // 🔥 Resume Paused endpoint
+      if (path === "/radar/action/resume" && method === "POST") {
+        return await handleResumeGatewayAction(request, env);
+      }
+
       if (path === "/radar/test-create" && method === "GET") {
         return await handleTestIncident(request, env);
       }
@@ -259,7 +264,9 @@ async function handleRetryGatewayAction(request, env) {
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
-    allowedStatuses: ["pending", "paused"],
+    // 🔒 OPTION B FIX — DO NOT RETRY PAUSED INCIDENTS
+    // Paused must remain untouched unless explicitly targeted
+    allowedStatuses: ["pending"],
     incidentIds
   });
 
@@ -292,6 +299,82 @@ async function handleRetryGatewayAction(request, env) {
     incident_ids: targetIds
   });
 }
+
+// 🔥 Resume Paused handler
+async function handleResumeGatewayAction(request, env) {
+  const body = await safeReadJson(request);
+  const gateway = normalizeGatewayName(body?.gateway);
+  const incidentIds = normalizeIncidentIds(body?.incident_ids);
+
+  const allStores = await env.DB.prepare(`
+    SELECT store_id, gateway, execution_mode
+    FROM stores
+  `).all();
+
+  console.log("RESUME → ALL STORES JSON:", JSON.stringify(allStores.results || []));
+
+  const store = (allStores.results || []).find((s) =>
+    String(s.gateway || "").toLowerCase().includes(gateway)
+  );
+
+  console.log("RESUME → MATCHED STORE JSON:", JSON.stringify(store || null));
+  console.log("RESUME → gateway JSON:", JSON.stringify(gateway));
+
+  const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  console.log("RESUME → executionMode JSON:", JSON.stringify(executionMode));
+
+  if (executionMode !== "live") {
+    return json(request, {
+      ok: true,
+      mode: executionMode || "test",
+      simulated: true,
+      gateway,
+      updated_status: "pending",
+      affected_count: 0,
+      incident_ids: [],
+      message: `TEST MODE: Resume simulated for ${gateway}. No live records were changed.`
+    });
+  }
+
+  console.log("RESUME → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
+  const targetIds = await findIncidentIdsForAction(env, {
+    gateway,
+    allowedStatuses: ["paused"],
+    incidentIds
+  });
+
+  console.log("RESUME → targetIds JSON:", JSON.stringify(targetIds || []));
+
+  if (!gateway || gateway === "unknown") {
+    return json(request, {
+      ok: false,
+      error: "Valid gateway is required."
+    }, 400);
+  }
+
+  if (!targetIds.length) {
+    return json(request, {
+      ok: true,
+      gateway,
+      updated_status: "pending",
+      affected_count: 0,
+      incident_ids: []
+    });
+  }
+
+  await updateIncidentStatuses(env, targetIds, "pending");
+
+  return json(request, {
+    ok: true,
+    gateway,
+    updated_status: "pending",
+    affected_count: targetIds.length,
+    incident_ids: targetIds
+  });
+}
+
 async function handleTestIncident(request, env) {
   const detected_at = new Date().toISOString();
 
