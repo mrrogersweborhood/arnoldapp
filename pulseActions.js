@@ -342,40 +342,17 @@ if (typeof window.loadPulseDashboard === "function") {
 
       action === "RETRY_LATER"
         ? `
-? `
-  <div class="pulse-modal-signal pulse-modal-signal-danger">
-    ⚠️ High-confidence gateway outage detected
-  </div>
-
-  <div class="pulse-modal-badge">
-    ${esc(confidencePct.toFixed(0))}% confidence
-  </div>
-
-  <div class="pulse-modal-impact">
-    <span>${esc(String(customersAtRisk))} customer${customersAtRisk === 1 ? "" : "s"}</span>
-    <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong>
-  </div>
-
-  <div style="margin-bottom:12px;">
-    Retrying payments now will likely continue to fail.
-  </div>
-
-  <div style="margin-bottom:12px;">
-    <strong>Recommended:</strong> Pause retries and wait for gateway recovery.
-  </div>
-
-  <div style="font-size:13px; opacity:.75;">
-    Resume once successful payments are observed.
-  </div>
-`
-
-          <div style="margin-bottom:10px;">
-            <strong>${esc(confidencePct.toFixed(0))}% confidence</strong> that current failures are gateway-related.
+          <div class="pulse-modal-signal pulse-modal-signal-danger">
+            ⚠️ High-confidence gateway outage detected
           </div>
 
-          <div style="margin-bottom:10px;">
-            <strong>${esc(String(customersAtRisk))}</strong> customer${customersAtRisk === 1 ? "" : "s"} at risk •
-            <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong> recoverable revenue
+          <div class="pulse-modal-badge">
+            ${esc(confidencePct.toFixed(0))}% confidence
+          </div>
+
+          <div class="pulse-modal-impact">
+            <span>${esc(String(customersAtRisk))} customer${customersAtRisk === 1 ? "" : "s"}</span>
+            <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong>
           </div>
 
           <div style="margin-bottom:12px;">
@@ -387,11 +364,11 @@ if (typeof window.loadPulseDashboard === "function") {
           </div>
 
           <div style="font-size:13px; opacity:.75;">
-            Retries can resume once successful payments are observed again.
+            Resume once successful payments are observed.
           </div>
         `
 
-                : action === "RETRY_NOW"
+        : action === "RETRY_NOW"
         ? `
           <div class="pulse-modal-signal pulse-modal-signal-positive">
             ⚡ Recovery opportunity detected
