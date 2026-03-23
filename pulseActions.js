@@ -45,6 +45,7 @@
       <div style="display:flex; gap:10px; flex-wrap:wrap;">
 <button class="pulse-modal-action-btn" data-action="pause">Pause Retries</button>
 <button class="pulse-modal-action-btn" data-action="retry">Move to Retry Queue</button>
+<button class="pulse-modal-action-btn" data-action="resume">Resume Paused</button>
 <button class="pulse-modal-action-btn" data-action="customers">View Affected Customers</button>
       </div>
     `;
@@ -207,6 +208,8 @@ if (typeof window.setPulseAffectedCustomers === "function") {
         ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause"
         : action === "retry"
         ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry"
+        : action === "resume"
+        ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/resume"
         : null;
 
     if (!endpoint) {
