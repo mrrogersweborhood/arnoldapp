@@ -37,18 +37,44 @@
 
     document.getElementById("pulse-modal-title").textContent = title;
 
-    document.getElementById("pulse-modal-body").innerHTML = `
-      <div style="margin-bottom:16px;">${body}</div>
-      <div style="font-size:14px; color:#5b5670; margin-bottom:16px;">
-        Gateway: <strong>${esc(window.__pulseModalGateway || "unknown")}</strong>
-      </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap;">
-<button class="pulse-modal-action-btn" data-action="pause">Pause Retries</button>
-<button class="pulse-modal-action-btn" data-action="retry">Move to Retry Queue</button>
-<button class="pulse-modal-action-btn" data-action="resume">Resume Paused</button>
-<button class="pulse-modal-action-btn" data-action="customers">View Affected Customers</button>
-      </div>
-    `;
+document.getElementById("pulse-modal-body").innerHTML = `
+  <div class="pulse-modal-intro">
+    ${body}
+  </div>
+
+  <div class="pulse-modal-meta">
+    Gateway
+    <strong>${esc(window.__pulseModalGateway || "unknown")}</strong>
+  </div>
+
+  <div class="pulse-modal-section-label">
+    Recommended action
+  </div>
+
+  <div class="pulse-modal-actions-primary">
+    <button class="pulse-modal-action-btn primary" data-action="retry">
+      Move to Retry Queue
+    </button>
+  </div>
+
+  <div class="pulse-modal-section-label secondary">
+    Other actions
+  </div>
+
+  <div class="pulse-modal-actions-secondary">
+    <button class="pulse-modal-action-btn danger" data-action="pause">
+      Pause Retries
+    </button>
+
+    <button class="pulse-modal-action-btn" data-action="resume">
+      Resume Paused
+    </button>
+
+    <button class="pulse-modal-action-btn ghost" data-action="customers">
+      View Affected Customers
+    </button>
+  </div>
+`;
 
     modal.classList.remove("hidden");
   }
