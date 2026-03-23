@@ -251,17 +251,16 @@ if (data?.simulated === true) {
 
 closePulseModal();
 
-// 🔥 store optimistic state for UI
-// TEMP: disable optimistic UI until backend sync is stable
-// window.__pulseOptimisticAction = {
-//   gateway,
-//   action,
-//   timestamp: Date.now()
-// };
-
-// 🔥 trigger single render (no duplicate)
-if (typeof window.doPulseDashboard === "function") {
+// 🔥 CRITICAL FIX — force backend re-fetch (no stale UI)
+if (typeof window.loadPulseDashboard === "function") {
+  console.log("Refreshing Pulse dashboard via loadPulseDashboard()");
+  window.loadPulseDashboard();
+} else if (typeof window.doPulseDashboard === "function") {
+  console.warn("loadPulseDashboard not found, falling back to doPulseDashboard()");
   window.doPulseDashboard();
+} else {
+  console.warn("No dashboard refresh function found — forcing reload");
+  window.location.reload();
 }
       })
       .catch((err) => {
