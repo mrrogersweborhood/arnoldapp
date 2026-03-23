@@ -310,62 +310,129 @@ if (typeof window.loadPulseDashboard === "function") {
 
     if (!action || !gateway) return;
 
-    window.__pulseModalGateway = gateway;
+        window.__pulseModalGateway = gateway;
 
-openPulseModal(
-  gateway.toUpperCase() + " Recovery Action",
+    const analysis = window.__pulseLastAnalysis || {};
+    const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways : [];
+    const gatewayData = gateways.find(
+      (g) => String(g?.gateway || "").trim().toLowerCase() === String(gateway).trim().toLowerCase()
+    ) || null;
 
-  action === "RETRY_LATER"
-    ? `
-      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
-        ⚠️ High-confidence gateway outage detected
-      </div>
+    const gatewayIncidents = Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : [];
+    const incidentData = gatewayIncidents.find(
+      (g) => String(g?.gateway || "").trim().toLowerCase() === String(gateway).trim().toLowerCase()
+    ) || null;
 
-      <div style="margin-bottom:12px;">
-        Retrying payments now will likely continue to fail.
-      </div>
+    const confidencePct = Number(
+      incidentData?.confidence != null
+        ? Number(incidentData.confidence) * 100
+        : 0
+    );
 
-      <div style="margin-bottom:12px;">
-        <strong>Recommended:</strong> Pause retries and wait for gateway recovery.
-      </div>
+    const customersAtRisk = Number(
+      incidentData?.customers_at_risk != null
+        ? incidentData.customers_at_risk
+        : gatewayData?.customers_at_risk
+    ) || 0;
 
-      <div style="font-size:13px; opacity:.75;">
-        Retries can resume once successful payments are observed again.
-      </div>
-    `
+    const revenueAtRisk = Number(gatewayData?.recoverable_revenue || 0) || 0;
 
-    : action === "RETRY_NOW"
-    ? `
-      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
-        ⚡ Recovery opportunity detected
-      </div>
+    openPulseModal(
+      gateway.toUpperCase() + " Recovery Action",
 
-      <div style="margin-bottom:12px;">
-        Failed payments appear recoverable.
-      </div>
+      action === "RETRY_LATER"
+        ? `
+? `
+  <div class="pulse-modal-signal pulse-modal-signal-danger">
+    ⚠️ High-confidence gateway outage detected
+  </div>
 
-      <div style="margin-bottom:12px;">
-        <strong>Recommended:</strong> Move subscriptions into the retry queue now.
-      </div>
+  <div class="pulse-modal-badge">
+    ${esc(confidencePct.toFixed(0))}% confidence
+  </div>
 
-      <div style="font-size:13px; opacity:.75;">
-        Pulse will attempt recovery automatically.
-      </div>
-    `
+  <div class="pulse-modal-impact">
+    <span>${esc(String(customersAtRisk))} customer${customersAtRisk === 1 ? "" : "s"}</span>
+    <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong>
+  </div>
 
-    : `
-      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
-        ℹ️ Monitoring only
-      </div>
+  <div style="margin-bottom:12px;">
+    Retrying payments now will likely continue to fail.
+  </div>
 
-      <div style="margin-bottom:12px;">
-        No immediate action is recommended.
-      </div>
+  <div style="margin-bottom:12px;">
+    <strong>Recommended:</strong> Pause retries and wait for gateway recovery.
+  </div>
 
-      <div style="font-size:13px; opacity:.75;">
-        Pulse will continue watching for changes in gateway behavior.
-      </div>
-    `
-);
+  <div style="font-size:13px; opacity:.75;">
+    Resume once successful payments are observed.
+  </div>
+`
+
+          <div style="margin-bottom:10px;">
+            <strong>${esc(confidencePct.toFixed(0))}% confidence</strong> that current failures are gateway-related.
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <strong>${esc(String(customersAtRisk))}</strong> customer${customersAtRisk === 1 ? "" : "s"} at risk •
+            <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong> recoverable revenue
+          </div>
+
+          <div style="margin-bottom:12px;">
+            Retrying payments now will likely continue to fail.
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <strong>Recommended:</strong> Pause retries and wait for gateway recovery.
+          </div>
+
+          <div style="font-size:13px; opacity:.75;">
+            Retries can resume once successful payments are observed again.
+          </div>
+        `
+
+                : action === "RETRY_NOW"
+        ? `
+          <div class="pulse-modal-signal pulse-modal-signal-positive">
+            ⚡ Recovery opportunity detected
+          </div>
+
+          <div class="pulse-modal-impact">
+            <span>${esc(String(customersAtRisk))} ready for retry</span>
+            <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            Failed payments appear recoverable.
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <strong>Recommended:</strong> Move subscriptions into the retry queue now.
+          </div>
+
+          <div style="font-size:13px; opacity:.75;">
+            Pulse will attempt recovery automatically.
+          </div>
+        `
+
+        : `
+          <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
+            ℹ️ Monitoring only
+          </div>
+
+          <div style="margin-bottom:10px;">
+            <strong>${esc(String(customersAtRisk))}</strong> customer${customersAtRisk === 1 ? "" : "s"} currently affected •
+            <strong>${esc(formatPulseMoney(revenueAtRisk))}</strong> recoverable revenue
+          </div>
+
+          <div style="margin-bottom:12px;">
+            No immediate action is recommended.
+          </div>
+
+          <div style="font-size:13px; opacity:.75;">
+            Pulse will continue watching for changes in gateway behavior.
+          </div>
+        `
+    );
   });
 })();
