@@ -312,13 +312,60 @@ if (typeof window.loadPulseDashboard === "function") {
 
     window.__pulseModalGateway = gateway;
 
-    openPulseModal(
-      gateway.toUpperCase() + " Recovery Action",
-action === "RETRY_LATER"
-  ? "This will pause automatic retries for this gateway.<br><br>No payments will be retried until activity stabilizes."
-  : action === "RETRY_NOW"
-  ? "This will move failed payments into the retry queue and attempt recovery."
-  : "No action will be taken. This will continue monitoring gateway activity."
-    );
+openPulseModal(
+  gateway.toUpperCase() + " Recovery Action",
+
+  action === "RETRY_LATER"
+    ? `
+      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
+        ⚠️ High-confidence gateway outage detected
+      </div>
+
+      <div style="margin-bottom:12px;">
+        Retrying payments now will likely continue to fail.
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <strong>Recommended:</strong> Pause retries and wait for gateway recovery.
+      </div>
+
+      <div style="font-size:13px; opacity:.75;">
+        Retries can resume once successful payments are observed again.
+      </div>
+    `
+
+    : action === "RETRY_NOW"
+    ? `
+      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
+        ⚡ Recovery opportunity detected
+      </div>
+
+      <div style="margin-bottom:12px;">
+        Failed payments appear recoverable.
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <strong>Recommended:</strong> Move subscriptions into the retry queue now.
+      </div>
+
+      <div style="font-size:13px; opacity:.75;">
+        Pulse will attempt recovery automatically.
+      </div>
+    `
+
+    : `
+      <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
+        ℹ️ Monitoring only
+      </div>
+
+      <div style="margin-bottom:12px;">
+        No immediate action is recommended.
+      </div>
+
+      <div style="font-size:13px; opacity:.75;">
+        Pulse will continue watching for changes in gateway behavior.
+      </div>
+    `
+);
   });
 })();
