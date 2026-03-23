@@ -1244,7 +1244,20 @@ async function findIncidentIdsForAction(env, options = {}) {
 
   return incidents
     .filter((row) => normalizeGatewayName(row?.gateway) === gateway)
-    .filter((row) => requestedIncidentIds.length ? requestedIncidentIds.includes(Number(row?.id)) : true)
+    .filter((row) => {
+      // 🔒 HARD RULE: Do NOT default to "all incidents"
+      // If no incident_ids provided, only act on SAFE statuses
+
+      if (requestedIncidentIds.length) {
+        return requestedIncidentIds.includes(Number(row?.id));
+      }
+
+      // 🔥 CONTROLLED FALLBACK:
+      // Only allow retry of items that are explicitly safe to move
+      // (prevents wiping paused state unintentionally)
+
+      return allowedStatuses.includes(asText(row?.status));
+    })
     .map((row) => Number(row.id))
     .filter((id) => Number.isInteger(id) && id > 0);
 }
