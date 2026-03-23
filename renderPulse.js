@@ -229,7 +229,10 @@
   }
 
   function renderPulseDashboard(analysis, summary) {
+    // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
+    // Prevent stale optimistic state from leaking into a fresh render.
     window.__pulseLastAnalysis = analysis;
+    window.__pulseOptimisticAction = null;
 
     const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
     const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
@@ -262,7 +265,7 @@
     let retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
     let retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
 
-    let pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+       let pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
     let pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
 
         const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
@@ -270,7 +273,6 @@
     // Use summary as the single source of truth for paused/retrying totals.
     // Do not apply optimistic math here because it can double-count against
     // already-updated summary values returned from the backend.
-    window.__pulseOptimisticAction = null;
 
     const highestPriorityCount = gateways.filter(
       (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
