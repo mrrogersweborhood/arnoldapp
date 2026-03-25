@@ -43,6 +43,10 @@ export default {
         return await handleRetryGatewayAction(request, env);
       }
 
+      if (path === "/radar/action/add-note" && method === "POST") {
+        return await handleAddOrderNoteAction(request, env);
+      }
+
       // 🔥 Resume Paused endpoint
       if (path === "/radar/action/resume" && method === "POST") {
         return await handleResumeGatewayAction(request, env);
@@ -409,9 +413,116 @@ async function handleTestIncident(request, env) {
   });
 }
 
+async function handleAddOrderNoteAction(request, env) {
+  const body = await safeReadJson(request);
+  const gateway = normalizeGatewayName(body?.gateway);
+  const orderId = asText(body?.order_id);
+  const noteMessage = asText(body?.message) || "Pulse: Payment failures detected. Monitoring.";
+  const customerNote = false;
+
+  if (!gateway || gateway === "unknown") {
+    return json(request, {
+      ok: false,
+      error: "Valid gateway is required."
+    }, 400);
+  }
+
+  if (!orderId) {
+    return json(request, {
+      ok: false,
+      error: "Valid order_id is required."
+    }, 400);
+  }
+
+  const allStores = await env.DB.prepare(`
+    SELECT store_id, store_url, gateway, execution_mode
+    FROM stores
+  `).all();
+
+  console.log("ADD NOTE → ALL STORES JSON:", JSON.stringify(allStores.results || []));
+
+  const store = (allStores.results || []).find((s) =>
+    String(s.gateway || "").toLowerCase().includes(gateway)
+  );
+
+  console.log("ADD NOTE → MATCHED STORE JSON:", JSON.stringify(store || null));
+  console.log("ADD NOTE → gateway JSON:", JSON.stringify(gateway));
+  console.log("ADD NOTE → orderId JSON:", JSON.stringify(orderId));
+
+  const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  console.log("ADD NOTE → executionMode JSON:", JSON.stringify(executionMode));
+
+  if (!store?.store_url) {
+    return json(request, {
+      ok: false,
+      error: "Matching store_url not found for gateway."
+    }, 404);
+  }
+
+  if (executionMode !== "live") {
+    return json(request, {
+      ok: true,
+      mode: executionMode,
+      simulated: true,
+      gateway,
+      order_id: orderId,
+      note: noteMessage,
+      customer_note: customerNote,
+      message: `TEST MODE: Order note simulated for order ${orderId}. No WooCommerce record was changed.`
+    });
+  }
+
+  const baseUrl = store.store_url.replace(/\/+$/, "");
+  const noteUrl = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes`;
+
+  const response = await fetch(noteUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
+    },
+    body: JSON.stringify({
+      note: noteMessage,
+      customer_note: customerNote
+    })
+  });
+
+  const responseText = await response.text();
+  let responseJson = null;
+
+  try {
+    responseJson = responseText ? JSON.parse(responseText) : null;
+  } catch (_) {
+    responseJson = null;
+  }
+
+  if (!response.ok) {
+    return json(request, {
+      ok: false,
+      mode: executionMode,
+      gateway,
+      order_id: orderId,
+      error: "WooCommerce order note request failed.",
+      status_code: response.status,
+      woo_response: responseJson || responseText || null
+    }, 502);
+  }
+
+  return json(request, {
+    ok: true,
+    mode: executionMode,
+    simulated: false,
+    gateway,
+    order_id: orderId,
+    note: noteMessage,
+    customer_note: customerNote,
+    woo_note: responseJson || null
+  });
+}
+
 async function runPulseScanner(request, env) {
   const stores = await loadActiveStores(env);
-
   let totalScanned = 0;
   let totalCreated = 0;
   let totalSkipped = 0;
