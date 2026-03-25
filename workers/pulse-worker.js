@@ -46,7 +46,9 @@ export default {
       if (path === "/radar/action/add-note" && method === "POST") {
         return await handleAddOrderNoteAction(request, env);
       }
-
+if (path === "/radar/action/backfill-notes" && method === "POST") {
+  return await handleBackfillNotes(request, env);
+}
       // 🔥 Resume Paused endpoint
       if (path === "/radar/action/resume" && method === "POST") {
         return await handleResumeGatewayAction(request, env);
@@ -199,7 +201,7 @@ async function handlePauseGatewayAction(request, env) {
     String(s.gateway || "").toLowerCase().includes(gateway)
   );
 
-    console.log("PAUSE → MATCHED STORE JSON:", JSON.stringify(store || null));
+  console.log("PAUSE → MATCHED STORE JSON:", JSON.stringify(store || null));
   console.log("PAUSE → gateway JSON:", JSON.stringify(gateway));
 
   const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
@@ -218,13 +220,24 @@ async function handlePauseGatewayAction(request, env) {
       message: `TEST MODE: Pause simulated for ${gateway}. No live records were changed.`
     });
   }
-  console.log("PAUSE → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
+    console.log("PAUSE → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
+  if (!incidentIds.length) {
+    return json(request, {
+      ok: false,
+      error: "incident_ids is required for pause."
+    }, 400);
+  }
+
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
     allowedStatuses: ["pending", "retrying"],
     incidentIds
   });
+
   console.log("PAUSE → targetIds JSON:", JSON.stringify(targetIds || []));
+
   if (!gateway || gateway === "unknown") {
     return json(request, {
       ok: false,
@@ -244,6 +257,13 @@ async function handlePauseGatewayAction(request, env) {
 
   await updateIncidentStatuses(env, targetIds, "paused");
 
+  await addActionNotesForIncidents(
+    env,
+    targetIds,
+    gateway,
+    "Pulse: Retries paused due to suspected gateway issue."
+  );
+
   return json(request, {
     ok: true,
     gateway,
@@ -252,7 +272,6 @@ async function handlePauseGatewayAction(request, env) {
     incident_ids: targetIds
   });
 }
-
 async function handleRetryGatewayAction(request, env) {
   const body = await safeReadJson(request);
   const gateway = normalizeGatewayName(body?.gateway);
@@ -289,12 +308,17 @@ async function handleRetryGatewayAction(request, env) {
     });
   }
 
-  console.log("RETRY → incidentIds JSON:", JSON.stringify(incidentIds || []));
+    console.log("RETRY → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
+  if (!incidentIds.length) {
+    return json(request, {
+      ok: false,
+      error: "incident_ids is required for retry."
+    }, 400);
+  }
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
-    // 🔒 OPTION B FIX — DO NOT RETRY PAUSED INCIDENTS
-    // Paused must remain untouched unless explicitly targeted
     allowedStatuses: ["pending"],
     incidentIds
   });
@@ -320,6 +344,13 @@ async function handleRetryGatewayAction(request, env) {
 
   await updateIncidentStatuses(env, targetIds, "retrying");
 
+  await addActionNotesForIncidents(
+    env,
+    targetIds,
+    gateway,
+    "Pulse: Manual retry triggered."
+  );
+
   return json(request, {
     ok: true,
     gateway,
@@ -328,7 +359,6 @@ async function handleRetryGatewayAction(request, env) {
     incident_ids: targetIds
   });
 }
-
 // 🔥 Resume Paused handler
 async function handleResumeGatewayAction(request, env) {
   const body = await safeReadJson(request);
@@ -366,7 +396,14 @@ async function handleResumeGatewayAction(request, env) {
     });
   }
 
-  console.log("RESUME → incidentIds JSON:", JSON.stringify(incidentIds || []));
+    console.log("RESUME → incidentIds JSON:", JSON.stringify(incidentIds || []));
+
+  if (!incidentIds.length) {
+    return json(request, {
+      ok: false,
+      error: "incident_ids is required for resume."
+    }, 400);
+  }
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
@@ -395,6 +432,13 @@ async function handleResumeGatewayAction(request, env) {
 
   await updateIncidentStatuses(env, targetIds, "pending");
 
+  await addActionNotesForIncidents(
+    env,
+    targetIds,
+    gateway,
+    "Pulse: Retries resumed."
+  );
+
   return json(request, {
     ok: true,
     gateway,
@@ -403,7 +447,6 @@ async function handleResumeGatewayAction(request, env) {
     incident_ids: targetIds
   });
 }
-
 async function handleTestIncident(request, env) {
   const testBody = {
     store_id: "okobserver",
@@ -488,20 +531,66 @@ async function handleAddOrderNoteAction(request, env) {
     });
   }
 
-  const baseUrl = store.store_url.replace(/\/+$/, "");
-const noteUrl = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes`;
+    const baseUrl = store.store_url.replace(/\/+$/, "");
+    const noteUrl = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes?per_page=100`;
 
-const response = await fetch(noteUrl, {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
-  },
-  body: JSON.stringify({
-    note: noteMessage,
-    customer_note: customerNote
-  })
-});
+  const existingNotesResponse = await fetch(noteUrl, {
+    method: "GET",
+    headers: {
+      Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
+    }
+  });
+
+  const existingNotesText = await existingNotesResponse.text();
+  let existingNotesJson = null;
+
+  try {
+    existingNotesJson = existingNotesText ? JSON.parse(existingNotesText) : null;
+  } catch (_) {
+    existingNotesJson = null;
+  }
+
+  if (!existingNotesResponse.ok) {
+    return json(request, {
+      ok: false,
+      mode: executionMode,
+      gateway,
+      order_id: orderId,
+      error: "WooCommerce order notes lookup failed.",
+      status_code: existingNotesResponse.status,
+      woo_response: existingNotesJson || existingNotesText || null
+    }, 502);
+  }
+
+  const pulseNoteAlreadyExists = Array.isArray(existingNotesJson) && existingNotesJson.some((note) =>
+    asText(note?.note).includes(noteMessage)
+  );
+
+  if (pulseNoteAlreadyExists) {
+    return json(request, {
+      ok: true,
+      mode: executionMode,
+      simulated: false,
+      skipped: true,
+      gateway,
+      order_id: orderId,
+      note: noteMessage,
+      customer_note: customerNote,
+      message: "Pulse note already exists for this order."
+    });
+  }
+
+  const response = await fetch(noteUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
+    },
+    body: JSON.stringify({
+      note: noteMessage,
+      customer_note: customerNote
+    })
+  });
 
   const responseText = await response.text();
   let responseJson = null;
@@ -535,7 +624,97 @@ const response = await fetch(noteUrl, {
     woo_note: responseJson || null
   });
 }
+async function handleBackfillNotes(request, env) {
+  const rows = await env.DB.prepare(`
+    SELECT
+      id,
+      store_id,
+      order_id,
+      gateway
+    FROM radar_incidents
+    ORDER BY id DESC
+    LIMIT 200
+  `).all();
 
+  const incidents = rows.results || [];
+
+  let scanned = 0;
+  let noted = 0;
+  let skipped_existing_note = 0;
+  let skipped_test_mode = 0;
+  let skipped_missing_order = 0;
+  let failed = 0;
+
+  for (const row of incidents) {
+    scanned++;
+
+    try {
+      const store = await env.DB.prepare(`
+        SELECT store_url, execution_mode, gateway
+        FROM stores
+        WHERE store_id = ?
+        LIMIT 1
+      `)
+        .bind(row.store_id)
+        .first();
+
+      const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+      if (executionMode !== "live") {
+        skipped_test_mode++;
+        continue;
+      }
+
+      const noteRequest = new Request(request.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          gateway: row.gateway,
+          order_id: row.order_id,
+          message: "Pulse: Failure detected and logged."
+        })
+      });
+
+      const response = await handleAddOrderNoteAction(noteRequest, env);
+      const text = await response.text();
+
+      let jsonData = null;
+      try {
+        jsonData = text ? JSON.parse(text) : null;
+      } catch (_) {}
+
+      if (!response.ok) {
+        if (jsonData?.status_code === 404) {
+          skipped_missing_order++;
+        } else {
+          failed++;
+        }
+        continue;
+      }
+
+      if (jsonData?.skipped) {
+        skipped_existing_note++;
+      } else {
+        noted++;
+      }
+
+    } catch (err) {
+      failed++;
+    }
+  }
+
+  return json(request, {
+    ok: true,
+    scanned,
+    noted,
+    skipped_existing_note,
+    skipped_test_mode,
+    skipped_missing_order,
+    failed
+  });
+}
 async function runPulseScanner(request, env) {
   const stores = await loadActiveStores(env);
   let totalScanned = 0;
@@ -643,34 +822,41 @@ async function scanStoreFailedOrders(env, store) {
     const orderNotes = await fetchOrderNotesForOrder(baseUrl, consumerKey, consumerSecret, orderId);
     const reason = classifyFailureReason(order, gateway, store, orderNotes);
 
-    await env.DB.prepare(`
-      INSERT INTO radar_incidents (
-        store_id,
-        subscription_id,
-        order_id,
-        customer_email,
+        const incidentRequest = new Request("https://pulse-worker.bob-b5c.workers.dev/radar/incident", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        store_id: store.store_id,
+        subscription_id: orderId,
+        order_id: orderId,
+        customer_email: email,
         gateway,
         reason,
         amount,
-        currency,
-        status,
-        detected_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `)
-      .bind(
-        store.store_id,
-        orderId,
-        orderId,
-        email,
-        gateway,
-        reason,
-        amount,
-        "USD",
-        "pending",
-        new Date().toISOString()
-      )
-      .run();
+        currency: "USD",
+        status: "pending"
+      })
+    });
+
+    const incidentResponse = await handleCreateIncident(incidentRequest, env);
+    const incidentText = await incidentResponse.text();
+    let incidentJson = null;
+
+    try {
+      incidentJson = incidentText ? JSON.parse(incidentText) : null;
+    } catch (_) {
+      incidentJson = null;
+    }
+
+    if (!incidentResponse.ok || !incidentJson?.ok) {
+      throw new Error(
+        incidentJson?.error ||
+        incidentJson?.message ||
+        `Incident creation failed with status ${incidentResponse.status}`
+      );
+    }
 
     created++;
   }
@@ -1444,37 +1630,28 @@ async function findIncidentIdsForAction(env, options = {}) {
 
   if (!gateway || gateway === "unknown") return [];
 
+  // HARD STOP: no explicit incident_ids = no action
+  if (!requestedIncidentIds.length) return [];
+
   const statusPlaceholders = allowedStatuses.map(() => "?").join(", ");
+  const idPlaceholders = requestedIncidentIds.map(() => "?").join(", ");
+
   const rows = await env.DB.prepare(`
     SELECT id, gateway, status
     FROM radar_incidents
     WHERE status IN (${statusPlaceholders})
+      AND id IN (${idPlaceholders})
   `)
-    .bind(...allowedStatuses)
+    .bind(...allowedStatuses, ...requestedIncidentIds)
     .all();
 
   const incidents = Array.isArray(rows?.results) ? rows.results : [];
 
   return incidents
     .filter((row) => normalizeGatewayName(row?.gateway) === gateway)
-    .filter((row) => {
-      // 🔒 HARD RULE: Do NOT default to "all incidents"
-      // If no incident_ids provided, only act on SAFE statuses
-
-      if (requestedIncidentIds.length) {
-        return requestedIncidentIds.includes(Number(row?.id));
-      }
-
-      // 🔥 CONTROLLED FALLBACK:
-      // Only allow retry of items that are explicitly safe to move
-      // (prevents wiping paused state unintentionally)
-
-      return allowedStatuses.includes(asText(row?.status));
-    })
     .map((row) => Number(row.id))
     .filter((id) => Number.isInteger(id) && id > 0);
 }
-
 async function updateIncidentStatuses(env, incidentIds, nextStatus) {
   const ids = Array.isArray(incidentIds)
     ? incidentIds.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
@@ -1492,8 +1669,50 @@ async function updateIncidentStatuses(env, incidentIds, nextStatus) {
     await env.DB.prepare(sql).bind(nextStatus, id).run();
   }
 }
+async function addActionNotesForIncidents(env, incidentIds, gateway, message) {
+  const ids = Array.isArray(incidentIds)
+    ? incidentIds.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
+    : [];
 
-function buildCorsHeaders(request) {
+  if (!ids.length) return;
+
+  const placeholders = ids.map(() => "?").join(", ");
+
+  const rows = await env.DB.prepare(`
+    SELECT id, order_id
+    FROM radar_incidents
+    WHERE id IN (${placeholders})
+  `)
+    .bind(...ids)
+    .all();
+
+  const incidents = Array.isArray(rows?.results) ? rows.results : [];
+
+  const orderIds = Array.from(
+    new Set(
+      incidents
+        .map((row) => asText(row?.order_id))
+        .filter(Boolean)
+    )
+  );
+
+  for (const orderId of orderIds) {
+    await handleAddOrderNoteAction(
+      new Request("https://pulse-worker.bob-b5c.workers.dev/radar/action/add-note", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          gateway,
+          order_id: orderId,
+          message
+        })
+      }),
+      env
+    );
+  }
+}function buildCorsHeaders(request) {
   const origin = request?.headers?.get("Origin") || "";
   const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : "";
 
