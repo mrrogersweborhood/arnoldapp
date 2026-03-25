@@ -134,12 +134,41 @@ async function handleCreateIncident(request, env) {
     )
     .run();
 
+  const store = await env.DB.prepare(`
+    SELECT
+      store_id,
+      execution_mode
+    FROM stores
+    WHERE store_id = ?
+    LIMIT 1
+  `)
+    .bind(store_id)
+    .first();
+
+  const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
+
+  if (executionMode === "live" && order_id && gateway) {
+    await handleAddOrderNoteAction(
+      new Request(request.url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          gateway,
+          order_id,
+          message: "Pulse: Failure detected and logged."
+        })
+      }),
+      env
+    );
+  }
+
   return json(request, {
     ok: true,
     incident_id: result.meta.last_row_id
   });
 }
-
 async function handleListIncidents(request, env) {
   const result = await env.DB.prepare(`
     SELECT *
@@ -376,43 +405,29 @@ async function handleResumeGatewayAction(request, env) {
 }
 
 async function handleTestIncident(request, env) {
-  const detected_at = new Date().toISOString();
+  const testBody = {
+    store_id: "okobserver",
+    subscription_id: "389642",
+    order_id: "389642",
+    customer_email: "subscriber@test.com",
+    gateway: "square",
+    reason: "CARD_EXPIRED",
+    amount: 40,
+    currency: "USD",
+    status: "pending"
+  };
 
-  const result = await env.DB.prepare(`
-    INSERT INTO radar_incidents (
-      store_id,
-      subscription_id,
-      order_id,
-      customer_email,
-      gateway,
-      reason,
-      amount,
-      currency,
-      status,
-      detected_at
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `)
-    .bind(
-      "okobserver",
-      "389642",
-      "389642",
-      "subscriber@test.com",
-      "square",
-      "CARD_EXPIRED",
-      40,
-      "USD",
-      "pending",
-      detected_at
-    )
-    .run();
-
-  return json(request, {
-    ok: true,
-    test_incident: result.meta.last_row_id
-  });
+  return await handleCreateIncident(
+    new Request(request.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(testBody)
+    }),
+    env
+  );
 }
-
 async function handleAddOrderNoteAction(request, env) {
   const body = await safeReadJson(request);
   const gateway = normalizeGatewayName(body?.gateway);
