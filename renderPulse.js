@@ -660,6 +660,9 @@ const gatewayCards = `
     // ----------------------------
     // GATEWAY ACTIONS
     // ----------------------------
+        // ----------------------------
+    // GATEWAY ACTIONS
+    // ----------------------------
     const actionEl = e.target.closest(".pulse-action-pill, .pulse-incident-strip-action");
     if (actionEl) {
       const action = String(actionEl.getAttribute("data-action") || "").toUpperCase();
@@ -669,17 +672,6 @@ const gatewayCards = `
         console.warn("Pulse action missing gateway");
         return;
       }
-
-      const analysis = window.__pulseLastAnalysis || null;
-      const incidents = Array.isArray(analysis?.incidents) ? analysis.incidents : [];
-
-      const incident_ids = incidents
-        .filter((item) => String(item?.gateway || "").toLowerCase() === gateway)
-        .map((item) => Number(item?.id))
-        .filter((id) => Number.isInteger(id) && id > 0);
-
-      console.log("ACTION → gateway:", gateway);
-      console.log("ACTION → incident_ids:", incident_ids);
 
       let endpoint = "";
 
@@ -691,16 +683,33 @@ const gatewayCards = `
 
       window.__pulseOptimisticAction = null;
 
-      fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          gateway,
-          incident_ids
+      fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`)
+        .then((r) => r.json())
+        .then((affected) => {
+          const incident_ids = Array.isArray(affected?.customers)
+            ? affected.customers
+                .map((item) => Number(item?.id))
+                .filter((id) => Number.isInteger(id) && id > 0)
+            : [];
+
+          console.log("ACTION → gateway:", gateway);
+          console.log("ACTION → incident_ids:", incident_ids);
+
+          if (!incident_ids.length) {
+            throw new Error(`No incident_ids found for gateway: ${gateway}`);
+          }
+
+          return fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              gateway,
+              incident_ids
+            })
+          });
         })
-      })
         .then((r) => r.json())
         .then((res) => {
           console.log("ACTION RESULT:", res);

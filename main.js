@@ -17,7 +17,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
   // --------------------------------------------------
   // Session / view state
   // --------------------------------------------------
-  let lastMode = null; // 'search' | 'totals' | 'radar' | 'pulse'
+    let lastMode = null; // 'search' | 'totals' | 'radar' | 'pulse' | 'stores'
   let lastPayload = null;
   let lastRaw = null;
   let rawVisible = false;
@@ -334,35 +334,50 @@ async function refreshSession() {
 }
 
 
-  function setDashboardChrome(view) {
+    function setDashboardChrome(view) {
   const isPulse = view === "pulse";
   const isRadar = view === "radar";
+  const isStores = view === "stores";
 
   const banner = $("radarStatusBanner");
   const hero = $("radarHeroMetrics");
   const kpi = $("radarKpiBand");
   const opps = $("radarRecoveryOpps");
+  const results = $("results");
+  const storeManagerView = $("storeManagerView");
 
   if (banner) banner.classList.toggle("is-hidden", !isRadar);
   if (hero) hero.classList.toggle("is-hidden", true);
   if (kpi) kpi.classList.toggle("is-hidden", true);
   if (opps) opps.classList.toggle("is-hidden", true);
 
+  if (results) {
+    results.classList.toggle("is-hidden", isStores);
+    results.style.display = isStores ? "none" : "";
+  }
+
+  if (storeManagerView) {
+    storeManagerView.classList.toggle("is-hidden", !isStores);
+    storeManagerView.style.display = isStores ? "" : "none";
+  }
+
   const navRadar = $("navRadar");
   const navPulse = $("navPulse");
+  const navStores = $("navStores");
 
   navRadar?.classList.toggle("is-active", isRadar);
   navPulse?.classList.toggle("is-active", isPulse);
+  navStores?.classList.toggle("is-active", isStores);
 
   const statusLine = $("statusLine");
   const rawBtn = $("btnRawJson");
 
   if (statusLine) {
-    statusLine.style.display = isPulse ? "none" : "";
+    statusLine.style.display = (isPulse || isStores) ? "none" : "";
   }
 
   if (rawBtn) {
-    rawBtn.style.display = isPulse ? "none" : "";
+    rawBtn.style.display = (isPulse || isStores) ? "none" : "";
   }
 }
   // --------------------------------------------------
@@ -407,6 +422,38 @@ window.setPulseAffectedCustomers = function (gateway, data) {
           <div class="aa-section-subtitle">Renderer not loaded</div>
         </div>
         <div class="aa-muted">renderPulseDashboard is not available.</div>
+      </section>
+    `;
+  }
+
+  function renderStoresLoadingShellSafe() {
+    if (typeof window.renderStoresLoadingShell === "function") {
+      return window.renderStoresLoadingShell();
+    }
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Store Manager</div>
+          <div class="aa-section-subtitle">Renderer not loaded</div>
+        </div>
+        <div class="aa-muted">renderStoresLoadingShell is not available.</div>
+      </section>
+    `;
+  }
+
+  function renderStoresDashboardSafe(payload) {
+    if (typeof window.renderStoresDashboard === "function") {
+      return window.renderStoresDashboard(payload);
+    }
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Store Manager</div>
+          <div class="aa-section-subtitle">Renderer not loaded</div>
+        </div>
+        <div class="aa-muted">renderStoresDashboard is not available.</div>
       </section>
     `;
   }
@@ -1174,6 +1221,62 @@ const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
     }
   }
 
+    async function doStoreManager() {
+    abortActiveSearch();
+    lastMode = "stores";
+    setDashboardChrome("stores");
+
+    const storeManagerView = $("storeManagerView");
+    if (storeManagerView) {
+      storeManagerView.innerHTML = renderStoresLoadingShellSafe();
+    }
+
+    try {
+      const storesRes = await fetch(`${WORKER_BASE}/stores`, { method: "GET", credentials: "include" });
+      const storesJson = await storesRes.json().catch(() => null);
+
+      if (!storesRes.ok || !storesJson?.ok) {
+        const errorHtml = `
+          <section class="card aa-section">
+            <div class="aa-section-head">
+              <div class="aa-section-title">Store Manager</div>
+              <div class="aa-section-subtitle">Stores endpoint failed</div>
+            </div>
+            <div class="aa-muted">${esc(friendlyText(storesJson?.error || "Stores failed."))}</div>
+          </section>
+        `;
+        if (storeManagerView) {
+          storeManagerView.innerHTML = errorHtml;
+        }
+        return;
+      }
+
+           lastPayload = {
+        ok: true,
+        stores: storesJson
+      };
+      lastRaw = lastPayload;
+      window.__storeManagerPayload = storesJson;
+
+      if (storeManagerView) {
+        storeManagerView.innerHTML = renderStoresDashboardSafe(storesJson);
+      }
+    } catch (err) {
+      const errorHtml = `
+        <section class="card aa-section">
+          <div class="aa-section-head">
+            <div class="aa-section-title">Store Manager</div>
+            <div class="aa-section-subtitle">Request failed</div>
+          </div>
+          <div class="aa-muted">${esc(friendlyText(err?.message || "Store manager failed."))}</div>
+        </section>
+      `;
+      if ($("storeManagerView")) {
+        $("storeManagerView").innerHTML = errorHtml;
+      }
+    }
+  }
+
   async function doPulseDashboard() {
     abortActiveSearch();
     lastMode = "pulse";
@@ -1188,9 +1291,9 @@ const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
     }
 
     const results = $("results");
-      if (results) {
-        results.innerHTML = renderPulseLoadingShellSafe();
-      }
+    if (results) {
+      results.innerHTML = renderPulseLoadingShellSafe();
+    }
 
     try {
       const [analysisRes, summaryRes] = await Promise.all([
@@ -1230,6 +1333,7 @@ const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
       setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
     }
   }
+window.doStoreManager = doStoreManager;
 window.doPulseDashboard = doPulseDashboard;
 window.doSearch = doSearch;
 window.doCustomerSearch = doSearch;
@@ -1373,6 +1477,11 @@ $("btnLogout")?.addEventListener("click", (e) => {    e.preventDefault();
   $("navPulse")?.addEventListener("click", (e) => {
     e.preventDefault();
     doPulseDashboard().catch(console.error);
+  });
+
+  $("navStores")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    doStoreManager().catch(console.error);
   });
 
   window.addEventListener("DOMContentLoaded", async () => {

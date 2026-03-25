@@ -93,6 +93,222 @@ document.getElementById("pulse-modal-body").innerHTML = `
     }).format(amount);
   }
 
+  function getStoresPayload() {
+    const payload = window.__storeManagerPayload || null;
+    const stores = Array.isArray(payload?.stores)
+      ? payload.stores
+      : Array.isArray(payload?.data?.stores)
+      ? payload.data.stores
+      : Array.isArray(payload)
+      ? payload
+      : [];
+    return stores;
+  }
+
+  function findStoreById(storeId) {
+    const normalized = String(storeId || "").trim();
+    if (!normalized) return null;
+
+    const stores = getStoresPayload();
+    return stores.find((store) => String(store?.store_id || "").trim() === normalized) || null;
+  }
+
+  function renderStoreFormModal(mode, store) {
+    const isEdit = mode === "edit";
+    const modalTitle = document.getElementById("pulse-modal-title");
+    const modalBody = document.getElementById("pulse-modal-body");
+
+    if (!modalTitle || !modalBody) return;
+
+    const storeId = String(store?.store_id || "");
+    const storeName = String(store?.store_name || "");
+    const gateway = String(store?.gateway || "");
+    const executionMode = String(store?.execution_mode || "test").toLowerCase();
+    const timezone = String(store?.timezone || "");
+    const gatewayWindow = String(store?.gateway_activity_window_hours ?? "");
+
+    modalTitle.textContent = isEdit ? "Edit Store" : "Add Store";
+
+    modalBody.innerHTML = `
+      <div class="store-manager-form-card">
+        <div class="store-manager-form-grid">
+          <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormStoreId">Store ID</label>
+            <input
+              id="storeFormStoreId"
+              class="store-manager-input"
+              type="text"
+              value="${esc(storeId)}"
+              placeholder="primary-store"
+              ${isEdit ? 'readonly' : ''}
+            />
+          </div>
+
+                    <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormStoreName">Store Name</label>
+            <input
+              id="storeFormStoreName"
+              class="store-manager-input"
+              type="text"
+              value="${esc(storeName)}"
+              placeholder="Main Store"
+            />
+          </div>
+
+          <div class="store-manager-field store-manager-field-wide">
+            <label class="store-manager-label" for="storeFormStoreUrl">Store URL</label>
+            <input
+              id="storeFormStoreUrl"
+              class="store-manager-input"
+              type="text"
+              value="${esc(String(store?.store_url || ""))}"
+              placeholder="https://okobserver.org"
+            />
+          </div>
+
+          <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormGateway">Gateway</label>
+            <input
+              id="storeFormGateway"
+              class="store-manager-input"
+              type="text"
+              value="${esc(gateway)}"
+              placeholder="square"
+            />
+          </div>
+
+          <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormExecutionMode">Execution Mode</label>
+            <select id="storeFormExecutionMode" class="store-manager-select">
+              <option value="test" ${executionMode === "test" ? "selected" : ""}>Test</option>
+              <option value="live" ${executionMode === "live" ? "selected" : ""}>Live</option>
+            </select>
+          </div>
+
+          <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormTimezone">Timezone</label>
+            <input
+              id="storeFormTimezone"
+              class="store-manager-input"
+              type="text"
+              value="${esc(timezone)}"
+              placeholder="America/Chicago"
+            />
+          </div>
+
+          <div class="store-manager-field">
+            <label class="store-manager-label" for="storeFormGatewayWindow">Gateway Activity Window Hours</label>
+            <input
+              id="storeFormGatewayWindow"
+              class="store-manager-input"
+              type="number"
+              min="1"
+              step="1"
+              value="${esc(gatewayWindow)}"
+              placeholder="24"
+            />
+          </div>
+        </div>
+
+        <div class="store-manager-help">
+          ${isEdit ? "Update the selected store configuration." : "Create a new store configuration record."}
+        </div>
+
+        <div class="store-manager-card-actions">
+          <button
+            class="pulse-modal-action-btn"
+            data-store-submit="${isEdit ? "update" : "create"}"
+            data-store-id="${esc(storeId)}"
+          >
+            ${isEdit ? "Save Store" : "Create Store"}
+          </button>
+        </div>
+      </div>
+    `;
+
+    const modal = document.getElementById("pulse-modal");
+    if (modal) {
+      modal.classList.remove("hidden");
+    }
+  }
+
+  function renderStoreDeleteModal(store) {
+    const modalTitle = document.getElementById("pulse-modal-title");
+    const modalBody = document.getElementById("pulse-modal-body");
+
+    if (!modalTitle || !modalBody) return;
+
+    const storeId = String(store?.store_id || "");
+    const storeName = String(store?.store_name || "Untitled Store");
+
+    modalTitle.textContent = "Delete Store";
+
+    modalBody.innerHTML = `
+      <div class="store-manager-form-card">
+        <div class="pulse-modal-intro">
+          Delete <strong>${esc(storeName)}</strong>?
+        </div>
+
+        <div class="store-manager-help">
+          This will remove store <strong>${esc(storeId)}</strong> from the Store Manager once the backend endpoint is available.
+        </div>
+
+        <div class="store-manager-card-actions">
+          <button
+            class="pulse-modal-action-btn danger"
+            data-store-submit="delete"
+            data-store-id="${esc(storeId)}"
+          >
+            Delete Store
+          </button>
+        </div>
+      </div>
+    `;
+
+    const modal = document.getElementById("pulse-modal");
+    if (modal) {
+      modal.classList.remove("hidden");
+    }
+  }
+
+  function getStoreFormPayload() {
+    return {
+      store_id: String(document.getElementById("storeFormStoreId")?.value || "").trim(),
+      store_name: String(document.getElementById("storeFormStoreName")?.value || "").trim(),
+      store_url: String(document.getElementById("storeFormStoreUrl")?.value || "").trim(),
+      gateway: String(document.getElementById("storeFormGateway")?.value || "").trim(),
+      execution_mode: String(document.getElementById("storeFormExecutionMode")?.value || "test").trim().toLowerCase(),
+      timezone: String(document.getElementById("storeFormTimezone")?.value || "").trim(),
+      gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0
+    };
+  }
+
+  function validateStoreFormPayload(payload) {
+    if (!payload.store_id) return "Store ID is required.";
+    if (!payload.store_name) return "Store name is required.";
+    if (!payload.store_url) return "Store URL is required.";
+    if (!/^https?:\/\//i.test(payload.store_url)) return "Store URL must start with http:// or https://";
+    if (!payload.gateway) return "Gateway is required.";
+    if (!payload.execution_mode) return "Execution mode is required.";
+    if (!payload.timezone) return "Timezone is required.";
+    if (!payload.gateway_activity_window_hours) return "Gateway activity window hours is required.";
+    return "";
+  }
+
+  function refreshStoreManagerView() {
+    if (typeof window.doStoreManager === "function") {
+      window.doStoreManager();
+      return;
+    }
+
+    if (typeof window.doPulseDashboard === "function") {
+      window.doPulseDashboard();
+      return;
+    }
+
+    window.location.reload();
+  }
+
   function renderAffectedCustomersModal(gateway, data) {
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
@@ -172,9 +388,11 @@ modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
   });
 
   // ACTION HANDLER
+  // ACTION HANDLER
   document.addEventListener("click", function (e) {
     const btn = e.target.closest(".pulse-modal-action-btn");
     if (!btn) return;
+    if (!btn.hasAttribute("data-action")) return;
 
     const action = String(btn.getAttribute("data-action") || "").trim();
     const gateway = window.__pulseModalGateway || null;
@@ -294,6 +512,119 @@ if (typeof window.loadPulseDashboard === "function") {
         btn.disabled = false;
         btn.textContent = originalLabel;
         showPulseBanner("Action failed", "error");
+      });
+  });
+
+  // TRIGGER HANDLERS
+    // STORE MANAGER HANDLERS
+  document.addEventListener("click", function (e) {
+    const addBtn = e.target.closest("#btnAddStore");
+    if (!addBtn) return;
+
+    renderStoreFormModal("create", null);
+  });
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-store-action]");
+    if (!btn) return;
+
+    const action = String(btn.getAttribute("data-store-action") || "").trim();
+    const storeId = String(btn.getAttribute("data-store-id") || "").trim();
+    const store = findStoreById(storeId);
+
+    if (action === "edit") {
+      renderStoreFormModal("edit", store || { store_id: storeId });
+      return;
+    }
+
+    if (action === "delete") {
+      renderStoreDeleteModal(store || { store_id: storeId, store_name: storeId });
+      return;
+    }
+  });
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-store-submit]");
+    if (!btn) return;
+
+    const submitAction = String(btn.getAttribute("data-store-submit") || "").trim();
+    const storeId = String(btn.getAttribute("data-store-id") || "").trim();
+
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Processing...";
+
+    if (submitAction === "delete") {
+      fetch("https://arnold-admin-worker.bob-b5c.workers.dev/stores/delete", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store_id: storeId })
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+
+          if (!data?.ok) {
+            showPulseBanner(data?.error || "Delete store failed.", "error");
+            return;
+          }
+
+          closePulseModal();
+          showPulseBanner("Store deleted.", "success");
+          refreshStoreManagerView();
+        })
+        .catch((err) => {
+          console.error(err);
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+          showPulseBanner("Delete store failed.", "error");
+        });
+
+      return;
+    }
+
+    const payload = getStoreFormPayload();
+    const validationError = validateStoreFormPayload(payload);
+
+    if (validationError) {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+      showPulseBanner(validationError, "error");
+      return;
+    }
+
+    const endpoint =
+      submitAction === "update"
+        ? "https://arnold-admin-worker.bob-b5c.workers.dev/stores/update"
+        : "https://arnold-admin-worker.bob-b5c.workers.dev/stores/create";
+
+    fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+
+        if (!data?.ok) {
+          showPulseBanner(data?.error || "Save store failed.", "error");
+          return;
+        }
+
+        closePulseModal();
+        showPulseBanner(submitAction === "update" ? "Store updated." : "Store created.", "success");
+        refreshStoreManagerView();
+      })
+      .catch((err) => {
+        console.error(err);
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+        showPulseBanner(submitAction === "update" ? "Update store failed." : "Create store failed.", "error");
       });
   });
 
