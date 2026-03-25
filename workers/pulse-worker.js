@@ -474,19 +474,19 @@ async function handleAddOrderNoteAction(request, env) {
   }
 
   const baseUrl = store.store_url.replace(/\/+$/, "");
-  const noteUrl = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes`;
+const noteUrl = `${baseUrl}/wp-json/wc/v3/orders/${encodeURIComponent(orderId)}/notes`;
 
-  const response = await fetch(noteUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
-    },
-    body: JSON.stringify({
-      note: noteMessage,
-      customer_note: customerNote
-    })
-  });
+const response = await fetch(noteUrl, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Basic " + btoa(env.WC_KEY + ":" + env.WC_SECRET)
+  },
+  body: JSON.stringify({
+    note: noteMessage,
+    customer_note: customerNote
+  })
+});
 
   const responseText = await response.text();
   let responseJson = null;
@@ -1502,7 +1502,7 @@ function json(request, data, status = 200) {
     status,
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
-      ...buildCorsHeaders(request)
+      ...buildCorsHeaders(request) 
     }
   });
 }
