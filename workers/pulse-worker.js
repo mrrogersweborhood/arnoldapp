@@ -166,7 +166,7 @@ async function handlePauseGatewayAction(request, env) {
     String(s.gateway || "").toLowerCase().includes(gateway)
   );
 
-  console.log("PAUSE → MATCHED STORE JSON:", JSON.stringify(store || null));
+    console.log("PAUSE → MATCHED STORE JSON:", JSON.stringify(store || null));
   console.log("PAUSE → gateway JSON:", JSON.stringify(gateway));
 
   const executionMode = (asText(store?.execution_mode) || "test").toLowerCase();
@@ -176,7 +176,7 @@ async function handlePauseGatewayAction(request, env) {
   if (executionMode !== "live") {
     return json(request, {
       ok: true,
-      mode: executionMode || "test",
+      mode: executionMode,
       simulated: true,
       gateway,
       updated_status: "paused",
@@ -246,7 +246,7 @@ async function handleRetryGatewayAction(request, env) {
   if (executionMode !== "live") {
     return json(request, {
       ok: true,
-      mode: executionMode || "test",
+      mode: executionMode,
       simulated: true,
       gateway,
       updated_status: "retrying",
@@ -323,7 +323,7 @@ async function handleResumeGatewayAction(request, env) {
   if (executionMode !== "live") {
     return json(request, {
       ok: true,
-      mode: executionMode || "test",
+      mode: executionMode,
       simulated: true,
       gateway,
       updated_status: "pending",
