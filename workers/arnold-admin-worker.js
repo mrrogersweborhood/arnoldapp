@@ -265,6 +265,278 @@ async function requireAdminCookie(request) {
   return { ok: true, jwt: jwt.trim(), user: v.user, roles: v.roles };
 }
 
+function storeText(value) {
+  if (value === null || value === undefined) return "";
+  return String(value).trim();
+}
+
+function storeWindowHours(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num) || num <= 0) return 24;
+  return Math.round(num);
+}
+
+async function handleListStores(request, env) {
+  const auth = await requireAdminCookie(request);
+  if (!auth.ok) {
+    return json(
+      auth.status || 401,
+      { ok: false, error: auth.error || "Unauthorized" },
+      { "cache-control": "no-store" },
+      request
+    );
+  }
+
+  const result = await env.DB.prepare(`
+    SELECT
+      store_id,
+      store_name,
+      store_url,
+      gateway,
+      execution_mode,
+      timezone,
+      gateway_activity_window_hours
+    FROM stores
+    ORDER BY store_name ASC, store_id ASC
+  `).all();
+
+  return json(
+    200,
+    {
+      ok: true,
+      stores: (result.results || []).map((row) => ({
+        store_id: storeText(row?.store_id),
+        store_name: storeText(row?.store_name),
+        store_url: storeText(row?.store_url),
+        gateway: storeText(row?.gateway),
+        execution_mode: (storeText(row?.execution_mode) || "test").toLowerCase(),
+        timezone: storeText(row?.timezone) || "UTC",
+        gateway_activity_window_hours: storeWindowHours(row?.gateway_activity_window_hours)
+      }))
+    },
+    { "cache-control": "no-store" },
+    request
+  );
+}
+
+async function handleCreateStore(request, env) {
+  const auth = await requireAdminCookie(request);
+  if (!auth.ok) {
+    return json(
+      auth.status || 401,
+      { ok: false, error: auth.error || "Unauthorized" },
+      { "cache-control": "no-store" },
+      request
+    );
+  }
+
+  const body = await request.json().catch(() => null);
+
+  const store_id = storeText(body?.store_id);
+  const store_name = storeText(body?.store_name);
+  const store_url = storeText(body?.store_url);
+  const gateway = storeText(body?.gateway);
+  const execution_mode = (storeText(body?.execution_mode) || "test").toLowerCase();
+  const timezone = storeText(body?.timezone) || "UTC";
+  const gateway_activity_window_hours = storeWindowHours(body?.gateway_activity_window_hours);
+
+  if (!store_id) {
+    return json(400, { ok: false, error: "Store ID is required." }, { "cache-control": "no-store" }, request);
+  }
+
+  if (!store_name) {
+    return json(400, { ok: false, error: "Store name is required." }, { "cache-control": "no-store" }, request);
+  }
+
+  if (!gateway) {
+    return json(400, { ok: false, error: "Gateway is required." }, { "cache-control": "no-store" }, request);
+  }
+
+  const existing = await env.DB.prepare(`
+    SELECT store_id
+    FROM stores
+    WHERE store_id = ?
+    LIMIT 1
+  `).bind(store_id).first();
+
+  if (existing) {
+    return json(409, { ok: false, error: "A store with that Store ID already exists." }, { "cache-control": "no-store" }, request);
+  }
+
+  await env.DB.prepare(`
+    INSERT INTO stores (
+      store_id,
+      store_name,
+      store_url,
+      gateway,
+      execution_mode,
+      timezone,
+      gateway_activity_window_hours
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    store_id,
+    store_name,
+    store_url,
+    gateway,
+    execution_mode === "live" ? "live" : "test",
+    timezone,
+    gateway_activity_window_hours
+  ).run();
+
+  return json(
+    200,
+    {
+      ok: true,
+      created: true,
+      store: {
+        store_id,
+        store_name,
+        store_url,
+        gateway,
+        execution_mode: execution_mode === "live" ? "live" : "test",
+        timezone,
+        gateway_activity_window_hours
+      }
+    },
+    { "cache-control": "no-store" },
+    request
+  );
+}
+
+async function handleUpdateStore(request, env) {
+  const auth = await requireAdminCookie(request);
+  if (!auth.ok) {
+    return json(
+      auth.status || 401,
+      { ok: false, error: auth.error || "Unauthorized" },
+      { "cache-control": "no-store" },
+      request
+    );
+  }
+
+  const body = await request.json().catch(() => null);
+  const store_id = storeText(body?.store_id);
+
+  if (!store_id) {
+    return json(400, { ok: false, error: "Store ID is required." }, { "cache-control": "no-store" }, request);
+  }
+
+  const existing = await env.DB.prepare(`
+    SELECT
+      store_id,
+      store_name,
+      store_url,
+      gateway,
+      execution_mode,
+      timezone,
+      gateway_activity_window_hours
+    FROM stores
+    WHERE store_id = ?
+    LIMIT 1
+  `).bind(store_id).first();
+
+  if (!existing) {
+    return json(404, { ok: false, error: "Store not found." }, { "cache-control": "no-store" }, request);
+  }
+
+  const nextStoreName = storeText(body?.store_name) || storeText(existing?.store_name);
+  const nextStoreUrl =
+    body && Object.prototype.hasOwnProperty.call(body, "store_url")
+      ? storeText(body?.store_url)
+      : storeText(existing?.store_url);
+  const nextGateway = storeText(body?.gateway) || storeText(existing?.gateway);
+  const nextExecutionMode = ((storeText(body?.execution_mode) || storeText(existing?.execution_mode) || "test").toLowerCase() === "live")
+    ? "live"
+    : "test";
+  const nextTimezone = storeText(body?.timezone) || storeText(existing?.timezone) || "UTC";
+  const nextGatewayWindowHours =
+    body && Object.prototype.hasOwnProperty.call(body, "gateway_activity_window_hours")
+      ? storeWindowHours(body?.gateway_activity_window_hours)
+      : storeWindowHours(existing?.gateway_activity_window_hours);
+
+  await env.DB.prepare(`
+    UPDATE stores
+    SET
+      store_name = ?,
+      store_url = ?,
+      gateway = ?,
+      execution_mode = ?,
+      timezone = ?,
+      gateway_activity_window_hours = ?
+    WHERE store_id = ?
+  `).bind(
+    nextStoreName,
+    nextStoreUrl,
+    nextGateway,
+    nextExecutionMode,
+    nextTimezone,
+    nextGatewayWindowHours,
+    store_id
+  ).run();
+
+  return json(
+    200,
+    {
+      ok: true,
+      updated: true,
+      store: {
+        store_id,
+        store_name: nextStoreName,
+        store_url: nextStoreUrl,
+        gateway: nextGateway,
+        execution_mode: nextExecutionMode,
+        timezone: nextTimezone,
+        gateway_activity_window_hours: nextGatewayWindowHours
+      }
+    },
+    { "cache-control": "no-store" },
+    request
+  );
+}
+
+async function handleDeleteStore(request, env) {
+  const auth = await requireAdminCookie(request);
+  if (!auth.ok) {
+    return json(
+      auth.status || 401,
+      { ok: false, error: auth.error || "Unauthorized" },
+      { "cache-control": "no-store" },
+      request
+    );
+  }
+
+  const body = await request.json().catch(() => null);
+  const store_id = storeText(body?.store_id);
+
+  if (!store_id) {
+    return json(400, { ok: false, error: "Store ID is required." }, { "cache-control": "no-store" }, request);
+  }
+
+  const existing = await env.DB.prepare(`
+    SELECT store_id
+    FROM stores
+    WHERE store_id = ?
+    LIMIT 1
+  `).bind(store_id).first();
+
+  if (!existing) {
+    return json(404, { ok: false, error: "Store not found." }, { "cache-control": "no-store" }, request);
+  }
+
+  await env.DB.prepare(`
+    DELETE FROM stores
+    WHERE store_id = ?
+  `).bind(store_id).run();
+
+  return json(
+    200,
+    { ok: true, deleted: true, store_id },
+    { "cache-control": "no-store" },
+    request
+  );
+}
+
 /* ---------------- MAIN FETCH HANDLER ---------------- */
 
 async function fetchUpstreamWithOptionalAuth(upstream, init, hadAuth) {
@@ -277,6 +549,7 @@ async function fetchUpstreamWithOptionalAuth(upstream, init, hadAuth) {
   }
   return resp;
 }
+
 const RADAR_CACHE_SECONDS = 180;
 export default {
   async fetch(request, env, ctx) {
@@ -1874,7 +2147,7 @@ return response;
         );
       }
 
-      return json(
+            return json(
         200,
         {
           ok: true,
@@ -1885,6 +2158,22 @@ return response;
         { "cache-control": "no-store" },
         request
       );
+    }
+
+    if (url.pathname === "/stores" && request.method === "GET") {
+      return handleListStores(request, env);
+    }
+
+    if (url.pathname === "/stores/create" && request.method === "POST") {
+      return handleCreateStore(request, env);
+    }
+
+    if (url.pathname === "/stores/update" && request.method === "POST") {
+      return handleUpdateStore(request, env);
+    }
+
+    if (url.pathname === "/stores/delete" && request.method === "POST") {
+      return handleDeleteStore(request, env);
     }
 
     if (url.pathname === "/status") {
@@ -1915,24 +2204,24 @@ return response;
       (request.method === "GET" || request.method === "HEAD") &&
       !upstream.searchParams.has(NOCACHE_QS);
 
-    const init = {
-      method: request.method,
-      headers: fwdHeaders,
-      body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
-      ...(cacheable && {
-        cf: {
-          cacheEverything: true,
-          cacheTtlByStatus: {
-            "200-299": CACHE_TTL,
-            "300-399": 60,
-            "401": 0,
-            "403": 0,
-            "404": 0,
-            "500-599": 0
-          }
-        }
-      })
-    };
+const init = {
+  method: request.method,
+  headers: fwdHeaders,
+  body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+  ...(cacheable ? {
+    cf: {
+      cacheEverything: true,
+      cacheTtlByStatus: {
+        "200-299": CACHE_TTL,
+        "300-399": 60,
+        "401": 0,
+        "403": 0,
+        "404": 0,
+        "500-599": 0
+      }
+    }
+  } : {})
+};
 
     let upstreamResp;
     try {
@@ -2023,7 +2312,6 @@ function corsHeaders(req) {
     "cache-control": "no-store"
   };
 }
-
 function text(status, body, req, extraHeaders) {
   return new Response(body, {
     status,
@@ -2043,7 +2331,6 @@ function json(status, obj, extraHeaders, req) {
   };
   return new Response(JSON.stringify(obj), { status, headers });
 }
-
 function jsonError(status, msg, err, req) {
   return json(
     status,

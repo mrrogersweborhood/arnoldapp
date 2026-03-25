@@ -65,11 +65,7 @@ export default {
       }
 if (path === "/pulse/affected-customers" && method === "GET") {
   return await handleAffectedCustomers(request, env);
-}
-if (path === "/pulse/affected-customers" && method === "GET") {
-  return await handleAffectedCustomers(request, env);
-}
-      return json(request, { ok: false, error: "Not found" }, 404);
+}      return json(request, { ok: false, error: "Not found" }, 404);
     } catch (error) {
       return json(request, {
         ok: false,
@@ -858,16 +854,24 @@ async function handlePulseSummary(request, env) {
 
   const executionMode = storeModes.includes("live") ? "live" : "test";
 
-  return json(request, {
-    ok: true,
-    execution_mode: executionMode,
-    recoverable_revenue: totalFailedRevenue,
-    failed_subscriptions: totalFailedCount,
-    paused_subscriptions: Number(paused?.count || 0),
-    paused_revenue: Number(paused?.total || 0),
-    retrying_subscriptions: Number(retrying?.count || 0),
-    retrying_revenue: Number(retrying?.total || 0)
-  });
+return json(request, {
+  ok: true,
+  execution_mode: executionMode,
+
+  // totals
+  recoverable_revenue: totalFailedRevenue,
+  failed_subscriptions: totalFailedCount,
+
+  // 🔥 REQUIRED — explicit status counts
+  pending_subscriptions: Number(pending?.count || 0),
+  pending_revenue: Number(pending?.total || 0),
+
+  retrying_subscriptions: Number(retrying?.count || 0),
+  retrying_revenue: Number(retrying?.total || 0),
+
+  paused_subscriptions: Number(paused?.count || 0),
+  paused_revenue: Number(paused?.total || 0)
+});
 }
 async function handleFailureAnalysis(request, env) {
   let lastSuccessAt = null;
