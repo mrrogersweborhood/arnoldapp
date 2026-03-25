@@ -84,13 +84,54 @@ document.getElementById("pulse-modal-body").innerHTML = `
     if (!modal) return;
     modal.classList.add("hidden");
   }
-  function formatPulseMoney(value) {
+    function formatPulseMoney(value) {
     const amount = Number(value || 0) || 0;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       maximumFractionDigits: 2
     }).format(amount);
+  }
+
+  const STORE_GATEWAY_OPTIONS = [
+    { value: "square", label: "Square" },
+    { value: "stripe", label: "Stripe" },
+    { value: "paypal", label: "PayPal" }
+  ];
+
+  const STORE_TIMEZONE_OPTIONS = [
+    { value: "America/New_York", label: "America/New_York" },
+    { value: "America/Chicago", label: "America/Chicago" },
+    { value: "America/Denver", label: "America/Denver" },
+    { value: "America/Los_Angeles", label: "America/Los_Angeles" },
+    { value: "America/Phoenix", label: "America/Phoenix" },
+    { value: "America/Anchorage", label: "America/Anchorage" },
+    { value: "Pacific/Honolulu", label: "Pacific/Honolulu" },
+    { value: "UTC", label: "UTC" }
+  ];
+
+  function renderSelectOptions(options, selectedValue) {
+    const selected = String(selectedValue || "").trim();
+
+    return options.map((option) => {
+      const value = String(option?.value || "");
+      const label = String(option?.label || value);
+      const isSelected = value === selected ? "selected" : "";
+
+      return `<option value="${esc(value)}" ${isSelected}>${esc(label)}</option>`;
+    }).join("");
+  }
+
+  function normalizeGatewayForForm(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    const allowed = new Set(STORE_GATEWAY_OPTIONS.map((option) => option.value));
+    return allowed.has(raw) ? raw : "square";
+  }
+
+  function normalizeTimezoneForForm(value) {
+    const raw = String(value || "").trim();
+    const allowed = new Set(STORE_TIMEZONE_OPTIONS.map((option) => option.value));
+    return allowed.has(raw) ? raw : "America/Chicago";
   }
 
   function getStoresPayload() {
@@ -121,94 +162,6 @@ document.getElementById("pulse-modal-body").innerHTML = `
     if (!modalTitle || !modalBody) return;
 
     const storeId = String(store?.store_id || "");
-    const storeName = String(store?.store_name || "");
-    const gateway = String(store?.gateway || "");
-    const executionMode = String(store?.execution_mode || "test").toLowerCase();
-    const timezone = String(store?.timezone || "");
-    const gatewayWindow = String(store?.gateway_activity_window_hours ?? "");
-
-    modalTitle.textContent = isEdit ? "Edit Store" : "Add Store";
-
-    modalBody.innerHTML = `
-      <div class="store-manager-form-card">
-        <div class="store-manager-form-grid">
-          <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormStoreId">Store ID</label>
-            <input
-              id="storeFormStoreId"
-              class="store-manager-input"
-              type="text"
-              value="${esc(storeId)}"
-              placeholder="primary-store"
-              ${isEdit ? 'readonly' : ''}
-            />
-          </div>
-
-                    <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormStoreName">Store Name</label>
-            <input
-              id="storeFormStoreName"
-              class="store-manager-input"
-              type="text"
-              value="${esc(storeName)}"
-              placeholder="Main Store"
-            />
-          </div>
-
-          <div class="store-manager-field store-manager-field-wide">
-            <label class="store-manager-label" for="storeFormStoreUrl">Store URL</label>
-            <input
-              id="storeFormStoreUrl"
-              class="store-manager-input"
-              type="text"
-              value="${esc(String(store?.store_url || ""))}"
-              placeholder="https://okobserver.org"
-            />
-          </div>
-
-          <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormGateway">Gateway</label>
-            <input
-              id="storeFormGateway"
-              class="store-manager-input"
-              type="text"
-              value="${esc(gateway)}"
-              placeholder="square"
-            />
-          </div>
-
-          <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormExecutionMode">Execution Mode</label>
-            <select id="storeFormExecutionMode" class="store-manager-select">
-              <option value="test" ${executionMode === "test" ? "selected" : ""}>Test</option>
-              <option value="live" ${executionMode === "live" ? "selected" : ""}>Live</option>
-            </select>
-          </div>
-
-          <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormTimezone">Timezone</label>
-            <input
-              id="storeFormTimezone"
-              class="store-manager-input"
-              type="text"
-              value="${esc(timezone)}"
-              placeholder="America/Chicago"
-            />
-          </div>
-
-          <div class="store-manager-field">
-            <label class="store-manager-label" for="storeFormGatewayWindow">Gateway Activity Window Hours</label>
-            <input
-              id="storeFormGatewayWindow"
-              class="store-manager-input"
-              type="number"
-              min="1"
-              step="1"
-              value="${esc(gatewayWindow)}"
-              placeholder="24"
-            />
-          </div>
-        </div>
 
         <div class="store-manager-help">
           ${isEdit ? "Update the selected store configuration." : "Create a new store configuration record."}
@@ -271,17 +224,7 @@ document.getElementById("pulse-modal-body").innerHTML = `
     }
   }
 
-  function getStoreFormPayload() {
-    return {
-      store_id: String(document.getElementById("storeFormStoreId")?.value || "").trim(),
-      store_name: String(document.getElementById("storeFormStoreName")?.value || "").trim(),
-      store_url: String(document.getElementById("storeFormStoreUrl")?.value || "").trim(),
-      gateway: String(document.getElementById("storeFormGateway")?.value || "").trim(),
-      execution_mode: String(document.getElementById("storeFormExecutionMode")?.value || "test").trim().toLowerCase(),
-      timezone: String(document.getElementById("storeFormTimezone")?.value || "").trim(),
-      gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0
-    };
-  }
+function getStoreFormPayload() {
 
   function validateStoreFormPayload(payload) {
     if (!payload.store_id) return "Store ID is required.";
