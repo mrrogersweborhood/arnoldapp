@@ -647,7 +647,7 @@ if (row) {
   }
   return;
 }
-   // ----------------------------
+// ----------------------------
 // PRIMARY ACTION DRILL-IN
 // ----------------------------
 const actionBtn = e.target.closest(".pulse-action-pill:not([data-action='pulse-toggle-customers'])");
@@ -656,11 +656,9 @@ if (actionBtn) {
   if (!gateway) return;
 
   try {
-    const res = await fetch(
-      `https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`
-    );
-
-    const data = await res.json();
+    const data = typeof window.fetchPulseAffectedCustomers === "function"
+      ? await window.fetchPulseAffectedCustomers(gateway)
+      : { ok: false, customers: [] };
 
     if (data?.ok && Array.isArray(data.customers)) {
       const customers = data.customers;
@@ -707,11 +705,9 @@ if (toggle) {
   // ONLY FETCH WHEN EXPANDING
   if (isExpanding) {
     try {
-      const res = await fetch(
-        `https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`
-      );
-
-      const data = await res.json();
+      const data = typeof window.fetchPulseAffectedCustomers === "function"
+        ? await window.fetchPulseAffectedCustomers(gateway)
+        : { ok: false, customers: [] };
 
       if (data?.ok && Array.isArray(data.customers)) {
         window.__pulseAffectedCustomers = data.customers;
@@ -732,8 +728,7 @@ if (toggle) {
   }
 
   return;
-}
-  });
+}  });
 
   window.renderPulseDashboard = renderPulseDashboard;
 })();
