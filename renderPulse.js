@@ -195,36 +195,160 @@
     return "LOW";
   }
 
-  function renderPulseLoadingShell() {
+    function renderPulseLoadingShell() {
     return `
-      <section class="card pulse-hero">
-        <div class="pulse-hero-top">
-          <div>
-            <div class="pulse-kicker">Pulse Revenue Intelligence</div>
-            <div class="pulse-title">Loading dashboard…</div>
-            <div class="pulse-subtitle">Pulling live gateway and failure data from the Pulse worker.</div>
+      <div class="pulse-shell">
+        <section class="card pulse-incident-strip pulse-medium">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">
+              <div class="aa-loading-row" style="width:180px"></div>
+            </div>
+            <div class="pulse-incident-strip-subtitle">
+              <div class="aa-loading-row" style="width:320px"></div>
+            </div>
           </div>
-        </div>
-        <div class="pulse-stat-grid">
-          <div class="pulse-stat-card pulse-stat-accent-danger"><div class="aa-loading-row" style="width:120px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
-          <div class="pulse-stat-card pulse-stat-accent-warning"><div class="aa-loading-row" style="width:100px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
-          <div class="pulse-stat-card pulse-stat-accent-neutral"><div class="aa-loading-row" style="width:130px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
-          <div class="pulse-stat-card pulse-stat-accent-neutral"><div class="aa-loading-row" style="width:110px"></div><div class="aa-loading-row" style="width:88px; margin-top:10px"></div></div>
-        </div>
-      </section>
 
-      <section class="card pulse-section">
-        <div class="pulse-section-head">
-          <div>
-            <div class="pulse-section-title">Gateway intelligence</div>
-            <div class="pulse-section-subtitle">Preparing live recovery recommendations…</div>
+          <div class="pulse-incident-strip-metrics">
+            <div class="pulse-incident-strip-metric">
+              <span>Confidence</span>
+              <strong><div class="aa-loading-row" style="width:70px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Customers</span>
+              <strong><div class="aa-loading-row" style="width:60px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Revenue</span>
+              <strong><div class="aa-loading-row" style="width:90px"></div></strong>
+            </div>
           </div>
-        </div>
-        <div class="pulse-grid">
-          <div class="pulse-gateway-card"><div class="aa-loading-row" style="width:150px"></div><div class="aa-loading-row" style="width:90px; margin-top:10px"></div><div class="aa-loading-row" style="width:100%; margin-top:12px"></div><div class="aa-loading-row" style="width:85%; margin-top:8px"></div></div>
-          <div class="pulse-gateway-card"><div class="aa-loading-row" style="width:150px"></div><div class="aa-loading-row" style="width:90px; margin-top:10px"></div><div class="aa-loading-row" style="width:100%; margin-top:12px"></div><div class="aa-loading-row" style="width:85%; margin-top:8px"></div></div>
-        </div>
-      </section>
+        </section>
+
+        <section class="card pulse-section pulse-last-scan-card">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Last scanner run</div>
+              <div class="pulse-section-subtitle">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+            </div>
+            <div class="pulse-last-scan-chip pulse-last-scan-chip-up">
+              <div class="aa-loading-row" style="width:120px"></div>
+            </div>
+          </div>
+
+          <div class="pulse-last-scan-grid">
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Processed</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Created</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Skipped</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Recent successes</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
+              <div class="pulse-last-scan-label">Last successful payment seen</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-small">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card pulse-hero">
+          <div class="pulse-hero-top">
+            <div>
+              <div class="pulse-kicker">Pulse Revenue Intelligence</div>
+              <div class="pulse-title">Revenue recovery dashboard</div>
+              <div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
+            </div>
+            <div class="pulse-priority-pill pulse-priority-medium">
+              Updating…
+            </div>
+          </div>
+
+          <div class="pulse-stat-grid">
+            <div class="pulse-stat-card pulse-stat-accent-danger">
+              <div class="pulse-stat-label">Recoverable revenue</div>
+              <div class="aa-loading-row" style="width:140px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:190px; margin-top:10px"></div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-warning">
+              <div class="pulse-stat-label">Failed subscriptions</div>
+              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:180px; margin-top:10px"></div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Active incidents</div>
+              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:180px; margin-top:10px"></div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Retry queue</div>
+              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:160px; margin-top:10px"></div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Paused incidents</div>
+              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:160px; margin-top:10px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card pulse-section">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Gateway intelligence</div>
+              <div class="pulse-section-subtitle">Recommended recovery actions, priorities, and next steps.</div>
+            </div>
+          </div>
+
+          <div class="pulse-grid">
+            <div class="pulse-gateway-card">
+              <div class="aa-loading-row" style="width:160px"></div>
+              <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+              <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+              <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+            </div>
+
+            <div class="pulse-gateway-card">
+              <div class="aa-loading-row" style="width:160px"></div>
+              <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+              <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+              <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+              <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card pulse-section pulse-reasons-card">
+          <div class="pulse-section-head" style="padding:16px 16px 0;">
+            <div>
+              <div class="pulse-section-title">Reasons breakdown</div>
+              <div class="pulse-section-subtitle">Sorted by revenue impact.</div>
+            </div>
+          </div>
+          <div class="pulse-reason-list">
+            <div class="aa-loading-row" style="margin:16px"></div>
+            <div class="aa-loading-row" style="margin:16px"></div>
+          </div>
+        </section>
+      </div>
     `;
   }
 
