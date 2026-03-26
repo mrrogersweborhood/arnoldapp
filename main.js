@@ -979,13 +979,15 @@ btn.addEventListener("click", async () => {
   }
 function renderOrder(payload) {
   const order = payload?.order || payload?.context?.order || null;
+  const orderId = payload?.order_id || order?.id || "—";
+  const customer = payload?.context?.customer || null;
 
-  if (!order) {
+  if (!order && !customer) {
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Order</div>
-          <div class="aa-section-subtitle">No order data returned</div>
+          <div class="aa-section-title">Order #${esc(orderId)}</div>
+          <div class="aa-section-subtitle">No data returned</div>
         </div>
         <div class="aa-muted">Order not found.</div>
       </section>
@@ -995,25 +997,24 @@ function renderOrder(payload) {
   return `
     <section class="card aa-section">
       <div class="aa-section-head">
-        <div class="aa-section-title">Order #${esc(order.id || "—")}</div>
-        <div class="aa-section-subtitle">${esc(order.status || "Unknown status")}</div>
+        <div class="aa-section-title">Order #${esc(orderId)}</div>
+        <div class="aa-section-subtitle">${esc(order?.status || "Status unavailable")}</div>
       </div>
 
       <div class="aa-grid-2">
         <div>
           <strong>Total:</strong><br>
-          ${esc(order.total || "—")}
+          ${esc(order?.total || "—")}
         </div>
 
         <div>
           <strong>Customer:</strong><br>
-          ${esc(order.billing?.email || order.email || "—")}
+          ${esc(customer?.email || order?.billing?.email || order?.email || "—")}
         </div>
       </div>
     </section>
   `;
-}
-  // --------------------------------------------------
+}  // --------------------------------------------------
   // Radar render
   // --------------------------------------------------
   function renderRadar(payload) {
