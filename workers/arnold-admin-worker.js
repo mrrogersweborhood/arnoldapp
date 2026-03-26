@@ -2118,15 +2118,22 @@ return response;
           );
         }
 
-        return json(
-          200,
-          {
-            ok: true,
-            intent: "customer_by_email",
-            matches: customers.length,
-            results: customers.slice(0, 5).map(pickCustomer),
-            context
-          },
+// ensure at least one result if we have a context customer
+let resultCustomers = customers.slice(0, 5).map(pickCustomer);
+
+if (!resultCustomers.length && contextCustomer) {
+  resultCustomers = [contextCustomer];
+}
+
+return json(
+  200,
+  {
+    ok: true,
+    intent: "customer_by_email",
+    matches: resultCustomers.length,
+    results: resultCustomers,
+    context
+  },
           { "cache-control": "no-store" },
           request
         );
