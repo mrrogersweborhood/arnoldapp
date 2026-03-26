@@ -418,10 +418,9 @@
                     ? "Hide customers"
                     : "View customers"}
                 </button>
-              </div>
+                            </div>
 
               ${
-                             ${
                 window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
                 window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
                 Array.isArray(window.__pulseAffectedCustomers) &&
