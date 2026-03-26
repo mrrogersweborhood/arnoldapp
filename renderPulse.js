@@ -621,7 +621,7 @@
   window.renderPulseLoadingShell = renderPulseLoadingShell;
 
   // inline affected customer + expand handler only
-  document.addEventListener("click", function (e) {
+  document.addEventListener("click", async function (e) {
 
 // ----------------------------
 // ----------------------------
@@ -650,21 +650,44 @@ if (row) {
     // ----------------------------
     // TOGGLE CUSTOMERS
     // ----------------------------
-    const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
-    if (toggle) {
-      const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
-      if (!gateway) return;
+const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
+if (toggle) {
+  const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
+  if (!gateway) return;
 
-      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-      window.__pulseExpandedGateways[gateway] =
-        !window.__pulseExpandedGateways[gateway];
+  window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+  const isExpanding = !window.__pulseExpandedGateways[gateway];
+  window.__pulseExpandedGateways[gateway] = isExpanding;
 
-      if (typeof window.doPulseDashboard === "function") {
-        window.doPulseDashboard();
+  // ✅ ONLY FETCH WHEN EXPANDING
+  if (isExpanding) {
+    try {
+      const res = await fetch(
+        `https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`
+      );
+
+      const data = await res.json();
+
+      if (data?.ok && Array.isArray(data.customers)) {
+        window.__pulseAffectedCustomers = data.customers;
+        window.__pulseAffectedGateway = gateway;
+      } else {
+        window.__pulseAffectedCustomers = [];
+        window.__pulseAffectedGateway = gateway;
       }
-
-      return;
+    } catch (err) {
+      console.error("Failed to load affected customers:", err);
+      window.__pulseAffectedCustomers = [];
+      window.__pulseAffectedGateway = gateway;
     }
+  }
+
+  if (typeof window.doPulseDashboard === "function") {
+    window.doPulseDashboard();
+  }
+
+  return;
+}
   });
 
   window.renderPulseDashboard = renderPulseDashboard;
