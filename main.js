@@ -977,44 +977,7 @@ btn.addEventListener("click", async () => {
       ${activityCard}
     `;
   }
-function renderOrder(payload) {
-  const order = payload?.order || payload?.context?.order || null;
-  const orderId = payload?.order_id || order?.id || "—";
-  const customer = payload?.context?.customer || null;
-
-  if (!order && !customer) {
-    return `
-      <section class="card aa-section">
-        <div class="aa-section-head">
-          <div class="aa-section-title">Order #${esc(orderId)}</div>
-          <div class="aa-section-subtitle">No data returned</div>
-        </div>
-        <div class="aa-muted">Order not found.</div>
-      </section>
-    `;
-  }
-
-  return `
-    <section class="card aa-section">
-      <div class="aa-section-head">
-        <div class="aa-section-title">Order #${esc(orderId)}</div>
-        <div class="aa-section-subtitle">${esc(order?.status || "Status unavailable")}</div>
-      </div>
-
-      <div class="aa-grid-2">
-        <div>
-          <strong>Total:</strong><br>
-          ${esc(order?.total || "—")}
-        </div>
-
-        <div>
-          <strong>Customer:</strong><br>
-          ${esc(customer?.email || order?.billing?.email || order?.email || "—")}
-        </div>
-      </div>
-    </section>
-  `;
-}  // --------------------------------------------------
+// --------------------------------------------------
   // Radar render
   // --------------------------------------------------
   function renderRadar(payload) {
@@ -1180,13 +1143,21 @@ function renderOrder(payload) {
 
 if (results) {
   // ----------------------------
-  // ORDER vs CUSTOMER ROUTING
+  // ORDER vs CUSTOMER ROUTING (UNIFIED)
   // ----------------------------
   if (j?.intent === "order_by_id" || j?.order_id) {
-  results.innerHTML = renderOrder(j);
-} else {
-  results.innerHTML = renderResults(j);
-}
+    const order = j?.order || j?.context?.order || null;
+
+    results.innerHTML = renderResults({
+      ...j,
+      context: {
+        ...(j?.context || {}),
+        orders: order ? [order] : []
+      }
+    });
+  } else {
+    results.innerHTML = renderResults(j);
+  }
 
   bindNotesToggles(results);
   bindCopyButtons(results);
