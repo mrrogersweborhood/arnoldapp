@@ -1825,7 +1825,7 @@ return response;
         q.match(/(?:\bcustomer\s+id\s*#?\s*)(\d{1,})\b/i) ||
         q.match(/(?:\bid\s*#?\s*)(\d{1,})\b/i);
 
-      if (orderIdMatch) {
+           if (orderIdMatch) {
         const orderId = orderIdMatch[1];
         const o = await wooGet(`/wp-json/wc/v3/orders/${encodeURIComponent(String(orderId))}`);
         if (!o.resp.ok) {
@@ -1883,6 +1883,7 @@ return response;
             order_id: String(orderId),
             context: {
               customer: contextCustomer,
+              order: order || null,
               subscriptions,
               orders: order ? [order] : []
             }
