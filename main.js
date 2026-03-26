@@ -1110,23 +1110,23 @@ btn.addEventListener("click", async () => {
 
     try {
       const direct = parseDirectLookupQuery(q);
-// ----------------------------
-// DIRECT ORDER ROUTE (FIX)
-// ----------------------------
-if (direct?.type === "order") {
-  return doSearch(`order #${direct.id}`);
-}
-const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    query: q
-  }),
-  signal
-});
+
+      const normalizedQuery =
+        direct?.type === "order"
+          ? `order #${direct.id}`
+          : q;
+
+      const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query: normalizedQuery
+        }),
+        signal
+      });
 
       const j = await r.json().catch(() => null);
 
