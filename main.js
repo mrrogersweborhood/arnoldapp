@@ -1132,7 +1132,16 @@ btn.addEventListener("click", async () => {
       if (signal.aborted) return;
 
       if (!r.ok || !j?.ok) {
-        setStatus("warn", friendlyText(j?.error || "Search failed."));
+        const errorText =
+          typeof j?.error === "string"
+            ? j.error
+            : typeof j?.message === "string"
+              ? j.message
+              : r.status === 404
+                ? "Search target not found."
+                : "Search failed.";
+
+        setStatus("warn", friendlyText(errorText));
         if (results && !cachedShell) results.innerHTML = "";
         return;
       }
