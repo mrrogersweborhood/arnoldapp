@@ -619,17 +619,29 @@
   // inline affected customer + expand handler only
   document.addEventListener("click", function (e) {
 
-    // ----------------------------
-    // CUSTOMER ROW CLICK
-    // ----------------------------
-    const row = e.target.closest("[data-email]");
-    if (row) {
-      const email = row.getAttribute("data-email");
-      if (email && typeof window.doSearch === "function") {
-        window.doSearch(email);
-      }
+// ----------------------------
+// CUSTOMER ROW CLICK (EMAIL + ORDER SUPPORT)
+// ----------------------------
+const row = e.target.closest("[data-email]");
+if (row) {
+
+  // ✅ ORDER CLICK (only if clicking last cell)
+  const orderCell = e.target.closest("td:last-child");
+  if (orderCell) {
+    const orderText = orderCell.textContent.trim();
+    if (orderText && orderText !== "—" && typeof window.doSearch === "function") {
+      window.doSearch(orderText);
       return;
     }
+  }
+
+  // ✅ DEFAULT: EMAIL CLICK
+  const email = row.getAttribute("data-email");
+  if (email && typeof window.doSearch === "function") {
+    window.doSearch(email);
+  }
+  return;
+}
 
     // ----------------------------
     // TOGGLE CUSTOMERS
