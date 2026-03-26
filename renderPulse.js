@@ -655,6 +655,55 @@ if (actionBtn) {
   const gateway = String(actionBtn.getAttribute("data-gateway") || "").toLowerCase();
   if (!gateway) return;
 
+  // 🟢 LOADING STATE (NEW)
+  const originalText = actionBtn.textContent;
+  actionBtn.textContent = "Loading…";
+  actionBtn.disabled = true;
+
+  try {
+    const data = typeof window.fetchPulseAffectedCustomers === "function"
+      ? await window.fetchPulseAffectedCustomers(gateway)
+      : { ok: false, customers: [] };
+
+    if (data?.ok && Array.isArray(data.customers)) {
+      const customers = data.customers;
+
+      // SINGLE CUSTOMER → AUTO SEARCH
+      if (customers.length === 1) {
+        const email = customers[0]?.customer_email || customers[0]?.email;
+        if (email && typeof window.doSearch === "function") {
+          window.doSearch(email);
+        }
+        return;
+      }
+
+      // MULTIPLE → EXPAND EXISTING TABLE
+      window.__pulseAffectedCustomers = customers;
+      window.__pulseAffectedGateway = gateway;
+
+      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+      window.__pulseExpandedGateways[gateway] = true;
+
+      if (typeof window.doPulseDashboard === "function") {
+        window.doPulseDashboard();
+      }
+
+      return;
+    }
+
+    // 🟢 EMPTY STATE FEEDBACK (NEW)
+    showPulseBanner("No customers found for this gateway", "warning");
+
+  } catch (err) {
+    console.error("Drill-in failed:", err);
+    showPulseBanner("Failed to load customers", "error");
+  } finally {
+    // 🟢 RESET BUTTON (NEW)
+    actionBtn.textContent = originalText;
+    actionBtn.disabled = false;
+  }
+}
+
   try {
     const data = typeof window.fetchPulseAffectedCustomers === "function"
       ? await window.fetchPulseAffectedCustomers(gateway)
@@ -698,6 +747,10 @@ if (toggle) {
   const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
   if (!gateway) return;
 
+  const originalText = toggle.textContent;
+  toggle.textContent = "Loading…";
+  toggle.disabled = true;
+
   window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
   const isExpanding = !window.__pulseExpandedGateways[gateway];
   window.__pulseExpandedGateways[gateway] = isExpanding;
@@ -715,17 +768,22 @@ if (toggle) {
       } else {
         window.__pulseAffectedCustomers = [];
         window.__pulseAffectedGateway = gateway;
+        showPulseBanner("No customers found", "warning");
       }
     } catch (err) {
       console.error("Failed to load affected customers:", err);
       window.__pulseAffectedCustomers = [];
       window.__pulseAffectedGateway = gateway;
+      showPulseBanner("Failed to load customers", "error");
     }
   }
 
   if (typeof window.doPulseDashboard === "function") {
     window.doPulseDashboard();
   }
+
+  toggle.textContent = originalText;
+  toggle.disabled = false;
 
   return;
 }  });
