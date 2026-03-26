@@ -426,6 +426,19 @@ window.setPulseAffectedCustomers = function (gateway, data) {
     `;
   }
 
+  function fadeReplaceResults(html) {
+    const results = $("results");
+    if (!results) return;
+
+    results.style.transition = "opacity 180ms ease";
+    results.style.opacity = "0";
+
+    window.setTimeout(() => {
+      results.innerHTML = html;
+      results.style.opacity = "1";
+    }, 180);
+  }
+
   function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
       return window.renderStoresLoadingShell();
@@ -1338,7 +1351,7 @@ if (results) {
       lastRaw = lastPayload;
 
       if (results) {
-        results.innerHTML = renderPulseDashboardSafe(analysisJson, summaryJson);
+        fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
       }
 
       setStatus("", "Pulse dashboard loaded.");
