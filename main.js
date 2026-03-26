@@ -1494,10 +1494,7 @@ $("navPulse")?.addEventListener("click", (e) => {
   doPulseDashboard().catch(console.error);
 });
 
-$("navRevenueIntelligence")?.addEventListener("click", (e) => {
-  e.preventDefault();
-  doPulseDashboard().catch(console.error);
-});
+
 
 $("navStores")?.addEventListener("click", (e) => {
   e.preventDefault();
