@@ -258,283 +258,271 @@
       return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
     });
 
+    const executionMode = String(summary?.execution_mode || "test").toUpperCase();
     const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
     const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
-    const executionMode = String(summary?.execution_mode || "test").toUpperCase();
-
-    let retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
-    let retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
-
-       let pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
-    let pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
-
-        const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
-
-    // Use summary as the single source of truth for paused/retrying totals.
-    // Do not apply optimistic math here because it can double-count against
-    // already-updated summary values returned from the backend.
-
-    const highestPriorityCount = gateways.filter(
-      (item) => String(item?.recommended_priority || "").toUpperCase() === "HIGH"
-    ).length;
+    const pendingSubscriptions = Number(summary?.pending_subscriptions || 0) || 0;
+    const pendingRevenue = Number(summary?.pending_revenue || 0) || 0;
+    const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
+    const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
+    const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+    const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
+    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
 
     const incidentStrip = activeIncident
       ? `
-          <section class="card pulse-incident-strip">
-                        <div class="pulse-incident-strip-head">
-              <div>
-                <div class="pulse-incident-strip-title">⚠️ Elevated Failure Activity</div>
-                <div class="pulse-incident-strip-subtitle">
-                  ${esc((() => {
-                    const gatewayName = formatPulseGatewayName(activeIncident.gateway);
-
-                    if (!lastSuccessAt) {
-                      return `${gatewayName} showing abnormal failure behavior. No successful payments detected — investigate immediately.`;
-                    }
-
-                    return `${gatewayName} status: ${activeIncident.status.toUpperCase()} — ${activeIncident.recommended_message}`;
-                  })())}
-                </div>
-              </div>
-              <div
-                class="pulse-incident-strip-action"
-                data-action="${esc(String(activeIncident?.recommended_action || "MONITOR").toUpperCase())}"
-                data-gateway="${esc(String(activeIncident?.gateway || "unknown"))}"
-                style="cursor:pointer"
-              >
-                View Recovery Actions
-              </div>
+        <section class="card pulse-incident-strip pulse-${esc(String(activeIncident?.severity || "low").toLowerCase())}">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">
+              ${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}
             </div>
-
-            <div class="pulse-incident-strip-metrics">
-              <div class="pulse-incident-chip">
-                <span class="pulse-incident-chip-label">Status</span>
-                <span class="pulse-incident-chip-value">${esc(activeIncident.status.toUpperCase())}</span>
-              </div>
-              <div class="pulse-incident-chip">
-                <span class="pulse-incident-chip-label">Severity</span>
-                <span class="pulse-incident-chip-value">${esc(activeIncident.severity.toUpperCase())}</span>
-              </div>
-              <div class="pulse-incident-chip">
-                <span class="pulse-incident-chip-label">Confidence</span>
-                <span class="pulse-incident-chip-value">${esc(formatPulsePercent(activeIncident.confidence * 100))}</span>
-              </div>
-              <div class="pulse-incident-chip">
-                <span class="pulse-incident-chip-label">Customers at risk</span>
-                <span class="pulse-incident-chip-value">${esc(formatPulseInteger(activeIncident.customers_at_risk))}</span>
-              </div>
+            <div class="pulse-incident-strip-subtitle">
+              ${esc(activeIncident?.recommended_message || "No incident message available.")}
             </div>
-          </section>
-        `
+          </div>
+
+          <div class="pulse-incident-strip-metrics">
+            <div class="pulse-incident-strip-metric">
+              <span>Confidence</span>
+              <strong>${esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100))}</strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Customers</span>
+              <strong>${esc(formatPulseInteger(activeIncident?.customers_at_risk || 0))}</strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Revenue</span>
+              <strong>${esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0))}</strong>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-actions">
+            <button
+              class="pulse-incident-strip-action"
+              type="button"
+              data-action="${esc(String(activeIncident?.recommended_action || ""))}"
+              data-gateway="${esc(String(activeIncident?.gateway || ""))}"
+            >
+              ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
+            </button>
+          </div>
+        </section>
+      `
       : "";
 
     const lastScanCard = lastScanInfo
       ? `
-      <section class="card pulse-scan-inline">
-        <div class="pulse-scan-inline-row">
-
-          <div class="pulse-scan-chip">
-            <span class="pulse-scan-label">Last scan</span>
-            <span class="pulse-scan-value">${esc(new Date(lastScanInfo.time).toLocaleString())}</span>
+        <section class="card pulse-section pulse-last-scan-card">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Last scanner run</div>
+              <div class="pulse-section-subtitle">
+                ${esc(new Date(lastScanInfo.time).toLocaleString())}
+              </div>
+            </div>
+            ${scanDelta
+              ? `
+                <div class="pulse-last-scan-chip ${scanDelta.failedDelta > 0 || scanDelta.revenueDelta > 0 ? "pulse-last-scan-chip-up" : "pulse-last-scan-chip-down"}">
+                  ${scanDelta.failedDelta > 0 ? "+" : ""}${esc(formatPulseInteger(scanDelta.failedDelta))} failures ·
+                  ${scanDelta.revenueDelta > 0 ? "+" : ""}${esc(formatPulseMoney(scanDelta.revenueDelta))}
+                </div>
+              `
+              : ""}
           </div>
 
-          <div class="pulse-scan-chip">
-            <span class="pulse-scan-label">Processed</span>
-            <span class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.processed))}</span>
+          <div class="pulse-last-scan-grid">
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Processed</div>
+              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.processed || 0))}</div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Created</div>
+              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_created || 0))}</div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Skipped</div>
+              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_skipped || 0))}</div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Recent successes</div>
+              <div class="pulse-last-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
+            </div>
+            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
+              <div class="pulse-last-scan-label">Last successful payment seen</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-small">
+                ${lastSuccessAt ? esc(new Date(lastSuccessAt).toLocaleString()) : "No recent success observed"}
+              </div>
+            </div>
           </div>
-
-          <div class="pulse-scan-chip">
-            <span class="pulse-scan-label">Failed</span>
-            <span class="pulse-scan-value">${esc(formatPulseInteger(lastScanInfo.failed))}</span>
-          </div>
-
-          <div class="pulse-scan-chip">
-            <span class="pulse-scan-label">Last success</span>
-            <span class="pulse-scan-value">${
-              esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "—")
-            }</span>
-          </div>
-
-          <div class="pulse-scan-chip">
-            <span class="pulse-scan-label">Successes</span>
-            <span class="pulse-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</span>
-          </div>
-
-        </div>
-      </section>
-    `
+        </section>
+      `
       : "";
 
-const topGateway = gateways[0] || null;
-const otherGateways = gateways.slice(1);
+    const gatewayCards = gateways.length
+      ? gateways.map((gateway) => {
+          const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
+          const priorityToken = getPulsePriorityToken(priority);
+          const recommendedAction = String(gateway?.recommended_action || "").toUpperCase();
 
-const renderGatewayCard = (gateway) => {
-  const priorityLabel = String(gateway?.recommended_priority || "LOW").toUpperCase();
-  const priorityToken = getPulsePriorityToken(priorityLabel);
-
-  const isActiveGateway =
-    String(window.__pulseAffectedGateway || "").toLowerCase() ===
-    String(gateway?.gateway || "").toLowerCase();
-
-  const inlineCustomers = isActiveGateway && Array.isArray(window.__pulseAffectedCustomers)
-    ? window.__pulseAffectedCustomers
-    : [];
-
-  const MAX_VISIBLE = 3;
-
-  window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-
-  const gatewayKey = String(gateway?.gateway || "").toLowerCase();
-  const isExpanded = window.__pulseExpandedGateways[gatewayKey] === true;
-
-  const visibleCustomers = isExpanded
-    ? inlineCustomers
-    : inlineCustomers.slice(0, MAX_VISIBLE);
-
-  const inlineCustomersTable = inlineCustomers.length
-    ? `
-        <div class="pulse-message-block">
-          <div class="pulse-message-label">Affected Customers</div>
-
-          <div class="pulse-customer-list">
-            ${visibleCustomers.map((row) => `
-              <div data-email="${esc(row?.email || "")}" class="pulse-customer-item">
-                <div class="pulse-customer-row-top">
-                  <div class="pulse-customer-email">${esc(row?.email || "—")}</div>
-                  <div class="pulse-customer-amount">${esc(formatPulseMoney(row?.amount))}</div>
+          return `
+            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+              <div class="pulse-gateway-top">
+                <div>
+                  <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
+                  <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct || 0))} of active failures</div>
                 </div>
+                <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
+              </div>
 
-                <div class="pulse-customer-row-bottom">
-                  ${renderPulseReasonPill(row?.reason || "—")}
-                  <span class="pulse-customer-meta">${esc(String(row?.status || "").toUpperCase() || "—")}</span>
-                  <span class="pulse-customer-meta">#${esc(row?.order_id || "—")}</span>
+              <div class="pulse-gateway-metrics">
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Failures</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.incident_count || 0))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Customers</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.customers_at_risk || 0))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Recoverable revenue</div>
+                  <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue || 0))}</div>
                 </div>
               </div>
-            `).join("")}
-          </div>
 
-          ${inlineCustomers.length > MAX_VISIBLE ? `
-            <div
-              class="pulse-view-all"
-              data-action="pulse-toggle-customers"
-              data-gateway="${esc(String(gateway?.gateway || ""))}"
-            >
-              ${isExpanded ? "Show less" : `View all (${inlineCustomers.length})`}
-            </div>
-          ` : ""}
-        </div>
-      `
-    : "";
+              <div class="pulse-gateway-message">
+                ${esc(gateway?.recommended_message || "No recommendation available.")}
+              </div>
 
-  return `
-    <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
-      <div class="pulse-gateway-top">
-        <div>
-          <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
-          <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct))} of tracked failures</div>
-        </div>
-        <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priorityLabel)}</div>
-      </div>
+              <div class="pulse-gateway-playbook">
+                ${esc(gateway?.playbook || "Monitor gateway performance.")}
+              </div>
 
-      <div class="pulse-gateway-metrics">
-        <div class="pulse-metric">
-          <div class="pulse-metric-label">Incidents</div>
-          <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.incident_count))}</div>
-        </div>
-        <div class="pulse-metric">
-          <div class="pulse-metric-label">Revenue</div>
-          <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue))}</div>
-        </div>
-        <div class="pulse-metric">
-          <div class="pulse-metric-label">Customers at risk</div>
-          <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.customers_at_risk))}</div>
-        </div>
-      </div>
+              <div class="pulse-gateway-actions">
+                <button
+                  class="pulse-action-pill"
+                  type="button"
+                  data-action="${esc(recommendedAction)}"
+                  data-gateway="${esc(String(gateway?.gateway || ""))}"
+                >
+                  ${esc(formatPulseActionLabel(recommendedAction))}
+                </button>
 
-      <div
-        class="pulse-action-pill"
-        data-action="${esc(String(gateway?.recommended_action || "MONITOR").toUpperCase())}"
-        data-gateway="${esc(String(gateway?.gateway || "unknown"))}"
-        style="cursor:pointer;"
-      >
-        ${esc(formatPulseActionLabel(gateway?.recommended_action))}
-      </div>
+                <button
+                  class="pulse-action-pill pulse-action-pill-secondary"
+                  type="button"
+                  data-action="pulse-toggle-customers"
+                  data-gateway="${esc(String(gateway?.gateway || ""))}"
+                >
+                  ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()]
+                    ? "Hide customers"
+                    : "View customers"}
+                </button>
+              </div>
 
-      <div class="pulse-message-block">
-        <div class="pulse-message-label">Recommended message</div>
-        <div class="pulse-message-text">${esc(String(gateway?.recommended_message || "No message returned."))}</div>
-      </div>
+              ${
+                window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
+                window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
+                Array.isArray(window.__pulseAffectedCustomers) &&
+                window.__pulseAffectedCustomers.length
+                  ? `
+                    <div class="pulse-inline-customers">
+                      <div class="pulse-inline-customers-head">
+                        <div class="pulse-inline-customers-title">Affected customers</div>
+                        <div class="pulse-inline-customers-subtitle">
+                          ${esc(formatPulseInteger(window.__pulseAffectedCustomers.length))} currently visible
+                        </div>
+                      </div>
 
-      <div class="pulse-message-block">
-        <div class="pulse-message-label">Playbook</div>
-        <div class="pulse-message-text">${esc(String(gateway?.playbook || "No playbook returned."))}</div>
-      </div>
+                      <div class="pulse-inline-customers-table">
+                        <div class="pulse-inline-customers-row pulse-inline-customers-head-row">
+                          <div>Email</div>
+                          <div>Amount</div>
+                          <div>Reason</div>
+                          <div>Status</div>
+                          <div>Order</div>
+                        </div>
 
-      ${inlineCustomersTable}
-    </article>
-  `;
-};
-const gatewayCards = `
-  ${gateways.length ? `
-    <div class="pulse-secondary-gateways">
-      ${gateways.map(renderGatewayCard).join("")}
-    </div>
-  ` : `
-    <div class="pulse-empty" style="margin:16px;">
-      No gateway data returned.
-    </div>
-  `}
-`;
+                        ${window.__pulseAffectedCustomers.map((row) => `
+                          <div class="pulse-inline-customers-row" data-email="${esc(row?.email || "")}">
+                            <div class="pulse-linkish">${esc(row?.email || "—")}</div>
+                            <div>${esc(formatPulseMoney(row?.amount || 0))}</div>
+                            <div>${renderPulseReasonPill(row?.reason || "FAILED_GENERIC")}</div>
+                            <div>${esc(String(row?.status || "—").toUpperCase())}</div>
+                            <div>${esc(String(row?.order_id || "—"))}</div>
+                          </div>
+                        `).join("")}
+                      </div>
+                    </div>
+                  `
+                  : ""
+              }
+            </article>
+          `;
+        }).join("")
+      : `
+        <article class="pulse-gateway-card">
+          <div class="pulse-gateway-name">No gateway activity</div>
+          <div class="pulse-gateway-message">No gateway intelligence was returned by the Pulse worker.</div>
+        </article>
+      `;
+
     const reasonRows = reasons.length
       ? reasons.map((reason) => `
           <div class="pulse-reason-row">
-            <div class="pulse-reason-name">${renderPulseReasonPill(reason?.reason)}</div>
-            <div class="pulse-reason-value pulse-right">${esc(formatPulseInteger(reason?.incident_count))}</div>
-            <div class="pulse-reason-value pulse-right">${esc(formatPulseMoney(reason?.recoverable_revenue))}</div>
+            <div>${renderPulseReasonPill(reason?.reason || "FAILED_GENERIC")}</div>
+            <div class="pulse-right">${esc(formatPulseInteger(reason?.incident_count || 0))}</div>
+            <div class="pulse-right">${esc(formatPulseMoney(reason?.recoverable_revenue || 0))}</div>
           </div>
         `).join("")
-      : `<div class="pulse-empty" style="margin:16px;">No reasons data was returned by the live Pulse endpoint.</div>`;
+      : `
+        <div class="pulse-reason-row">
+          <div>No reasons available</div>
+          <div class="pulse-right">0</div>
+          <div class="pulse-right">${esc(formatPulseMoney(0))}</div>
+        </div>
+      `;
 
-    // affected customers now render inline under the active gateway card
     const repeatOffenderSection = repeatOffenders.length
       ? `
-          <section class="card pulse-section">
-            <div class="pulse-section-head">
-              <div>
-                <div class="pulse-section-title">Repeat offenders</div>
-                <div class="pulse-section-subtitle">Subscribers with repeated payment failures.</div>
-              </div>
+        <section class="card pulse-section">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Repeat offenders</div>
+              <div class="pulse-section-subtitle">Customers with repeated failures across tracked incidents.</div>
             </div>
-            <div class="pulse-grid">
-              ${repeatOffenders.map((offender) => {
-                const priority = getOffenderPriority(offender);
-                const priorityToken = getPulsePriorityToken(priority);
-                return `
-                  <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
-                    <div class="pulse-gateway-top">
-                      <div>
-                        <div class="pulse-gateway-name">${esc(offender.email)}</div>
-                        <div class="pulse-gateway-share">${esc(String(offender.count))} failures</div>
-                      </div>
-                      <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
-                    </div>
+          </div>
 
-                    <div class="pulse-gateway-metrics">
-                      <div class="pulse-metric">
-                        <div class="pulse-metric-label">Failures</div>
-                        <div class="pulse-metric-value">${esc(formatPulseInteger(offender.count))}</div>
-                      </div>
-                      <div class="pulse-metric">
-                        <div class="pulse-metric-label">Revenue at risk</div>
-                        <div class="pulse-metric-value">${esc(formatPulseMoney(offender.total))}</div>
-                      </div>
+          <div class="pulse-grid">
+            ${repeatOffenders.map((offender) => {
+              const priority = getOffenderPriority(offender);
+              const priorityToken = getPulsePriorityToken(priority);
+              return `
+                <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+                  <div class="pulse-gateway-top">
+                    <div>
+                      <div class="pulse-gateway-name">${esc(offender.email)}</div>
+                      <div class="pulse-gateway-share">${esc(String(offender.count))} failures</div>
                     </div>
-                  </article>
-                `;
-              }).join("")}
-            </div>
-          </section>
-        `
+                    <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
+                  </div>
+
+                  <div class="pulse-gateway-metrics">
+                    <div class="pulse-metric">
+                      <div class="pulse-metric-label">Failures</div>
+                      <div class="pulse-metric-value">${esc(formatPulseInteger(offender.count))}</div>
+                    </div>
+                    <div class="pulse-metric">
+                      <div class="pulse-metric-label">Revenue at risk</div>
+                      <div class="pulse-metric-value">${esc(formatPulseMoney(offender.total))}</div>
+                    </div>
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `
       : "";
 
     return `
@@ -621,9 +609,9 @@ const gatewayCards = `
     `;
   }
 
-     window.renderPulseLoadingShell = renderPulseLoadingShell;
+  window.renderPulseLoadingShell = renderPulseLoadingShell;
 
-  // inline affected customer + expand handler + gateway actions
+  // inline affected customer + expand handler only
   document.addEventListener("click", function (e) {
 
     // ----------------------------
@@ -656,83 +644,6 @@ const gatewayCards = `
 
       return;
     }
-
-    // ----------------------------
-    // GATEWAY ACTIONS
-    // ----------------------------
-        // ----------------------------
-    // GATEWAY ACTIONS
-    // ----------------------------
-    const actionEl = e.target.closest(".pulse-action-pill, .pulse-incident-strip-action");
-    if (actionEl) {
-      const action = String(actionEl.getAttribute("data-action") || "").toUpperCase();
-      const gateway = String(actionEl.getAttribute("data-gateway") || "").toLowerCase();
-
-      if (!gateway) {
-        console.warn("Pulse action missing gateway");
-        return;
-      }
-
-      let endpoint = "";
-
-      if (action === "RETRY_NOW") {
-        endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry";
-      } else {
-        endpoint = "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause";
-      }
-
-      window.__pulseOptimisticAction = null;
-
-      fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`)
-        .then((r) => r.json())
-        .then((affected) => {
-          const incident_ids = Array.isArray(affected?.customers)
-            ? affected.customers
-                .map((item) => Number(item?.id))
-                .filter((id) => Number.isInteger(id) && id > 0)
-            : [];
-
-          console.log("ACTION → gateway:", gateway);
-          console.log("ACTION → incident_ids:", incident_ids);
-
-          if (!incident_ids.length) {
-            throw new Error(`No incident_ids found for gateway: ${gateway}`);
-          }
-
-          return fetch(endpoint, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              gateway,
-              incident_ids
-            })
-          });
-        })
-        .then((r) => r.json())
-        .then((res) => {
-          console.log("ACTION RESULT:", res);
-
-          if (!res?.ok) {
-            showPulseBanner("Action failed", "error");
-            return;
-          }
-
-          showPulseBanner("Action applied", "success");
-
-          if (typeof window.doPulseDashboard === "function") {
-            window.doPulseDashboard();
-          }
-        })
-        .catch((err) => {
-          console.error("ACTION ERROR:", err);
-          showPulseBanner("Action failed", "error");
-        });
-
-      return;
-    }
-
   });
 
   window.renderPulseDashboard = renderPulseDashboard;

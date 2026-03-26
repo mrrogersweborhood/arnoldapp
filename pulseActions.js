@@ -35,46 +35,50 @@
     const modal = document.getElementById("pulse-modal");
     if (!modal) return;
 
-    document.getElementById("pulse-modal-title").textContent = title;
+    const titleEl = document.getElementById("pulse-modal-title");
+    const bodyEl = document.getElementById("pulse-modal-body");
+    if (!titleEl || !bodyEl) return;
 
-document.getElementById("pulse-modal-body").innerHTML = `
-  <div class="pulse-modal-intro">
-    ${body}
-  </div>
+    titleEl.textContent = title;
 
-  <div class="pulse-modal-meta">
-    Gateway
-    <strong>${esc(window.__pulseModalGateway || "unknown")}</strong>
-  </div>
+    bodyEl.innerHTML = `
+      <div class="pulse-modal-intro">
+        ${body}
+      </div>
 
-  <div class="pulse-modal-section-label">
-    Recommended action
-  </div>
+      <div class="pulse-modal-meta">
+        Gateway
+        <strong>${esc(window.__pulseModalGateway || "unknown")}</strong>
+      </div>
 
-  <div class="pulse-modal-actions-primary">
-    <button class="pulse-modal-action-btn primary" data-action="retry">
-      Move to Retry Queue
-    </button>
-  </div>
+      <div class="pulse-modal-section-label">
+        Recommended action
+      </div>
 
-  <div class="pulse-modal-section-label secondary">
-    Other actions
-  </div>
+      <div class="pulse-modal-actions-primary">
+        <button class="pulse-modal-action-btn primary" data-action="retry">
+          Move to Retry Queue
+        </button>
+      </div>
 
-  <div class="pulse-modal-actions-secondary">
-    <button class="pulse-modal-action-btn danger" data-action="pause">
-      Pause Retries
-    </button>
+      <div class="pulse-modal-section-label secondary">
+        Other actions
+      </div>
 
-    <button class="pulse-modal-action-btn" data-action="resume">
-      Resume Paused
-    </button>
+      <div class="pulse-modal-actions-secondary">
+        <button class="pulse-modal-action-btn danger" data-action="pause">
+          Pause Retries
+        </button>
 
-    <button class="pulse-modal-action-btn ghost" data-action="customers">
-      View Affected Customers
-    </button>
-  </div>
-`;
+        <button class="pulse-modal-action-btn" data-action="resume">
+          Resume Paused
+        </button>
+
+        <button class="pulse-modal-action-btn ghost" data-action="customers">
+          View Affected Customers
+        </button>
+      </div>
+    `;
 
     modal.classList.remove("hidden");
   }
@@ -83,8 +87,10 @@ document.getElementById("pulse-modal-body").innerHTML = `
     const modal = document.getElementById("pulse-modal");
     if (!modal) return;
     modal.classList.add("hidden");
+    window.__pulseModalGateway = null;
   }
-    function formatPulseMoney(value) {
+
+  function formatPulseMoney(value) {
     const amount = Number(value || 0) || 0;
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -99,77 +105,146 @@ document.getElementById("pulse-modal-body").innerHTML = `
     { value: "paypal", label: "PayPal" }
   ];
 
-  const STORE_TIMEZONE_OPTIONS = [
-    { value: "America/New_York", label: "America/New_York" },
-    { value: "America/Chicago", label: "America/Chicago" },
-    { value: "America/Denver", label: "America/Denver" },
-    { value: "America/Los_Angeles", label: "America/Los_Angeles" },
-    { value: "America/Phoenix", label: "America/Phoenix" },
-    { value: "America/Anchorage", label: "America/Anchorage" },
-    { value: "Pacific/Honolulu", label: "Pacific/Honolulu" },
-    { value: "UTC", label: "UTC" }
+  const STORE_EXECUTION_MODE_OPTIONS = [
+    { value: "test", label: "Test" },
+    { value: "live", label: "Live" }
   ];
 
-  function renderSelectOptions(options, selectedValue) {
-    const selected = String(selectedValue || "").trim();
-
-    return options.map((option) => {
-      const value = String(option?.value || "");
-      const label = String(option?.label || value);
-      const isSelected = value === selected ? "selected" : "";
-
-      return `<option value="${esc(value)}" ${isSelected}>${esc(label)}</option>`;
-    }).join("");
-  }
+  const STORE_TIMEZONE_OPTIONS = [
+    "UTC",
+    "America/New_York",
+    "America/Chicago",
+    "America/Denver",
+    "America/Los_Angeles",
+    "America/Phoenix"
+  ];
 
   function normalizeGatewayForForm(value) {
-    const raw = String(value || "").trim().toLowerCase();
-    const allowed = new Set(STORE_GATEWAY_OPTIONS.map((option) => option.value));
-    return allowed.has(raw) ? raw : "square";
+    const gateway = String(value || "").trim().toLowerCase();
+    if (!gateway) return "";
+    return gateway;
   }
 
   function normalizeTimezoneForForm(value) {
-    const raw = String(value || "").trim();
-    const allowed = new Set(STORE_TIMEZONE_OPTIONS.map((option) => option.value));
-    return allowed.has(raw) ? raw : "America/Chicago";
+    const timezone = String(value || "").trim();
+    return timezone || "UTC";
   }
 
-  function getStoresPayload() {
-    const payload = window.__storeManagerPayload || null;
-    const stores = Array.isArray(payload?.stores)
-      ? payload.stores
-      : Array.isArray(payload?.data?.stores)
-      ? payload.data.stores
-      : Array.isArray(payload)
-      ? payload
-      : [];
-    return stores;
+  function buildSelectOptions(options, selectedValue) {
+    return options.map((option) => {
+      const value = String(option?.value ?? "");
+      const label = String(option?.label ?? value);
+      const selected = value === String(selectedValue ?? "") ? " selected" : "";
+      return `<option value="${esc(value)}"${selected}>${esc(label)}</option>`;
+    }).join("");
+  }
+
+  function buildTimezoneOptions(selectedValue) {
+    return STORE_TIMEZONE_OPTIONS.map((timezone) => {
+      const selected = timezone === String(selectedValue ?? "") ? " selected" : "";
+      return `<option value="${esc(timezone)}"${selected}>${esc(timezone)}</option>`;
+    }).join("");
   }
 
   function findStoreById(storeId) {
-    const normalized = String(storeId || "").trim();
-    if (!normalized) return null;
+    const stores = Array.isArray(window.__storeManagerPayload?.stores)
+      ? window.__storeManagerPayload.stores
+      : [];
 
-    const stores = getStoresPayload();
-    return stores.find((store) => String(store?.store_id || "").trim() === normalized) || null;
+    return stores.find((row) => String(row?.store_id || "") === String(storeId || "")) || null;
   }
 
   function renderStoreFormModal(mode, store) {
-    const isEdit = mode === "edit";
+    const isEdit = String(mode || "").toLowerCase() === "edit";
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
-
     if (!modalTitle || !modalBody) return;
 
     const storeId = String(store?.store_id || "");
+    const storeName = String(store?.store_name || "");
+    const storeUrl = String(store?.store_url || "");
+    const gateway = normalizeGatewayForForm(store?.gateway || "");
+    const executionMode = String(store?.execution_mode || "test").trim().toLowerCase();
+    const timezone = normalizeTimezoneForForm(store?.timezone || "UTC");
+    const gatewayWindowHours = Number(store?.gateway_activity_window_hours || 24) || 24;
 
-        <div class="store-manager-help">
-          ${isEdit ? "Update the selected store configuration." : "Create a new store configuration record."}
+    modalTitle.textContent = isEdit ? "Edit Store" : "Create Store";
+
+    modalBody.innerHTML = `
+      <div class="store-manager-form-card">
+        <div class="pulse-modal-intro">
+          ${isEdit ? "Update store settings." : "Create a new monitored store."}
+        </div>
+
+        <div class="store-manager-form-grid">
+          <label class="store-manager-field">
+            <span>Store ID</span>
+            <input
+              id="storeFormStoreId"
+              type="text"
+              value="${esc(storeId)}"
+              ${isEdit ? "disabled" : ""}
+              placeholder="primary-store"
+            />
+          </label>
+
+          <label class="store-manager-field">
+            <span>Store Name</span>
+            <input
+              id="storeFormStoreName"
+              type="text"
+              value="${esc(storeName)}"
+              placeholder="Main Store"
+            />
+          </label>
+
+          <label class="store-manager-field store-manager-field-wide">
+            <span>Store URL</span>
+            <input
+              id="storeFormStoreUrl"
+              type="text"
+              value="${esc(storeUrl)}"
+              placeholder="https://okobserver.org"
+            />
+          </label>
+
+          <label class="store-manager-field">
+            <span>Gateway</span>
+            <select id="storeFormGateway">
+              ${buildSelectOptions(STORE_GATEWAY_OPTIONS, gateway)}
+            </select>
+          </label>
+
+          <label class="store-manager-field">
+            <span>Execution Mode</span>
+            <select id="storeFormExecutionMode">
+              ${buildSelectOptions(STORE_EXECUTION_MODE_OPTIONS, executionMode)}
+            </select>
+          </label>
+
+          <label class="store-manager-field">
+            <span>Timezone</span>
+            <select id="storeFormTimezone">
+              ${buildTimezoneOptions(timezone)}
+            </select>
+          </label>
+
+          <label class="store-manager-field">
+            <span>Gateway Activity Window (hours)</span>
+            <input
+              id="storeFormGatewayWindow"
+              type="number"
+              min="1"
+              step="1"
+              value="${esc(String(gatewayWindowHours))}"
+              placeholder="24"
+            />
+          </label>
         </div>
 
         <div class="store-manager-card-actions">
           <button
-            class="pulse-modal-action-btn"
+            class="pulse-modal-action-btn primary"
             data-store-submit="${isEdit ? "update" : "create"}"
             data-store-id="${esc(storeId)}"
           >
@@ -179,16 +254,12 @@ document.getElementById("pulse-modal-body").innerHTML = `
       </div>
     `;
 
-    const modal = document.getElementById("pulse-modal");
-    if (modal) {
-      modal.classList.remove("hidden");
-    }
+    document.getElementById("pulse-modal")?.classList.remove("hidden");
   }
 
   function renderStoreDeleteModal(store) {
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
-
     if (!modalTitle || !modalBody) return;
 
     const storeId = String(store?.store_id || "");
@@ -218,13 +289,20 @@ document.getElementById("pulse-modal-body").innerHTML = `
       </div>
     `;
 
-    const modal = document.getElementById("pulse-modal");
-    if (modal) {
-      modal.classList.remove("hidden");
-    }
+    document.getElementById("pulse-modal")?.classList.remove("hidden");
   }
 
-function getStoreFormPayload() {
+  function getStoreFormPayload() {
+    return {
+      store_id: String(document.getElementById("storeFormStoreId")?.value || "").trim(),
+      store_name: String(document.getElementById("storeFormStoreName")?.value || "").trim(),
+      store_url: String(document.getElementById("storeFormStoreUrl")?.value || "").trim(),
+      gateway: normalizeGatewayForForm(document.getElementById("storeFormGateway")?.value || ""),
+      execution_mode: String(document.getElementById("storeFormExecutionMode")?.value || "test").trim().toLowerCase(),
+      timezone: normalizeTimezoneForForm(document.getElementById("storeFormTimezone")?.value || ""),
+      gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0
+    };
+  }
 
   function validateStoreFormPayload(payload) {
     if (!payload.store_id) return "Store ID is required.";
@@ -239,23 +317,78 @@ function getStoreFormPayload() {
   }
 
   function refreshStoreManagerView() {
-    if (typeof window.doStoreManager === "function") {
-      window.doStoreManager();
-      return;
-    }
-
-    if (typeof window.doPulseDashboard === "function") {
-      window.doPulseDashboard();
-      return;
-    }
-
+    if (typeof window.doStoreManager === "function") return window.doStoreManager();
+    if (typeof window.doPulseDashboard === "function") return window.doPulseDashboard();
     window.location.reload();
+  }
+
+  function getPulseActionEndpoint(action) {
+    const token = String(action || "").trim().toLowerCase();
+
+    if (token === "pause") return "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause";
+    if (token === "retry") return "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry";
+    if (token === "resume") return "https://pulse-worker.bob-b5c.workers.dev/radar/action/resume";
+
+    return null;
+  }
+
+  async function fetchPulseAffectedCustomers(gateway) {
+    const response = await fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`, {
+      method: "GET"
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.error || `Failed to load affected customers for ${gateway}`);
+    }
+
+    return data;
+  }
+
+  function getIncidentIdsFromAffectedCustomers(data) {
+    return Array.isArray(data?.customers)
+      ? data.customers
+          .map((item) => Number(item?.id))
+          .filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+  }
+
+  async function executePulseGatewayAction(action, gateway) {
+    const endpoint = getPulseActionEndpoint(action);
+
+    if (!endpoint) {
+      throw new Error("Action not implemented yet");
+    }
+
+    const affectedData = await fetchPulseAffectedCustomers(gateway);
+    const incident_ids = getIncidentIdsFromAffectedCustomers(affectedData);
+
+    if (!incident_ids.length) {
+      throw new Error(`No incident_ids found for gateway: ${gateway}`);
+    }
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        gateway,
+        incident_ids
+      })
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok || !data?.ok) {
+      throw new Error(data?.error || `Action failed for ${gateway}`);
+    }
+
+    return data;
   }
 
   function renderAffectedCustomersModal(gateway, data) {
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
-
     if (!modalTitle || !modalBody) return;
 
     const customers = Array.isArray(data?.customers) ? data.customers : [];
@@ -303,23 +436,22 @@ function getStoreFormPayload() {
         </table>
       </div>
     `;
-    // CLICK HANDLER: open customer in full UI
-modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
-  rowEl.addEventListener("click", () => {
-    const email = rowEl.getAttribute("data-email");
-    if (!email) return;
 
-    closePulseModal();
+    modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
+      rowEl.addEventListener("click", () => {
+        const email = rowEl.getAttribute("data-email");
+        if (!email) return;
+        closePulseModal();
 
-    if (typeof window.doSearch === "function") {
-      window.doSearch(email);
-    } else {
-      console.error("doSearch is not available on window");
-    }
-  });
-});
+        if (typeof window.doSearch === "function") {
+          window.doSearch(email);
+        } else {
+          console.error("doSearch is not available on window");
+        }
+      });
+    });
   }
-  // CLOSE HANDLER
+
   document.addEventListener("click", function (e) {
     if (
       e.target.id === "pulse-modal-close" ||
@@ -330,14 +462,11 @@ modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
     }
   });
 
-  // ACTION HANDLER
-  // ACTION HANDLER
   document.addEventListener("click", function (e) {
     const btn = e.target.closest(".pulse-modal-action-btn");
-    if (!btn) return;
-    if (!btn.hasAttribute("data-action")) return;
+    if (!btn || !btn.hasAttribute("data-action")) return;
 
-    const action = String(btn.getAttribute("data-action") || "").trim();
+    const action = String(btn.getAttribute("data-action") || "").trim().toLowerCase();
     const gateway = window.__pulseModalGateway || null;
 
     btn.disabled = true;
@@ -351,119 +480,80 @@ modalBody.querySelectorAll("tr[data-email]").forEach((rowEl) => {
       return;
     }
 
-if (action === "customers") {
-  fetch(`https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`, {
-    method: "GET"
-  })
-    .then((r) => r.json())
-    .then((data) => {
-      btn.disabled = false;
-      btn.textContent = originalLabel;
+    if (action === "customers") {
+      fetchPulseAffectedCustomers(gateway)
+        .then((data) => {
+          btn.disabled = false;
+          btn.textContent = originalLabel;
 
-      if (!data?.ok) {
-        showPulseBanner(`Failed to load affected customers for ${gateway}`, "error");
-        return;
-      }
+          const customers = Array.isArray(data?.customers) ? data.customers : [];
+          if (!customers.length) {
+            showPulseBanner(`No affected customers for ${gateway}`, "error");
+            return;
+          }
 
-      const customers = Array.isArray(data?.customers) ? data.customers : [];
+          closePulseModal();
 
-      if (!customers.length) {
-        showPulseBanner(`No affected customers for ${gateway}`, "error");
-        return;
-      }
+          if (typeof window.setPulseAffectedCustomers === "function") {
+            window.setPulseAffectedCustomers(gateway, data);
+          } else {
+            console.error("setPulseAffectedCustomers is not available on window");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+          showPulseBanner(err?.message || "Failed to load affected customers", "error");
+        });
 
-closePulseModal();
-
-if (typeof window.setPulseAffectedCustomers === "function") {
-  window.setPulseAffectedCustomers(gateway, data);
-} else {
-  console.error("setPulseAffectedCustomers is not available on window");
-}
-    })
-    .catch((err) => {
-      console.error(err);
-      btn.disabled = false;
-      btn.textContent = originalLabel;
-      showPulseBanner("Failed to load affected customers", "error");
-    });
-
-  return;
-}
-
-    const endpoint =
-      action === "pause"
-        ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/pause"
-        : action === "retry"
-        ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/retry"
-        : action === "resume"
-        ? "https://pulse-worker.bob-b5c.workers.dev/radar/action/resume"
-        : null;
-
-    if (!endpoint) {
-      btn.disabled = false;
-      btn.textContent = originalLabel;
-      showPulseBanner("Action not implemented yet", "error");
       return;
     }
 
-    fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gateway })
-    })
-      .then((r) => r.json())
+    executePulseGatewayAction(action, gateway)
       .then((data) => {
         btn.disabled = false;
         btn.textContent = originalLabel;
 
-        if (!data?.ok) {
-          showPulseBanner(`Action failed for ${gateway}`, "error");
-          return;
+        const count = Number(data?.affected_count || 0);
+
+        if (data?.simulated === true) {
+          showPulseBanner(
+            data?.message ||
+              `TEST MODE: ${count} subscription${count === 1 ? "" : "s"} simulated for ${gateway}. No live records were changed.`,
+            "success"
+          );
+        } else {
+          showPulseBanner(
+            `${count} subscription${count === 1 ? "" : "s"} updated for ${gateway}`,
+            "success"
+          );
         }
 
-const count = Number(data?.affected_count || 0);
+        closePulseModal();
 
-if (data?.simulated === true) {
-  showPulseBanner(
-    data?.message ||
-      `TEST MODE: ${count} subscription${count === 1 ? "" : "s"} simulated for ${gateway}. No live records were changed.`,
-    "success"
-  );
-} else {
-  showPulseBanner(
-    `${count} subscription${count === 1 ? "" : "s"} updated for ${gateway}`,
-    "success"
-  );
-}
-
-closePulseModal();
-
-// 🔥 CRITICAL FIX — force backend re-fetch (no stale UI)
-if (typeof window.loadPulseDashboard === "function") {
-  console.log("Refreshing Pulse dashboard via loadPulseDashboard()");
-  window.loadPulseDashboard();
-} else if (typeof window.doPulseDashboard === "function") {
-  console.warn("loadPulseDashboard not found, falling back to doPulseDashboard()");
-  window.doPulseDashboard();
-} else {
-  console.warn("No dashboard refresh function found — forcing reload");
-  window.location.reload();
-}
+        if (typeof window.loadPulseDashboard === "function") {
+          console.log("Refreshing Pulse dashboard via loadPulseDashboard()");
+          window.loadPulseDashboard();
+        } else if (typeof window.doPulseDashboard === "function") {
+          console.warn("loadPulseDashboard not found, falling back to doPulseDashboard()");
+          window.doPulseDashboard();
+        } else {
+          console.warn("No dashboard refresh function found — forcing reload");
+          window.location.reload();
+        }
       })
       .catch((err) => {
         console.error(err);
         btn.disabled = false;
         btn.textContent = originalLabel;
-        showPulseBanner("Action failed", "error");
+        showPulseBanner(err?.message || `Action failed for ${gateway}`, "error");
       });
   });
 
-  // TRIGGER HANDLERS
-    // STORE MANAGER HANDLERS
   document.addEventListener("click", function (e) {
     const addBtn = e.target.closest("#btnAddStore");
     if (!addBtn) return;
-
     renderStoreFormModal("create", null);
   });
 
@@ -482,7 +572,6 @@ if (typeof window.loadPulseDashboard === "function") {
 
     if (action === "delete") {
       renderStoreDeleteModal(store || { store_id: storeId, store_name: storeId });
-      return;
     }
   });
 
@@ -571,7 +660,6 @@ if (typeof window.loadPulseDashboard === "function") {
       });
   });
 
-  // TRIGGER HANDLERS
   document.addEventListener("click", function (e) {
     const trigger =
       e.target.closest(".pulse-action-pill") ||
@@ -581,10 +669,9 @@ if (typeof window.loadPulseDashboard === "function") {
 
     const action = String(trigger.getAttribute("data-action") || "").trim();
     const gateway = String(trigger.getAttribute("data-gateway") || "").trim();
-
     if (!action || !gateway) return;
 
-        window.__pulseModalGateway = gateway;
+    window.__pulseModalGateway = gateway;
 
     const analysis = window.__pulseLastAnalysis || {};
     const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways : [];
@@ -613,7 +700,6 @@ if (typeof window.loadPulseDashboard === "function") {
 
     openPulseModal(
       gateway.toUpperCase() + " Recovery Action",
-
       action === "RETRY_LATER"
         ? `
           <div class="pulse-modal-signal pulse-modal-signal-danger">
@@ -641,7 +727,6 @@ if (typeof window.loadPulseDashboard === "function") {
             Resume once successful payments are observed.
           </div>
         `
-
         : action === "RETRY_NOW"
         ? `
           <div class="pulse-modal-signal pulse-modal-signal-positive">
@@ -665,7 +750,6 @@ if (typeof window.loadPulseDashboard === "function") {
             Pulse will attempt recovery automatically.
           </div>
         `
-
         : `
           <div style="font-size:16px; font-weight:900; margin-bottom:10px;">
             ℹ️ Monitoring only
@@ -687,3 +771,5 @@ if (typeof window.loadPulseDashboard === "function") {
     );
   });
 })();
+
+// 🔴 pulseActions.js
