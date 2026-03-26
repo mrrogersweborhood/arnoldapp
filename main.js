@@ -1489,15 +1489,20 @@ $("btnLogout")?.addEventListener("click", (e) => {    e.preventDefault();
     doRadar(1, "").catch(console.error);
   });
 
-  $("navPulse")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    doPulseDashboard().catch(console.error);
-  });
+$("navPulse")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doPulseDashboard().catch(console.error);
+});
 
-  $("navStores")?.addEventListener("click", (e) => {
-    e.preventDefault();
-    doStoreManager().catch(console.error);
-  });
+$("navRevenueIntelligence")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doPulseDashboard().catch(console.error);
+});
+
+$("navStores")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  doStoreManager().catch(console.error);
+});
 
   window.addEventListener("DOMContentLoaded", async () => {
     const loggedIn = await refreshSession().catch(() => false);
