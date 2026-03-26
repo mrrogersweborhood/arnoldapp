@@ -1333,6 +1333,7 @@ const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
       setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
     }
   }
+window.loadPulseDashboard = doPulseDashboard;
 window.doStoreManager = doStoreManager;
 window.doPulseDashboard = doPulseDashboard;
 window.doSearch = doSearch;
