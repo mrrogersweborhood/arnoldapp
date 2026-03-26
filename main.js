@@ -426,18 +426,28 @@ window.setPulseAffectedCustomers = function (gateway, data) {
     `;
   }
 
-  function fadeReplaceResults(html) {
-    const results = $("results");
-    if (!results) return;
+function fadeReplaceResults(html) {
+  const results = $("results");
+  if (!results) return;
 
+  // FIRST LOAD ONLY → allow fade
+  if (!results.dataset.loaded) {
     results.style.transition = "opacity 180ms ease";
     results.style.opacity = "0";
 
     window.setTimeout(() => {
       results.innerHTML = html;
       results.style.opacity = "1";
+      results.dataset.loaded = "true";
     }, 180);
+
+    return;
   }
+
+  // 🔥 SUBSEQUENT LOADS → NO WIPE
+  // Replace content instantly to avoid “screen swap”
+  results.innerHTML = html;
+}
 
   function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
@@ -1317,10 +1327,10 @@ if (results) {
       `;
     }
 
-    const results = $("results");
-    if (results) {
-      results.innerHTML = renderPulseLoadingShellSafe();
-    }
+const results = $("results");
+if (results && !results.dataset.pulseInitialized) {
+  results.innerHTML = renderPulseLoadingShellSafe();
+}
 
     try {
       const [analysisRes, summaryRes] = await Promise.all([
@@ -1350,9 +1360,10 @@ if (results) {
       };
       lastRaw = lastPayload;
 
-      if (results) {
-        fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
-      }
+     if (results) {
+  results.dataset.pulseInitialized = "true";
+  fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
+}
 
       setStatus("", "Pulse dashboard loaded.");
       renderRawJson();
