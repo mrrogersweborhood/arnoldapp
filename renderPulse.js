@@ -704,40 +704,7 @@ if (actionBtn) {
   }
 }
 
-  try {
-    const data = typeof window.fetchPulseAffectedCustomers === "function"
-      ? await window.fetchPulseAffectedCustomers(gateway)
-      : { ok: false, customers: [] };
 
-    if (data?.ok && Array.isArray(data.customers)) {
-      const customers = data.customers;
-
-      // SINGLE CUSTOMER → AUTO SEARCH
-      if (customers.length === 1) {
-        const email = customers[0]?.customer_email || customers[0]?.email;
-        if (email && typeof window.doSearch === "function") {
-          window.doSearch(email);
-        }
-        return;
-      }
-
-      // MULTIPLE → EXPAND EXISTING TABLE
-      window.__pulseAffectedCustomers = customers;
-      window.__pulseAffectedGateway = gateway;
-
-      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
-      window.__pulseExpandedGateways[gateway] = true;
-
-      if (typeof window.doPulseDashboard === "function") {
-        window.doPulseDashboard();
-      }
-
-      return;
-    }
-  } catch (err) {
-    console.error("Drill-in failed:", err);
-  }
-}
 
 // ----------------------------
 // TOGGLE CUSTOMERS
