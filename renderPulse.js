@@ -372,7 +372,7 @@
           </div>
         </section>
       `
-      : lastScanInfo
+            : lastScanInfo
         ? `
         <section class="card pulse-section pulse-last-scan-card">
           <div class="pulse-section-head">
@@ -395,26 +395,38 @@
           <div class="pulse-last-scan-grid">
             <div class="pulse-last-scan-item">
               <div class="pulse-last-scan-label">Processed</div>
-              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.processed || 0))}</div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Created</div>
-              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_created || 0))}</div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Skipped</div>
-              <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_skipped || 0))}</div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Recent successes</div>
-              <div class="pulse-last-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
-            </div>
-            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
-              <div class="pulse-last-scan-label">Last successful payment seen</div>
-              <div class="pulse-last-scan-value pulse-last-scan-value-small">
-                ${lastSuccessAt ? esc(new Date(lastSuccessAt).toLocaleString()) : "No recent success observed"}
+              <div class="pulse-last-scan-value pulse-last-scan-value-big">
+                ${esc(formatPulseInteger(lastScanInfo.processed || 0))}
               </div>
             </div>
+
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Created</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-big">
+                ${esc(formatPulseInteger(lastScanInfo.incidents_created || 0))}
+              </div>
+            </div>
+
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Skipped</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-big">
+                ${esc(formatPulseInteger(lastScanInfo.incidents_skipped || 0))}
+              </div>
+            </div>
+
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Recent successes</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-big pulse-last-scan-value-success">
+                ${esc(formatPulseInteger(recentSuccessCount))}
+              </div>
+            </div>
+          </div>
+
+          <div class="pulse-last-scan-footer">
+            Last successful payment seen:
+            <strong>
+              ${lastSuccessAt ? esc(new Date(lastSuccessAt).toLocaleString()) : "No recent success observed"}
+            </strong>
           </div>
         </section>
       `

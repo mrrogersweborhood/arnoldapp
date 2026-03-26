@@ -101,6 +101,57 @@
 .pulse-section{
   padding:16px;
 }
+/* ===== Last Scan Card (Pulse) ===== */
+
+.pulse-last-scan-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pulse-last-scan-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.pulse-last-scan-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(15,23,42,.08);
+}
+
+.pulse-last-scan-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+  font-weight: 900;
+  color: #64748b;
+}
+
+.pulse-last-scan-value {
+  font-size: 20px;
+  font-weight: 950;
+  color: #0b1220;
+  line-height: 1.2;
+}
+
+.pulse-last-scan-value-success {
+  color: #16a34a;
+}
+
+.pulse-last-scan-footer {
+  margin-top: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  opacity: 0.8;
+}
 .pulse-section-head{
   display:flex;
   align-items:flex-end;
