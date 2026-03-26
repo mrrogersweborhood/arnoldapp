@@ -452,7 +452,11 @@
                                 <td style="padding:10px 12px;">${esc(formatPulseMoney(row?.amount || 0))}</td>
                                 <td style="padding:10px 12px;">${renderPulseReasonPill(row?.reason || "FAILED_GENERIC")}</td>
                                 <td style="padding:10px 12px;">${esc(String(row?.status || "—").toUpperCase())}</td>
-                                <td style="padding:10px 12px;">${esc(String(row?.order_id || "—"))}</td>
+                                <td
+                                  style="padding:10px 12px;"
+                                  class="pulse-order-link"
+                                  data-order-id="${esc(String(row?.order_id || ""))}"
+                                >${esc(String(row?.order_id || "—"))}</td>
                               </tr>
                             `).join("")}
                           </tbody>
@@ -620,29 +624,29 @@
   document.addEventListener("click", function (e) {
 
 // ----------------------------
+// ----------------------------
 // CUSTOMER ROW CLICK (EMAIL + ORDER SUPPORT)
 // ----------------------------
+
+// ✅ ORDER CLICK (ALWAYS CHECK FIRST)
+const orderCell = e.target.closest("[data-order-id]");
+if (orderCell) {
+  const orderId = orderCell.getAttribute("data-order-id");
+  if (orderId && orderId !== "—" && typeof window.doSearch === "function") {
+    window.doSearch(orderId);
+  }
+  return;
+}
+
+// ✅ EMAIL CLICK (ROW)
 const row = e.target.closest("[data-email]");
 if (row) {
-
-  // ✅ ORDER CLICK (only if clicking last cell)
-  const orderCell = e.target.closest("td:last-child");
-  if (orderCell) {
-    const orderText = orderCell.textContent.trim();
-    if (orderText && orderText !== "—" && typeof window.doSearch === "function") {
-      window.doSearch(orderText);
-      return;
-    }
-  }
-
-  // ✅ DEFAULT: EMAIL CLICK
   const email = row.getAttribute("data-email");
   if (email && typeof window.doSearch === "function") {
     window.doSearch(email);
   }
   return;
 }
-
     // ----------------------------
     // TOGGLE CUSTOMERS
     // ----------------------------
