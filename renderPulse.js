@@ -647,9 +647,54 @@ if (row) {
   }
   return;
 }
-    // ----------------------------
-    // TOGGLE CUSTOMERS
-    // ----------------------------
+   // ----------------------------
+// PRIMARY ACTION DRILL-IN
+// ----------------------------
+const actionBtn = e.target.closest(".pulse-action-pill:not([data-action='pulse-toggle-customers'])");
+if (actionBtn) {
+  const gateway = String(actionBtn.getAttribute("data-gateway") || "").toLowerCase();
+  if (!gateway) return;
+
+  try {
+    const res = await fetch(
+      `https://pulse-worker.bob-b5c.workers.dev/pulse/affected-customers?gateway=${encodeURIComponent(gateway)}`
+    );
+
+    const data = await res.json();
+
+    if (data?.ok && Array.isArray(data.customers)) {
+      const customers = data.customers;
+
+      // SINGLE CUSTOMER → AUTO SEARCH
+      if (customers.length === 1) {
+        const email = customers[0]?.customer_email || customers[0]?.email;
+        if (email && typeof window.doSearch === "function") {
+          window.doSearch(email);
+        }
+        return;
+      }
+
+      // MULTIPLE → EXPAND EXISTING TABLE
+      window.__pulseAffectedCustomers = customers;
+      window.__pulseAffectedGateway = gateway;
+
+      window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+      window.__pulseExpandedGateways[gateway] = true;
+
+      if (typeof window.doPulseDashboard === "function") {
+        window.doPulseDashboard();
+      }
+
+      return;
+    }
+  } catch (err) {
+    console.error("Drill-in failed:", err);
+  }
+}
+
+// ----------------------------
+// TOGGLE CUSTOMERS
+// ----------------------------
 const toggle = e.target.closest('[data-action="pulse-toggle-customers"]');
 if (toggle) {
   const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
@@ -659,7 +704,7 @@ if (toggle) {
   const isExpanding = !window.__pulseExpandedGateways[gateway];
   window.__pulseExpandedGateways[gateway] = isExpanding;
 
-  // ✅ ONLY FETCH WHEN EXPANDING
+  // ONLY FETCH WHEN EXPANDING
   if (isExpanding) {
     try {
       const res = await fetch(
