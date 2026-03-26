@@ -421,6 +421,7 @@
               </div>
 
               ${
+                             ${
                 window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
                 window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
                 Array.isArray(window.__pulseAffectedCustomers) &&
@@ -434,24 +435,29 @@
                         </div>
                       </div>
 
-                      <div class="pulse-inline-customers-table">
-                        <div class="pulse-inline-customers-row pulse-inline-customers-head-row">
-                          <div>Email</div>
-                          <div>Amount</div>
-                          <div>Reason</div>
-                          <div>Status</div>
-                          <div>Order</div>
-                        </div>
-
-                        ${window.__pulseAffectedCustomers.map((row) => `
-                          <div class="pulse-inline-customers-row" data-email="${esc(row?.email || "")}">
-                            <div class="pulse-linkish">${esc(row?.email || "—")}</div>
-                            <div>${esc(formatPulseMoney(row?.amount || 0))}</div>
-                            <div>${renderPulseReasonPill(row?.reason || "FAILED_GENERIC")}</div>
-                            <div>${esc(String(row?.status || "—").toUpperCase())}</div>
-                            <div>${esc(String(row?.order_id || "—"))}</div>
-                          </div>
-                        `).join("")}
+                      <div class="pulse-inline-customers-table-wrap" style="overflow:auto;">
+                        <table class="pulse-inline-customers-table" style="width:100%; border-collapse:collapse;">
+                          <thead>
+                            <tr class="pulse-inline-customers-head-row">
+                              <th style="text-align:left; padding:10px 12px;">Email</th>
+                              <th style="text-align:left; padding:10px 12px;">Amount</th>
+                              <th style="text-align:left; padding:10px 12px;">Reason</th>
+                              <th style="text-align:left; padding:10px 12px;">Status</th>
+                              <th style="text-align:left; padding:10px 12px;">Order</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${window.__pulseAffectedCustomers.map((row) => `
+                              <tr class="pulse-inline-customers-row" data-email="${esc(row?.email || "")}" style="cursor:pointer;">
+                                <td style="padding:10px 12px;" class="pulse-linkish">${esc(row?.email || "—")}</td>
+                                <td style="padding:10px 12px;">${esc(formatPulseMoney(row?.amount || 0))}</td>
+                                <td style="padding:10px 12px;">${renderPulseReasonPill(row?.reason || "FAILED_GENERIC")}</td>
+                                <td style="padding:10px 12px;">${esc(String(row?.status || "—").toUpperCase())}</td>
+                                <td style="padding:10px 12px;">${esc(String(row?.order_id || "—"))}</td>
+                              </tr>
+                            `).join("")}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                   `
