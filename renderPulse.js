@@ -251,7 +251,25 @@
     const lastSuccessAt = successSummary?.last_success_at || null;
     const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
 
-    gateways.sort((a, b) => Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0));
+    gateways.sort((a, b) => {
+      const rank = (value) => {
+        const token = String(value || "LOW").trim().toUpperCase();
+        if (token === "HIGH") return 3;
+        if (token === "MEDIUM") return 2;
+        return 1;
+      };
+
+      const priorityDelta =
+        rank(b?.recommended_priority) - rank(a?.recommended_priority);
+      if (priorityDelta !== 0) return priorityDelta;
+
+      const revenueDelta =
+        Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0);
+      if (revenueDelta !== 0) return revenueDelta;
+
+      return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
+    });
+
     reasons.sort((a, b) => {
       const revDelta = Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0);
       if (revDelta !== 0) return revDelta;
@@ -390,22 +408,44 @@
                 </div>
               </div>
 
-              <div class="pulse-gateway-message">
+                            <div class="pulse-gateway-message">
                 ${esc(gateway?.recommended_message || "No recommendation available.")}
               </div>
 
-              <div class="pulse-gateway-playbook">
+              <div
+                class="pulse-gateway-decision"
+                style="margin-top:14px; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04);"
+              >
+                <div
+                  class="pulse-gateway-decision-kicker"
+                  style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:6px;"
+                >
+                  Primary decision
+                </div>
+                <div
+                  class="pulse-gateway-decision-text"
+                  style="font-size:15px; font-weight:700; line-height:1.35;"
+                >
+                  ${priority === "HIGH"
+                    ? "Act now: " + esc(formatPulseActionLabel(recommendedAction))
+                    : esc(formatPulseActionLabel(recommendedAction))}
+                </div>
+              </div>
+
+              <div class="pulse-gateway-playbook" style="margin-top:10px;">
                 ${esc(gateway?.playbook || "Monitor gateway performance.")}
               </div>
 
-              <div class="pulse-gateway-actions">
+              <div class="pulse-gateway-actions" style="margin-top:14px;">
                 <button
                   class="pulse-action-pill"
                   type="button"
                   data-action="${esc(recommendedAction)}"
                   data-gateway="${esc(String(gateway?.gateway || ""))}"
                 >
-                  ${esc(formatPulseActionLabel(recommendedAction))}
+                  ${priority === "HIGH"
+                    ? esc("Act Now — " + formatPulseActionLabel(recommendedAction))
+                    : esc(formatPulseActionLabel(recommendedAction))}
                 </button>
 
                 <button
@@ -418,7 +458,7 @@
                     ? "Hide customers"
                     : "View customers"}
                 </button>
-                            </div>
+              </div>
 
               ${
                 window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
