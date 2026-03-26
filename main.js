@@ -977,7 +977,42 @@ btn.addEventListener("click", async () => {
       ${activityCard}
     `;
   }
+function renderOrder(payload) {
+  const order = payload?.order || payload?.context?.order || null;
 
+  if (!order) {
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Order</div>
+          <div class="aa-section-subtitle">No order data returned</div>
+        </div>
+        <div class="aa-muted">Order not found.</div>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="card aa-section">
+      <div class="aa-section-head">
+        <div class="aa-section-title">Order #${esc(order.id || "—")}</div>
+        <div class="aa-section-subtitle">${esc(order.status || "Unknown status")}</div>
+      </div>
+
+      <div class="aa-grid-2">
+        <div>
+          <strong>Total:</strong><br>
+          ${esc(order.total || "—")}
+        </div>
+
+        <div>
+          <strong>Customer:</strong><br>
+          ${esc(order.billing?.email || order.email || "—")}
+        </div>
+      </div>
+    </section>
+  `;
+}
   // --------------------------------------------------
   // Radar render
   // --------------------------------------------------
@@ -1142,12 +1177,20 @@ btn.addEventListener("click", async () => {
       lastRaw = j;
       cacheLastCustomerFromPayload(j);
 
-      if (results) {
-        results.innerHTML = renderResults(j);
-        bindNotesToggles(results);
-        bindCopyButtons(results);
-        bindOpenCandidateButtons(results);
-      }
+if (results) {
+  // ----------------------------
+  // ORDER vs CUSTOMER ROUTING
+  // ----------------------------
+  if (j?.order || j?.type === "order") {
+    results.innerHTML = renderOrder(j);
+  } else {
+    results.innerHTML = renderResults(j);
+  }
+
+  bindNotesToggles(results);
+  bindCopyButtons(results);
+  bindOpenCandidateButtons(results);
+}
 
       setStatus("", "Search complete.");
       renderRawJson();
