@@ -430,25 +430,46 @@ function fadeReplaceResults(html) {
   const results = $("results");
   if (!results) return;
 
-  // FIRST LOAD ONLY → allow fade
+  const wrappedHtml = `
+    <div
+      class="pulse-fade-in"
+      style="
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 220ms ease, transform 220ms ease;
+      "
+    >
+      ${html}
+    </div>
+  `;
+
+  // FIRST LOAD ONLY
   if (!results.dataset.loaded) {
-    results.style.transition = "opacity 180ms ease";
-    results.style.opacity = "0";
+    results.innerHTML = wrappedHtml;
 
-    window.setTimeout(() => {
-      results.innerHTML = html;
-      results.style.opacity = "1";
-      results.dataset.loaded = "true";
-    }, 180);
+    const animated = results.querySelector(".pulse-fade-in");
+    if (animated) {
+      window.requestAnimationFrame(() => {
+        animated.style.opacity = "1";
+        animated.style.transform = "translateY(0)";
+      });
+    }
 
+    results.dataset.loaded = "true";
     return;
   }
 
-  // 🔥 SUBSEQUENT LOADS → NO WIPE
-  // Replace content instantly to avoid “screen swap”
-  results.innerHTML = html;
-}
+  // SUBSEQUENT LOADS → update in place, then fade the new content in
+  results.innerHTML = wrappedHtml;
 
+  const animated = results.querySelector(".pulse-fade-in");
+  if (animated) {
+    window.requestAnimationFrame(() => {
+      animated.style.opacity = "1";
+      animated.style.transform = "translateY(0)";
+    });
+  }
+}
   function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
       return window.renderStoresLoadingShell();

@@ -196,182 +196,31 @@
   }
 
     function renderPulseLoadingShell() {
-    return `
-      <div class="pulse-shell">
-        <section class="card pulse-incident-strip pulse-medium">
-          <div class="pulse-incident-strip-left">
-            <div class="pulse-incident-strip-kicker">Gateway incident</div>
-            <div class="pulse-incident-strip-title">
-              <div class="aa-loading-row" style="width:180px"></div>
-            </div>
-            <div class="pulse-incident-strip-subtitle">
-              <div class="aa-loading-row" style="width:320px"></div>
-            </div>
-          </div>
+  return renderPulseDashboard(null, null, { isLoading: true });
+}
 
-          <div class="pulse-incident-strip-metrics">
-            <div class="pulse-incident-strip-metric">
-              <span>Confidence</span>
-              <strong><div class="aa-loading-row" style="width:70px"></div></strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Customers</span>
-              <strong><div class="aa-loading-row" style="width:60px"></div></strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Revenue</span>
-              <strong><div class="aa-loading-row" style="width:90px"></div></strong>
-            </div>
-          </div>
-        </section>
+  function renderPulseDashboard(analysis, summary, options = {}) {
+    const isLoading = options.isLoading === true;
 
-        <section class="card pulse-section pulse-last-scan-card">
-          <div class="pulse-section-head">
-            <div>
-              <div class="pulse-section-title">Last scanner run</div>
-              <div class="pulse-section-subtitle">
-                <div class="aa-loading-row" style="width:220px"></div>
-              </div>
-            </div>
-            <div class="pulse-last-scan-chip pulse-last-scan-chip-up">
-              <div class="aa-loading-row" style="width:120px"></div>
-            </div>
-          </div>
-
-          <div class="pulse-last-scan-grid">
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Processed</div>
-              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Created</div>
-              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Skipped</div>
-              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
-            </div>
-            <div class="pulse-last-scan-item">
-              <div class="pulse-last-scan-label">Recent successes</div>
-              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
-            </div>
-            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
-              <div class="pulse-last-scan-label">Last successful payment seen</div>
-              <div class="pulse-last-scan-value pulse-last-scan-value-small">
-                <div class="aa-loading-row" style="width:220px"></div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card pulse-hero">
-          <div class="pulse-hero-top">
-            <div>
-              <div class="pulse-kicker">Pulse Revenue Intelligence</div>
-              <div class="pulse-title">Revenue recovery dashboard</div>
-              <div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
-            </div>
-            <div class="pulse-priority-pill pulse-priority-medium">
-              Updating…
-            </div>
-          </div>
-
-          <div class="pulse-stat-grid">
-            <div class="pulse-stat-card pulse-stat-accent-danger">
-              <div class="pulse-stat-label">Recoverable revenue</div>
-              <div class="aa-loading-row" style="width:140px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:190px; margin-top:10px"></div>
-            </div>
-
-            <div class="pulse-stat-card pulse-stat-accent-warning">
-              <div class="pulse-stat-label">Failed subscriptions</div>
-              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:180px; margin-top:10px"></div>
-            </div>
-
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">Active incidents</div>
-              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:180px; margin-top:10px"></div>
-            </div>
-
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">Retry queue</div>
-              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:160px; margin-top:10px"></div>
-            </div>
-
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">Paused incidents</div>
-              <div class="aa-loading-row" style="width:100px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:160px; margin-top:10px"></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card pulse-section">
-          <div class="pulse-section-head">
-            <div>
-              <div class="pulse-section-title">Gateway intelligence</div>
-              <div class="pulse-section-subtitle">Recommended recovery actions, priorities, and next steps.</div>
-            </div>
-          </div>
-
-          <div class="pulse-grid">
-            <div class="pulse-gateway-card">
-              <div class="aa-loading-row" style="width:160px"></div>
-              <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
-              <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
-              <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
-            </div>
-
-            <div class="pulse-gateway-card">
-              <div class="aa-loading-row" style="width:160px"></div>
-              <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
-              <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
-              <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
-              <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
-            </div>
-          </div>
-        </section>
-
-        <section class="card pulse-section pulse-reasons-card">
-          <div class="pulse-section-head" style="padding:16px 16px 0;">
-            <div>
-              <div class="pulse-section-title">Reasons breakdown</div>
-              <div class="pulse-section-subtitle">Sorted by revenue impact.</div>
-            </div>
-          </div>
-          <div class="pulse-reason-list">
-            <div class="aa-loading-row" style="margin:16px"></div>
-            <div class="aa-loading-row" style="margin:16px"></div>
-          </div>
-        </section>
-      </div>
-    `;
-  }
-
-  function renderPulseDashboard(analysis, summary) {
     // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
     // Prevent stale optimistic state from leaking into a fresh render.
     window.__pulseLastAnalysis = analysis;
     window.__pulseOptimisticAction = null;
 
-    const gateways = Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : [];
-    const reasons = Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : [];
-    const repeatOffenders = getRepeatOffenders(analysis?.incidents);
-    const gatewayIncidents = Array.isArray(analysis?.gateway_incidents)
-      ? analysis.gateway_incidents
-      : [];
+    const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
+    const reasons = isLoading ? [] : (Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : []);
+    const repeatOffenders = isLoading ? [] : getRepeatOffenders(analysis?.incidents);
+    const gatewayIncidents = isLoading
+      ? []
+      : (Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : []);
 
     // 🔥 APPLY OPTIMISTIC UI STATE
 
-    const activeIncident = gatewayIncidents[0] || null;
-    const lastScanInfo = getLastScanInfo();
-    const scanDelta = getScanDelta(summary);
+    const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
+    const lastScanInfo = isLoading ? null : getLastScanInfo();
+    const scanDelta = isLoading ? null : getScanDelta(summary);
 
-    const successSummary = analysis?.success_summary || null;
+    const successSummary = isLoading ? null : (analysis?.success_summary || null);
     const lastSuccessAt = successSummary?.last_success_at || null;
     const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
 
@@ -409,10 +258,39 @@
     const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
     const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
     const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
-    const pendingIncidents = Number(analysis?.total_pending_incidents || 0) || 0;
+    const pendingIncidents = isLoading ? 0 : (Number(analysis?.total_pending_incidents || 0) || 0);
 
-    const incidentStrip = activeIncident
+        const incidentStrip = isLoading
       ? `
+        <section class="card pulse-incident-strip pulse-medium">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">
+              <div class="aa-loading-row" style="width:180px"></div>
+            </div>
+            <div class="pulse-incident-strip-subtitle">
+              <div class="aa-loading-row" style="width:320px"></div>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-metrics">
+            <div class="pulse-incident-strip-metric">
+              <span>Confidence</span>
+              <strong><div class="aa-loading-row" style="width:70px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Customers</span>
+              <strong><div class="aa-loading-row" style="width:60px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Revenue</span>
+              <strong><div class="aa-loading-row" style="width:90px"></div></strong>
+            </div>
+          </div>
+        </section>
+      `
+      : activeIncident
+        ? `
         <section class="card pulse-incident-strip pulse-${esc(String(activeIncident?.severity || "low").toLowerCase())}">
           <div class="pulse-incident-strip-left">
             <div class="pulse-incident-strip-kicker">Gateway incident</div>
@@ -451,10 +329,51 @@
           </div>
         </section>
       `
-      : "";
+        : "";
 
-    const lastScanCard = lastScanInfo
+        const lastScanCard = isLoading
       ? `
+        <section class="card pulse-section pulse-last-scan-card">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Last scanner run</div>
+              <div class="pulse-section-subtitle">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+            </div>
+            <div class="pulse-last-scan-chip pulse-last-scan-chip-up">
+              <div class="aa-loading-row" style="width:120px"></div>
+            </div>
+          </div>
+
+          <div class="pulse-last-scan-grid">
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Processed</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Created</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Skipped</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Recent successes</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
+              <div class="pulse-last-scan-label">Last successful payment seen</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-small">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `
+      : lastScanInfo
+        ? `
         <section class="card pulse-section pulse-last-scan-card">
           <div class="pulse-section-head">
             <div>
@@ -499,9 +418,26 @@
           </div>
         </section>
       `
-      : "";
+        : "";
 
-    const gatewayCards = gateways.length
+        const gatewayCards = isLoading
+      ? `
+        <article class="pulse-gateway-card">
+          <div class="aa-loading-row" style="width:160px"></div>
+          <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+          <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+          <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+          <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+        </article>
+        <article class="pulse-gateway-card">
+          <div class="aa-loading-row" style="width:160px"></div>
+          <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+          <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+          <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+          <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+        </article>
+      `
+      : gateways.length
       ? gateways.map((gateway) => {
           const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
           const priorityToken = getPulsePriorityToken(priority);
@@ -532,7 +468,7 @@
                 </div>
               </div>
 
-                            <div class="pulse-gateway-message">
+              <div class="pulse-gateway-message">
                 ${esc(gateway?.recommended_message || "No recommendation available.")}
               </div>
 
@@ -710,8 +646,8 @@
               <div class="pulse-title">Revenue recovery dashboard</div>
               <div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
             </div>
-            <div class="pulse-priority-pill ${executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium"}">
-              ${esc(executionMode)} MODE
+            <div class="pulse-priority-pill ${isLoading ? "pulse-priority-medium" : (executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium")}">
+              ${isLoading ? "Updating…" : esc(executionMode + " MODE")}
             </div>
           </div>
 
