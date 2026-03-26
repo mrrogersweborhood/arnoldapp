@@ -435,42 +435,24 @@ function fadeReplaceResults(html) {
       class="pulse-fade-in"
       style="
         opacity: 0;
-        transform: translateY(4px);
-        transition: opacity 220ms ease, transform 220ms ease;
+        transition: opacity 160ms ease;
       "
     >
       ${html}
     </div>
   `;
 
-  // FIRST LOAD ONLY
-  if (!results.dataset.loaded) {
-    results.innerHTML = wrappedHtml;
-
-    const animated = results.querySelector(".pulse-fade-in");
-    if (animated) {
-      window.requestAnimationFrame(() => {
-        animated.style.opacity = "1";
-        animated.style.transform = "translateY(0)";
-      });
-    }
-
-    results.dataset.loaded = "true";
-    return;
-  }
-
-  // SUBSEQUENT LOADS → update in place, then fade the new content in
   results.innerHTML = wrappedHtml;
 
   const animated = results.querySelector(".pulse-fade-in");
   if (animated) {
     window.requestAnimationFrame(() => {
       animated.style.opacity = "1";
-      animated.style.transform = "translateY(0)";
     });
   }
-}
-  function renderStoresLoadingShellSafe() {
+
+  results.dataset.loaded = "true";
+}  function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
       return window.renderStoresLoadingShell();
     }
@@ -1340,14 +1322,12 @@ if (results) {
     lastMode = "pulse";
     setDashboardChrome("pulse");
     setStatus("busy aa-status-center", "");
-    const sl = $("statusLine");
-    if (sl) {
-      sl.innerHTML = `
-        <span class="aa-inline-spinner" aria-hidden="true"></span>
-        <span class="aa-status-center-text">Loading Pulse dashboard…</span>
-      `;
-    }
-
+const sl = $("statusLine");
+if (sl) {
+  sl.className = "msg";
+  sl.textContent = "";
+  sl.innerHTML = "";
+}
 const results = $("results");
 if (results && !results.dataset.pulseInitialized) {
   results.innerHTML = renderPulseLoadingShellSafe();
@@ -1386,7 +1366,7 @@ if (results && !results.dataset.pulseInitialized) {
   fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
 }
 
-      setStatus("", "Pulse dashboard loaded.");
+      setStatus("", "");
       renderRawJson();
     } catch (err) {
       setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
