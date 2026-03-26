@@ -936,24 +936,12 @@ btn.addEventListener("click", async () => {
       ? window.renderAddressBlock("Shipping", customer?.shipping)
       : "";
 
-    const subscriptionsCard = typeof window.renderSubscriptionsTable === "function"
-      ? window.renderSubscriptionsTable(subscriptions, openSubNotes)
-      : "";
-
-    const ordersCard = typeof window.renderOrdersTable === "function"
-      ? window.renderOrdersTable(orders, openOrderNotes)
-      : "";
-
-    const totalsCard = typeof window.renderTotalsCard === "function"
-      ? window.renderTotalsCard(payload)
-      : "";
-
-    const healthCard = typeof window.renderHealthCard === "function"
-      ? window.renderHealthCard(payload)
+    const healthCard = typeof window.renderSubscriptionHealthSummary === "function"
+      ? window.renderSubscriptionHealthSummary(customer, subscriptions, orders)
       : "";
 
     const activityCard = typeof window.renderCustomerActivity === "function"
-      ? window.renderCustomerActivity(payload)
+      ? window.renderCustomerActivity(customer, subscriptions, orders)
       : "";
 
     return `
@@ -970,10 +958,7 @@ btn.addEventListener("click", async () => {
         </div>
       </section>
 
-      ${subscriptionsCard}
-      ${ordersCard}
-      ${totalsCard}
-      ${healthCard}
+            ${healthCard}
       ${activityCard}
     `;
   }
