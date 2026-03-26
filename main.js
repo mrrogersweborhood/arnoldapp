@@ -1181,11 +1181,11 @@ if (results) {
   // ----------------------------
   // ORDER vs CUSTOMER ROUTING
   // ----------------------------
-  if (j?.order || j?.type === "order") {
-    results.innerHTML = renderOrder(j);
-  } else {
-    results.innerHTML = renderResults(j);
-  }
+  if (j?.intent === "order_by_id" || j?.order_id) {
+  results.innerHTML = renderOrder(j);
+} else {
+  results.innerHTML = renderResults(j);
+}
 
   bindNotesToggles(results);
   bindCopyButtons(results);
