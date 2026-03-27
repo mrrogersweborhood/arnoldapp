@@ -238,7 +238,7 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
 
     if (isLoggedIn) {
       pill.classList.add("ok");
-      txt.textContent = `Session: logged in as ${name || "admin"}`;
+      txt.textContent = `Connected as ${name || "Admin"}`;
     } else {
       pill.classList.remove("ok");
       txt.textContent = "Session: unknown";
@@ -311,7 +311,7 @@ async function refreshSession() {
       const loggedIn = !!j?.loggedIn;
 
       if (loggedIn) {
-        setSessionPill(true, j?.user?.name || j?.user?.slug || "admin");
+        setSessionPill(true, j?.user?.name || j?.user?.display_name || "Admin");
         toggleLoginSearchUI(true);
         setLoggedOutLanding(true);
         return true;
@@ -1050,7 +1050,7 @@ btn.addEventListener("click", async () => {
       return;
     }
 
-    setSessionPill(true, j?.user?.name || j?.user?.slug || user);
+    setSessionPill(true, j?.user?.name || j?.user?.display_name || "Admin");
     toggleLoginSearchUI(true);
     setLoggedOutLanding(true);
     setStatus("", "Logged in.");
