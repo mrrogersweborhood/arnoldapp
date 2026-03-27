@@ -430,26 +430,19 @@ function fadeReplaceResults(html) {
   const results = $("results");
   if (!results) return;
 
-  const wrappedHtml = `
-    <div
-      class="pulse-fade-in"
-      style="
-        opacity: 0;
-        transition: opacity 160ms ease;
-      "
-    >
-      ${html}
-    </div>
-  `;
+  results.style.opacity = "0";
+  results.style.transform = "translateY(6px)";
+  results.style.transition = "opacity .18s ease, transform .18s ease";
 
-  results.innerHTML = wrappedHtml;
+  window.setTimeout(() => {
+    results.innerHTML = html;
+    results.style.transform = "translateY(6px)";
 
-  const animated = results.querySelector(".pulse-fade-in");
-  if (animated) {
     window.requestAnimationFrame(() => {
-      animated.style.opacity = "1";
+      results.style.opacity = "1";
+      results.style.transform = "translateY(0)";
     });
-  }
+  }, 160);
 
   results.dataset.loaded = "true";
 }  function renderStoresLoadingShellSafe() {
