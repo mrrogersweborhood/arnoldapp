@@ -1326,10 +1326,15 @@ if (results) {
       sl.innerHTML = "";
     }
 
-    const results = $("results");
+const results = $("results");
 
-    try {
-      const [analysisRes, summaryRes] = await Promise.all([
+// 🟢 STEP 1 — IMMEDIATE LOADING SHELL (CRITICAL FIX)
+if (results) {
+  fadeReplaceResults(renderPulseLoadingShellSafe());
+}
+
+try {
+  const [analysisRes, summaryRes] = await Promise.all([
         fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
         fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" })
       ]);
@@ -1356,10 +1361,14 @@ if (results) {
       };
       lastRaw = lastPayload;
 
-      if (results) {
-        results.dataset.pulseInitialized = "true";
-        fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
-      }
+if (results) {
+  results.dataset.pulseInitialized = "true";
+
+  // 🟢 STEP 2 — SINGLE FINAL RENDER (NO DOUBLE RENDER)
+  window.updatePulseView(
+    renderPulseDashboardSafe(analysisJson, summaryJson)
+  );
+}
 
       setStatus("", "");
       renderRawJson();
