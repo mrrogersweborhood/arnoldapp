@@ -510,12 +510,32 @@
       return;
     }
 
-    executePulseGatewayAction(action, gateway)
-      .then((data) => {
-        btn.disabled = false;
-        btn.textContent = originalLabel;
+executePulseGatewayAction(action, gateway)
+  .then((data) => {
+    btn.disabled = false;
+    btn.textContent = originalLabel;
 
-        const count = Number(data?.affected_count || 0);
+    const count = Number(data?.affected_count || 0);
+    const revenue = Number(data?.affected_revenue || 0) || 0;
+
+    // 🔥 SET OPTIMISTIC STATE (CRITICAL)
+    if (action === "pause") {
+      window.__pulseOptimisticAction = {
+        type: "pause",
+        gateway,
+        count,
+        revenue
+      };
+    }
+
+    if (action === "retry") {
+      window.__pulseOptimisticAction = {
+        type: "retry",
+        gateway,
+        count,
+        revenue
+      };
+    }
 
         if (data?.simulated === true) {
           showPulseBanner(

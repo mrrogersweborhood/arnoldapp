@@ -666,30 +666,52 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
                 ${esc(successMeta)}
               </div>
 
-              <div class="pulse-gateway-actions" style="margin-top:14px;">
-                <button
-                  class="pulse-action-pill"
-                  type="button"
-                  data-action="${esc(recommendedAction)}"
-                  data-gateway="${esc(String(gateway?.gateway || ""))}"
-                >
-                  ${priority === "HIGH"
-                    ? esc("Act Now — " + formatPulseActionLabel(recommendedAction))
-                    : esc(formatPulseActionLabel(recommendedAction))}
-                </button>
+<div class="pulse-gateway-actions" style="margin-top:14px;">
+  ${
+    shouldPause
+      ? `
+        <button
+          class="pulse-action-pill pulse-action-pill-danger"
+          type="button"
+          data-action="RETRY_LATER"
+          data-gateway="${esc(String(gateway?.gateway || ""))}"
+        >
+          🔴 Pause Retries
+        </button>
+      `
+      : shouldResume
+      ? `
+        <button
+          class="pulse-action-pill pulse-action-pill-success"
+          type="button"
+          data-action="RESUME"
+          data-gateway="${esc(String(gateway?.gateway || ""))}"
+        >
+          🟢 Resume Retries
+        </button>
+      `
+      : `
+        <button
+          class="pulse-action-pill pulse-action-pill-disabled"
+          type="button"
+          disabled
+        >
+          Monitor
+        </button>
+      `
+  }
 
-                <button
-                  class="pulse-action-pill pulse-action-pill-secondary"
-                  type="button"
-                  data-action="pulse-toggle-customers"
-                  data-gateway="${esc(String(gateway?.gateway || ""))}"
-                >
-                  ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()]
-                    ? "Hide customers"
-                    : "View customers"}
-                </button>
-              </div>
-
+  <button
+    class="pulse-action-pill pulse-action-pill-secondary"
+    type="button"
+    data-action="pulse-toggle-customers"
+    data-gateway="${esc(String(gateway?.gateway || ""))}"
+  >
+    ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()]
+      ? "Hide customers"
+      : "View customers"}
+  </button>
+</div>
               ${
                 window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
                 window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
