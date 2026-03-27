@@ -77,11 +77,31 @@ async function handleLogin(request) {
 
     const token = data.token;
 
-    const user = {
-      id: data?.data?.user?.id || null,
-      name: data.user_display_name || data.user_nicename || username,
-      email: data.user_email || null
-    };
+// 🟢 ENRICH USER WITH REAL WP NAME (NOT display_name)
+let user = {
+  id: data?.data?.user?.id || null,
+  name: data.user_display_name || data.user_nicename || username,
+  email: data.user_email || null
+};
+
+try {
+  const meResp = await fetch(`${ORIGIN}/wp-json/wp/v2/users/me?context=edit`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (meResp.ok) {
+    const me = await meResp.json();
+
+    // ✅ Prefer real WP "Name" (e.g., Bob Rogers)
+    if (me?.name && String(me.name).trim()) {
+      user.name = me.name;
+    }
+  }
+} catch (e) {
+  console.warn("Failed to enrich user name:", e);
+}
 
     const headers = new Headers(corsHeaders(request));
     headers.append("Set-Cookie", makeJwtCookie(token, JWT_MAX_AGE));
@@ -195,23 +215,26 @@ async function verifyWpAdmin(jwt) {
     ? data.roles.map((x) => String(x).toLowerCase())
     : [];
 
+  const first = String(data?.first_name || "").trim();
+  const last = String(data?.last_name || "").trim();
+  const fullName = `${first} ${last}`.trim();
+
   const roleIsAllowed =
     roles.includes("administrator") ||
     roles.includes("shop_manager");
 
-  if (roleIsAllowed) {
-    return {
-      ok: true,
-      isAdmin: true,
-      roles,
-      user: {
-        id: data?.id ?? null,
-        name: data?.name ?? null,
-        slug: data?.slug ?? null
-      }
-    };
-  }
-
+if (roleIsAllowed) {
+  return {
+    ok: true,
+    isAdmin: true,
+    roles,
+    user: {
+      id: data?.id ?? null,
+      name: fullName || data?.name || null,
+      slug: data?.slug ?? null
+    }
+  };
+}
   try {
     const probe = await fetch(`${ORIGIN}/wp-json/wc/v3/orders?per_page=1`, {
       method: "GET",
@@ -221,39 +244,37 @@ async function verifyWpAdmin(jwt) {
       }
     });
 
-    if (probe.ok) {
-      console.log("[ADMIN DEBUG] Woo probe: allowed");
+if (probe.ok) {
+  console.log("[ADMIN DEBUG] Woo probe: allowed");
 
-      return {
-        ok: true,
-        isAdmin: true,
-        roles,
-        user: {
-          id: data?.id ?? null,
-          name: data?.name ?? null,
-          slug: data?.slug ?? null
-        }
-      };
+  return {
+    ok: true,
+    isAdmin: true,
+    roles,
+    user: {
+      id: data?.id ?? null,
+      name: fullName || data?.name || null,
+      slug: data?.slug ?? null
     }
-
+  };
+}
     console.log("[ADMIN DEBUG] Woo probe: denied", probe.status);
 
   } catch (err) {
     console.log("[ADMIN DEBUG] Woo probe error:", err?.message || err);
   }
 
-  return {
-    ok: true,
-    isAdmin: false,
-    roles,
-    user: {
-      id: data?.id ?? null,
-      name: data?.name ?? null,
-      slug: data?.slug ?? null
-    }
-  };
+return {
+  ok: true,
+  isAdmin: false,
+  roles,
+  user: {
+    id: data?.id ?? null,
+    name: fullName || data?.name || null,
+    slug: data?.slug ?? null
+  }
+};
 }
-
 async function requireAdminCookie(request) {
   const jwt = getCookieValue(request, ADMIN_COOKIE_NAME);
   if (!jwt || !jwt.trim()) return { ok: false, status: 401, error: "Not logged in" };
@@ -2320,6 +2341,7 @@ function corsHeaders(req) {
     "cache-control": "no-store"
   };
 }
+
 function text(status, body, req, extraHeaders) {
   return new Response(body, {
     status,
@@ -2339,6 +2361,7 @@ function json(status, obj, extraHeaders, req) {
   };
   return new Response(JSON.stringify(obj), { status, headers });
 }
+
 function jsonError(status, msg, err, req) {
   return json(
     status,
