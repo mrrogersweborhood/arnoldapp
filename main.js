@@ -1343,10 +1343,8 @@ const results = $("results");
 
 // 🟢 STEP 1 — IMMEDIATE LOADING SHELL (CRITICAL FIX)
 if (results) {
-  fadeReplaceResults(window.renderPulseShell());
-  window.renderPulseLoading();
+  fadeReplaceResults(renderPulseLoadingShellSafe());
 }
-
 try {
   const [analysisRes, summaryRes] = await Promise.all([
         fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
