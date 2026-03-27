@@ -420,6 +420,7 @@
 }
 .pulse-incident-strip-status-row{
   margin-top:12px;
+  min-height:64px;
 }
 .pulse-incident-strip-status-card{
   border:1px solid #fecaca;
@@ -455,6 +456,15 @@
   font-weight:800;
   color:#0f172a;
 }
+
+.pulse-incident-strip-actions{
+  margin-top:12px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-height:44px;
+}
+
 .pulse-incident-chip{
   display:flex;
   flex-direction:column;

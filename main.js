@@ -443,7 +443,12 @@ function fadeReplaceResults(html) {
   results.style.transition = "";
   results.innerHTML = html;
   results.dataset.loaded = "true";
-}  function renderStoresLoadingShellSafe() {
+}  
+// 🔴 SINGLE RENDER PIPELINE (CRITICAL FIX)
+window.updatePulseView = function (html) {
+  fadeReplaceResults(html);
+};
+function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
       return window.renderStoresLoadingShell();
     }
@@ -1308,21 +1313,20 @@ if (results) {
     }
   }
 
-  async function doPulseDashboard() {
+    async function doPulseDashboard() {
     abortActiveSearch();
     lastMode = "pulse";
     setDashboardChrome("pulse");
     setStatus("busy aa-status-center", "");
-const sl = $("statusLine");
-if (sl) {
-  sl.className = "msg";
-  sl.textContent = "";
-  sl.innerHTML = "";
-}
-const results = $("results");
-if (results && !results.dataset.pulseInitialized) {
-  results.innerHTML = renderPulseLoadingShellSafe();
-}
+
+    const sl = $("statusLine");
+    if (sl) {
+      sl.className = "msg";
+      sl.textContent = "";
+      sl.innerHTML = "";
+    }
+
+    const results = $("results");
 
     try {
       const [analysisRes, summaryRes] = await Promise.all([
@@ -1352,10 +1356,10 @@ if (results && !results.dataset.pulseInitialized) {
       };
       lastRaw = lastPayload;
 
-     if (results) {
-  results.dataset.pulseInitialized = "true";
-  fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
-}
+      if (results) {
+        results.dataset.pulseInitialized = "true";
+        fadeReplaceResults(renderPulseDashboardSafe(analysisJson, summaryJson));
+      }
 
       setStatus("", "");
       renderRawJson();
