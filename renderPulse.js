@@ -491,6 +491,12 @@
               </div>
             </div>
           </div>
+
+          <div class="pulse-incident-strip-actions">
+            <div class="pulse-incident-strip-action" style="opacity:.55; pointer-events:none;">
+              <div class="aa-loading-row" style="width:120px"></div>
+            </div>
+          </div>
         </section>
       `
       : activeIncident

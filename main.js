@@ -438,20 +438,10 @@ function fadeReplaceResults(html) {
   const results = $("results");
   if (!results) return;
 
-  results.style.opacity = "0";
-  results.style.transform = "translateY(6px)";
-  results.style.transition = "opacity .18s ease, transform .18s ease";
-
-  window.setTimeout(() => {
-    results.innerHTML = html;
-    results.style.transform = "translateY(6px)";
-
-    window.requestAnimationFrame(() => {
-      results.style.opacity = "1";
-      results.style.transform = "translateY(0)";
-    });
-  }, 160);
-
+  results.style.opacity = "1";
+  results.style.transform = "translateY(0)";
+  results.style.transition = "";
+  results.innerHTML = html;
   results.dataset.loaded = "true";
 }  function renderStoresLoadingShellSafe() {
     if (typeof window.renderStoresLoadingShell === "function") {
