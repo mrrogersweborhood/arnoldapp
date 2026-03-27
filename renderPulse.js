@@ -232,7 +232,36 @@ if (summary) {
   window.__pulseOptimisticAction = null;
 }
 
-   const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
+   let gateways = isLoading
+  ? []
+  : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
+
+// 🟢 DEDUPE GATEWAYS BY KEY (CRITICAL FIX)
+if (!isLoading && gateways.length) {
+  const map = new Map();
+
+  gateways.forEach((g) => {
+    const key = String(g?.gateway || "").trim().toLowerCase();
+    if (!key) return;
+
+    // 🔥 keep the MOST IMPORTANT version (higher revenue wins)
+    const existing = map.get(key);
+
+    if (!existing) {
+      map.set(key, g);
+      return;
+    }
+
+    const existingRevenue = Number(existing?.recoverable_revenue || 0);
+    const newRevenue = Number(g?.recoverable_revenue || 0);
+
+    if (newRevenue > existingRevenue) {
+      map.set(key, g);
+    }
+  });
+
+  gateways = Array.from(map.values());
+}
 
 // 🔥 NEW — APPLY ACTION FEEDBACK (UI INTERACTION LAYER)
 const actionFeedback = window.__pulseActionFeedback || null;
