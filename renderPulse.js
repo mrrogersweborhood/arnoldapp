@@ -517,7 +517,22 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
           const recentSuccessCountForGateway = Number(incident?.recent_success_count || 0);
           const hasRecentSuccessForGateway = !!incident?.has_recent_success;
           const minutesSinceSuccess = Number(incident?.minutes_since_success);
+// 🔥 NEW — Recovery Intelligence (FROM WORKER)
+const recoveryState = String(incident?.recommended_recovery_state || "monitor").toLowerCase();
+const shouldPause = !!incident?.should_pause_retries;
+const shouldResume = !!incident?.should_resume_retries;
+const recoveryReason = String(incident?.recovery_reason || "").trim();
 
+// UI token
+let recoveryToken = "neutral";
+if (recoveryState === "pause") recoveryToken = "high";
+else if (recoveryState === "resume") recoveryToken = "low";
+else recoveryToken = "medium";
+
+// UI label
+let recoveryLabel = "Monitor";
+if (recoveryState === "pause") recoveryLabel = "Pause Recommended";
+if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
           let intelligenceToken = "low";
           if (intelligenceStatus === "OUTAGE") intelligenceToken = "high";
           else if (intelligenceStatus === "DEGRADED" || intelligenceStatus === "SPIKE") intelligenceToken = "medium";
@@ -567,9 +582,41 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
                 </div>
               </div>
 
-              <div class="pulse-gateway-message">
-                ${esc(gateway?.recommended_message || "No recommendation available.")}
-              </div>
+<div class="pulse-gateway-message">
+  ${esc(gateway?.recommended_message || "No recommendation available.")}
+</div>
+
+<div
+  class="pulse-gateway-recovery pulse-priority-${recoveryToken}"
+  style="margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03);"
+>
+  <div
+    class="pulse-gateway-recovery-label"
+    style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75;"
+  >
+    Recovery recommendation
+  </div>
+
+  <div
+    class="pulse-gateway-recovery-value"
+    style="font-size:14px; font-weight:700; margin-top:4px;"
+  >
+    ${esc(recoveryLabel)}
+  </div>
+
+  ${
+    recoveryReason
+      ? `
+        <div
+          class="pulse-gateway-recovery-reason"
+          style="font-size:12px; margin-top:6px; opacity:.85;"
+        >
+          ${esc(recoveryReason)}
+        </div>
+      `
+      : ""
+  }
+</div>
 
               <div
                 class="pulse-gateway-decision"
