@@ -218,6 +218,12 @@ if (summary) {
     const gatewayIncidents = isLoading
       ? []
       : (Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : []);
+    const gatewayIncidentMap = new Map(
+      gatewayIncidents.map((item) => [
+        String(item?.gateway || "").trim().toLowerCase(),
+        item
+      ])
+    );
 
 // 🔥 APPLY OPTIMISTIC UI STATE (ONE-TIME ONLY)
 
@@ -260,7 +266,21 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
     const lastSuccessAt = successSummary?.last_success_at || null;
     const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
 
-    gateways.sort((a, b) => {
+        gateways.sort((a, b) => {
+      const incidentA = gatewayIncidentMap.get(String(a?.gateway || "").trim().toLowerCase()) || null;
+      const incidentB = gatewayIncidentMap.get(String(b?.gateway || "").trim().toLowerCase()) || null;
+
+      const statusRank = (incident) => {
+        const token = String(incident?.status || "normal").trim().toLowerCase();
+        if (token === "outage") return 4;
+        if (token === "degraded") return 3;
+        if (token === "spike") return 2;
+        return 1;
+      };
+
+      const intelligenceDelta = statusRank(incidentB) - statusRank(incidentA);
+      if (intelligenceDelta !== 0) return intelligenceDelta;
+
       const rank = (value) => {
         const token = String(value || "LOW").trim().toUpperCase();
         if (token === "HIGH") return 3;
@@ -485,17 +505,44 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
           <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
         </article>
       `
-      : gateways.length
+            : gateways.length
       ? gateways.map((gateway) => {
           const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
           const priorityToken = getPulsePriorityToken(priority);
           const recommendedAction = String(gateway?.recommended_action || "").toUpperCase();
+          const incident = gatewayIncidentMap.get(String(gateway?.gateway || "").trim().toLowerCase()) || null;
+
+          const intelligenceStatus = String(incident?.status || "normal").trim().toUpperCase();
+          const failureRate = Number(incident?.failure_rate || 0);
+          const recentSuccessCountForGateway = Number(incident?.recent_success_count || 0);
+          const hasRecentSuccessForGateway = !!incident?.has_recent_success;
+          const minutesSinceSuccess = Number(incident?.minutes_since_success);
+
+          let intelligenceToken = "low";
+          if (intelligenceStatus === "OUTAGE") intelligenceToken = "high";
+          else if (intelligenceStatus === "DEGRADED" || intelligenceStatus === "SPIKE") intelligenceToken = "medium";
+
+          const successMeta = hasRecentSuccessForGateway
+            ? `Recent successes ${formatPulseInteger(recentSuccessCountForGateway)}`
+            : (
+                Number.isFinite(minutesSinceSuccess) && minutesSinceSuccess >= 0
+                  ? `No recent success · last success ${formatPulseInteger(minutesSinceSuccess)} min ago`
+                  : "No recent success observed"
+              );
 
           return `
             <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
               <div class="pulse-gateway-top">
                 <div>
-                  <div class="pulse-gateway-name">${esc(formatPulseGatewayName(gateway?.gateway))}</div>
+                  <div class="pulse-gateway-name">
+                    ${esc(formatPulseGatewayName(gateway?.gateway))}
+                    <span
+                      class="pulse-priority-pill pulse-priority-${intelligenceToken}"
+                      style="margin-left:8px; vertical-align:middle;"
+                    >
+                      ${esc(intelligenceStatus)}
+                    </span>
+                  </div>
                   <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct || 0))} of active failures</div>
                 </div>
                 <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
@@ -513,6 +560,10 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
                 <div class="pulse-metric">
                   <div class="pulse-metric-label">Recoverable revenue</div>
                   <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue || 0))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Failure rate</div>
+                  <div class="pulse-metric-value">${esc(formatPulsePercent(failureRate * 100))}</div>
                 </div>
               </div>
 
@@ -542,6 +593,10 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
 
               <div class="pulse-gateway-playbook" style="margin-top:10px;">
                 ${esc(gateway?.playbook || "Monitor gateway performance.")}
+              </div>
+
+              <div class="pulse-gateway-playbook" style="margin-top:8px; opacity:.86;">
+                ${esc(successMeta)}
               </div>
 
               <div class="pulse-gateway-actions" style="margin-top:14px;">
