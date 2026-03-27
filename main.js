@@ -438,12 +438,25 @@ function fadeReplaceResults(html) {
   const results = $("results");
   if (!results) return;
 
+  // 🟢 LOCK HEIGHT BEFORE CHANGE (CRITICAL FIX)
+  const prevHeight = results.offsetHeight;
+  if (prevHeight > 0) {
+    results.style.minHeight = prevHeight + "px";
+  }
+
   results.style.opacity = "1";
   results.style.transform = "translateY(0)";
   results.style.transition = "";
+
+  // 🔁 REPLACE CONTENT
   results.innerHTML = html;
   results.dataset.loaded = "true";
-}  
+
+  // 🟢 RELEASE HEIGHT AFTER PAINT
+  requestAnimationFrame(() => {
+    results.style.minHeight = "";
+  });
+} 
 // 🔴 SINGLE RENDER PIPELINE (CRITICAL FIX)
 window.updatePulseView = function (html) {
   fadeReplaceResults(html);
@@ -1330,7 +1343,8 @@ const results = $("results");
 
 // 🟢 STEP 1 — IMMEDIATE LOADING SHELL (CRITICAL FIX)
 if (results) {
-  fadeReplaceResults(renderPulseLoadingShellSafe());
+  fadeReplaceResults(window.renderPulseShell());
+  window.renderPulseLoading();
 }
 
 try {
@@ -1365,9 +1379,7 @@ if (results) {
   results.dataset.pulseInitialized = "true";
 
   // 🟢 STEP 2 — SINGLE FINAL RENDER (NO DOUBLE RENDER)
-  window.updatePulseView(
-    renderPulseDashboardSafe(analysisJson, summaryJson)
-  );
+window.renderPulseDashboard(analysisJson, summaryJson);
 }
 
       setStatus("", "");
