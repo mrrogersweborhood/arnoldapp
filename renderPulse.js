@@ -684,25 +684,7 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
   }
 </div>
 
-              <div
-                class="pulse-gateway-decision"
-                style="margin-top:14px; padding:12px 14px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04);"
-              >
-                <div
-                  class="pulse-gateway-decision-kicker"
-                  style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75; margin-bottom:6px;"
-                >
-                  Primary decision
-                </div>
-                <div
-                  class="pulse-gateway-decision-text"
-                  style="font-size:15px; font-weight:700; line-height:1.35;"
-                >
-                  ${priority === "HIGH"
-                    ? "Act now: " + esc(formatPulseActionLabel(recommendedAction))
-                    : esc(formatPulseActionLabel(recommendedAction))}
-                </div>
-              </div>
+${""}
 
               <div class="pulse-gateway-playbook" style="margin-top:10px;">
                 ${esc(gateway?.playbook || "Monitor gateway performance.")}
@@ -713,40 +695,6 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
               </div>
 
 <div class="pulse-gateway-actions" style="margin-top:14px;">
-  ${
-    shouldPause
-      ? `
-        <button
-          class="pulse-action-pill pulse-action-pill-danger"
-          type="button"
-          data-action="RETRY_LATER"
-          data-gateway="${esc(String(gateway?.gateway || ""))}"
-        >
-          🔴 Pause Retries
-        </button>
-      `
-      : shouldResume
-      ? `
-        <button
-          class="pulse-action-pill pulse-action-pill-success"
-          type="button"
-          data-action="RESUME"
-          data-gateway="${esc(String(gateway?.gateway || ""))}"
-        >
-          🟢 Resume Retries
-        </button>
-      `
-      : `
-        <button
-          class="pulse-action-pill pulse-action-pill-disabled"
-          type="button"
-          disabled
-        >
-          Monitor
-        </button>
-      `
-  }
-
   <button
     class="pulse-action-pill pulse-action-pill-secondary"
     type="button"
@@ -757,8 +705,7 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
       ? "Hide customers"
       : "View customers"}
   </button>
-</div>
-              ${
+</div>              ${
                 window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
                 window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
                 Array.isArray(window.__pulseAffectedCustomers) &&
