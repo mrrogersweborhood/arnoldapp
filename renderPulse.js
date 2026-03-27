@@ -266,6 +266,49 @@ if (!isLoading && gateways.length) {
 // 🔥 NEW — APPLY ACTION FEEDBACK (UI INTERACTION LAYER)
 const actionFeedback = window.__pulseActionFeedback || null;
 
+let actionOutcomeBanner = "";
+
+if (actionFeedback && !isLoading) {
+  const now = Date.now();
+  const age = now - Number(actionFeedback.at || 0);
+
+  if (age < 8000) {
+    const secondsAgo = Math.floor(age / 1000);
+
+    const label =
+      actionFeedback.action === "pause"
+        ? "paused"
+        : actionFeedback.action === "retry"
+        ? "moved to retry queue"
+        : actionFeedback.action === "resume"
+        ? "resumed"
+        : "updated";
+
+    actionOutcomeBanner = `
+      <section class="card pulse-action-outcome">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+          
+          <div>
+            <div style="font-weight:800; font-size:16px;">
+              ✓ ${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} ${label}
+            </div>
+
+            <div style="margin-top:4px; opacity:.8;">
+              💰 ${esc(formatPulseMoney(actionFeedback.revenue))} impacted
+            </div>
+          </div>
+
+          <div style="font-size:12px; opacity:.6;">
+            ${secondsAgo}s ago
+          </div>
+
+        </div>
+      </section>
+    `;
+  } else {
+    window.__pulseActionFeedback = null;
+  }
+}
 if (actionFeedback && !isLoading) {
   const now = Date.now();
   const age = now - Number(actionFeedback.at || 0);
@@ -305,6 +348,10 @@ if (actionFeedback && !isLoading) {
 }
     const reasons = isLoading ? [] : (Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : []);
     const repeatOffenders = isLoading ? [] : getRepeatOffenders(analysis?.incidents);
+    const automationEvents = isLoading
+      ? []
+      : (Array.isArray(analysis?.automation_events) ? analysis.automation_events.slice() : []);
+    const automationSummary = isLoading ? null : (analysis?.automation_summary || null);
     const gatewayIncidents = isLoading
       ? []
       : (Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : []);
@@ -349,9 +396,68 @@ if (optimistic && !isLoading && summary) {
 }
 
 const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
+    const automationStateCard = isLoading
+      ? ""
+      : activeIncident
+        ? (() => {
+            const gatewayName = formatPulseGatewayName(activeIncident?.gateway);
+            const pausedTotal = Number(analysis?.paused_total || 0) || 0;
+            const retryingTotal = Number(analysis?.retrying_total || 0) || 0;
+            const modeLabel = String(summary?.execution_mode || "test").toUpperCase();
+            const shouldPauseRetries = !!activeIncident?.should_pause_retries;
+            const shouldResumeRetries = !!activeIncident?.should_resume_retries;
+            const recoveryReasonText = String(activeIncident?.recovery_reason || "").trim();
+
+            let stateLabel = "Monitoring";
+            let stateToken = "medium";
+
+            if (shouldPauseRetries) {
+              stateLabel = "Auto-paused";
+              stateToken = "high";
+            } else if (shouldResumeRetries) {
+              stateLabel = "Resume ready";
+              stateToken = "low";
+            }
+
+            return `
+              <section class="card pulse-section pulse-automation-state-card">
+                <div class="pulse-section-head">
+                  <div>
+                    <div class="pulse-section-title">Automation status</div>
+                    <div class="pulse-section-subtitle">Persistent system state based on current recovery conditions.</div>
+                  </div>
+                  <div class="pulse-priority-pill pulse-priority-${stateToken}">
+                    ${esc(stateLabel)}
+                  </div>
+                </div>
+
+                <div class="pulse-grid">
+                  <article class="pulse-gateway-card">
+                    <div class="pulse-gateway-top">
+                      <div>
+                        <div class="pulse-gateway-name">${esc(gatewayName)}</div>
+                        <div class="pulse-gateway-share">
+                          ${esc(formatPulseInteger(pausedTotal))} paused · ${esc(formatPulseInteger(retryingTotal))} retrying
+                        </div>
+                      </div>
+                      <div class="pulse-priority-pill pulse-priority-medium">
+                        ${esc(modeLabel)} MODE
+                      </div>
+                    </div>
+
+                    <div class="pulse-gateway-message">
+                      ${esc(recoveryReasonText || "No recovery reason available.")}
+                    </div>
+                  </article>
+                </div>
+              </section>
+            `;
+          })()
+        : "";
     const lastScanInfo = isLoading ? null : getLastScanInfo();
     const scanDelta = isLoading ? null : getScanDelta(summary);
 
+    
     const successSummary = isLoading ? null : (analysis?.success_summary || null);
     const lastSuccessAt = successSummary?.last_success_at || null;
     const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
@@ -848,9 +954,11 @@ ${""}
       `
       : "";
 
-        return `
+return `
       <div class="pulse-shell">
+        ${actionOutcomeBanner}
         ${incidentStrip}
+        ${automationStateCard}
 
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
@@ -863,7 +971,6 @@ ${""}
               ${isLoading ? "Updating…" : esc(executionMode + " MODE")}
             </div>
           </div>
-
           <div class="pulse-stat-grid">
 <div class="pulse-stat-card pulse-stat-accent-danger">
   <div class="pulse-stat-label">Recoverable revenue</div>
