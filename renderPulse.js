@@ -205,6 +205,9 @@
     // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
     // Prevent stale optimistic state from leaking into a fresh render.
     window.__pulseLastAnalysis = analysis;
+if (summary) {
+  window.__pulseLastSummary = summary;
+}
     window.__pulseOptimisticAction = null;
 
     const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
@@ -663,31 +666,61 @@
           </div>
 
           <div class="pulse-stat-grid">
-            <div class="pulse-stat-card pulse-stat-accent-danger">
-              <div class="pulse-stat-label">Recoverable revenue</div>
-              <div class="pulse-stat-value">${esc(formatPulseMoney(totalRevenue))}</div>
-              <div class="pulse-stat-meta">Current total across tracked failed subscriptions.</div>
-            </div>
+<div class="pulse-stat-card pulse-stat-accent-danger">
+  <div class="pulse-stat-label">Recoverable revenue</div>
+  <div class="pulse-stat-value">
+    ${isLoading
+      ? `<div class="aa-loading-row" style="width:120px"></div>`
+      : esc(formatPulseMoney(totalRevenue))
+    }
+  </div>
+  <div class="pulse-stat-meta">Current total across tracked failed subscriptions.</div>
+</div>
             <div class="pulse-stat-card pulse-stat-accent-warning">
               <div class="pulse-stat-label">Failed subscriptions</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(failedSubscriptions))}</div>
+              <div class="pulse-stat-value">
+  ${isLoading
+    ? `<div class="aa-loading-row" style="width:60px"></div>`
+    : esc(formatPulseInteger(failedSubscriptions))
+  }
+</div>
               <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
             </div>
             <div class="pulse-stat-card pulse-stat-accent-neutral">
               <div class="pulse-stat-label">Active incidents</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(pendingIncidents))}</div>
+              <div class="pulse-stat-value">
+  ${isLoading
+    ? `<div class="aa-loading-row" style="width:60px"></div>`
+    : esc(formatPulseInteger(pendingIncidents))
+  }
+</div>
               <div class="pulse-stat-meta">Incidents currently in retry or paused state.</div>
             </div>
 
             <div class="pulse-stat-card pulse-stat-accent-neutral">
               <div class="pulse-stat-label">Retry queue</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(retryingSubscriptions))}</div>
-              <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)}</div>
+              <div class="pulse-stat-value">
+  ${isLoading
+    ? `<div class="aa-loading-row" style="width:60px"></div>`
+    : esc(formatPulseInteger(retryingSubscriptions))
+  }
+</div>
+              <div class="pulse-stat-meta">
+  ${isLoading
+    ? `<div class="aa-loading-row" style="width:100px"></div>`
+    : esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)
+  }
+</div>
             </div>
 
             <div class="pulse-stat-card pulse-stat-accent-neutral">
               <div class="pulse-stat-label">Paused incidents</div>
-              <div class="pulse-stat-value">${esc(formatPulseInteger(pausedSubscriptions))}</div>
+              <div class="pulse-stat-value">
+  ${isLoading
+    ? `<div class="aa-loading-row" style="width:60px"></div>`
+    : esc(formatPulseInteger(pausedSubscriptions))
+  }
+</div>
               <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
             </div>
 
@@ -797,7 +830,10 @@ if (actionBtn) {
       window.__pulseExpandedGateways[gateway] = true;
 
       if (typeof window.renderPulseDashboard === "function") {
-        const html = window.renderPulseDashboard(window.__pulseLastAnalysis, null);
+        const html = window.renderPulseDashboard(
+  window.__pulseLastAnalysis,
+  window.__pulseLastSummary || null
+);
         const results = document.getElementById("results");
         if (results) results.innerHTML = html;
       }
@@ -860,7 +896,10 @@ if (toggle) {
   }
 
   if (typeof window.renderPulseDashboard === "function") {
-    const html = window.renderPulseDashboard(window.__pulseLastAnalysis, null);
+    const html = window.renderPulseDashboard(
+  window.__pulseLastAnalysis,
+  window.__pulseLastSummary || null
+);
     const results = document.getElementById("results");
     if (results) results.innerHTML = html;
   }
