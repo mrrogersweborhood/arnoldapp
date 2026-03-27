@@ -223,12 +223,10 @@ async function handlePauseGatewayAction(request, env) {
 
     console.log("PAUSE → incidentIds JSON:", JSON.stringify(incidentIds || []));
 
-  if (!incidentIds.length) {
-    return json(request, {
-      ok: false,
-      error: "incident_ids is required for pause."
-    }, 400);
-  }
+// 🟢 Allow automation mode (no explicit incident_ids)
+if (!incidentIds.length) {
+  console.log("PAUSE → AUTO MODE: selecting incidents internally");
+}
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
@@ -310,12 +308,10 @@ async function handleRetryGatewayAction(request, env) {
 
     console.log("RETRY → incidentIds JSON:", JSON.stringify(incidentIds || []));
 
-  if (!incidentIds.length) {
-    return json(request, {
-      ok: false,
-      error: "incident_ids is required for retry."
-    }, 400);
-  }
+// 🟢 Allow automation mode (no explicit incident_ids)
+if (!incidentIds.length) {
+  console.log("AUTO MODE: selecting incidents internally");
+}
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
@@ -398,12 +394,10 @@ async function handleResumeGatewayAction(request, env) {
 
     console.log("RESUME → incidentIds JSON:", JSON.stringify(incidentIds || []));
 
-  if (!incidentIds.length) {
-    return json(request, {
-      ok: false,
-      error: "incident_ids is required for resume."
-    }, 400);
-  }
+// 🟢 Allow automation mode (no explicit incident_ids)
+if (!incidentIds.length) {
+  console.log("AUTO MODE: selecting incidents internally");
+}
 
   const targetIds = await findIncidentIdsForAction(env, {
     gateway,
@@ -1280,8 +1274,103 @@ const retryingRows = await env.DB.prepare(`
     successCountsByGateway,
     windowedSuccessCountsByGateway
   );
-  const reasonsMap = new Map();
+  const automationEvents = [];
+// 🔥 AUTOMATION ENGINE (SAFE, GUARDED)
+for (const g of gatewayIncidents) {
+  const gateway = normalizeGatewayName(g.gateway);
 
+  // 🟢 AUTO-PAUSE
+  if (g.should_pause_retries === true) {
+    const rows = await env.DB.prepare(`
+      SELECT id, gateway, status
+      FROM radar_incidents
+      WHERE status IN ('pending', 'retrying')
+      LIMIT 200
+    `).all();
+
+    const active = (rows.results || []).find((r) => {
+      const rowGateway = normalizeGatewayName(r.gateway);
+      return rowGateway === gateway;
+    });
+
+    if (active) {
+      console.log("AUTO ACTION → PAUSE:", gateway);
+
+      const autoPauseResponse = await handlePauseGatewayAction(
+        new Request("https://pulse-worker.bob-b5c.workers.dev/radar/action/pause", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            gateway,
+            incident_ids: []
+          })
+        }),
+        env
+      );
+
+      const autoPauseJson = await autoPauseResponse.json().catch(() => null);
+
+      automationEvents.push({
+        type: "pause",
+        gateway,
+        ok: !!autoPauseJson?.ok,
+        simulated: !!autoPauseJson?.simulated,
+        affected_count: Number(autoPauseJson?.affected_count || 0),
+        updated_status: String(autoPauseJson?.updated_status || "paused"),
+        message:
+          autoPauseJson?.message ||
+          `Pulse auto-paused ${gateway}.`
+      });
+    }
+  }
+
+  // 🟢 AUTO-RESUME
+  if (g.should_resume_retries === true) {
+    const rows = await env.DB.prepare(`
+      SELECT id, gateway, status
+      FROM radar_incidents
+      WHERE status = 'paused'
+      LIMIT 200
+    `).all();
+
+    const paused = (rows.results || []).find((r) => {
+      const rowGateway = normalizeGatewayName(r.gateway);
+      return rowGateway === gateway;
+    });
+
+    if (paused) {
+      console.log("AUTO ACTION → RESUME:", gateway);
+
+      const autoResumeResponse = await handleResumeGatewayAction(
+        new Request("https://pulse-worker.bob-b5c.workers.dev/radar/action/resume", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            gateway,
+            incident_ids: []
+          })
+        }),
+        env
+      );
+
+      const autoResumeJson = await autoResumeResponse.json().catch(() => null);
+
+      automationEvents.push({
+        type: "resume",
+        gateway,
+        ok: !!autoResumeJson?.ok,
+        simulated: !!autoResumeJson?.simulated,
+        affected_count: Number(autoResumeJson?.affected_count || 0),
+        updated_status: String(autoResumeJson?.updated_status || "pending"),
+        message:
+          autoResumeJson?.message ||
+          `Pulse auto-resumed ${gateway}.`
+      });
+    }
+  }
+}
+
+const reasonsMap = new Map();
   for (const row of incidents) {
     const reason = asText(row.reason) || "FAILED_GENERIC";
     const current = reasonsMap.get(reason) || {
@@ -1321,6 +1410,12 @@ return json(request, {
   // NEW visibility
   paused_total: (pausedRows.results || []).length,
   retrying_total: (retryingRows.results || []).length,
+
+  automation_events: automationEvents,
+  automation_summary: {
+    count: automationEvents.length,
+    last_event_at: automationEvents.length ? new Date().toISOString() : null
+  },
 
   success_summary: {
     last_success_at: lastSuccessAt,
@@ -1465,17 +1560,21 @@ function buildGatewayIncidents(
       const customers = Number(g?.customers_at_risk || 0);
       const share = Number(g?.share_of_failures_pct || 0);
 
-      // --- NEW: gateway-specific windowed success awareness ---
-      const gatewaySuccessCount = successCountsByGateway[g.gateway] || 0;
-      const gatewayWindowedSuccessCount = windowedSuccessCountsByGateway[g.gateway] || 0;
+      const gatewaySuccessCount = Number(successCountsByGateway[g.gateway] || 0);
+      const gatewayWindowedSuccessCount = Number(windowedSuccessCountsByGateway[g.gateway] || 0);
 
       const successSignal = gatewayWindowedSuccessCount > 0 ? 1 : 0;
 
-      // ratio of recent windowed successes to failures for THIS gateway
       const successToFailureRatio =
         gatewayWindowedSuccessCount > 0
           ? gatewayWindowedSuccessCount / Math.max(1, count)
           : 0;
+
+      const totalGatewayVolume = count + gatewaySuccessCount;
+      const failureRate =
+        totalGatewayVolume > 0
+          ? count / totalGatewayVolume
+          : 1;
 
       let status = "normal";
       let severity = "low";
@@ -1506,10 +1605,14 @@ function buildGatewayIncidents(
       const hasNoKnownSuccess = minutesSinceSuccess === null;
 
       if (hasRecentSuccess) {
-        if (successToFailureRatio >= 0.5) {
-          status = "spike";
-          severity = "medium";
-          confidence = Math.min(0.75, 0.55 + (count / 40));
+        if (failureRate >= 0.6 && count >= 5) {
+          status = "degraded";
+          severity = failureRate >= 0.8 || count >= 10 ? "high" : "medium";
+          confidence = Math.min(0.92, 0.58 + (failureRate * 0.25) + (count / 40));
+        } else if (successToFailureRatio >= 0.5) {
+          status = "normal";
+          severity = "low";
+          confidence = Math.min(0.75, 0.45 + (gatewayWindowedSuccessCount / 40));
         } else if (count >= 10 || share >= 50) {
           status = "spike";
           severity = count >= 15 || share >= 70 ? "high" : "medium";
@@ -1519,30 +1622,76 @@ function buildGatewayIncidents(
           severity = "medium";
           confidence = Math.min(0.82, 0.5 + (count / 30) + (share / 300));
         }
-      } else if (hasStaleSuccess) {
-        if (count >= 5) {
-          status = "outage";
-          severity = count >= 10 || share >= 60 ? "high" : "medium";
+} else if (hasStaleSuccess) {
+  // 🔥 CRITICAL FIX:
+  // No recent success should NEVER be classified as "spike"
 
-          const base = 0.72 + (count / 30) + (share / 250);
-          confidence = successSignal === 0
-            ? Math.min(0.97, base + 0.1)
-            : Math.min(0.95, base);
-        } else if (share >= 30) {
-          status = "spike";
-          severity = "medium";
-          confidence = Math.min(0.84, 0.58 + (share / 250));
-        }
-      } else if (hasNoKnownSuccess) {
-        if (share >= 80 && count >= 20) {
+  if (count >= 3 && failureRate >= 0.35) {
+    status = "degraded";
+
+    if (failureRate >= 0.6 || count >= 10 || share >= 60) {
+      status = "outage";
+      severity = "high";
+    } else {
+      severity = "medium";
+    }
+
+    const base = 0.72 + (failureRate * 0.18) + (count / 30) + (share / 250);
+    confidence = Math.min(0.95, base);
+
+  } else {
+    status = "degraded";
+    severity = "low";
+    confidence = 0.6;
+  }
+} else if (hasNoKnownSuccess) {
+        if (failureRate >= 0.6 && count >= 3) {
           status = "outage";
-          severity = "high";
-          confidence = Math.min(0.9, 0.7 + (share / 200) + (count / 100));
+          severity = failureRate >= 0.85 || share >= 80 || count >= 20 ? "high" : "medium";
+          confidence = Math.min(0.95, 0.68 + (failureRate * 0.2) + (share / 220) + (count / 100));
         } else if (count >= 5 || share >= 30) {
           status = "spike";
           severity = count >= 10 || share >= 60 ? "high" : "medium";
           confidence = Math.min(0.82, 0.52 + (count / 30) + (share / 300));
         }
+      }
+
+           // 🔥 NEW — Recovery Recommendation Engine
+      let recommendedRecoveryState = "monitor";
+      let shouldPauseRetries = false;
+      let shouldResumeRetries = false;
+      let recoveryReason = "No action required.";
+
+      if (status === "outage") {
+        if (!hasRecentSuccess) {
+          recommendedRecoveryState = "pause";
+          shouldPauseRetries = true;
+          recoveryReason = "Gateway outage detected with no recent successful payments.";
+        } else {
+          recommendedRecoveryState = "monitor";
+          recoveryReason = "Outage signal present, but recent successes are still being observed.";
+        }
+      } else if (status === "degraded") {
+        if (!hasRecentSuccess && (failureRate >= 0.35 || count >= 3)) {
+          recommendedRecoveryState = "pause";
+          shouldPauseRetries = true;
+          recoveryReason = "Gateway degradation detected with no recent successful payments.";
+        } else {
+          recommendedRecoveryState = "monitor";
+          recoveryReason = "Gateway degraded but still processing some payments.";
+        }
+      } else if (status === "normal") {
+        if (hasRecentSuccess && gatewayWindowedSuccessCount >= 2) {
+          recommendedRecoveryState = "resume";
+          shouldResumeRetries = true;
+          recoveryReason = "Gateway recovered — successful payments detected.";
+        } else {
+          recommendedRecoveryState = "monitor";
+          recoveryReason = "Gateway operating normally.";
+        }
+      } else if (status === "spike") {
+        recommendedRecoveryState = "monitor";
+        recoveryReason = "Temporary spike detected — observe before acting.";
       }
 
       return {
@@ -1554,7 +1703,18 @@ function buildGatewayIncidents(
         recoverable_revenue: Number(revenue.toFixed(2)),
         customers_at_risk: customers,
         recommended_action: g.recommended_action,
-        recommended_message: g.recommended_message
+        recommended_message: g.recommended_message,
+        failure_rate: Number(failureRate.toFixed(4)),
+        success_count: gatewaySuccessCount,
+        recent_success_count: gatewayWindowedSuccessCount,
+        has_recent_success: hasRecentSuccess,
+        minutes_since_success: minutesSinceSuccess,
+
+        // 🔥 NEW FIELDS (NON-BREAKING ADDITIONS)
+        recommended_recovery_state: recommendedRecoveryState,
+        should_pause_retries: shouldPauseRetries,
+        should_resume_retries: shouldResumeRetries,
+        recovery_reason: recoveryReason
       };
     });
   } catch (err) {
@@ -1562,7 +1722,6 @@ function buildGatewayIncidents(
     return [];
   }
 }
-
 function buildGatewayWindowMinutesByGateway(stores = []) {
   const map = {};
 
@@ -1630,8 +1789,24 @@ async function findIncidentIdsForAction(env, options = {}) {
 
   if (!gateway || gateway === "unknown") return [];
 
-  // HARD STOP: no explicit incident_ids = no action
-  if (!requestedIncidentIds.length) return [];
+// 🟢 Allow auto-selection when incident_ids not provided
+if (!requestedIncidentIds.length) {
+  const rows = await env.DB.prepare(`
+    SELECT id, gateway, status
+    FROM radar_incidents
+    WHERE status IN (${allowedStatuses.map(() => "?").join(", ")})
+    LIMIT 200
+  `)
+    .bind(...allowedStatuses)
+    .all();
+
+  const filtered = (rows.results || []).filter((r) => {
+    const rowGateway = normalizeGatewayName(r.gateway);
+    return rowGateway === gateway;
+  });
+
+  return filtered.map(r => Number(r.id)).filter(Boolean);
+}
 
   const statusPlaceholders = allowedStatuses.map(() => "?").join(", ");
   const idPlaceholders = requestedIncidentIds.map(() => "?").join(", ");
