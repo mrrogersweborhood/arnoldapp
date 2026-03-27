@@ -353,6 +353,7 @@
   border-radius:20px;
   position:relative;
   margin-bottom:4px;
+  min-height:210px; /* 🔥 locks layout height */
 }
 
 /* subtle “primary” label */
@@ -394,6 +395,7 @@
 .pulse-incident-strip-action{
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   padding:11px 20px;
   border-radius:999px;
   background:#ffffff;
@@ -404,6 +406,7 @@
   white-space:nowrap;
   box-shadow:0 10px 22px rgba(153,27,27,.18);
   transition:all .15s ease;
+  min-height:42px;
 }
 
 .pulse-incident-strip-action:hover{
@@ -424,6 +427,7 @@
   background:rgba(255,255,255,.92);
   padding:12px 14px;
   box-shadow:0 4px 12px rgba(153,27,27,.08);
+  min-height:72px; /* 🔥 prevents inner jump */
 }
 .pulse-incident-strip-status-head{
   display:flex;

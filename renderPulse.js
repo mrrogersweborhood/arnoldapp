@@ -486,9 +486,13 @@
                 <div class="pulse-incident-strip-status-label">Automation status</div>
                 <div class="pulse-priority-pill pulse-priority-medium">Updating…</div>
               </div>
-              <div class="pulse-incident-strip-status-meta">
-                <div class="aa-loading-row" style="width:180px"></div>
-              </div>
+<div class="pulse-incident-strip-status-meta">
+  <div class="aa-loading-row" style="width:180px"></div>
+</div>
+
+<div class="pulse-incident-strip-status-reason">
+  <div class="aa-loading-row" style="width:260px"></div>
+</div>
             </div>
           </div>
 
