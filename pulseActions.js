@@ -530,18 +530,30 @@
           );
         }
 
-        closePulseModal();
+closePulseModal();
 
-        if (typeof window.loadPulseDashboard === "function") {
-          console.log("Refreshing Pulse dashboard via loadPulseDashboard()");
-          window.loadPulseDashboard();
-        } else if (typeof window.doPulseDashboard === "function") {
-          console.warn("loadPulseDashboard not found, falling back to doPulseDashboard()");
-          window.doPulseDashboard();
-        } else {
-          console.warn("No dashboard refresh function found — forcing reload");
-          window.location.reload();
-        }
+// 🟢 PASS 3 — LOCAL RENDER REFRESH (NO FULL RELOAD)
+
+if (
+  typeof window.renderPulseDashboard === "function" &&
+  window.__pulseLastAnalysis
+) {
+  const results = document.getElementById("results");
+
+  const html = window.renderPulseDashboard(
+    window.__pulseLastAnalysis,
+    window.__pulseLastSummary
+  );
+
+  if (results) {
+    results.innerHTML = html;
+  }
+
+  console.log("Pulse: local dashboard refresh (no reload)");
+} else {
+  console.warn("Pulse: fallback to full reload");
+  window.location.reload();
+}
       })
       .catch((err) => {
         console.error(err);

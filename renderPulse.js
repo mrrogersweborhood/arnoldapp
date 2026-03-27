@@ -208,7 +208,9 @@
 if (summary) {
   window.__pulseLastSummary = summary;
 }
-    window.__pulseOptimisticAction = null;
+    if (options?.clearOptimistic) {
+  window.__pulseOptimisticAction = null;
+}
 
     const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
     const reasons = isLoading ? [] : (Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : []);
@@ -713,16 +715,21 @@ if (summary) {
 </div>
             </div>
 
-            <div class="pulse-stat-card pulse-stat-accent-neutral">
-              <div class="pulse-stat-label">Paused incidents</div>
-              <div class="pulse-stat-value">
-  ${isLoading
-    ? `<div class="aa-loading-row" style="width:60px"></div>`
-    : esc(formatPulseInteger(pausedSubscriptions))
-  }
+<div class="pulse-stat-card pulse-stat-accent-neutral">
+  <div class="pulse-stat-label">Paused incidents</div>
+  <div class="pulse-stat-value">
+    ${isLoading
+      ? `<div class="aa-loading-row" style="width:60px"></div>`
+      : esc(formatPulseInteger(pausedSubscriptions))
+    }
+  </div>
+  <div class="pulse-stat-meta">
+    ${isLoading
+      ? `<div class="aa-loading-row" style="width:100px"></div>`
+      : esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)
+    }
+  </div>
 </div>
-              <div class="pulse-stat-meta">${esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)}</div>
-            </div>
 
             ${""}
           </div>
@@ -801,9 +808,12 @@ if (actionBtn) {
   if (!gateway) return;
 
   // 🟢 LOADING STATE (NEW)
-  const originalText = actionBtn.textContent;
-  actionBtn.textContent = "Loading…";
-  actionBtn.disabled = true;
+const originalText = actionBtn.textContent;
+
+// ⚡ instant visual feedback
+actionBtn.classList.add("pulse-action-active");
+actionBtn.textContent = "Loading…";
+actionBtn.disabled = true;
 
   try {
     const data = typeof window.fetchPulseAffectedCustomers === "function"
