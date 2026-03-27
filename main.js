@@ -247,16 +247,24 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     applyLoginUserMask(!!isLoggedIn);
   }
 
-  function toggleLoginSearchUI(isLoggedIn) {
+function toggleLoginSearchUI(isLoggedIn) {
     const login = $("loginFields");
     const search = $("searchFields");
     const btnLogin = $("btnLogin");
     const btnLogout = $("btnLogout");
     const btnLogout2 = $("btnLogout2");
+    const sessionActions = $("sessionActions");
 
     if (login) login.style.display = isLoggedIn ? "none" : "grid";
     if (search) search.style.display = isLoggedIn ? "grid" : "none";
+
     if (btnLogin) btnLogin.style.display = isLoggedIn ? "none" : "";
+
+    // 🟢 FIX: ensure logout is NOT tied to loginFields visibility
+    if (sessionActions) {
+      sessionActions.style.display = isLoggedIn ? "flex" : "none";
+    }
+
     if (btnLogout) btnLogout.style.display = isLoggedIn ? "" : "none";
     if (btnLogout2) btnLogout2.style.display = isLoggedIn ? "" : "none";
   }
