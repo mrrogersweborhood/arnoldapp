@@ -1376,8 +1376,10 @@ try {
 if (results) {
   results.dataset.pulseInitialized = "true";
 
-  // 🟢 STEP 2 — SINGLE FINAL RENDER (NO DOUBLE RENDER)
-window.renderPulseDashboard(analysisJson, summaryJson);
+  // 🟢 STEP 2 — SINGLE FINAL RENDER (FIXED: ACTUALLY PATCH DOM)
+  window.updatePulseView(
+    window.renderPulseDashboard(analysisJson, summaryJson)
+  );
 }
 
       setStatus("", "");
