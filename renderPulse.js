@@ -53,6 +53,26 @@
     return `${amount.toFixed(2)}%`;
   }
 
+  function formatPulseElapsedMinutes(value) {
+    const totalMinutes = Number(value);
+
+    if (!Number.isFinite(totalMinutes) || totalMinutes < 0) {
+      return "0m";
+    }
+
+    const minutes = Math.floor(totalMinutes);
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    const mins = minutes % 60;
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0 || days > 0) parts.push(`${hours}h`);
+    parts.push(`${mins}m`);
+
+    return parts.join(" ");
+  }
+
   function pulseTitleCase(value) {
     return String(value || "")
       .replace(/[_-]+/g, " ")
@@ -541,7 +561,7 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
             ? `Recent successes ${formatPulseInteger(recentSuccessCountForGateway)}`
             : (
                 Number.isFinite(minutesSinceSuccess) && minutesSinceSuccess >= 0
-                  ? `No recent success · last success ${formatPulseInteger(minutesSinceSuccess)} min ago`
+                  ? `No recent success · last success ${formatPulseElapsedMinutes(minutesSinceSuccess)} ago`
                   : "No recent success observed"
               );
 
