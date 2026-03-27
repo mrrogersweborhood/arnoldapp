@@ -796,8 +796,10 @@ if (actionBtn) {
       window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
       window.__pulseExpandedGateways[gateway] = true;
 
-      if (typeof window.doPulseDashboard === "function") {
-        window.doPulseDashboard();
+      if (typeof window.renderPulseDashboard === "function") {
+        const html = window.renderPulseDashboard(window.__pulseLastAnalysis, null);
+        const results = document.getElementById("results");
+        if (results) results.innerHTML = html;
       }
 
       return;
@@ -857,8 +859,10 @@ if (toggle) {
     }
   }
 
-  if (typeof window.doPulseDashboard === "function") {
-    window.doPulseDashboard();
+  if (typeof window.renderPulseDashboard === "function") {
+    const html = window.renderPulseDashboard(window.__pulseLastAnalysis, null);
+    const results = document.getElementById("results");
+    if (results) results.innerHTML = html;
   }
 
   toggle.textContent = originalText;
