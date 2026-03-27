@@ -415,6 +415,42 @@
   grid-template-columns:repeat(4, minmax(0, 1fr));
   gap:10px;
 }
+.pulse-incident-strip-status-row{
+  margin-top:12px;
+}
+.pulse-incident-strip-status-card{
+  border:1px solid #fecaca;
+  border-radius:14px;
+  background:rgba(255,255,255,.92);
+  padding:12px 14px;
+  box-shadow:0 4px 12px rgba(153,27,27,.08);
+}
+.pulse-incident-strip-status-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+}
+.pulse-incident-strip-status-label{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#7c2d12;
+}
+.pulse-incident-strip-status-meta{
+  margin-top:8px;
+  font-size:12px;
+  font-weight:900;
+  color:#7c2d12;
+}
+.pulse-incident-strip-status-reason{
+  margin-top:6px;
+  font-size:14px;
+  font-weight:800;
+  color:#0f172a;
+}
 .pulse-incident-chip{
   display:flex;
   flex-direction:column;
@@ -423,8 +459,7 @@
   border-radius:14px;
   background:rgba(255,255,255,.92);
   border:1px solid #fecaca;
-}
-.pulse-incident-chip-label{
+}.pulse-incident-chip-label{
   font-size:10px;
   font-weight:900;
   letter-spacing:.06em;
@@ -717,6 +752,7 @@
   .pulse-stat-grid{grid-template-columns:1fr;}
   .pulse-title{font-size:24px;}
   .pulse-incident-strip-metrics{grid-template-columns:1fr;}
+  .pulse-incident-strip-status-head{align-items:flex-start;}
   .pulse-scan-grid{grid-template-columns:1fr;}
   .pulse-scan-item-wide{grid-column:span 1;}
 
@@ -735,7 +771,6 @@
     width:100%;
   }
 }
-
 
 /* ===== Pulse Modal UX Upgrade ===== */
 
