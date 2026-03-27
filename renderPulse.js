@@ -219,9 +219,40 @@ if (summary) {
       ? []
       : (Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : []);
 
-    // 🔥 APPLY OPTIMISTIC UI STATE
+// 🔥 APPLY OPTIMISTIC UI STATE (ONE-TIME ONLY)
 
-    const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
+const optimistic = window.__pulseOptimisticAction || null;
+
+if (optimistic && !isLoading && summary) {
+  try {
+    if (optimistic.type === "pause" && optimistic.gateway) {
+      const count = Number(optimistic.count || 0) || 0;
+
+      summary.retrying_subscriptions = Math.max(0, (summary.retrying_subscriptions || 0) - count);
+      summary.paused_subscriptions = (summary.paused_subscriptions || 0) + count;
+
+      summary.retrying_revenue = Math.max(0, (summary.retrying_revenue || 0) - (optimistic.revenue || 0));
+      summary.paused_revenue = (summary.paused_revenue || 0) + (optimistic.revenue || 0);
+    }
+
+    if (optimistic.type === "retry" && optimistic.gateway) {
+      const count = Number(optimistic.count || 0) || 0;
+
+      summary.paused_subscriptions = Math.max(0, (summary.paused_subscriptions || 0) - count);
+      summary.retrying_subscriptions = (summary.retrying_subscriptions || 0) + count;
+
+      summary.paused_revenue = Math.max(0, (summary.paused_revenue || 0) - (optimistic.revenue || 0));
+      summary.retrying_revenue = (summary.retrying_revenue || 0) + (optimistic.revenue || 0);
+    }
+  } catch (e) {
+    console.warn("Optimistic update failed:", e);
+  }
+
+  // 🔴 CRITICAL: CLEAR AFTER APPLY (prevents reapply bug)
+  window.__pulseOptimisticAction = null;
+}
+
+const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
     const lastScanInfo = isLoading ? null : getLastScanInfo();
     const scanDelta = isLoading ? null : getScanDelta(summary);
 
