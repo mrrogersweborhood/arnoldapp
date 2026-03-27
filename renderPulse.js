@@ -646,10 +646,9 @@
       `
       : "";
 
-    return `
+        return `
       <div class="pulse-shell">
         ${incidentStrip}
-        ${lastScanCard}
 
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
@@ -708,8 +707,6 @@
           </div>
         </section>
 
-           ${repeatOffenderSection}
-
         <section class="card pulse-section pulse-reasons-card">
           <div class="pulse-section-head" style="padding:16px 16px 0;">
             <div>
@@ -726,6 +723,9 @@
             ${reasonRows}
           </div>
         </section>
+
+        ${repeatOffenderSection}
+        ${lastScanCard}
       </div>
     `;
   }
