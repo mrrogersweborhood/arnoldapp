@@ -232,7 +232,48 @@ if (summary) {
   window.__pulseOptimisticAction = null;
 }
 
-    const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
+   const gateways = isLoading ? [] : (Array.isArray(analysis?.gateways) ? analysis.gateways.slice() : []);
+
+// 🔥 NEW — APPLY ACTION FEEDBACK (UI INTERACTION LAYER)
+const actionFeedback = window.__pulseActionFeedback || null;
+
+if (actionFeedback && !isLoading) {
+  const now = Date.now();
+  const age = now - Number(actionFeedback.at || 0);
+
+  // expire after 8 seconds (visual feedback window)
+  if (age < 8000) {
+    const gatewayKey = String(actionFeedback.gateway || "").toLowerCase();
+
+    gateways.forEach((g) => {
+      if (String(g?.gateway || "").toLowerCase() !== gatewayKey) return;
+
+      if (actionFeedback.action === "pause") {
+        g.__uiOverride = {
+          label: "✓ Paused",
+          token: "high"
+        };
+      }
+
+      if (actionFeedback.action === "retry") {
+        g.__uiOverride = {
+          label: "↻ Retry Queue",
+          token: "medium"
+        };
+      }
+
+      if (actionFeedback.action === "resume") {
+        g.__uiOverride = {
+          label: "✓ Resumed",
+          token: "low"
+        };
+      }
+    });
+  } else {
+    // expire feedback
+    window.__pulseActionFeedback = null;
+  }
+}
     const reasons = isLoading ? [] : (Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : []);
     const repeatOffenders = isLoading ? [] : getRepeatOffenders(analysis?.incidents);
     const gatewayIncidents = isLoading
@@ -528,6 +569,9 @@ const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
             : gateways.length
       ? gateways.map((gateway) => {
           const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
+
+// 🔥 NEW — UI override (from action feedback)
+const uiOverride = gateway.__uiOverride || null;
           const priorityToken = getPulsePriorityToken(priority);
           const recommendedAction = String(gateway?.recommended_action || "").toUpperCase();
           const incident = gatewayIncidentMap.get(String(gateway?.gateway || "").trim().toLowerCase()) || null;
@@ -580,7 +624,9 @@ if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
                   </div>
                   <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct || 0))} of active failures</div>
                 </div>
-                <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
+<div class="pulse-priority-pill pulse-priority-${uiOverride?.token || priorityToken}">
+  ${esc(uiOverride?.label || priority)}
+</div>
               </div>
 
               <div class="pulse-gateway-metrics">

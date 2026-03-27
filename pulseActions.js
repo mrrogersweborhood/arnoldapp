@@ -550,6 +550,15 @@ executePulseGatewayAction(action, gateway)
           );
         }
 
+        // 🔥 NEW — action feedback state (REQUIRED for UI interaction layer)
+        window.__pulseActionFeedback = {
+          gateway: String(gateway || "").trim().toLowerCase(),
+          action,
+          count,
+          revenue,
+          at: Date.now()
+        };
+
 closePulseModal();
 
 // 🟢 PASS 3 — LOCAL RENDER REFRESH (NO FULL RELOAD)
