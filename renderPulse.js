@@ -1147,8 +1147,10 @@
               window.__pulseLastAnalysis,
               window.__pulseLastSummary || null
             );
-            const results = document.getElementById("results");
-            if (results) results.innerHTML = html;
+
+            if (typeof window.updatePulseView === "function") {
+              window.updatePulseView(html);
+            }
           }
 
           return;
@@ -1211,8 +1213,10 @@
           window.__pulseLastAnalysis,
           window.__pulseLastSummary || null
         );
-        const results = document.getElementById("results");
-        if (results) results.innerHTML = html;
+
+        if (typeof window.updatePulseView === "function") {
+          window.updatePulseView(html);
+        }
       }
 
       toggle.textContent = originalText;
