@@ -353,7 +353,13 @@
   border-radius:20px;
   position:relative;
   margin-bottom:4px;
-  min-height:210px; /* 🔥 locks layout height */
+
+  /* 🔥 FIX: match real hydrated height */
+  min-height:300px;
+
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
 }
 
 /* subtle “primary” label */
@@ -417,10 +423,15 @@
   display:grid;
   grid-template-columns:repeat(4, minmax(0, 1fr));
   gap:10px;
+
+  /* 🔥 reserve space for chips */
+  min-height:64px;
 }
 .pulse-incident-strip-status-row{
   margin-top:12px;
-  min-height:64px;
+
+  /* 🔥 matches real content height */
+  min-height:96px;
 }
 .pulse-incident-strip-status-card{
   border:1px solid #fecaca;
