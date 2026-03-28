@@ -463,16 +463,12 @@
   color:#7c2d12;
 }
 .pulse-incident-strip-status-meta{
-  margin-top:8px;
-  font-size:12px;
-  font-weight:900;
-  color:#7c2d12;
-}
 .pulse-incident-strip-status-reason{
   margin-top:6px;
   font-size:14px;
   font-weight:800;
   color:#0f172a;
+  min-height:22px;
 }
 
 .pulse-incident-strip-actions{
@@ -481,6 +477,11 @@
   align-items:center;
   justify-content:flex-end;
   min-height:44px;
+}
+
+.pulse-incident-strip-metric strong{
+  display:inline-block;
+  min-height:20px;
 }
 
 .pulse-incident-chip{

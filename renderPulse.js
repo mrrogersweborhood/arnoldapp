@@ -235,7 +235,149 @@
     return renderPulseShell();
   }
 
-    function buildPulseViewModel(analysis, summary, options = {}) {
+  function renderPulseIncidentMetricCell(label, valueHtml) {
+    return `
+      <div class="pulse-incident-strip-metric">
+        <span>${esc(label)}</span>
+        <strong>${valueHtml}</strong>
+      </div>
+    `;
+  }
+
+  function renderPulseIncidentStatusCard({
+    automationLabel,
+    automationToken,
+    automationMeta,
+    automationReason
+  }) {
+    return `
+      <div class="pulse-incident-strip-status-card">
+        <div class="pulse-incident-strip-status-head">
+          <div class="pulse-incident-strip-status-label">Automation status</div>
+          <div class="pulse-priority-pill pulse-priority-${esc(automationToken)}">
+            ${automationLabel}
+          </div>
+        </div>
+
+        <div class="pulse-incident-strip-status-meta">
+          ${automationMeta}
+        </div>
+
+        <div class="pulse-incident-strip-status-reason">
+          ${automationReason}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderPulseIncidentStrip({
+    isLoading,
+    activeIncident,
+    analysis,
+    summary
+  }) {
+    const severityToken = isLoading
+      ? "medium"
+      : esc(String(activeIncident?.severity || "low").toLowerCase());
+
+    const titleHtml = isLoading
+      ? `<div class="aa-loading-row" style="width:180px"></div>`
+      : `${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}`;
+
+    const subtitleHtml = isLoading
+      ? `<div class="aa-loading-row" style="width:320px"></div>`
+      : `${esc(activeIncident?.recommended_message || "No incident message available.")}`;
+
+    const confidenceHtml = isLoading
+      ? `<div class="aa-loading-row" style="width:70px"></div>`
+      : esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100));
+
+    const customersHtml = isLoading
+      ? `<div class="aa-loading-row" style="width:60px"></div>`
+      : esc(formatPulseInteger(activeIncident?.customers_at_risk || 0));
+
+    const revenueHtml = isLoading
+      ? `<div class="aa-loading-row" style="width:90px"></div>`
+      : esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0));
+
+    const automationLabel = isLoading
+      ? "Updating…"
+      : esc(
+          activeIncident?.should_pause_retries
+            ? "Auto-paused"
+            : activeIncident?.should_resume_retries
+              ? "Resume ready"
+              : "Monitoring"
+        );
+
+    const automationToken = isLoading
+      ? "medium"
+      : (
+          activeIncident?.should_pause_retries
+            ? "high"
+            : activeIncident?.should_resume_retries
+              ? "low"
+              : "medium"
+        );
+
+    const automationMeta = isLoading
+      ? `<div class="aa-loading-row" style="width:180px"></div>`
+      : `${esc(formatPulseInteger(analysis?.paused_total || 0))} paused · ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying · ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE`;
+
+    const automationReason = isLoading
+      ? `<div class="aa-loading-row" style="width:260px"></div>`
+      : `${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}`;
+
+    const actionHtml = isLoading
+      ? `
+        <div class="pulse-incident-strip-action" style="opacity:.55; pointer-events:none;">
+          <div class="aa-loading-row" style="width:120px"></div>
+        </div>
+      `
+      : `
+        <button
+          class="pulse-incident-strip-action"
+          type="button"
+          data-action="${esc(String(activeIncident?.recommended_action || ""))}"
+          data-gateway="${esc(String(activeIncident?.gateway || ""))}"
+        >
+          ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
+        </button>
+      `;
+
+    return `
+      <section class="card pulse-incident-strip pulse-${severityToken}">
+        <div class="pulse-incident-strip-head">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">${titleHtml}</div>
+            <div class="pulse-incident-strip-subtitle">${subtitleHtml}</div>
+          </div>
+        </div>
+
+        <div class="pulse-incident-strip-metrics">
+          ${renderPulseIncidentMetricCell("Confidence", confidenceHtml)}
+          ${renderPulseIncidentMetricCell("Customers", customersHtml)}
+          ${renderPulseIncidentMetricCell("Revenue", revenueHtml)}
+        </div>
+
+        <div class="pulse-incident-strip-status-row">
+          ${renderPulseIncidentStatusCard({
+            automationLabel,
+            automationToken,
+            automationMeta,
+            automationReason
+          })}
+        </div>
+
+        <div class="pulse-incident-strip-actions">
+          ${actionHtml}
+        </div>
+      </section>
+    `;
+  }
+
+  function buildPulseViewModel(analysis, summary, options = {}) {
     const isLoading = options.isLoading === true;
 
     // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
@@ -457,131 +599,14 @@
     const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
     const pendingIncidents = isLoading ? 0 : (Number(analysis?.total_pending_incidents || 0) || 0);
 
-    const incidentStrip = isLoading
-      ? `
-        <section class="card pulse-incident-strip pulse-medium">
-          <div class="pulse-incident-strip-left">
-            <div class="pulse-incident-strip-kicker">Gateway incident</div>
-            <div class="pulse-incident-strip-title">
-              <div class="aa-loading-row" style="width:180px"></div>
-            </div>
-            <div class="pulse-incident-strip-subtitle">
-              <div class="aa-loading-row" style="width:320px"></div>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-metrics">
-            <div class="pulse-incident-strip-metric">
-              <span>Confidence</span>
-              <strong><div class="aa-loading-row" style="width:70px"></div></strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Customers</span>
-              <strong><div class="aa-loading-row" style="width:60px"></div></strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Revenue</span>
-              <strong><div class="aa-loading-row" style="width:90px"></div></strong>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-status-row">
-            <div class="pulse-incident-strip-status-card">
-              <div class="pulse-incident-strip-status-head">
-                <div class="pulse-incident-strip-status-label">Automation status</div>
-                <div class="pulse-priority-pill pulse-priority-medium">Updating…</div>
-              </div>
-              <div class="pulse-incident-strip-status-meta">
-                <div class="aa-loading-row" style="width:180px"></div>
-              </div>
-
-              <div class="pulse-incident-strip-status-reason">
-                <div class="aa-loading-row" style="width:260px"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-actions">
-            <div class="pulse-incident-strip-action" style="opacity:.55; pointer-events:none;">
-              <div class="aa-loading-row" style="width:120px"></div>
-            </div>
-          </div>
-        </section>
-      `
-      : activeIncident
-        ? `
-        <section class="card pulse-incident-strip pulse-${esc(String(activeIncident?.severity || "low").toLowerCase())}">
-          <div class="pulse-incident-strip-left">
-            <div class="pulse-incident-strip-kicker">Gateway incident</div>
-            <div class="pulse-incident-strip-title">
-              ${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}
-            </div>
-            <div class="pulse-incident-strip-subtitle">
-              ${esc(activeIncident?.recommended_message || "No incident message available.")}
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-metrics">
-            <div class="pulse-incident-strip-metric">
-              <span>Confidence</span>
-              <strong>${esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100))}</strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Customers</span>
-              <strong>${esc(formatPulseInteger(activeIncident?.customers_at_risk || 0))}</strong>
-            </div>
-            <div class="pulse-incident-strip-metric">
-              <span>Revenue</span>
-              <strong>${esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0))}</strong>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-status-row">
-            <div class="pulse-incident-strip-status-card">
-              <div class="pulse-incident-strip-status-head">
-                <div class="pulse-incident-strip-status-label">Automation status</div>
-                <div class="pulse-priority-pill pulse-priority-${
-                  activeIncident?.should_pause_retries
-                    ? "high"
-                    : activeIncident?.should_resume_retries
-                      ? "low"
-                      : "medium"
-                }">
-                  ${esc(
-                    activeIncident?.should_pause_retries
-                      ? "Auto-paused"
-                      : activeIncident?.should_resume_retries
-                        ? "Resume ready"
-                        : "Monitoring"
-                  )}
-                </div>
-              </div>
-
-              <div class="pulse-incident-strip-status-meta">
-                ${esc(formatPulseInteger(analysis?.paused_total || 0))} paused ·
-                ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying ·
-                ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE
-              </div>
-
-              <div class="pulse-incident-strip-status-reason">
-                ${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}
-              </div>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-actions">
-            <button
-              class="pulse-incident-strip-action"
-              type="button"
-              data-action="${esc(String(activeIncident?.recommended_action || ""))}"
-              data-gateway="${esc(String(activeIncident?.gateway || ""))}"
-            >
-              ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
-            </button>
-          </div>
-        </section>
-      `
-        : "";
+        const incidentStrip = activeIncident || isLoading
+      ? renderPulseIncidentStrip({
+          isLoading,
+          activeIncident,
+          analysis,
+          summary
+        })
+      : "";
 
     const gatewayCards = isLoading
       ? `
