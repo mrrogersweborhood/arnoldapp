@@ -385,18 +385,24 @@
   gap:12px;
   flex-wrap:wrap;
   margin-bottom:12px;
+
+  /* 🔥 prevents title/subtitle expansion jump */
+  min-height:72px;
 }
 .pulse-incident-strip-title{
   font-size:22px;
   font-weight:950;
   color:#991b1b;
   line-height:1.1;
-}
-.pulse-incident-strip-subtitle{
+
+  min-height:48px; /* 🔥 reserves 2-line title space */
+}.pulse-incident-strip-subtitle{
   margin-top:4px;
   font-size:13px;
   font-weight:800;
   color:#7c2d12;
+
+  min-height:18px; /* 🔥 prevents subtitle pop-in shift */
 }
 .pulse-incident-strip-action{
   display:inline-flex;
@@ -423,6 +429,7 @@
   display:grid;
   grid-template-columns:repeat(4, minmax(0, 1fr));
   gap:10px;
+  align-items:center;
 
   /* 🔥 reserve space for chips */
   min-height:64px;
