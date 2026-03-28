@@ -446,7 +446,7 @@
   background:rgba(255,255,255,.92);
   padding:12px 14px;
   box-shadow:0 4px 12px rgba(153,27,27,.08);
-  min-height:72px; /* 🔥 prevents inner jump */
+  min-height:96px; /* 🔥 match real hydrated height */
 }
 .pulse-incident-strip-status-head{
   display:flex;
@@ -463,6 +463,13 @@
   color:#7c2d12;
 }
 .pulse-incident-strip-status-meta{
+  margin-top:8px;
+  font-size:12px;
+  font-weight:900;
+  color:#7c2d12;
+  min-height:18px;
+}
+
 .pulse-incident-strip-status-reason{
   margin-top:6px;
   font-size:14px;
@@ -472,12 +479,6 @@
 }
 
 .pulse-incident-strip-actions{
-  margin-top:12px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  min-height:44px;
-}
 
 .pulse-incident-strip-metric strong{
   display:inline-block;
