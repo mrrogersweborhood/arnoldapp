@@ -235,7 +235,7 @@
     return renderPulseShell();
   }
 
-  function buildPulseViewModel(analysis, summary, options = {}) {
+    function buildPulseViewModel(analysis, summary, options = {}) {
     const isLoading = options.isLoading === true;
 
     // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
@@ -277,268 +277,948 @@
 
       gateways = Array.from(map.values());
     }
-    // -----------------------------------
-    // PRIORITY SORT (HIGH → LOW)
-    // -----------------------------------
-    if (!isLoading && gateways.length) {
-      gateways.sort((a, b) => {
-        const pa = String(a?.priority || "LOW").toUpperCase();
-        const pb = String(b?.priority || "LOW").toUpperCase();
 
-        const weight = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    // 🔥 NEW — APPLY ACTION FEEDBACK (UI INTERACTION LAYER)
+    const actionFeedback = window.__pulseActionFeedback || null;
 
-        const delta = (weight[pb] || 0) - (weight[pa] || 0);
-        if (delta !== 0) return delta;
+    let actionOutcomeBanner = "";
 
-        return (Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0));
-      });
-    }
+    if (actionFeedback && !isLoading) {
+      const now = Date.now();
+      const age = now - Number(actionFeedback.at || 0);
 
-    const highestPriorityCount = gateways.filter(
-      (g) => String(g?.priority || "").toUpperCase() === "HIGH"
-    ).length;
+      if (age < 8000) {
+        const secondsAgo = Math.floor(age / 1000);
 
-    const incidents = isLoading
-      ? []
-      : (Array.isArray(analysis?.incidents) ? analysis.incidents : []);
+        const label =
+          actionFeedback.action === "pause"
+            ? "paused"
+            : actionFeedback.action === "retry"
+              ? "moved to retry queue"
+              : actionFeedback.action === "resume"
+                ? "resumed"
+                : "updated";
 
-    const reasons = isLoading
-      ? []
-      : (Array.isArray(analysis?.reasons) ? analysis.reasons : []);
+        actionOutcomeBanner = `
+          <section class="card pulse-action-outcome">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+              <div>
+                <div style="font-weight:800; font-size:16px;">
+                  ✓ ${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} ${label}
+                </div>
 
-    const summaryData = summary || {};
+                <div style="margin-top:4px; opacity:.8;">
+                  💰 ${esc(formatPulseMoney(actionFeedback.revenue))} impacted
+                </div>
+              </div>
 
-    const repeatOffenders = isLoading ? [] : getRepeatOffenders(incidents);
-
-    const lastScan = isLoading ? null : getLastScanInfo();
-    const scanDelta = isLoading ? null : getScanDelta(summaryData);
-
-    return {
-      isLoading,
-      gateways,
-      incidents,
-      reasons,
-      summary: summaryData,
-      highestPriorityCount,
-      repeatOffenders,
-      lastScan,
-      scanDelta
-    };
-  }
-
-  function hydratePulseView(viewModel) {
-    if (!viewModel) return;
-
-    const {
-      isLoading,
-      gateways,
-      incidents,
-      reasons,
-      summary,
-      highestPriorityCount,
-      repeatOffenders,
-      lastScan,
-      scanDelta
-    } = viewModel;
-
-    const slotAction = document.getElementById("pulse-slot-action-outcome");
-    const slotIncident = document.getElementById("pulse-slot-incident-strip");
-    const slotHero = document.getElementById("pulse-slot-hero");
-    const slotGateways = document.getElementById("pulse-slot-gateway-intelligence");
-    const slotReasons = document.getElementById("pulse-slot-reasons");
-    const slotRepeat = document.getElementById("pulse-slot-repeat-offenders");
-    const slotLast = document.getElementById("pulse-slot-last-scan");
-
-    if (!slotHero || !slotGateways) return;
-
-    // -----------------------------------
-    // HERO
-    // -----------------------------------
-    slotHero.innerHTML = isLoading
-      ? `<div class="card pulse-loading">Loading summary…</div>`
-      : `
-        <div class="card pulse-hero">
-          <div class="pulse-hero-row">
-            <div class="pulse-hero-stat">
-              <div class="pulse-hero-value">${formatPulseMoney(summary?.recoverable_revenue)}</div>
-              <div class="pulse-hero-label">Recoverable Revenue</div>
+              <div style="font-size:12px; opacity:.6;">
+                ${secondsAgo}s ago
+              </div>
             </div>
-
-            <div class="pulse-hero-stat">
-              <div class="pulse-hero-value">${formatPulseInteger(summary?.failed_subscriptions)}</div>
-              <div class="pulse-hero-label">Failed</div>
-            </div>
-
-            <div class="pulse-hero-stat">
-              <div class="pulse-hero-value">${formatPulseInteger(summary?.retrying_subscriptions)}</div>
-              <div class="pulse-hero-label">Retry Queue</div>
-            </div>
-
-            <div class="pulse-hero-stat">
-              <div class="pulse-hero-value">${formatPulseInteger(summary?.paused_subscriptions)}</div>
-              <div class="pulse-hero-label">Paused</div>
-            </div>
-          </div>
-        </div>
-      `;
-    // -----------------------------------
-    // INCIDENT STRIP
-    // -----------------------------------
-    if (slotIncident) {
-      if (isLoading) {
-        slotIncident.innerHTML = "";
+          </section>
+        `;
       } else {
-        const top = incidents?.[0];
-
-        slotIncident.innerHTML = top
-          ? `
-            <div class="card pulse-incident">
-              <div class="pulse-incident-title">
-                ${esc(formatPulseGatewayName(top.gateway))}
-              </div>
-              <div class="pulse-incident-message">
-                ${esc(top?.recommended_message || "")}
-              </div>
-            </div>
-          `
-          : "";
+        window.__pulseActionFeedback = null;
       }
     }
 
-    // -----------------------------------
-    // GATEWAY CARDS
-    // -----------------------------------
-    if (isLoading) {
-      slotGateways.innerHTML = `<div class="card pulse-loading">Loading gateways…</div>`;
-    } else {
-      slotGateways.innerHTML = `
-        <div class="pulse-gateway-grid">
-          ${(gateways || []).map((g) => {
-            const gatewayName = formatPulseGatewayName(g?.gateway);
-            const revenue = formatPulseMoney(g?.recoverable_revenue);
-            const failures = formatPulseInteger(g?.incident_count);
-            const priorityToken = getPulsePriorityToken(g?.priority);
+    if (actionFeedback && !isLoading) {
+      const now = Date.now();
+      const age = now - Number(actionFeedback.at || 0);
+
+      if (age < 8000) {
+        const gatewayKey = String(actionFeedback.gateway || "").toLowerCase();
+
+        gateways.forEach((g) => {
+          if (String(g?.gateway || "").toLowerCase() !== gatewayKey) return;
+
+          if (actionFeedback.action === "pause") {
+            g.__uiOverride = {
+              label: "✓ Paused",
+              token: "high"
+            };
+          }
+
+          if (actionFeedback.action === "retry") {
+            g.__uiOverride = {
+              label: "↻ Retry Queue",
+              token: "medium"
+            };
+          }
+
+          if (actionFeedback.action === "resume") {
+            g.__uiOverride = {
+              label: "✓ Resumed",
+              token: "low"
+            };
+          }
+        });
+      } else {
+        window.__pulseActionFeedback = null;
+      }
+    }
+
+    const reasons = isLoading ? [] : (Array.isArray(analysis?.reasons) ? analysis.reasons.slice() : []);
+    const repeatOffenders = isLoading ? [] : getRepeatOffenders(analysis?.incidents);
+    const gatewayIncidents = isLoading
+      ? []
+      : (Array.isArray(analysis?.gateway_incidents) ? analysis.gateway_incidents : []);
+    const gatewayIncidentMap = new Map(
+      gatewayIncidents.map((item) => [
+        String(item?.gateway || "").trim().toLowerCase(),
+        item
+      ])
+    );
+
+    const optimistic = window.__pulseOptimisticAction || null;
+
+    if (optimistic && !isLoading && summary) {
+      try {
+        if (optimistic.type === "pause" && optimistic.gateway) {
+          const count = Number(optimistic.count || 0) || 0;
+
+          summary.retrying_subscriptions = Math.max(0, (summary.retrying_subscriptions || 0) - count);
+          summary.paused_subscriptions = (summary.paused_subscriptions || 0) + count;
+
+          summary.retrying_revenue = Math.max(0, (summary.retrying_revenue || 0) - (optimistic.revenue || 0));
+          summary.paused_revenue = (summary.paused_revenue || 0) + (optimistic.revenue || 0);
+        }
+
+        if (optimistic.type === "retry" && optimistic.gateway) {
+          const count = Number(optimistic.count || 0) || 0;
+
+          summary.paused_subscriptions = Math.max(0, (summary.paused_subscriptions || 0) - count);
+          summary.retrying_subscriptions = (summary.retrying_subscriptions || 0) + count;
+
+          summary.paused_revenue = Math.max(0, (summary.paused_revenue || 0) - (optimistic.revenue || 0));
+          summary.retrying_revenue = (summary.retrying_revenue || 0) + (optimistic.revenue || 0);
+        }
+      } catch (e) {
+        console.warn("Optimistic update failed:", e);
+      }
+
+      window.__pulseOptimisticAction = null;
+    }
+
+    const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
+    const lastScanInfo = isLoading ? null : getLastScanInfo();
+    const scanDelta = isLoading ? null : getScanDelta(summary);
+
+    const successSummary = isLoading ? null : (analysis?.success_summary || null);
+    const lastSuccessAt = successSummary?.last_success_at || null;
+    const recentSuccessCount = Number(successSummary?.recent_success_count || 0) || 0;
+
+    gateways.sort((a, b) => {
+      const incidentA = gatewayIncidentMap.get(String(a?.gateway || "").trim().toLowerCase()) || null;
+      const incidentB = gatewayIncidentMap.get(String(b?.gateway || "").trim().toLowerCase()) || null;
+
+      const statusRank = (incident) => {
+        const token = String(incident?.status || "normal").trim().toLowerCase();
+        if (token === "outage") return 4;
+        if (token === "degraded") return 3;
+        if (token === "spike") return 2;
+        return 1;
+      };
+
+      const intelligenceDelta = statusRank(incidentB) - statusRank(incidentA);
+      if (intelligenceDelta !== 0) return intelligenceDelta;
+
+      const rank = (value) => {
+        const token = String(value || "LOW").trim().toUpperCase();
+        if (token === "HIGH") return 3;
+        if (token === "MEDIUM") return 2;
+        return 1;
+      };
+
+      const priorityDelta =
+        rank(b?.recommended_priority) - rank(a?.recommended_priority);
+      if (priorityDelta !== 0) return priorityDelta;
+
+      const revenueDelta =
+        Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0);
+      if (revenueDelta !== 0) return revenueDelta;
+
+      return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
+    });
+
+    reasons.sort((a, b) => {
+      const revDelta = Number(b?.recoverable_revenue || 0) - Number(a?.recoverable_revenue || 0);
+      if (revDelta !== 0) return revDelta;
+      return Number(b?.incident_count || 0) - Number(a?.incident_count || 0);
+    });
+
+    const executionMode = String(summary?.execution_mode || "test").toUpperCase();
+    const totalRevenue = Number(summary?.recoverable_revenue || 0) || 0;
+    const failedSubscriptions = Number(summary?.failed_subscriptions || 0) || 0;
+    const retryingSubscriptions = Number(summary?.retrying_subscriptions || 0) || 0;
+    const retryingRevenue = Number(summary?.retrying_revenue || 0) || 0;
+    const pausedSubscriptions = Number(summary?.paused_subscriptions || 0) || 0;
+    const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
+    const pendingIncidents = isLoading ? 0 : (Number(analysis?.total_pending_incidents || 0) || 0);
+
+    const incidentStrip = isLoading
+      ? `
+        <section class="card pulse-incident-strip pulse-medium">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">
+              <div class="aa-loading-row" style="width:180px"></div>
+            </div>
+            <div class="pulse-incident-strip-subtitle">
+              <div class="aa-loading-row" style="width:320px"></div>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-metrics">
+            <div class="pulse-incident-strip-metric">
+              <span>Confidence</span>
+              <strong><div class="aa-loading-row" style="width:70px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Customers</span>
+              <strong><div class="aa-loading-row" style="width:60px"></div></strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Revenue</span>
+              <strong><div class="aa-loading-row" style="width:90px"></div></strong>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-status-row">
+            <div class="pulse-incident-strip-status-card">
+              <div class="pulse-incident-strip-status-head">
+                <div class="pulse-incident-strip-status-label">Automation status</div>
+                <div class="pulse-priority-pill pulse-priority-medium">Updating…</div>
+              </div>
+              <div class="pulse-incident-strip-status-meta">
+                <div class="aa-loading-row" style="width:180px"></div>
+              </div>
+
+              <div class="pulse-incident-strip-status-reason">
+                <div class="aa-loading-row" style="width:260px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-actions">
+            <div class="pulse-incident-strip-action" style="opacity:.55; pointer-events:none;">
+              <div class="aa-loading-row" style="width:120px"></div>
+            </div>
+          </div>
+        </section>
+      `
+      : activeIncident
+        ? `
+        <section class="card pulse-incident-strip pulse-${esc(String(activeIncident?.severity || "low").toLowerCase())}">
+          <div class="pulse-incident-strip-left">
+            <div class="pulse-incident-strip-kicker">Gateway incident</div>
+            <div class="pulse-incident-strip-title">
+              ${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}
+            </div>
+            <div class="pulse-incident-strip-subtitle">
+              ${esc(activeIncident?.recommended_message || "No incident message available.")}
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-metrics">
+            <div class="pulse-incident-strip-metric">
+              <span>Confidence</span>
+              <strong>${esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100))}</strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Customers</span>
+              <strong>${esc(formatPulseInteger(activeIncident?.customers_at_risk || 0))}</strong>
+            </div>
+            <div class="pulse-incident-strip-metric">
+              <span>Revenue</span>
+              <strong>${esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0))}</strong>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-status-row">
+            <div class="pulse-incident-strip-status-card">
+              <div class="pulse-incident-strip-status-head">
+                <div class="pulse-incident-strip-status-label">Automation status</div>
+                <div class="pulse-priority-pill pulse-priority-${
+                  activeIncident?.should_pause_retries
+                    ? "high"
+                    : activeIncident?.should_resume_retries
+                      ? "low"
+                      : "medium"
+                }">
+                  ${esc(
+                    activeIncident?.should_pause_retries
+                      ? "Auto-paused"
+                      : activeIncident?.should_resume_retries
+                        ? "Resume ready"
+                        : "Monitoring"
+                  )}
+                </div>
+              </div>
+
+              <div class="pulse-incident-strip-status-meta">
+                ${esc(formatPulseInteger(analysis?.paused_total || 0))} paused ·
+                ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying ·
+                ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE
+              </div>
+
+              <div class="pulse-incident-strip-status-reason">
+                ${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}
+              </div>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-actions">
+            <button
+              class="pulse-incident-strip-action"
+              type="button"
+              data-action="${esc(String(activeIncident?.recommended_action || ""))}"
+              data-gateway="${esc(String(activeIncident?.gateway || ""))}"
+            >
+              ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
+            </button>
+          </div>
+        </section>
+      `
+        : "";
+
+    const gatewayCards = isLoading
+      ? `
+        <article class="pulse-gateway-card">
+          <div class="aa-loading-row" style="width:160px"></div>
+          <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+          <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+          <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+          <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+        </article>
+        <article class="pulse-gateway-card">
+          <div class="aa-loading-row" style="width:160px"></div>
+          <div class="aa-loading-row" style="width:90px; margin-top:10px"></div>
+          <div class="aa-loading-row" style="width:100%; margin-top:12px"></div>
+          <div class="aa-loading-row" style="width:88%; margin-top:8px"></div>
+          <div class="aa-loading-row" style="width:76%; margin-top:14px"></div>
+        </article>
+      `
+      : gateways.length
+        ? gateways.map((gateway) => {
+            const priority = String(gateway?.recommended_priority || "LOW").toUpperCase();
+
+            const uiOverride = gateway.__uiOverride || null;
+            const priorityToken = getPulsePriorityToken(priority);
+            const incident = gatewayIncidentMap.get(String(gateway?.gateway || "").trim().toLowerCase()) || null;
+
+            const intelligenceStatus = String(incident?.status || "normal").trim().toUpperCase();
+            const failureRate = Number(incident?.failure_rate || 0);
+            const recentSuccessCountForGateway = Number(incident?.recent_success_count || 0);
+            const hasRecentSuccessForGateway = !!incident?.has_recent_success;
+            const minutesSinceSuccess = Number(incident?.minutes_since_success);
+
+            const recoveryState = String(incident?.recommended_recovery_state || "monitor").toLowerCase();
+            const recoveryReason = String(incident?.recovery_reason || "").trim();
+
+            let recoveryToken = "neutral";
+            if (recoveryState === "pause") recoveryToken = "high";
+            else if (recoveryState === "resume") recoveryToken = "low";
+            else recoveryToken = "medium";
+
+            let recoveryLabel = "Monitor";
+            if (recoveryState === "pause") recoveryLabel = "Pause Recommended";
+            if (recoveryState === "resume") recoveryLabel = "Resume Recommended";
+
+            let intelligenceToken = "low";
+            if (intelligenceStatus === "OUTAGE") intelligenceToken = "high";
+            else if (intelligenceStatus === "DEGRADED" || intelligenceStatus === "SPIKE") intelligenceToken = "medium";
+
+            const successMeta = hasRecentSuccessForGateway
+              ? `Recent successes ${formatPulseInteger(recentSuccessCountForGateway)}`
+              : (
+                  Number.isFinite(minutesSinceSuccess) && minutesSinceSuccess >= 0
+                    ? `No recent success · last success ${formatPulseElapsedMinutes(minutesSinceSuccess)} ago`
+                    : "No recent success observed"
+                );
 
             return `
-              <div class="card pulse-gateway-card pulse-priority-${priorityToken}">
-                <div class="pulse-gateway-header">
-                  <div class="pulse-gateway-name">${esc(gatewayName)}</div>
-                  <div class="pulse-gateway-priority">${esc(g?.priority || "LOW")}</div>
+            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+              <div class="pulse-gateway-top">
+                <div>
+                  <div class="pulse-gateway-name">
+                    ${esc(formatPulseGatewayName(gateway?.gateway))}
+                    <span
+                      class="pulse-priority-pill pulse-priority-${intelligenceToken}"
+                      style="margin-left:8px; vertical-align:middle;"
+                    >
+                      ${esc(intelligenceStatus)}
+                    </span>
+                  </div>
+                  <div class="pulse-gateway-share">${esc(formatPulsePercent(gateway?.share_of_failures_pct || 0))} of active failures</div>
                 </div>
-
-                <div class="pulse-gateway-body">
-                  <div class="pulse-gateway-revenue">${revenue}</div>
-                  <div class="pulse-gateway-meta">${failures} failures</div>
+                <div class="pulse-priority-pill pulse-priority-${uiOverride?.token || priorityToken}">
+                  ${esc(uiOverride?.label || priority)}
                 </div>
               </div>
-            `;
-          }).join("")}
-        </div>
-      `;
-    }
 
-    // -----------------------------------
-    // REASONS BREAKDOWN
-    // -----------------------------------
-    if (slotReasons) {
-      if (isLoading) {
-        slotReasons.innerHTML = "";
-      } else {
-        slotReasons.innerHTML = `
-          <div class="card pulse-reasons">
-            ${(reasons || []).map((r) => `
-              <div class="pulse-reason-row">
-                ${renderPulseReasonPill(r?.reason)}
-                <span class="pulse-reason-value">
-                  ${formatPulseMoney(r?.recoverable_revenue)}
-                </span>
-              </div>
-            `).join("")}
-          </div>
-        `;
-      }
-    }
-    // -----------------------------------
-    // REPEAT OFFENDERS
-    // -----------------------------------
-    if (slotRepeat) {
-      if (isLoading) {
-        slotRepeat.innerHTML = "";
-      } else {
-        slotRepeat.innerHTML = `
-          <div class="card pulse-repeat">
-            ${(repeatOffenders || []).map((o) => {
-              const priority = getOffenderPriority(o);
-              const token = getPulsePriorityToken(priority);
-
-              return `
-                <div class="pulse-repeat-row pulse-priority-${token}">
-                  <div class="pulse-repeat-email"
-                       data-email="${esc(o.email)}"
-                       style="cursor:pointer;text-decoration:underline;">
-                    ${esc(o.email)}
-                  </div>
-                  <div class="pulse-repeat-meta">
-                    ${formatPulseInteger(o.count)} failures
-                  </div>
-                  <div class="pulse-repeat-value">
-                    ${formatPulseMoney(o.total)}
-                  </div>
+              <div class="pulse-gateway-metrics">
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Failures</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.incident_count || 0))}</div>
                 </div>
-              `;
-            }).join("")}
-          </div>
-        `;
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Customers</div>
+                  <div class="pulse-metric-value">${esc(formatPulseInteger(gateway?.customers_at_risk || 0))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Recoverable revenue</div>
+                  <div class="pulse-metric-value">${esc(formatPulseMoney(gateway?.recoverable_revenue || 0))}</div>
+                </div>
+                <div class="pulse-metric">
+                  <div class="pulse-metric-label">Failure rate</div>
+                  <div class="pulse-metric-value">${esc(formatPulsePercent(failureRate * 100))}</div>
+                </div>
+              </div>
 
-        // click → search by email
-        slotRepeat.querySelectorAll(".pulse-repeat-email").forEach((el) => {
-          el.addEventListener("click", () => {
-            if (typeof window.runSearch === "function") {
-              window.runSearch(el.dataset.email);
-            }
-          });
-        });
-      }
-    }
+              <div class="pulse-gateway-message">
+                ${esc(gateway?.recommended_message || "No recommendation available.")}
+              </div>
 
-    // -----------------------------------
-    // LAST SCAN
-    // -----------------------------------
-    if (slotLast) {
-      if (isLoading) {
-        slotLast.innerHTML = "";
-      } else {
-        slotLast.innerHTML = lastScan
-          ? `
-            <div class="card pulse-last-scan">
-              <div>Last Scan: ${esc(new Date(lastScan.ts).toLocaleString())}</div>
+              <div
+                class="pulse-gateway-recovery pulse-priority-${recoveryToken}"
+                style="margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03);"
+              >
+                <div
+                  class="pulse-gateway-recovery-label"
+                  style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75;"
+                >
+                  Recovery recommendation
+                </div>
+
+                <div
+                  class="pulse-gateway-recovery-value"
+                  style="font-size:14px; font-weight:700; margin-top:4px;"
+                >
+                  ${esc(recoveryLabel)}
+                </div>
+
+                ${
+                  recoveryReason
+                    ? `
+                      <div
+                        class="pulse-gateway-recovery-reason"
+                        style="font-size:12px; margin-top:6px; opacity:.85;"
+                      >
+                        ${esc(recoveryReason)}
+                      </div>
+                    `
+                    : ""
+                }
+              </div>
+
+              <div class="pulse-gateway-playbook" style="margin-top:10px;">
+                ${esc(gateway?.playbook || "Monitor gateway performance.")}
+              </div>
+
+              <div class="pulse-gateway-playbook" style="margin-top:8px; opacity:.86;">
+                ${esc(successMeta)}
+              </div>
+
+              <div class="pulse-gateway-actions" style="margin-top:14px;">
+                <button
+                  class="pulse-action-pill pulse-action-pill-secondary"
+                  type="button"
+                  data-action="pulse-toggle-customers"
+                  data-gateway="${esc(String(gateway?.gateway || ""))}"
+                >
+                  ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()]
+                    ? "Hide customers"
+                    : "View customers"}
+                </button>
+              </div>
               ${
-                scanDelta
+                window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] &&
+                window.__pulseAffectedGateway === String(gateway?.gateway || "").toLowerCase() &&
+                Array.isArray(window.__pulseAffectedCustomers) &&
+                window.__pulseAffectedCustomers.length
                   ? `
-                    <div class="pulse-last-scan-delta">
-                      Δ Failed: ${formatPulseInteger(scanDelta.failedDelta)} |
-                      Δ Revenue: ${formatPulseMoney(scanDelta.revenueDelta)}
+                    <div class="pulse-inline-customers">
+                      <div class="pulse-inline-customers-head">
+                        <div class="pulse-inline-customers-title">Affected customers</div>
+                        <div class="pulse-inline-customers-subtitle">
+                          ${esc(formatPulseInteger(window.__pulseAffectedCustomers.length))} currently visible
+                        </div>
+                      </div>
+
+                      <div class="pulse-inline-customers-table-wrap" style="overflow:auto;">
+                        <table class="pulse-inline-customers-table" style="width:100%; border-collapse:collapse;">
+                          <thead>
+                            <tr class="pulse-inline-customers-head-row">
+                              <th style="text-align:left; padding:10px 12px;">Email</th>
+                              <th style="text-align:left; padding:10px 12px;">Amount</th>
+                              <th style="text-align:left; padding:10px 12px;">Reason</th>
+                              <th style="text-align:left; padding:10px 12px;">Status</th>
+                              <th style="text-align:left; padding:10px 12px;">Order</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            ${window.__pulseAffectedCustomers.map((row) => `
+                              <tr class="pulse-inline-customers-row" data-email="${esc(row?.email || "")}" style="cursor:pointer;">
+                                <td style="padding:10px 12px;" class="pulse-linkish">${esc(row?.email || "—")}</td>
+                                <td style="padding:10px 12px;">${esc(formatPulseMoney(row?.amount || 0))}</td>
+                                <td style="padding:10px 12px;">${renderPulseReasonPill(row?.reason || "FAILED_GENERIC")}</td>
+                                <td style="padding:10px 12px;">${esc(String(row?.status || "—").toUpperCase())}</td>
+                                <td
+                                  style="padding:10px 12px;"
+                                  class="pulse-order-link"
+                                  data-order-id="${esc(String(row?.order_id || ""))}"
+                                >${esc(String(row?.order_id || "—"))}</td>
+                              </tr>
+                            `).join("")}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   `
                   : ""
               }
-            </div>
-          `
-          : "";
-      }
-    }
+            </article>
+          `;
+          }).join("")
+        : `
+        <article class="pulse-gateway-card">
+          <div class="pulse-gateway-name">No gateway activity</div>
+          <div class="pulse-gateway-message">No gateway intelligence was returned by the Pulse worker.</div>
+        </article>
+      `;
 
-    // -----------------------------------
-    // ACTION OUTCOME (BANNER SLOT)
-    // -----------------------------------
-    if (slotAction) {
-      slotAction.innerHTML = ""; // handled globally via showPulseBanner
+    const reasonRows = reasons.length
+      ? reasons.map((reason) => `
+          <div class="pulse-reason-row">
+            <div>${renderPulseReasonPill(reason?.reason || "FAILED_GENERIC")}</div>
+            <div class="pulse-right">${esc(formatPulseInteger(reason?.incident_count || 0))}</div>
+            <div class="pulse-right">${esc(formatPulseMoney(reason?.recoverable_revenue || 0))}</div>
+          </div>
+        `).join("")
+      : `
+        <div class="pulse-reason-row">
+          <div>No reasons available</div>
+          <div class="pulse-right">0</div>
+          <div class="pulse-right">${esc(formatPulseMoney(0))}</div>
+        </div>
+      `;
+
+    const repeatOffendersSection = repeatOffenders.length
+      ? `
+        <section class="card pulse-section">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Repeat offenders</div>
+              <div class="pulse-section-subtitle">Customers with repeated failures across tracked incidents.</div>
+            </div>
+          </div>
+
+          <div class="pulse-grid">
+            ${repeatOffenders.map((offender) => {
+              const priority = getOffenderPriority(offender);
+              const priorityToken = getPulsePriorityToken(priority);
+              return `
+                <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+                  <div class="pulse-gateway-top">
+                    <div>
+                      <div class="pulse-gateway-name">${esc(offender.email)}</div>
+                      <div class="pulse-gateway-share">${esc(String(offender.count))} failures</div>
+                    </div>
+                    <div class="pulse-priority-pill pulse-priority-${priorityToken}">${esc(priority)}</div>
+                  </div>
+
+                  <div class="pulse-gateway-metrics">
+                    <div class="pulse-metric">
+                      <div class="pulse-metric-label">Failures</div>
+                      <div class="pulse-metric-value">${esc(formatPulseInteger(offender.count))}</div>
+                    </div>
+                    <div class="pulse-metric">
+                      <div class="pulse-metric-label">Revenue at risk</div>
+                      <div class="pulse-metric-value">${esc(formatPulseMoney(offender.total))}</div>
+                    </div>
+                  </div>
+                </article>
+              `;
+            }).join("")}
+          </div>
+        </section>
+      `
+      : "";
+
+    const lastScanSection = isLoading
+      ? `
+        <section class="card pulse-section pulse-last-scan-card">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Last scanner run</div>
+              <div class="pulse-section-subtitle">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pulse-last-scan-grid">
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Processed</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Created</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Skipped</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item">
+              <div class="pulse-last-scan-label">Recent successes</div>
+              <div class="pulse-last-scan-value"><div class="aa-loading-row" style="width:60px"></div></div>
+            </div>
+            <div class="pulse-last-scan-item pulse-last-scan-item-wide">
+              <div class="pulse-last-scan-label">Last successful payment seen</div>
+              <div class="pulse-last-scan-value pulse-last-scan-value-small"><div class="aa-loading-row" style="width:220px"></div></div>
+            </div>
+          </div>
+        </section>
+      `
+      : lastScanInfo
+        ? `
+          <section class="card pulse-section pulse-last-scan-card">
+            <div class="pulse-section-head">
+              <div>
+                <div class="pulse-section-title">Last scanner run</div>
+                <div class="pulse-section-subtitle">${esc(new Date(lastScanInfo.time).toLocaleString())}</div>
+              </div>
+            </div>
+
+            <div class="pulse-last-scan-grid">
+              <div class="pulse-last-scan-item">
+                <div class="pulse-last-scan-label">Processed</div>
+                <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.processed || 0))}</div>
+              </div>
+              <div class="pulse-last-scan-item">
+                <div class="pulse-last-scan-label">Created</div>
+                <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_created || 0))}</div>
+              </div>
+              <div class="pulse-last-scan-item">
+                <div class="pulse-last-scan-label">Skipped</div>
+                <div class="pulse-last-scan-value">${esc(formatPulseInteger(lastScanInfo.incidents_skipped || 0))}</div>
+              </div>
+              <div class="pulse-last-scan-item">
+                <div class="pulse-last-scan-label">Recent successes</div>
+                <div class="pulse-last-scan-value">${esc(formatPulseInteger(recentSuccessCount))}</div>
+              </div>
+              <div class="pulse-last-scan-item pulse-last-scan-item-wide">
+                <div class="pulse-last-scan-label">Last successful payment seen</div>
+                <div class="pulse-last-scan-value pulse-last-scan-value-small">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "No recent success observed")}</div>
+              </div>
+            </div>
+          </section>
+        `
+        : `
+          <section class="card pulse-section pulse-last-scan-card">
+            <div class="pulse-section-head">
+              <div>
+                <div class="pulse-section-title">Last scanner run</div>
+                <div class="pulse-section-subtitle">No scan history available yet.</div>
+              </div>
+            </div>
+            <div class="pulse-last-scan-footer">Run the scanner to populate the last scan panel.</div>
+          </section>
+        `;
+
+    return {
+      actionOutcomeBanner,
+      incidentStrip,
+      heroSection: `
+        <section class="card pulse-hero">
+          <div class="pulse-hero-top">
+            <div>
+              <div class="pulse-kicker">Pulse Revenue Intelligence</div>
+              <div class="pulse-title">Revenue recovery dashboard</div>
+              <div class="pulse-subtitle">Real-time revenue recovery insights and failure intelligence.</div>
+            </div>
+            <div class="pulse-priority-pill ${isLoading ? "pulse-priority-medium" : (executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium")}">
+              ${isLoading ? "Updating…" : esc(executionMode + " MODE")}
+            </div>
+          </div>
+          <div class="pulse-stat-grid">
+            <div class="pulse-stat-card pulse-stat-accent-danger">
+              <div class="pulse-stat-label">Recoverable revenue</div>
+              <div class="pulse-stat-value">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:120px"></div>`
+                  : esc(formatPulseMoney(totalRevenue))
+                }
+              </div>
+              <div class="pulse-stat-meta">Current total across tracked failed subscriptions.</div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-warning">
+              <div class="pulse-stat-label">Failed subscriptions</div>
+              <div class="pulse-stat-value">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:60px"></div>`
+                  : esc(formatPulseInteger(failedSubscriptions))
+                }
+              </div>
+              <div class="pulse-stat-meta">Live count from the Pulse summary endpoint.</div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Active incidents</div>
+              <div class="pulse-stat-value">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:60px"></div>`
+                  : esc(formatPulseInteger(pendingIncidents))
+                }
+              </div>
+              <div class="pulse-stat-meta">Incidents currently in retry or paused state.</div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Retry queue</div>
+              <div class="pulse-stat-value">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:60px"></div>`
+                  : esc(formatPulseInteger(retryingSubscriptions))
+                }
+              </div>
+              <div class="pulse-stat-meta">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:100px"></div>`
+                  : esc(`Revenue ${formatPulseMoney(retryingRevenue)}`)
+                }
+              </div>
+            </div>
+
+            <div class="pulse-stat-card pulse-stat-accent-neutral">
+              <div class="pulse-stat-label">Paused incidents</div>
+              <div class="pulse-stat-value">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:60px"></div>`
+                  : esc(formatPulseInteger(pausedSubscriptions))
+                }
+              </div>
+              <div class="pulse-stat-meta">
+                ${isLoading
+                  ? `<div class="aa-loading-row" style="width:100px"></div>`
+                  : esc(`Revenue ${formatPulseMoney(pausedRevenue)}`)
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      `,
+      gatewaySection: `
+        <section class="card pulse-section">
+          <div class="pulse-section-head">
+            <div>
+              <div class="pulse-section-title">Gateway intelligence</div>
+              <div class="pulse-section-subtitle">Recommended recovery actions, priorities, and next steps.</div>
+            </div>
+          </div>
+          <div class="pulse-grid">
+            ${gatewayCards}
+          </div>
+        </section>
+      `,
+      reasonsSection: `
+        <section class="card pulse-section pulse-reasons-card">
+          <div class="pulse-section-head" style="padding:16px 16px 0;">
+            <div>
+              <div class="pulse-section-title">Reasons breakdown</div>
+              <div class="pulse-section-subtitle">Sorted by revenue impact.</div>
+            </div>
+          </div>
+          <div class="pulse-reason-list">
+            <div class="pulse-reason-row pulse-reason-head">
+              <div>Reason</div>
+              <div class="pulse-right">Incident count</div>
+              <div class="pulse-right">Recoverable revenue</div>
+            </div>
+            ${reasonRows}
+          </div>
+        </section>
+      `,
+      repeatOffendersSection: repeatOffendersSection,
+      lastScanSection: lastScanSection
+    };
+  }
+    function hydratePulseView(viewModel) {
+    try {
+      const shell = document.getElementById("pulse-shell");
+      if (!shell) return;
+
+      const {
+        actionOutcomeBanner,
+        incidentStrip,
+        heroSection,
+        gatewaySection,
+        reasonsSection,
+        repeatOffendersSection,
+        lastScanSection
+      } = viewModel;
+
+      const slotOutcome = document.getElementById("pulse-slot-action-outcome");
+      const slotIncident = document.getElementById("pulse-slot-incident-strip");
+      const slotHero = document.getElementById("pulse-slot-hero");
+      const slotGateways = document.getElementById("pulse-slot-gateway-intelligence");
+      const slotReasons = document.getElementById("pulse-slot-reasons");
+      const slotRepeat = document.getElementById("pulse-slot-repeat-offenders");
+      const slotScan = document.getElementById("pulse-slot-last-scan");
+
+      if (slotOutcome) slotOutcome.innerHTML = actionOutcomeBanner || "";
+      if (slotIncident) slotIncident.innerHTML = incidentStrip || "";
+      if (slotHero) slotHero.innerHTML = heroSection || "";
+      if (slotGateways) slotGateways.innerHTML = gatewaySection || "";
+      if (slotReasons) slotReasons.innerHTML = reasonsSection || "";
+      if (slotRepeat) slotRepeat.innerHTML = repeatOffendersSection || "";
+      if (slotScan) slotScan.innerHTML = lastScanSection || "";
+
+      // 🔥 Rebind interactions AFTER hydration
+      bindPulseInteractions();
+
+    } catch (err) {
+      console.error("hydratePulseView error", err);
     }
   }
 
+  function bindPulseInteractions() {
+    // Incident strip primary action
+    document.querySelectorAll(".pulse-incident-strip-action[data-action][data-gateway]").forEach((btn) => {
+      btn.onclick = async () => {
+        const gateway = String(btn.getAttribute("data-gateway") || "").trim().toLowerCase();
+        const action = String(btn.getAttribute("data-action") || "").trim().toLowerCase();
+
+        if (!gateway || !action) return;
+
+        try {
+          const res = await fetch("https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ gateway })
+          });
+
+          const json = await res.json();
+
+          if (!json?.ok) {
+            showPulseBanner(json?.error || "Action failed", "error");
+            return;
+          }
+
+          window.__pulseActionFeedback = {
+            action,
+            gateway,
+            count: json?.count || 0,
+            revenue: json?.revenue || 0,
+            at: Date.now()
+          };
+
+          showPulseBanner("Action applied", "success");
+
+          if (typeof window.loadPulseDashboard === "function") {
+            window.loadPulseDashboard();
+          }
+
+        } catch (err) {
+          console.error(err);
+          showPulseBanner("Network error", "error");
+        }
+      };
+    });
+
+    // Inline customer email click → search
+    document.querySelectorAll(".pulse-inline-customers-row[data-email]").forEach((row) => {
+      row.onclick = (e) => {
+        const orderCell = e.target.closest("[data-order-id]");
+        if (orderCell) {
+          const orderId = orderCell.getAttribute("data-order-id");
+          if (orderId && orderId !== "—" && typeof window.doSearch === "function") {
+            window.doSearch(orderId);
+          }
+          return;
+        }
+
+        const email = row.getAttribute("data-email");
+        if (!email) return;
+
+        if (typeof window.doSearch === "function") {
+          window.doSearch(email);
+        }
+      };
+    });
+
+    // Repeat offender email click → search
+    document.querySelectorAll(".pulse-offender-email").forEach((el) => {
+      el.onclick = () => {
+        const email = el.getAttribute("data-email");
+        if (!email) return;
+
+        if (typeof window.doSearch === "function") {
+          window.doSearch(email);
+        }
+      };
+    });
+
+    // Toggle customers
+    document.querySelectorAll('.pulse-action-pill[data-action="pulse-toggle-customers"][data-gateway]').forEach((toggle) => {
+      toggle.onclick = async () => {
+        const gateway = String(toggle.getAttribute("data-gateway") || "").toLowerCase();
+        if (!gateway) return;
+
+        const originalText = toggle.textContent;
+        toggle.textContent = "Loading…";
+        toggle.disabled = true;
+
+        window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+        const isExpanding = !window.__pulseExpandedGateways[gateway];
+        window.__pulseExpandedGateways[gateway] = isExpanding;
+
+        if (isExpanding) {
+          try {
+            const data = typeof window.fetchPulseAffectedCustomers === "function"
+              ? await window.fetchPulseAffectedCustomers(gateway)
+              : { ok: false, customers: [] };
+
+            if (data?.ok && Array.isArray(data.customers)) {
+              window.__pulseAffectedCustomers = data.customers;
+              window.__pulseAffectedGateway = gateway;
+            } else {
+              window.__pulseAffectedCustomers = [];
+              window.__pulseAffectedGateway = gateway;
+              showPulseBanner("No customers found", "warning");
+            }
+          } catch (err) {
+            console.error("Failed to load affected customers:", err);
+            window.__pulseAffectedCustomers = [];
+            window.__pulseAffectedGateway = gateway;
+            showPulseBanner("Failed to load customers", "error");
+          }
+        }
+
+        if (typeof window.buildPulseViewModel === "function" &&
+            typeof window.updatePulseView === "function") {
+          window.updatePulseView(
+            window.buildPulseViewModel(
+              window.__pulseLastAnalysis,
+              window.__pulseLastSummary || null
+            )
+          );
+        }
+
+        toggle.textContent = originalText;
+        toggle.disabled = false;
+      };
+    });
+  }
   // -----------------------------------
   // EXPORTS
   // -----------------------------------
+  window.showPulseBanner = showPulseBanner;
   window.renderPulseShell = renderPulseShell;
   window.renderPulseLoadingShell = renderPulseLoadingShell;
   window.buildPulseViewModel = buildPulseViewModel;
