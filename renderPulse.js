@@ -1157,14 +1157,33 @@ const incidentStrip = isLoading
     }
 
     try {
-      const incidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
-        ? window.__pulseLastAnalysis.incidents
-        : [];
+const sourceIncidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
+  ? window.__pulseLastAnalysis.incidents
+  : [];
 
-      const incidentIds = incidents
-        .filter((i) => String(i?.gateway || "").toLowerCase() === gateway)
-        .map((i) => i?.id)
-        .filter(Boolean);
+const gatewayIncidents = Array.isArray(window.__pulseLastAnalysis?.gateway_incidents)
+  ? window.__pulseLastAnalysis.gateway_incidents
+  : [];
+
+const incidentIds = sourceIncidents
+  .filter((i) => String(i?.gateway || "").trim().toLowerCase() === gateway)
+  .map((i) => Number(i?.id))
+  .filter((id) => Number.isInteger(id) && id > 0);
+
+if (!incidentIds.length) {
+  const gatewayMatch = gatewayIncidents.find(
+    (i) => String(i?.gateway || "").trim().toLowerCase() === gateway
+  );
+
+  if (gatewayMatch && Number.isInteger(Number(gatewayMatch?.id)) && Number(gatewayMatch.id) > 0) {
+    incidentIds.push(Number(gatewayMatch.id));
+  }
+}
+
+if (!incidentIds.length) {
+  showPulseBanner(`No incident IDs found for ${gateway}`, "error");
+  return;
+}
 
       const res = await fetch(
         "https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action,
