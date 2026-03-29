@@ -478,9 +478,56 @@
   min-height:22px;
 }
 
+/* === INCIDENT STRIP HEIGHT STABILIZATION (FINAL) === */
+
+.pulse-incident-strip{
+  min-height:360px;
+}
+
+/* HEAD AREA */
+.pulse-incident-strip-head{
+  min-height:64px;
+}
+
+/* TITLE + SUBTITLE STACK */
+.pulse-incident-strip-left{
+  min-height:72px;
+}
+
+/* METRICS ROW */
+.pulse-incident-strip-metrics{
+  min-height:56px;
+}
+
+/* EACH METRIC */
+.pulse-incident-strip-metric{
+  min-height:40px;
+}
+
+/* METRIC VALUE (prevents jump when numbers appear) */
+.pulse-incident-strip-metric strong{
+  display:inline-block;
+  min-height:20px;
+}
+
+/* STATUS CARD */
+.pulse-incident-strip-status-card{
+  min-height:96px;
+}
+
+/* STATUS TEXT */
+.pulse-incident-strip-status-meta{
+  min-height:18px;
+}
+
+.pulse-incident-strip-status-reason{
+  min-height:22px;
+}
+
+/* ACTION ROW */
 .pulse-incident-strip-actions{
   margin-top:12px;
-  min-height:54px;
+  min-height:56px;
   display:flex;
   align-items:flex-end;
 }
