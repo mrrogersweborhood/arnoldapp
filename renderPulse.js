@@ -270,76 +270,94 @@
     `;
   }
 
-    function renderPulseIncidentStrip({
+      function renderPulseIncidentStrip({
     isLoading,
     activeIncident,
     analysis,
     summary
   }) {
-    const severityToken = isLoading
-      ? "medium"
-      : esc(String(activeIncident?.severity || "low").toLowerCase());
+    if (isLoading) {
+      return `
+        <section class="card pulse-incident-strip pulse-medium" aria-busy="true">
+          <div class="pulse-incident-strip-head">
+            <div class="pulse-incident-strip-left">
+              <div class="pulse-incident-strip-kicker">Gateway incident</div>
+              <div class="pulse-incident-strip-title"><span style="visibility:hidden;">Square · SPIKE</span></div>
+              <div class="pulse-incident-strip-subtitle"><span style="visibility:hidden;">High-confidence outage detected. Pause retries and wait for gateway recovery.</span></div>
+            </div>
+          </div>
 
-    const loadingTextStyle = "opacity:.38; color:transparent; text-shadow:0 0 0 rgba(124,45,18,.55);";
-    const loadingValueStyle = "opacity:.38; color:transparent; text-shadow:0 0 0 rgba(15,23,42,.55);";
-    const loadingPillStyle = "opacity:.72; pointer-events:none;";
-    const loadingActionStyle = "opacity:.72; pointer-events:none;";
+          <div class="pulse-incident-strip-metrics">
+            ${renderPulseIncidentMetricCell("Confidence", `<span style="visibility:hidden;">90.00%</span>`)}
+            ${renderPulseIncidentMetricCell("Customers", `<span style="visibility:hidden;">21</span>`)}
+            ${renderPulseIncidentMetricCell("Revenue", `<span style="visibility:hidden;">$1,370.00</span>`)}
+          </div>
 
-    const titleHtml = isLoading
-      ? `<span style="${loadingTextStyle}">Square · SPIKE</span>`
-      : `${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}`;
+          <div class="pulse-incident-strip-status-row">
+            <div class="pulse-incident-strip-status-card">
+              <div class="pulse-incident-strip-status-head">
+                <div class="pulse-incident-strip-status-label">Automation status</div>
+                <div class="pulse-priority-pill pulse-priority-medium" style="visibility:hidden;">Monitoring</div>
+              </div>
 
-    const subtitleHtml = isLoading
-      ? `<span style="${loadingTextStyle}">High-confidence outage detected. Pause retries and wait for gateway recovery.</span>`
-      : `${esc(activeIncident?.recommended_message || "No incident message available.")}`;
+              <div class="pulse-incident-strip-status-meta">
+                <span style="visibility:hidden;">22 paused · 0 retrying · TEST MODE</span>
+              </div>
 
-    const confidenceHtml = isLoading
-      ? `<span style="${loadingValueStyle}">90.00%</span>`
-      : esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100));
+              <div class="pulse-incident-strip-status-reason">
+                <span style="visibility:hidden;">Temporary spike detected — observe before acting.</span>
+              </div>
+            </div>
+          </div>
 
-    const customersHtml = isLoading
-      ? `<span style="${loadingValueStyle}">21</span>`
-      : esc(formatPulseInteger(activeIncident?.customers_at_risk || 0));
+          <div class="pulse-incident-strip-actions">
+            <div class="pulse-incident-strip-action" style="visibility:hidden; pointer-events:none;">
+              Pause Retries
+            </div>
+          </div>
+        </section>
+      `;
+    }
 
-    const revenueHtml = isLoading
-      ? `<span style="${loadingValueStyle}">$1,370.00</span>`
-      : esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0));
+    const severityToken = esc(String(activeIncident?.severity || "low").toLowerCase());
 
-    const automationLabel = isLoading
-      ? "Monitoring"
-      : esc(
-          activeIncident?.should_pause_retries
-            ? "Auto-paused"
-            : activeIncident?.should_resume_retries
-              ? "Resume ready"
-              : "Monitoring"
-        );
+    const titleHtml =
+      `${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}`;
 
-    const automationToken = isLoading
-      ? "medium"
-      : (
-          activeIncident?.should_pause_retries
-            ? "high"
-            : activeIncident?.should_resume_retries
-              ? "low"
-              : "medium"
-        );
+    const subtitleHtml =
+      `${esc(activeIncident?.recommended_message || "No incident message available.")}`;
 
-    const automationMeta = isLoading
-      ? `<span style="${loadingTextStyle}">22 paused · 0 retrying · TEST MODE</span>`
-      : `${esc(formatPulseInteger(analysis?.paused_total || 0))} paused · ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying · ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE`;
+    const confidenceHtml =
+      esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100));
 
-    const automationReason = isLoading
-      ? `<span style="${loadingTextStyle}">Temporary spike detected — observe before acting.</span>`
-      : `${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}`;
+    const customersHtml =
+      esc(formatPulseInteger(activeIncident?.customers_at_risk || 0));
 
-    const actionHtml = isLoading
-      ? `
-        <div class="pulse-incident-strip-action" style="${loadingActionStyle}">
-          Pause Retries
-        </div>
-      `
-      : `
+    const revenueHtml =
+      esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0));
+
+    const automationLabel = esc(
+      activeIncident?.should_pause_retries
+        ? "Auto-paused"
+        : activeIncident?.should_resume_retries
+          ? "Resume ready"
+          : "Monitoring"
+    );
+
+    const automationToken =
+      activeIncident?.should_pause_retries
+        ? "high"
+        : activeIncident?.should_resume_retries
+          ? "low"
+          : "medium";
+
+    const automationMeta =
+      `${esc(formatPulseInteger(analysis?.paused_total || 0))} paused · ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying · ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE`;
+
+    const automationReason =
+      `${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}`;
+
+    const actionHtml = `
         <button
           class="pulse-incident-strip-action"
           type="button"
@@ -372,10 +390,7 @@
             automationToken,
             automationMeta,
             automationReason
-          }).replace(
-            '<div class="pulse-priority-pill pulse-priority-' + automationToken + '">',
-            '<div class="pulse-priority-pill pulse-priority-' + automationToken + '" style="' + (isLoading ? loadingPillStyle : '') + '">'
-          )}
+          })}
         </div>
 
         <div class="pulse-incident-strip-actions">
