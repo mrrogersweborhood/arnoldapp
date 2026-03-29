@@ -270,7 +270,7 @@
     `;
   }
 
-      function renderPulseIncidentStrip({
+            function renderPulseIncidentStrip({
     isLoading,
     activeIncident,
     analysis,
@@ -278,44 +278,12 @@
   }) {
     if (isLoading) {
       return `
-        <section class="card pulse-incident-strip pulse-medium" aria-busy="true">
-          <div class="pulse-incident-strip-head">
-            <div class="pulse-incident-strip-left">
-              <div class="pulse-incident-strip-kicker">Gateway incident</div>
-              <div class="pulse-incident-strip-title"><span style="visibility:hidden;">Square · SPIKE</span></div>
-              <div class="pulse-incident-strip-subtitle"><span style="visibility:hidden;">High-confidence outage detected. Pause retries and wait for gateway recovery.</span></div>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-metrics">
-            ${renderPulseIncidentMetricCell("Confidence", `<span style="visibility:hidden;">90.00%</span>`)}
-            ${renderPulseIncidentMetricCell("Customers", `<span style="visibility:hidden;">21</span>`)}
-            ${renderPulseIncidentMetricCell("Revenue", `<span style="visibility:hidden;">$1,370.00</span>`)}
-          </div>
-
-          <div class="pulse-incident-strip-status-row">
-            <div class="pulse-incident-strip-status-card">
-              <div class="pulse-incident-strip-status-head">
-                <div class="pulse-incident-strip-status-label">Automation status</div>
-                <div class="pulse-priority-pill pulse-priority-medium" style="visibility:hidden;">Monitoring</div>
-              </div>
-
-              <div class="pulse-incident-strip-status-meta">
-                <span style="visibility:hidden;">22 paused · 0 retrying · TEST MODE</span>
-              </div>
-
-              <div class="pulse-incident-strip-status-reason">
-                <span style="visibility:hidden;">Temporary spike detected — observe before acting.</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="pulse-incident-strip-actions">
-            <div class="pulse-incident-strip-action" style="visibility:hidden; pointer-events:none;">
-              Pause Retries
-            </div>
-          </div>
-        </section>
+        <section
+          class="card pulse-incident-strip pulse-medium"
+          aria-busy="true"
+          aria-hidden="true"
+          style="visibility:hidden; pointer-events:none;"
+        ></section>
       `;
     }
 
