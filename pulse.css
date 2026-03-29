@@ -516,6 +516,11 @@
   align-items:flex-end;
 }
 
+/* 🟢 LOADING STATE FIX */
+.pulse-incident-strip-loading .pulse-incident-strip-action{
+  pointer-events:none;
+}
+
 /* STATUS CARD */
 .pulse-incident-strip-status-card{
   min-height:96px;

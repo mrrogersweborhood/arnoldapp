@@ -270,7 +270,7 @@
     `;
   }
 
-            function renderPulseIncidentStrip({
+  function renderPulseIncidentStrip({
     isLoading,
     activeIncident,
     analysis,
@@ -278,12 +278,40 @@
   }) {
     if (isLoading) {
       return `
-        <section
-          class="card pulse-incident-strip pulse-medium"
-          aria-busy="true"
-          aria-hidden="true"
-          style="visibility:hidden; pointer-events:none;"
-        ></section>
+        <section class="card pulse-incident-strip pulse-medium pulse-incident-strip-loading" aria-busy="true">
+          <div class="pulse-incident-strip-head">
+            <div class="pulse-incident-strip-left">
+              <div class="pulse-incident-strip-kicker">Gateway incident</div>
+              <div class="pulse-incident-strip-title">
+                <div class="aa-loading-row" style="width:180px"></div>
+              </div>
+              <div class="pulse-incident-strip-subtitle">
+                <div class="aa-loading-row" style="width:420px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pulse-incident-strip-metrics">
+            ${renderPulseIncidentMetricCell("Confidence", `<div class="aa-loading-row" style="width:70px"></div>`)}
+            ${renderPulseIncidentMetricCell("Customers", `<div class="aa-loading-row" style="width:60px"></div>`)}
+            ${renderPulseIncidentMetricCell("Revenue", `<div class="aa-loading-row" style="width:90px"></div>`)}
+          </div>
+
+          <div class="pulse-incident-strip-status-row">
+            ${renderPulseIncidentStatusCard({
+              automationLabel: "Updating…",
+              automationToken: "medium",
+              automationMeta: `<div class="aa-loading-row" style="width:180px"></div>`,
+              automationReason: `<div class="aa-loading-row" style="width:260px"></div>`
+            })}
+          </div>
+
+          <div class="pulse-incident-strip-actions">
+            <button class="pulse-incident-strip-action" type="button" disabled aria-hidden="true">
+              <div class="aa-loading-row" style="width:120px"></div>
+            </button>
+          </div>
+        </section>
       `;
     }
 
