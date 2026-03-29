@@ -270,7 +270,7 @@
     `;
   }
 
-  function renderPulseIncidentStrip({
+    function renderPulseIncidentStrip({
     isLoading,
     activeIncident,
     analysis,
@@ -280,28 +280,33 @@
       ? "medium"
       : esc(String(activeIncident?.severity || "low").toLowerCase());
 
+    const loadingTextStyle = "opacity:.38; color:transparent; text-shadow:0 0 0 rgba(124,45,18,.55);";
+    const loadingValueStyle = "opacity:.38; color:transparent; text-shadow:0 0 0 rgba(15,23,42,.55);";
+    const loadingPillStyle = "opacity:.72; pointer-events:none;";
+    const loadingActionStyle = "opacity:.72; pointer-events:none;";
+
     const titleHtml = isLoading
-      ? `<div class="aa-loading-row" style="width:180px"></div>`
+      ? `<span style="${loadingTextStyle}">Square · SPIKE</span>`
       : `${esc(formatPulseGatewayName(activeIncident?.gateway))} · ${esc(String(activeIncident?.status || "normal").toUpperCase())}`;
 
     const subtitleHtml = isLoading
-      ? `<div class="aa-loading-row" style="width:320px"></div>`
+      ? `<span style="${loadingTextStyle}">High-confidence outage detected. Pause retries and wait for gateway recovery.</span>`
       : `${esc(activeIncident?.recommended_message || "No incident message available.")}`;
 
     const confidenceHtml = isLoading
-      ? `<div class="aa-loading-row" style="width:70px"></div>`
+      ? `<span style="${loadingValueStyle}">90.00%</span>`
       : esc(formatPulsePercent((Number(activeIncident?.confidence || 0) || 0) * 100));
 
     const customersHtml = isLoading
-      ? `<div class="aa-loading-row" style="width:60px"></div>`
+      ? `<span style="${loadingValueStyle}">21</span>`
       : esc(formatPulseInteger(activeIncident?.customers_at_risk || 0));
 
     const revenueHtml = isLoading
-      ? `<div class="aa-loading-row" style="width:90px"></div>`
+      ? `<span style="${loadingValueStyle}">$1,370.00</span>`
       : esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0));
 
     const automationLabel = isLoading
-      ? "Updating…"
+      ? "Monitoring"
       : esc(
           activeIncident?.should_pause_retries
             ? "Auto-paused"
@@ -321,17 +326,17 @@
         );
 
     const automationMeta = isLoading
-      ? `<div class="aa-loading-row" style="width:180px"></div>`
+      ? `<span style="${loadingTextStyle}">22 paused · 0 retrying · TEST MODE</span>`
       : `${esc(formatPulseInteger(analysis?.paused_total || 0))} paused · ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying · ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE`;
 
     const automationReason = isLoading
-      ? `<div class="aa-loading-row" style="width:260px"></div>`
+      ? `<span style="${loadingTextStyle}">Temporary spike detected — observe before acting.</span>`
       : `${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}`;
 
     const actionHtml = isLoading
       ? `
-        <div class="pulse-incident-strip-action" style="opacity:.55; pointer-events:none;">
-          <div class="aa-loading-row" style="width:120px"></div>
+        <div class="pulse-incident-strip-action" style="${loadingActionStyle}">
+          Pause Retries
         </div>
       `
       : `
@@ -367,7 +372,10 @@
             automationToken,
             automationMeta,
             automationReason
-          })}
+          }).replace(
+            '<div class="pulse-priority-pill pulse-priority-' + automationToken + '">',
+            '<div class="pulse-priority-pill pulse-priority-' + automationToken + '" style="' + (isLoading ? loadingPillStyle : '') + '">'
+          )}
         </div>
 
         <div class="pulse-incident-strip-actions">
