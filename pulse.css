@@ -479,12 +479,16 @@
 }
 
 .pulse-incident-strip-actions{
+  margin-top:12px;
+  min-height:54px;
+  display:flex;
+  align-items:flex-end;
+}
 
 .pulse-incident-strip-metric strong{
   display:inline-block;
   min-height:20px;
 }
-
 .pulse-incident-chip{
   display:flex;
   flex-direction:column;
