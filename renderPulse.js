@@ -1146,12 +1146,28 @@ const incidentStrip = isLoading
         if (!gateway || !action) return;
 
         try {
-          const res = await fetch("https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ gateway })
-          });
+         // 🟢 Resolve incident_ids from last analysis (CRITICAL FIX)
+const incidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
+  ? window.__pulseLastAnalysis.incidents
+  : [];
+
+const incidentIds = incidents
+  .filter((i) => String(i?.gateway || "").toLowerCase() === gateway)
+  .map((i) => i?.id)
+  .filter(Boolean);
+
+const res = await fetch(
+  "https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action,
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      gateway,
+      incident_ids: incidentIds
+    })
+  }
+);
 
           const json = await res.json();
 
