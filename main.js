@@ -1429,11 +1429,28 @@ if (results) {
           );
         }
 
-        setStatus("", "");
-        renderRawJson();
-      } catch (err) {
-        setStatus("warn", friendlyText(err?.message || "Pulse dashboard failed."));
-      }
+// 🟢 HARD RESET STATUS LINE (fix favicon/spinner hang)
+const sl = $("statusLine");
+if (sl) {
+  sl.className = "msg";
+  sl.textContent = "";
+  sl.innerHTML = "";
+}
+
+// 🟢 ALSO CLEAR ANY GLOBAL LOADING FLAGS (defensive)
+document.body.classList.remove("loading");
+
+renderRawJson();
+} catch (err) {
+  const sl = $("statusLine");
+  if (sl) {
+    sl.className = "msg warn";
+    sl.textContent = friendlyText(err?.message || "Pulse dashboard failed.");
+    sl.innerHTML = sl.textContent;
+  }
+
+  document.body.classList.remove("loading");
+}
     }
 window.loadPulseDashboard = doPulseDashboard;
 window.doStoreManager = doStoreManager;
