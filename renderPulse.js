@@ -590,15 +590,21 @@
     const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
     const pendingIncidents = isLoading ? 0 : (Number(analysis?.total_pending_incidents || 0) || 0);
 
-const incidentStrip = (!isLoading && activeIncident)
+const incidentStrip = isLoading
   ? renderPulseIncidentStrip({
-      isLoading: false,
-      activeIncident,
+      isLoading: true,
+      activeIncident: null,
       analysis,
       summary
     })
-  : "";
-
+  : (activeIncident
+      ? renderPulseIncidentStrip({
+          isLoading: false,
+          activeIncident,
+          analysis,
+          summary
+        })
+      : "");
     const gatewayCards = isLoading
       ? `
         <article class="pulse-gateway-card">
