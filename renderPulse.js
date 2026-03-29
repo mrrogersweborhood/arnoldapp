@@ -1139,63 +1139,73 @@ const incidentStrip = isLoading
   function bindPulseInteractions() {
     // Incident strip primary action
     document.querySelectorAll(".pulse-incident-strip-action[data-action][data-gateway]").forEach((btn) => {
-      btn.onclick = async () => {
-        const gateway = String(btn.getAttribute("data-gateway") || "").trim().toLowerCase();
-        const action = String(btn.getAttribute("data-action") || "").trim().toLowerCase();
+  btn.onclick = async () => {
+    const gateway = String(btn.getAttribute("data-gateway") || "").trim().toLowerCase();
+    const rawAction = String(btn.getAttribute("data-action") || "").trim().toUpperCase();
 
-        if (!gateway || !action) return;
+    if (!gateway || !rawAction) return;
 
-        try {
-         // 🟢 Resolve incident_ids from last analysis (CRITICAL FIX)
-const incidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
-  ? window.__pulseLastAnalysis.incidents
-  : [];
+    const action =
+      rawAction === "RETRY_LATER" ? "pause" :
+      rawAction === "RETRY_NOW" ? "retry" :
+      rawAction === "RESUME" ? "resume" :
+      "";
 
-const incidentIds = incidents
-  .filter((i) => String(i?.gateway || "").toLowerCase() === gateway)
-  .map((i) => i?.id)
-  .filter(Boolean);
+    if (!action) {
+      showPulseBanner("No direct action is available for this recommendation", "error");
+      return;
+    }
 
-const res = await fetch(
-  "https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action,
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({
-      gateway,
-      incident_ids: incidentIds
-    })
-  }
-);
+    try {
+      const incidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
+        ? window.__pulseLastAnalysis.incidents
+        : [];
 
-          const json = await res.json();
+      const incidentIds = incidents
+        .filter((i) => String(i?.gateway || "").toLowerCase() === gateway)
+        .map((i) => i?.id)
+        .filter(Boolean);
 
-          if (!json?.ok) {
-            showPulseBanner(json?.error || "Action failed", "error");
-            return;
-          }
-
-          window.__pulseActionFeedback = {
-            action,
+      const res = await fetch(
+        "https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
             gateway,
-            count: json?.count || 0,
-            revenue: json?.revenue || 0,
-            at: Date.now()
-          };
-
-          showPulseBanner("Action applied", "success");
-
-          if (typeof window.loadPulseDashboard === "function") {
-            window.loadPulseDashboard();
-          }
-
-        } catch (err) {
-          console.error(err);
-          showPulseBanner("Network error", "error");
+            incident_ids: incidentIds
+          })
         }
+      );
+
+      const json = await res.json();
+
+      if (!json?.ok) {
+        showPulseBanner(json?.error || "Action failed", "error");
+        return;
+      }
+
+      window.__pulseActionFeedback = {
+        action,
+        gateway,
+        count: json?.count || json?.affected_count || 0,
+        revenue: json?.revenue || json?.affected_revenue || 0,
+        at: Date.now()
       };
-    });
+
+      showPulseBanner("Action applied", "success");
+
+      if (typeof window.loadPulseDashboard === "function") {
+        window.loadPulseDashboard();
+      }
+
+    } catch (err) {
+      console.error(err);
+      showPulseBanner("Network error", "error");
+    }
+  };
+});
 
     // Inline customer email click → search
     document.querySelectorAll(".pulse-inline-customers-row[data-email]").forEach((row) => {
