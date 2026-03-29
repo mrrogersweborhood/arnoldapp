@@ -622,14 +622,14 @@
     const pausedRevenue = Number(summary?.paused_revenue || 0) || 0;
     const pendingIncidents = isLoading ? 0 : (Number(analysis?.total_pending_incidents || 0) || 0);
 
-        const incidentStrip = activeIncident || isLoading
-      ? renderPulseIncidentStrip({
-          isLoading,
-          activeIncident,
-          analysis,
-          summary
-        })
-      : "";
+const incidentStrip = (!isLoading && activeIncident)
+  ? renderPulseIncidentStrip({
+      isLoading: false,
+      activeIncident,
+      analysis,
+      summary
+    })
+  : "";
 
     const gatewayCards = isLoading
       ? `
