@@ -353,16 +353,12 @@
   border-radius:20px;
   position:relative;
   margin-bottom:4px;
-
-  /* 🔥 FIX: match real hydrated height */
-  min-height:300px;
-
+  min-height:360px;
   display:flex;
   flex-direction:column;
   justify-content:space-between;
 }
 
-/* subtle “primary” label */
 .pulse-incident-strip::before{
   content:"PRIMARY DECISION";
   position:absolute;
@@ -378,6 +374,7 @@
   color:#991b1b;
   border:1px solid #fecaca;
 }
+
 .pulse-incident-strip-head{
   display:flex;
   align-items:flex-start;
@@ -385,25 +382,111 @@
   gap:12px;
   flex-wrap:wrap;
   margin-bottom:12px;
-
-  /* 🔥 prevents title/subtitle expansion jump */
   min-height:72px;
 }
+
+.pulse-incident-strip-left{
+  min-height:72px;
+}
+
+.pulse-incident-strip-kicker{
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#7c2d12;
+  margin-bottom:6px;
+  min-height:14px;
+}
+
 .pulse-incident-strip-title{
   font-size:22px;
   font-weight:950;
   color:#991b1b;
   line-height:1.1;
+  min-height:48px;
+}
 
-  min-height:48px; /* 🔥 reserves 2-line title space */
-}.pulse-incident-strip-subtitle{
+.pulse-incident-strip-subtitle{
   margin-top:4px;
   font-size:13px;
   font-weight:800;
   color:#7c2d12;
-
-  min-height:18px; /* 🔥 prevents subtitle pop-in shift */
+  min-height:18px;
 }
+
+.pulse-incident-strip-metrics{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:10px;
+  align-items:center;
+  min-height:56px;
+}
+
+.pulse-incident-strip-metric{
+  min-height:40px;
+}
+
+.pulse-incident-strip-metric span{
+  display:block;
+  font-size:11px;
+  font-weight:800;
+  color:#334155;
+  min-height:16px;
+}
+
+.pulse-incident-strip-metric strong{
+  display:inline-block;
+  min-height:20px;
+}
+
+.pulse-incident-strip-status-row{
+  margin-top:12px;
+  min-height:96px;
+}
+
+.pulse-incident-strip-status-card{
+  border:1px solid #fecaca;
+  border-radius:14px;
+  background:rgba(255,255,255,.92);
+  padding:12px 14px;
+  box-shadow:0 4px 12px rgba(153,27,27,.08);
+  min-height:96px;
+}
+
+.pulse-incident-strip-status-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  min-height:28px;
+}
+
+.pulse-incident-strip-status-label{
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#7c2d12;
+}
+
+.pulse-incident-strip-status-meta{
+  margin-top:8px;
+  font-size:12px;
+  font-weight:900;
+  color:#7c2d12;
+  min-height:18px;
+}
+
+.pulse-incident-strip-status-reason{
+  margin-top:6px;
+  font-size:14px;
+  font-weight:800;
+  color:#0f172a;
+  min-height:22px;
+}
+
 .pulse-incident-strip-action{
   display:inline-flex;
   align-items:center;
@@ -425,89 +508,12 @@
   transform:translateY(-1px);
   box-shadow:0 16px 30px rgba(153,27,27,.25);
 }
-.pulse-incident-strip-metrics{
-  display:grid;
-  grid-template-columns:repeat(4, minmax(0, 1fr));
-  gap:10px;
-  align-items:center;
 
-  /* 🔥 reserve space for chips */
-  min-height:64px;
-}
-.pulse-incident-strip-status-row{
+.pulse-incident-strip-actions{
   margin-top:12px;
-
-  /* 🔥 matches real content height */
-  min-height:96px;
-}
-.pulse-incident-strip-status-card{
-  border:1px solid #fecaca;
-  border-radius:14px;
-  background:rgba(255,255,255,.92);
-  padding:12px 14px;
-  box-shadow:0 4px 12px rgba(153,27,27,.08);
-  min-height:96px; /* 🔥 match real hydrated height */
-}
-.pulse-incident-strip-status-head{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  flex-wrap:wrap;
-}
-.pulse-incident-strip-status-label{
-  font-size:11px;
-  font-weight:900;
-  letter-spacing:.06em;
-  text-transform:uppercase;
-  color:#7c2d12;
-}
-.pulse-incident-strip-status-meta{
-  margin-top:8px;
-  font-size:12px;
-  font-weight:900;
-  color:#7c2d12;
-  min-height:18px;
-}
-
-.pulse-incident-strip-status-reason{
-  margin-top:6px;
-  font-size:14px;
-  font-weight:800;
-  color:#0f172a;
-  min-height:22px;
-}
-
-/* === INCIDENT STRIP HEIGHT STABILIZATION (FINAL) === */
-
-.pulse-incident-strip{
-  min-height:360px;
-}
-
-/* HEAD AREA */
-.pulse-incident-strip-head{
-  min-height:64px;
-}
-
-/* TITLE + SUBTITLE STACK */
-.pulse-incident-strip-left{
-  min-height:72px;
-}
-
-/* METRICS ROW */
-.pulse-incident-strip-metrics{
   min-height:56px;
-}
-
-/* EACH METRIC */
-.pulse-incident-strip-metric{
-  min-height:40px;
-}
-
-/* METRIC VALUE (prevents jump when numbers appear) */
-.pulse-incident-strip-metric strong{
-  display:inline-block;
-  min-height:20px;
+  display:flex;
+  align-items:flex-end;
 }
 
 /* STATUS CARD */
