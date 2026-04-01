@@ -441,20 +441,24 @@
     const revenueHtml =
       esc(formatPulseMoney(activeIncident?.recoverable_revenue || 0));
 
-    const automationLabel = esc(
-      activeIncident?.should_pause_retries
-        ? "Auto-paused"
-        : activeIncident?.should_resume_retries
-          ? "Resume ready"
-          : "Monitoring"
-    );
+    let automationLabel = "Monitoring";
+    let automationToken = "medium";
 
-    const automationToken =
-      activeIncident?.should_pause_retries
-        ? "high"
-        : activeIncident?.should_resume_retries
-          ? "low"
-          : "medium";
+    if ((Number(analysis?.paused_total || 0) || 0) > 0 && activeDecision?.should_auto_resume !== true) {
+      automationLabel = "Paused";
+      automationToken = "high";
+    } else if (activeDecision?.should_auto_pause === true) {
+      automationLabel = "Pause ready";
+      automationToken = "high";
+    } else if (activeDecision?.should_auto_resume === true) {
+      automationLabel = "Resume ready";
+      automationToken = "low";
+    } else if ((Number(analysis?.retrying_total || 0) || 0) > 0) {
+      automationLabel = "Retrying";
+      automationToken = "medium";
+    }
+
+    automationLabel = esc(automationLabel);
 
     const automationMeta =
       `${esc(formatPulseInteger(analysis?.paused_total || 0))} paused · ${esc(formatPulseInteger(analysis?.retrying_total || 0))} retrying · ${esc(String(summary?.execution_mode || "test").toUpperCase())} MODE`;
