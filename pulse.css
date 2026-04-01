@@ -227,6 +227,23 @@
   opacity:.85;
   transition:all .08s ease;
 }
+.pulse-inline-customers-table{
+  table-layout:auto;
+}
+
+.pulse-inline-customers-table td,
+.pulse-inline-customers-table th{
+  vertical-align:top;
+}
+
+.pulse-inline-customers-table .pulse-linkish{
+  overflow-wrap:anywhere;
+}
+
+.pulse-inline-customers-head th,
+.pulse-inline-customers-table th{
+  white-space:nowrap;
+}
 .pulse-gateway-metrics{
   display:grid;
   grid-template-columns:repeat(3, minmax(0, 1fr));
@@ -383,70 +400,37 @@
 }
 
 .pulse-inline-customers-head{
-  position:relative;
-  margin-bottom:10px;
-}
-
-.pulse-inline-customers-head::after{
-  content:"Click an email to open the customer. Click an order number to open the order.";
-  display:block;
-  margin-top:4px;
-  font-size:12px;
-  font-weight:800;
-  color:#64748b;
+  margin-bottom:8px;
 }
 
 .pulse-inline-customers-row[data-email]{
-  transition:background .12s ease, box-shadow .12s ease;
+  transition:background .12s ease;
 }
 
 .pulse-inline-customers-row[data-email]:hover{
-  background:rgba(168,85,247,.06);
+  background:rgba(168,85,247,.04);
 }
 
 .pulse-linkish,
 .pulse-order-link{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
+  display:inline;
   color:#1d4ed8;
-  font-weight:950;
-  text-decoration:none;
-  border-bottom:2px solid rgba(29,78,216,.28);
-  padding-bottom:1px;
-  transition:
-    color .12s ease,
-    border-color .12s ease,
-    transform .12s ease,
-    opacity .12s ease;
-}
-
-.pulse-linkish::after,
-.pulse-order-link::after{
-  content:"↗";
-  font-size:11px;
   font-weight:900;
-  opacity:.75;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  text-decoration-thickness:1px;
+  transition:color .12s ease, text-decoration-color .12s ease;
 }
 
 .pulse-linkish:hover,
 .pulse-order-link:hover{
   color:#1e40af;
-  border-bottom-color:#1e40af;
-  transform:translateY(-1px);
-  opacity:1;
+  text-decoration-color:#1e40af;
 }
 
 .pulse-order-link{
   white-space:nowrap;
 }
-
-.pulse-inline-customers-row[data-email]:hover .pulse-linkish,
-.pulse-inline-customers-row[data-email]:hover .pulse-order-link{
-  color:#1e40af;
-  border-bottom-color:#1e40af;
-}
-
 .pulse-incident-strip{  padding:22px 24px;
   border:1px solid #fecaca;
   background:linear-gradient(180deg, #fff8f8 0%, #fff5f5 100%);
