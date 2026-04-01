@@ -382,6 +382,7 @@
     isLoading,
     activeIncident,
     analysis,
+    activeDecision,
     summary
   }) {
     if (isLoading) {
@@ -461,14 +462,25 @@
     const automationReason =
       `${esc(String(activeIncident?.recovery_reason || "No recovery reason available."))}`;
 
+    const primaryActionToken =
+      activeDecision?.should_auto_resume === true && activeDecision?.can_retry !== false
+        ? "RETRY_NOW"
+        : activeDecision?.should_auto_pause === true && activeDecision?.can_pause !== false
+          ? "RETRY_LATER"
+          : activeDecision?.can_retry === true
+            ? "RETRY_NOW"
+            : activeDecision?.can_pause === true
+              ? "RETRY_LATER"
+              : "MONITOR";
+
     const actionHtml = `
         <button
           class="pulse-incident-strip-action"
           type="button"
-          data-action="${esc(String(activeIncident?.recommended_action || ""))}"
+          data-action="${esc(primaryActionToken)}"
           data-gateway="${esc(String(activeIncident?.gateway || ""))}"
         >
-          ${esc(formatPulseActionLabel(activeIncident?.recommended_action))}
+          ${esc(formatPulseActionLabel(primaryActionToken))}
         </button>
       `;
 
@@ -741,6 +753,7 @@ const incidentStrip = isLoading
       isLoading: true,
       activeIncident: null,
       analysis,
+      activeDecision: null,
       summary
     })
   : (activeIncident
@@ -748,6 +761,7 @@ const incidentStrip = isLoading
           isLoading: false,
           activeIncident,
           analysis,
+          activeDecision,
           summary
         })
       : "");
