@@ -639,6 +639,15 @@
         item
       ])
     );
+    const gatewayDecisions = isLoading
+      ? []
+      : (Array.isArray(analysis?.gateway_decisions) ? analysis.gateway_decisions : []);
+    const gatewayDecisionMap = new Map(
+      gatewayDecisions.map((item) => [
+        String(item?.gateway || "").trim().toLowerCase(),
+        item
+      ])
+    );
 
     const optimistic = window.__pulseOptimisticAction || null;
 
@@ -777,6 +786,7 @@ const automationStateSection = renderPulseAutomationStateCard({
             const uiOverride = gateway.__uiOverride || null;
             const priorityToken = getPulsePriorityToken(priority);
             const incident = gatewayIncidentMap.get(String(gateway?.gateway || "").trim().toLowerCase()) || null;
+            const decision = gatewayDecisionMap.get(String(gateway?.gateway || "").trim().toLowerCase()) || null;
 
             const intelligenceStatus = String(incident?.status || "normal").trim().toUpperCase();
             const failureRate = Number(incident?.failure_rate || 0);
@@ -848,7 +858,11 @@ const automationStateSection = renderPulseAutomationStateCard({
               </div>
 
               <div class="pulse-gateway-message">
-                ${esc(gateway?.recommended_message || "No recommendation available.")}
+                ${esc(
+                  decision?.decision_reason ||
+                  gateway?.recommended_message ||
+                  "No recommendation available."
+                )}
               </div>
 
               <div
