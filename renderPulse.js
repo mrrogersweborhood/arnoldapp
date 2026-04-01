@@ -222,6 +222,7 @@
       <div id="pulse-shell" class="pulse-shell">
         <div id="pulse-slot-action-outcome"></div>
         <div id="pulse-slot-incident-strip"></div>
+        <div id="pulse-slot-automation-state"></div>
         <div id="pulse-slot-hero"></div>
         <div id="pulse-slot-gateway-intelligence"></div>
         <div id="pulse-slot-reasons"></div>
@@ -267,6 +268,113 @@
           ${automationReason}
         </div>
       </div>
+    `;
+  }
+  function renderPulseAutomationStateCard({
+    isLoading,
+    analysis,
+    summary,
+    activeIncident,
+    activeDecision
+  }) {
+    if (isLoading) {
+      return `
+        <section class="card aa-section" aria-busy="true">
+          <div class="aa-section-head">
+            <div class="aa-section-title">Automation State</div>
+            <div class="aa-section-subtitle">Evaluating gateway automation posture…</div>
+          </div>
+
+          <div class="pulse-incident-strip-status-row">
+            <div class="pulse-incident-strip-status-card">
+              <div class="pulse-incident-strip-status-head">
+                <div class="pulse-incident-strip-status-label">Current state</div>
+                <div class="pulse-priority-pill pulse-priority-medium">Updating…</div>
+              </div>
+
+              <div class="pulse-incident-strip-status-meta">
+                <div class="aa-loading-row" style="width:220px"></div>
+              </div>
+
+              <div class="pulse-incident-strip-status-reason">
+                <div class="aa-loading-row" style="width:300px"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    const gatewayName = formatPulseGatewayName(
+      activeDecision?.gateway ||
+      activeIncident?.gateway ||
+      analysis?.top_gateway?.gateway ||
+      "unknown"
+    );
+
+    const pausedTotal = Number(analysis?.paused_total || 0) || 0;
+    const retryingTotal = Number(analysis?.retrying_total || 0) || 0;
+    const executionMode = String(summary?.execution_mode || "test").toUpperCase();
+
+    const shouldAutoPause = activeDecision?.should_auto_pause === true;
+    const shouldAutoResume = activeDecision?.should_auto_resume === true;
+
+    let stateLabel = "Monitoring";
+    let stateToken = "medium";
+
+    if (pausedTotal > 0 && !shouldAutoResume) {
+      stateLabel = "Paused";
+      stateToken = "high";
+    } else if (shouldAutoPause) {
+      stateLabel = "Pause Ready";
+      stateToken = "high";
+    } else if (shouldAutoResume) {
+      stateLabel = "Resume Ready";
+      stateToken = "low";
+    } else if (retryingTotal > 0) {
+      stateLabel = "Retrying";
+      stateToken = "medium";
+    }
+
+    const stateMeta =
+      `${esc(gatewayName)} · ${esc(formatPulseInteger(pausedTotal))} paused · ${esc(formatPulseInteger(retryingTotal))} retrying · ${esc(executionMode)} MODE`;
+
+    const stateReason =
+      esc(
+        String(
+          activeDecision?.decision_reason ||
+          activeIncident?.recovery_reason ||
+          activeIncident?.recommended_message ||
+          "No automation reason available."
+        )
+      );
+
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Automation State</div>
+          <div class="aa-section-subtitle">Persistent state from decision engine + live incident posture</div>
+        </div>
+
+        <div class="pulse-incident-strip-status-row">
+          <div class="pulse-incident-strip-status-card">
+            <div class="pulse-incident-strip-status-head">
+              <div class="pulse-incident-strip-status-label">Current state</div>
+              <div class="pulse-priority-pill pulse-priority-${esc(stateToken)}">
+                ${esc(stateLabel)}
+              </div>
+            </div>
+
+            <div class="pulse-incident-strip-status-meta">
+              ${stateMeta}
+            </div>
+
+            <div class="pulse-incident-strip-status-reason">
+              ${stateReason}
+            </div>
+          </div>
+        </div>
+      </section>
     `;
   }
 
@@ -563,6 +671,10 @@
     }
 
     const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
+    const gatewayDecisions = isLoading
+      ? []
+      : (Array.isArray(analysis?.gateway_decisions) ? analysis.gateway_decisions : []);
+    const activeDecision = isLoading ? null : (gatewayDecisions[0] || null);
     const lastScanInfo = isLoading ? null : getLastScanInfo();
     const scanDelta = isLoading ? null : getScanDelta(summary);
 
@@ -633,6 +745,14 @@ const incidentStrip = isLoading
           summary
         })
       : "");
+
+const automationStateSection = renderPulseAutomationStateCard({
+  isLoading,
+  analysis,
+  summary,
+  activeIncident,
+  activeDecision
+});
     const gatewayCards = isLoading
       ? `
         <article class="pulse-gateway-card">
@@ -1094,7 +1214,8 @@ const incidentStrip = isLoading
         </section>
       `,
       repeatOffendersSection: repeatOffendersSection,
-      lastScanSection: lastScanSection
+      lastScanSection: lastScanSection,
+      automationStateSection: automationStateSection
     };
   }
     function hydratePulseView(viewModel) {
@@ -1105,6 +1226,7 @@ const incidentStrip = isLoading
       const {
         actionOutcomeBanner,
         incidentStrip,
+        automationStateSection,
         heroSection,
         gatewaySection,
         reasonsSection,
@@ -1114,6 +1236,7 @@ const incidentStrip = isLoading
 
       const slotOutcome = document.getElementById("pulse-slot-action-outcome");
       const slotIncident = document.getElementById("pulse-slot-incident-strip");
+      const slotAutomationState = document.getElementById("pulse-slot-automation-state");
       const slotHero = document.getElementById("pulse-slot-hero");
       const slotGateways = document.getElementById("pulse-slot-gateway-intelligence");
       const slotReasons = document.getElementById("pulse-slot-reasons");
@@ -1122,6 +1245,7 @@ const incidentStrip = isLoading
 
       if (slotOutcome) slotOutcome.innerHTML = actionOutcomeBanner || "";
       if (slotIncident) slotIncident.innerHTML = incidentStrip || "";
+      if (slotAutomationState) slotAutomationState.innerHTML = automationStateSection || "";
       if (slotHero) slotHero.innerHTML = heroSection || "";
       if (slotGateways) slotGateways.innerHTML = gatewaySection || "";
       if (slotReasons) slotReasons.innerHTML = reasonsSection || "";
@@ -1137,94 +1261,8 @@ const incidentStrip = isLoading
   }
 
   function bindPulseInteractions() {
-    // Incident strip primary action
-    document.querySelectorAll(".pulse-incident-strip-action[data-action][data-gateway]").forEach((btn) => {
-  btn.onclick = async () => {
-    const gateway = String(btn.getAttribute("data-gateway") || "").trim().toLowerCase();
-    const rawAction = String(btn.getAttribute("data-action") || "").trim().toUpperCase();
-
-    if (!gateway || !rawAction) return;
-
-    const action =
-      rawAction === "RETRY_LATER" ? "pause" :
-      rawAction === "RETRY_NOW" ? "retry" :
-      rawAction === "RESUME" ? "resume" :
-      "";
-
-    if (!action) {
-      showPulseBanner("No direct action is available for this recommendation", "error");
-      return;
-    }
-
-    try {
-const sourceIncidents = Array.isArray(window.__pulseLastAnalysis?.incidents)
-  ? window.__pulseLastAnalysis.incidents
-  : [];
-
-const gatewayIncidents = Array.isArray(window.__pulseLastAnalysis?.gateway_incidents)
-  ? window.__pulseLastAnalysis.gateway_incidents
-  : [];
-
-const incidentIds = sourceIncidents
-  .filter((i) => String(i?.gateway || "").trim().toLowerCase() === gateway)
-  .map((i) => Number(i?.id))
-  .filter((id) => Number.isInteger(id) && id > 0);
-
-if (!incidentIds.length) {
-  const gatewayMatch = gatewayIncidents.find(
-    (i) => String(i?.gateway || "").trim().toLowerCase() === gateway
-  );
-
-  if (gatewayMatch && Number.isInteger(Number(gatewayMatch?.id)) && Number(gatewayMatch.id) > 0) {
-    incidentIds.push(Number(gatewayMatch.id));
-  }
-}
-
-if (!incidentIds.length) {
-  showPulseBanner(`No incident IDs found for ${gateway}`, "error");
-  return;
-}
-
-      const res = await fetch(
-        "https://arnold-admin-worker.bob-b5c.workers.dev/radar/action/" + action,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            gateway,
-            incident_ids: incidentIds
-          })
-        }
-      );
-
-      const json = await res.json();
-
-      if (!json?.ok) {
-        showPulseBanner(json?.error || "Action failed", "error");
-        return;
-      }
-
-      window.__pulseActionFeedback = {
-        action,
-        gateway,
-        count: json?.count || json?.affected_count || 0,
-        revenue: json?.revenue || json?.affected_revenue || 0,
-        at: Date.now()
-      };
-
-      showPulseBanner("Action applied", "success");
-
-      if (typeof window.loadPulseDashboard === "function") {
-        window.loadPulseDashboard();
-      }
-
-    } catch (err) {
-      console.error(err);
-      showPulseBanner("Network error", "error");
-    }
-  };
-});
+        // Incident strip primary action is owned by pulseActions.js.
+    // Do not bind a direct fetch/action path here.
 
     // Inline customer email click → search
     document.querySelectorAll(".pulse-inline-customers-row[data-email]").forEach((row) => {
