@@ -227,22 +227,47 @@
   opacity:.85;
   transition:all .08s ease;
 }
+.pulse-inline-customers-table-wrap{
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+
 .pulse-inline-customers-table{
-  table-layout:auto;
+  width:max-content;
+  min-width:980px;
+  border-collapse:collapse;
 }
 
 .pulse-inline-customers-table td,
 .pulse-inline-customers-table th{
   vertical-align:top;
-}
-
-.pulse-inline-customers-table .pulse-linkish{
-  overflow-wrap:anywhere;
-}
-
-.pulse-inline-customers-head th,
-.pulse-inline-customers-table th{
   white-space:nowrap;
+}
+
+.pulse-inline-customers-table th:nth-child(1),
+.pulse-inline-customers-table td:nth-child(1){
+  min-width:260px;
+}
+
+.pulse-inline-customers-table th:nth-child(2),
+.pulse-inline-customers-table td:nth-child(2){
+  min-width:90px;
+}
+
+.pulse-inline-customers-table th:nth-child(3),
+.pulse-inline-customers-table td:nth-child(3){
+  min-width:130px;
+}
+
+.pulse-inline-customers-table th:nth-child(4),
+.pulse-inline-customers-table td:nth-child(4){
+  min-width:90px;
+}
+
+.pulse-inline-customers-table th:nth-child(5),
+.pulse-inline-customers-table td:nth-child(5){
+  min-width:90px;
 }
 .pulse-gateway-metrics{
   display:grid;
@@ -413,7 +438,6 @@
 
 .pulse-linkish,
 .pulse-order-link{
-  display:inline;
   color:#1d4ed8;
   font-weight:900;
   text-decoration:underline;
@@ -426,10 +450,6 @@
 .pulse-order-link:hover{
   color:#1e40af;
   text-decoration-color:#1e40af;
-}
-
-.pulse-order-link{
-  white-space:nowrap;
 }
 .pulse-incident-strip{  padding:22px 24px;
   border:1px solid #fecaca;

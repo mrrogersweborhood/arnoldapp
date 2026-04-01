@@ -910,25 +910,22 @@ const automationStateSection = renderPulseAutomationStateCard({
                 window.__pulseAffectedCustomers.length
                   ? `
                     <div class="pulse-inline-customers">
-                      <div class="pulse-inline-customers-head">
+                                            <div class="pulse-inline-customers-head">
                         <div class="pulse-inline-customers-title">Affected customers</div>
                         <div class="pulse-inline-customers-subtitle">
                           ${esc(formatPulseInteger(window.__pulseAffectedCustomers.length))} currently visible
                         </div>
-                        <div class="pulse-inline-customers-hint">
-                          Click an email to open the customer view. Click an order number to open the order.
-                        </div>
                       </div>
 
-                      <div class="pulse-inline-customers-table-wrap" style="overflow:auto;">
-                        <table class="pulse-inline-customers-table" style="width:100%; border-collapse:collapse;">
+                      <div class="pulse-inline-customers-table-wrap">
+                        <table class="pulse-inline-customers-table">
                           <thead>
-                                                        <tr class="pulse-inline-customers-head-row">
-                              <th style="text-align:left; padding:10px 12px;">Email <span style="font-weight:800; color:#64748b;">(open customer)</span></th>
+                            <tr class="pulse-inline-customers-head-row">
+                              <th style="text-align:left; padding:10px 12px;">Email</th>
                               <th style="text-align:left; padding:10px 12px;">Amount</th>
                               <th style="text-align:left; padding:10px 12px;">Reason</th>
                               <th style="text-align:left; padding:10px 12px;">Status</th>
-                              <th style="text-align:left; padding:10px 12px;">Order <span style="font-weight:800; color:#64748b;">(open order)</span></th>
+                              <th style="text-align:left; padding:10px 12px;">Order</th>
                             </tr>
                           </thead>
                           <tbody>
