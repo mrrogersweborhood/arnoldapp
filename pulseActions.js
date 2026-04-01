@@ -167,6 +167,7 @@
     const executionMode = String(store?.execution_mode || "test").trim().toLowerCase();
     const timezone = normalizeTimezoneForForm(store?.timezone || "UTC");
     const gatewayWindowHours = Number(store?.gateway_activity_window_hours || 24) || 24;
+    const allowOrderNoteWrites = Number(store?.allow_order_note_writes || 0) === 1;
 
     modalTitle.textContent = isEdit ? "Edit Store" : "Create Store";
 
@@ -240,6 +241,17 @@
               placeholder="24"
             />
           </label>
+
+          <label class="store-manager-field store-manager-field-wide">
+            <span style="display:flex; align-items:center; gap:10px;">
+              <input
+                id="storeFormAllowOrderNoteWrites"
+                type="checkbox"
+                ${allowOrderNoteWrites ? "checked" : ""}
+              />
+              <span>Allow WooCommerce order note writes</span>
+            </span>
+          </label>
         </div>
 
         <div class="store-manager-card-actions">
@@ -300,7 +312,8 @@
       gateway: normalizeGatewayForForm(document.getElementById("storeFormGateway")?.value || ""),
       execution_mode: String(document.getElementById("storeFormExecutionMode")?.value || "test").trim().toLowerCase(),
       timezone: normalizeTimezoneForForm(document.getElementById("storeFormTimezone")?.value || ""),
-      gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0
+      gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0,
+      allow_order_note_writes: document.getElementById("storeFormAllowOrderNoteWrites")?.checked ? 1 : 0
     };
   }
 
@@ -620,7 +633,7 @@ if (typeof window.loadPulseDashboard === "function") {
     btn.textContent = "Processing...";
 
     if (submitAction === "delete") {
-      fetch("https://arnold-admin-worker.bob-b5c.workers.dev/stores/delete", {
+      fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -662,8 +675,8 @@ if (typeof window.loadPulseDashboard === "function") {
 
     const endpoint =
       submitAction === "update"
-        ? "https://arnold-admin-worker.bob-b5c.workers.dev/stores/update"
-        : "https://arnold-admin-worker.bob-b5c.workers.dev/stores/create";
+        ? "https://pulse-worker.bob-b5c.workers.dev/stores/update"
+        : "https://pulse-worker.bob-b5c.workers.dev/stores/create";
 
     fetch(endpoint, {
       method: "POST",
