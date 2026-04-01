@@ -449,7 +449,12 @@ async function refreshSession() {
   window.__pulseAffectedGateway = null;
 
   window.setPulseAffectedCustomers = function (gateway, data) {
-    window.__pulseAffectedGateway = gateway;
+    const gatewayKey = String(gateway || "").trim().toLowerCase();
+
+    window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
+    window.__pulseExpandedGateways[gatewayKey] = true;
+
+    window.__pulseAffectedGateway = gatewayKey;
     window.__pulseAffectedCustomers = Array.isArray(data?.customers) ? data.customers : [];
 
     if (window.__pulseLastAnalysis && typeof window.updatePulseView === "function") {
