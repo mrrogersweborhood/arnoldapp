@@ -382,6 +382,20 @@
   outline-offset:2px;
 }
 
+.pulse-inline-customers-head{
+  position:relative;
+  margin-bottom:10px;
+}
+
+.pulse-inline-customers-head::after{
+  content:"Click an email to open the customer. Click an order number to open the order.";
+  display:block;
+  margin-top:4px;
+  font-size:12px;
+  font-weight:800;
+  color:#64748b;
+}
+
 .pulse-inline-customers-row[data-email]{
   transition:background .12s ease, box-shadow .12s ease;
 }
@@ -392,17 +406,34 @@
 
 .pulse-linkish,
 .pulse-order-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
   color:#1d4ed8;
+  font-weight:950;
+  text-decoration:none;
+  border-bottom:2px solid rgba(29,78,216,.28);
+  padding-bottom:1px;
+  transition:
+    color .12s ease,
+    border-color .12s ease,
+    transform .12s ease,
+    opacity .12s ease;
+}
+
+.pulse-linkish::after,
+.pulse-order-link::after{
+  content:"↗";
+  font-size:11px;
   font-weight:900;
-  text-decoration:underline;
-  text-underline-offset:2px;
-  text-decoration-thickness:1.5px;
-  transition:color .12s ease, opacity .12s ease;
+  opacity:.75;
 }
 
 .pulse-linkish:hover,
 .pulse-order-link:hover{
   color:#1e40af;
+  border-bottom-color:#1e40af;
+  transform:translateY(-1px);
   opacity:1;
 }
 
@@ -410,8 +441,13 @@
   white-space:nowrap;
 }
 
-.pulse-incident-strip{
-  padding:22px 24px;
+.pulse-inline-customers-row[data-email]:hover .pulse-linkish,
+.pulse-inline-customers-row[data-email]:hover .pulse-order-link{
+  color:#1e40af;
+  border-bottom-color:#1e40af;
+}
+
+.pulse-incident-strip{  padding:22px 24px;
   border:1px solid #fecaca;
   background:linear-gradient(180deg, #fff8f8 0%, #fff5f5 100%);
   box-shadow:0 22px 48px rgba(11,7,21,.18);
