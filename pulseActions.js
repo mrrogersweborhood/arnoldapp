@@ -368,15 +368,20 @@
       throw new Error(`No incident_ids found for gateway: ${gateway}`);
     }
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        gateway,
-        incident_ids
-      })
-    });
+const store_id =
+  String(window.__pulseStoreId || "").trim() ||
+  String(window.__activeStoreId || "").trim() ||
+  "okobserver";
 
+const response = await fetch(endpoint, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    store_id,
+    gateway,
+    incident_ids
+  })
+});
     const data = await response.json().catch(() => null);
 
     if (!response.ok || !data?.ok) {
@@ -561,26 +566,13 @@ executePulseGatewayAction(action, gateway)
 
 closePulseModal();
 
-// 🟢 PASS 3 — LOCAL RENDER REFRESH (NO FULL RELOAD)
+// 🟢 PASS 3 — CONTRACT-COMPLIANT REFRESH (WORKER IS SOURCE OF TRUTH)
 
-if (
-  typeof window.renderPulseDashboard === "function" &&
-  window.__pulseLastAnalysis
-) {
-  const results = document.getElementById("results");
-
-  const html = window.renderPulseDashboard(
-    window.__pulseLastAnalysis,
-    window.__pulseLastSummary
-  );
-
-  if (results) {
-    results.innerHTML = html;
-  }
-
-  console.log("Pulse: local dashboard refresh (no reload)");
+if (typeof window.loadPulseDashboard === "function") {
+  window.loadPulseDashboard();
+  console.log("Pulse: refreshed via loadPulseDashboard()");
 } else {
-  console.warn("Pulse: fallback to full reload");
+  console.warn("Pulse: loadPulseDashboard missing — fallback reload");
   window.location.reload();
 }
       })
