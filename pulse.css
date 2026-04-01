@@ -185,6 +185,11 @@
   padding:16px;
   box-shadow:0 6px 16px rgba(15,23,42,.05);
 }
+
+/* 🟢 EXPANDED CARD — FULL WIDTH (FIXES TABLE CRUSHING) */
+.pulse-gateway-card-expanded{
+  grid-column: 1 / -1;
+}
 .pulse-gateway-card.pulse-priority-high-card{background:#fff5f5;border-color:#fecaca;}
 .pulse-gateway-card.pulse-priority-medium-card{background:#fffdf0;border-color:#fde68a;}
 .pulse-gateway-card.pulse-priority-low-card{background:#f8fafc;border-color:rgba(15,23,42,.10);}

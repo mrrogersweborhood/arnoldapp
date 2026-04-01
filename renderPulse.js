@@ -809,7 +809,7 @@ const automationStateSection = renderPulseAutomationStateCard({
                 );
 
             return `
-            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card">
+            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] ? "pulse-gateway-card-expanded" : ""}">
               <div class="pulse-gateway-top">
                 <div>
                   <div class="pulse-gateway-name">
