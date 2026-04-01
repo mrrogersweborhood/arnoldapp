@@ -680,9 +680,6 @@
     }
 
     const activeIncident = isLoading ? null : (gatewayIncidents[0] || null);
-    const gatewayDecisions = isLoading
-      ? []
-      : (Array.isArray(analysis?.gateway_decisions) ? analysis.gateway_decisions : []);
     const activeDecision = isLoading ? null : (gatewayDecisions[0] || null);
     const lastScanInfo = isLoading ? null : getLastScanInfo();
     const scanDelta = isLoading ? null : getScanDelta(summary);
