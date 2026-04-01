@@ -345,6 +345,71 @@
   text-decoration:underline;
 }
 
+/* ===== Pulse Click Affordance Pass ===== */
+
+.pulse-action-pill,
+.pulse-incident-strip-action,
+.pulse-modal-action-btn,
+.pulse-linkish,
+.pulse-order-link,
+.pulse-inline-customers-row[data-email]{
+  cursor:pointer;
+}
+
+.pulse-action-pill{
+  position:relative;
+  transition:
+    transform .12s ease,
+    box-shadow .12s ease,
+    background .12s ease,
+    border-color .12s ease,
+    color .12s ease;
+}
+
+.pulse-action-pill:hover{
+  transform:translateY(-1px);
+  box-shadow:0 8px 18px rgba(29,78,216,.12);
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
+
+.pulse-action-pill:focus-visible,
+.pulse-incident-strip-action:focus-visible,
+.pulse-modal-action-btn:focus-visible,
+.pulse-linkish:focus-visible,
+.pulse-order-link:focus-visible{
+  outline:3px solid rgba(168,85,247,.28);
+  outline-offset:2px;
+}
+
+.pulse-inline-customers-row[data-email]{
+  transition:background .12s ease, box-shadow .12s ease;
+}
+
+.pulse-inline-customers-row[data-email]:hover{
+  background:rgba(168,85,247,.06);
+}
+
+.pulse-linkish,
+.pulse-order-link{
+  color:#1d4ed8;
+  font-weight:900;
+  text-decoration:underline;
+  text-underline-offset:2px;
+  text-decoration-thickness:1.5px;
+  transition:color .12s ease, opacity .12s ease;
+}
+
+.pulse-linkish:hover,
+.pulse-order-link:hover{
+  color:#1e40af;
+  opacity:1;
+}
+
+.pulse-order-link{
+  white-space:nowrap;
+}
+
 .pulse-incident-strip{
   padding:22px 24px;
   border:1px solid #fecaca;
