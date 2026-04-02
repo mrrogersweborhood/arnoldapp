@@ -299,7 +299,7 @@ async function refreshSession() {
 
   sessionCache = (async () => {
     try {
-      const r = await fetch(`${WORKER_BASE}/admin/status`, {
+      const r = await fetch(`${PULSE_WORKER_BASE}/admin/status`, {
         method: "GET",
         credentials: "include"
       });
@@ -1094,7 +1094,7 @@ btn.addEventListener("click", async () => {
       `;
     }
 
-    const r = await fetch(`${WORKER_BASE}/admin/login`, {
+    const r = await fetch(`${PULSE_WORKER_BASE}/admin/login`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -1121,7 +1121,7 @@ btn.addEventListener("click", async () => {
     abortActiveSearch();
 
     try {
-      await fetch(`${WORKER_BASE}/admin/logout`, {
+      await fetch(`${PULSE_WORKER_BASE}/admin/logout`, {
         method: "POST",
         credentials: "include"
       });
