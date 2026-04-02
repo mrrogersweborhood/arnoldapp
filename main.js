@@ -453,7 +453,10 @@ async function refreshSession() {
 
     window.__pulseExpandedGateways = window.__pulseExpandedGateways || {};
     window.__pulseExpandedGateways[gatewayKey] = true;
-
+setTimeout(() => {
+  const el = document.querySelector(`[data-gateway="${gatewayKey}"]`);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}, 50);
     window.__pulseAffectedGateway = gatewayKey;
     window.__pulseAffectedCustomers = Array.isArray(data?.customers) ? data.customers : [];
 
@@ -1329,9 +1332,9 @@ if (results) {
       storeManagerView.innerHTML = renderStoresLoadingShellSafe();
     }
 
-    try {
-      const storesRes = await fetch(`${WORKER_BASE}/stores`, { method: "GET", credentials: "include" });
-      const storesJson = await storesRes.json().catch(() => null);
+try {
+  const storesRes = await fetch(`${PULSE_WORKER_BASE}/stores`, { method: "GET", credentials: "include" });
+  const storesJson = await storesRes.json().catch(() => null);
 
       if (!storesRes.ok || !storesJson?.ok) {
         const errorHtml = `
