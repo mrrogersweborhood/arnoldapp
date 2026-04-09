@@ -541,10 +541,15 @@ const count =
   Number(data?.incident_ids?.length) ||
   0;
 
+const revenueRaw =
+  data?.affected_revenue ??
+  data?.revenue ??
+  null;
+
 const revenue =
-  Number(data?.affected_revenue) ||
-  Number(data?.revenue) ||
-  0;
+  revenueRaw === null || revenueRaw === undefined || revenueRaw === ""
+    ? null
+    : Number(revenueRaw);
 
     // 🔥 SET OPTIMISTIC STATE (CRITICAL)
     if (action === "pause") {
@@ -580,12 +585,14 @@ const revenue =
 
         // 🔥 NEW — action feedback state (REQUIRED for UI interaction layer)
         window.__pulseActionFeedback = {
-          gateway: String(gateway || "").trim().toLowerCase(),
-          action,
-          count,
-          revenue,
-          at: Date.now()
-        };
+  gateway: String(gateway || "").trim().toLowerCase(),
+  action,
+  count,
+  revenue: Number.isFinite(revenue) ? revenue : null,
+  simulated: data?.simulated === true,
+  mode: String(data?.mode || "").trim().toLowerCase(),
+  at: Date.now()
+};
 
 closePulseModal();
 

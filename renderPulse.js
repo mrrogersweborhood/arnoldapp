@@ -584,25 +584,24 @@
                 ? "resumed"
                 : "updated";
 
-        actionOutcomeBanner = `
-          <section class="card pulse-action-outcome">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
-              <div>
-                <div style="font-weight:800; font-size:16px;">
-                  ✓ ${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} ${label}
-                </div>
+       const hasRevenue = Number.isFinite(actionFeedback.revenue) && actionFeedback.revenue > 0;
 
-                <div style="margin-top:4px; opacity:.8;">
-                  💰 ${esc(formatPulseMoney(actionFeedback.revenue))} impacted
-                </div>
-              </div>
+const revenueLine = hasRevenue
+  ? ` • ${esc(formatPulseMoney(actionFeedback.revenue))} impacted`
+  : "";
 
-              <div style="font-size:12px; opacity:.6;">
-                ${secondsAgo}s ago
-              </div>
-            </div>
-          </section>
-        `;
+const modeBadge =
+  actionFeedback.simulated || actionFeedback.mode === "test"
+    ? `<span style="margin-left:8px; font-size:11px; opacity:.6;">TEST MODE</span>`
+    : "";
+
+actionOutcomeBanner = `
+  <section class="card pulse-action-outcome">
+    <div style="font-weight:700; font-size:15px;">
+      ✓ ${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} ${label}${revenueLine}${modeBadge}
+    </div>
+  </section>
+`;
       } else {
         window.__pulseActionFeedback = null;
       }
