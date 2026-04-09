@@ -584,24 +584,41 @@
                 ? "resumed"
                 : "updated";
 
-       const hasRevenue = Number.isFinite(actionFeedback.revenue) && actionFeedback.revenue > 0;
+              const hasRevenue = Number.isFinite(actionFeedback.revenue) && actionFeedback.revenue > 0;
+        const isTestMode = actionFeedback.simulated || actionFeedback.mode === "test";
 
-const revenueLine = hasRevenue
-  ? ` • ${esc(formatPulseMoney(actionFeedback.revenue))} impacted`
-  : "";
+        const outcomeTitle =
+          actionFeedback.action === "pause"
+            ? `${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} paused`
+            : actionFeedback.action === "retry"
+              ? `${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} moved to retry queue`
+              : actionFeedback.action === "resume"
+                ? `${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} resumed`
+                : `${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} updated`;
 
-const modeBadge =
-  actionFeedback.simulated || actionFeedback.mode === "test"
-    ? `<span style="margin-left:8px; font-size:11px; opacity:.6;">TEST MODE</span>`
-    : "";
+        const outcomeMetaParts = [];
 
-actionOutcomeBanner = `
-  <section class="card pulse-action-outcome">
-    <div style="font-weight:700; font-size:15px;">
-      ✓ ${esc(formatPulseInteger(actionFeedback.count))} subscription${actionFeedback.count === 1 ? "" : "s"} ${label}${revenueLine}${modeBadge}
-    </div>
-  </section>
-`;
+        if (hasRevenue) {
+          outcomeMetaParts.push(`${esc(formatPulseMoney(actionFeedback.revenue))} impacted`);
+        }
+
+        if (isTestMode) {
+          outcomeMetaParts.push("Test mode");
+        }
+
+        const outcomeMeta = outcomeMetaParts.length
+          ? `<div class="pulse-action-outcome-meta">${outcomeMetaParts.map(esc).join(" • ")}</div>`
+          : "";
+
+        actionOutcomeBanner = `
+          <section class="card pulse-action-outcome pulse-action-outcome-clean">
+            <div class="pulse-action-outcome-mark" aria-hidden="true">✓</div>
+            <div class="pulse-action-outcome-copy">
+              <div class="pulse-action-outcome-title">${outcomeTitle}</div>
+              ${outcomeMeta}
+            </div>
+          </section>
+        `;
       } else {
         window.__pulseActionFeedback = null;
       }

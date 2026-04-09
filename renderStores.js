@@ -39,7 +39,7 @@
             <div>
               <div class="pulse-kicker">Platform</div>
               <div class="pulse-title">Loading store manager…</div>
-              <div class="pulse-subtitle">Pulling store configuration from the Pulse worker.</div>
+              <div class="pulse-subtitle">Pulling store configuration…</div>
             </div>
           </div>
 
@@ -136,6 +136,16 @@
             <div class="pulse-metric-label">Retry Window</div>
             <div class="pulse-metric-value">${esc(String(windowHours))}</div>
           </div>
+<div class="pulse-metric">
+  <div class="pulse-metric-label">Order Notes</div>
+  <div class="pulse-metric-value">
+    ${
+      Number(store?.allow_order_note_writes || 0) === 1
+        ? "Enabled"
+        : "Disabled"
+    }
+  </div>
+</div>
         </div>
 
         <div class="pulse-message-block">
@@ -225,10 +235,9 @@
           <div class="pulse-section-head">
             <div>
               <div class="pulse-section-title">Configured stores</div>
-              <div class="pulse-section-subtitle">Store records from the Pulse worker.</div>
+              <div class="pulse-section-subtitle">Store records returned by the backend.</div>
             </div>
           </div>
-
           ${
             stores.length
               ? `<div class="pulse-grid">${stores.map(renderStoreCard).join("")}</div>`
