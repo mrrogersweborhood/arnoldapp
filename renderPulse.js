@@ -1288,7 +1288,33 @@ const automationStateSection = renderPulseAutomationStateCard({
       const slotRepeat = document.getElementById("pulse-slot-repeat-offenders");
       const slotScan = document.getElementById("pulse-slot-last-scan");
 
-      if (slotOutcome) slotOutcome.innerHTML = actionOutcomeBanner || "";
+      if (slotOutcome) {
+  slotOutcome.innerHTML = actionOutcomeBanner || "";
+
+  // 🟢 Apply fade-in + auto-dismiss
+  if (actionOutcomeBanner) {
+    const el = slotOutcome.querySelector(".pulse-action-outcome");
+
+    if (el) {
+      // Trigger animation
+      el.classList.add("pulse-action-outcome-enter");
+
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        // Fade out
+        el.style.transition = "opacity .25s ease, transform .25s ease";
+        el.style.opacity = "0";
+        el.style.transform = "translateY(-6px)";
+
+        // Remove from DOM after fade
+        setTimeout(() => {
+          if (slotOutcome) slotOutcome.innerHTML = "";
+        }, 250);
+
+      }, 5000);
+    }
+  }
+}
       if (slotIncident) slotIncident.innerHTML = incidentStrip || "";
       if (slotAutomationState) slotAutomationState.innerHTML = automationStateSection || "";
       if (slotHero) slotHero.innerHTML = heroSection || "";
