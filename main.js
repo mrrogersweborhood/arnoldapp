@@ -1189,7 +1189,7 @@ btn.addEventListener("click", async () => {
           ? `order #${direct.id}`
           : q;
 
-           const r = await fetch(`${SEARCH_WORKER_BASE}/admin/nl-search`, {
+           const r = await fetch(`https://pulse-worker.bob-b5c.workers.dev/admin/nl-search`, {
         method: "POST",
         credentials: "include",
         headers: {
