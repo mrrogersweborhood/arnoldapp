@@ -1087,9 +1087,15 @@
 }
 
 .pulse-modal-action-btn.ghost {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color: #fff;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ff6b6b; /* 🔴 visible destructive color */
+}
+
+.pulse-modal-action-btn.ghost:hover {
+  background: rgba(255, 107, 107, 0.12);
+  border-color: #ff6b6b;
+  color: #ff6b6b;
 }
 
 
