@@ -623,9 +623,51 @@ if (typeof window.loadPulseDashboard === "function") {
       return;
     }
 
-    if (action === "delete") {
-      renderStoreDeleteModal(store || { store_id: storeId, store_name: storeId });
+   if (action === "delete") {
+  const storeId = btn.getAttribute("data-store-id");
+  const storeName = btn.closest(".pulse-gateway-card")?.querySelector(".pulse-gateway-name")?.textContent || storeId;
+
+  const confirmDelete = confirm(
+    `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`
+  );
+
+  if (!confirmDelete) return;
+
+  try {
+    btn.disabled = true;
+    btn.textContent = "Deleting...";
+
+    const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        store_id: storeId
+      })
+    });
+
+    const data = await res.json();
+
+    if (!data?.ok) {
+      throw new Error(data?.error || "Delete failed");
     }
+
+    showBanner("Store deleted.", "success");
+
+    await window.loadStoresDashboard();
+
+  } catch (err) {
+    console.error("Delete store failed:", err);
+    showBanner("Failed to delete store.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Delete Store";
+  }
+
+  return;
+}
   });
 
   document.addEventListener("click", function (e) {
