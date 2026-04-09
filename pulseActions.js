@@ -533,8 +533,18 @@ executePulseGatewayAction(action, gateway)
     btn.disabled = false;
     btn.textContent = originalLabel;
 
-    const count = Number(data?.affected_count || 0);
-    const revenue = Number(data?.affected_revenue || 0) || 0;
+    // 🟢 Normalize response safely (Worker is source of truth, but handle fallback)
+
+const count =
+  Number(data?.affected_count) ||
+  Number(data?.count) ||
+  Number(data?.incident_ids?.length) ||
+  0;
+
+const revenue =
+  Number(data?.affected_revenue) ||
+  Number(data?.revenue) ||
+  0;
 
     // 🔥 SET OPTIMISTIC STATE (CRITICAL)
     if (action === "pause") {
