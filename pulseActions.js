@@ -570,18 +570,8 @@ const revenue =
       };
     }
 
-        if (data?.simulated === true) {
-          showPulseBanner(
-            data?.message ||
-              `TEST MODE: ${count} subscription${count === 1 ? "" : "s"} simulated for ${gateway}. No live records were changed.`,
-            "success"
-          );
-        } else {
-          showPulseBanner(
-            `${count} subscription${count === 1 ? "" : "s"} updated for ${gateway}`,
-            "success"
-          );
-        }
+               // Global success banner removed.
+        // Inline Pulse action outcome card is now the single success surface.
 
         // 🔥 NEW — action feedback state (REQUIRED for UI interaction layer)
         window.__pulseActionFeedback = {
