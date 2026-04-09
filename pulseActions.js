@@ -381,20 +381,21 @@
       throw new Error(`No incident_ids found for gateway: ${gateway}`);
     }
 
-const store_id =
-  String(window.__pulseStoreId || "").trim() ||
-  String(window.__activeStoreId || "").trim() ||
-  "okobserver";
+    const store_id =
+      String(window.__pulseStoreId || "").trim() ||
+      String(window.__activeStoreId || "").trim() ||
+      "okobserver";
 
-const response = await fetch(endpoint, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    store_id,
-    gateway,
-    incident_ids
-  })
-});
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        store_id,
+        gateway,
+        incident_ids
+      })
+    });
+
     const data = await response.json().catch(() => null);
 
     if (!response.ok || !data?.ok) {
@@ -528,73 +529,64 @@ const response = await fetch(endpoint, {
       return;
     }
 
-executePulseGatewayAction(action, gateway)
-  .then((data) => {
-    btn.disabled = false;
-    btn.textContent = originalLabel;
+    executePulseGatewayAction(action, gateway)
+      .then((data) => {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
 
-    // 🟢 Normalize response safely (Worker is source of truth, but handle fallback)
+        const count =
+          Number(data?.affected_count) ||
+          Number(data?.count) ||
+          Number(data?.incident_ids?.length) ||
+          0;
 
-const count =
-  Number(data?.affected_count) ||
-  Number(data?.count) ||
-  Number(data?.incident_ids?.length) ||
-  0;
+        const revenueRaw =
+          data?.affected_revenue ??
+          data?.revenue ??
+          null;
 
-const revenueRaw =
-  data?.affected_revenue ??
-  data?.revenue ??
-  null;
+        const revenue =
+          revenueRaw === null || revenueRaw === undefined || revenueRaw === ""
+            ? null
+            : Number(revenueRaw);
 
-const revenue =
-  revenueRaw === null || revenueRaw === undefined || revenueRaw === ""
-    ? null
-    : Number(revenueRaw);
+        if (action === "pause") {
+          window.__pulseOptimisticAction = {
+            type: "pause",
+            gateway,
+            count,
+            revenue
+          };
+        }
 
-    // 🔥 SET OPTIMISTIC STATE (CRITICAL)
-    if (action === "pause") {
-      window.__pulseOptimisticAction = {
-        type: "pause",
-        gateway,
-        count,
-        revenue
-      };
-    }
+        if (action === "retry") {
+          window.__pulseOptimisticAction = {
+            type: "retry",
+            gateway,
+            count,
+            revenue
+          };
+        }
 
-    if (action === "retry") {
-      window.__pulseOptimisticAction = {
-        type: "retry",
-        gateway,
-        count,
-        revenue
-      };
-    }
-
-               // Global success banner removed.
-        // Inline Pulse action outcome card is now the single success surface.
-
-        // 🔥 NEW — action feedback state (REQUIRED for UI interaction layer)
         window.__pulseActionFeedback = {
-  gateway: String(gateway || "").trim().toLowerCase(),
-  action,
-  count,
-  revenue: Number.isFinite(revenue) ? revenue : null,
-  simulated: data?.simulated === true,
-  mode: String(data?.mode || "").trim().toLowerCase(),
-  at: Date.now()
-};
+          gateway: String(gateway || "").trim().toLowerCase(),
+          action,
+          count,
+          revenue: Number.isFinite(revenue) ? revenue : null,
+          simulated: data?.simulated === true,
+          mode: String(data?.mode || "").trim().toLowerCase(),
+          at: Date.now()
+        };
 
-closePulseModal();
+        closePulseModal();
 
-// 🟢 PASS 3 — CONTRACT-COMPLIANT REFRESH (WORKER IS SOURCE OF TRUTH)
-
-if (typeof window.loadPulseDashboard === "function") {
-  window.loadPulseDashboard();
-  console.log("Pulse: refreshed via loadPulseDashboard()");
-} else {
-  console.warn("Pulse: loadPulseDashboard missing — fallback reload");
-  window.location.reload();
-}
+        if (typeof window.loadPulseDashboard === "function") {
+          window.loadPulseDashboard();
+          console.log("Pulse: refreshed via loadPulseDashboard()");
+        } else {
+          console.warn("Pulse: loadPulseDashboard missing — fallback reload");
+          window.location.reload();
+        }
       })
       .catch((err) => {
         console.error(err);
@@ -610,7 +602,7 @@ if (typeof window.loadPulseDashboard === "function") {
     renderStoreFormModal("create", null);
   });
 
-  document.addEventListener("click", function (e) {
+  document.addEventListener("click", async function (e) {
     const btn = e.target.closest("[data-store-action]");
     if (!btn) return;
 
@@ -623,54 +615,52 @@ if (typeof window.loadPulseDashboard === "function") {
       return;
     }
 
-   if (action === "delete") {
-  const storeId = btn.getAttribute("data-store-id");
-  const storeName = btn.closest(".pulse-gateway-card")?.querySelector(".pulse-gateway-name")?.textContent || storeId;
+    if (action === "delete") {
+      const resolvedStoreId = btn.getAttribute("data-store-id");
+      const storeName = btn.closest(".pulse-gateway-card")?.querySelector(".pulse-gateway-name")?.textContent || resolvedStoreId;
 
-  const confirmDelete = confirm(
-    `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`
-  );
+      const confirmDelete = confirm(
+        `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`
+      );
 
-  if (!confirmDelete) return;
+      if (!confirmDelete) return;
 
-  try {
-    btn.disabled = true;
-    btn.textContent = "Deleting...";
+      try {
+        btn.disabled = true;
+        btn.textContent = "Deleting...";
 
-    const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        store_id: storeId
-      })
-    });
+        const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            store_id: resolvedStoreId
+          })
+        });
 
-    const data = await res.json();
+        const data = await res.json().catch(() => null);
 
-    if (!data?.ok) {
-      throw new Error(data?.error || "Delete failed");
+        if (!data?.ok) {
+          throw new Error(data?.error || "Delete failed");
+        }
+
+        showPulseBanner("Store deleted.", "success");
+        refreshStoreManagerView();
+      } catch (err) {
+        console.error("Delete store failed:", err);
+        showPulseBanner(err?.message || "Failed to delete store.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Delete Store";
+      }
+
+      return;
     }
-
-    showBanner("Store deleted.", "success");
-
-    await window.loadStoresDashboard();
-
-  } catch (err) {
-    console.error("Delete store failed:", err);
-    showBanner("Failed to delete store.", "error");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Delete Store";
-  }
-
-  return;
-}
   });
 
-  document.addEventListener("click", function (e) {
+  document.addEventListener("click", async function (e) {
     const btn = e.target.closest("[data-store-submit]");
     if (!btn) return;
 
