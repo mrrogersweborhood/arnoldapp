@@ -1057,6 +1057,62 @@ btn.addEventListener("click", async () => {
       `;
     }
 
+        if (!customer && orders.length) {
+      const orderRows = orders.map((order) => {
+        const orderId = order?.id != null ? `#${String(order.id)}` : "—";
+        const status = String(order?.status ?? "—");
+        const total = String(order?.total ?? "—");
+        const currency = String(order?.currency ?? "");
+        const dateCreated = String(order?.date_created ?? "—");
+        const billingName = [
+          order?.billing?.first_name,
+          order?.billing?.last_name
+        ].map((v) => String(v ?? "").trim()).filter(Boolean).join(" ") || "—";
+        const billingEmail = String(order?.billing?.email ?? "").trim() || "—";
+        const paymentMethod = String(order?.payment_method_title ?? order?.payment_method ?? "—");
+
+        return `
+          <tr>
+            <td>${esc(orderId)}</td>
+            <td>${esc(status)}</td>
+            <td>${esc(currency ? `${total} ${currency}` : total)}</td>
+            <td>${esc(dateCreated)}</td>
+            <td>${esc(billingName)}</td>
+            <td>${esc(billingEmail)}</td>
+            <td>${esc(paymentMethod)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      return `
+        <section class="card aa-section">
+          <div class="aa-section-head">
+            <div class="aa-section-title">Order Result</div>
+            <div class="aa-section-subtitle">Order found without customer context</div>
+          </div>
+
+          <div class="aa-table-wrap">
+            <table class="aa-table" style="min-width:960px;">
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Status</th>
+                  <th>Total</th>
+                  <th>Date Created</th>
+                  <th>Billing Name</th>
+                  <th>Billing Email</th>
+                  <th>Payment Method</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${orderRows}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      `;
+    }
+
     if (!customer) {
       return `
         <section class="card aa-section">
