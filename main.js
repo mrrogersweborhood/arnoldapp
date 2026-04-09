@@ -10,8 +10,10 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
 (() => {
   "use strict";
 
-  const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
+    const WORKER_BASE = "https://arnold-admin-worker.bob-b5c.workers.dev";
   const PULSE_WORKER_BASE = "https://pulse-worker.bob-b5c.workers.dev";
+  const SEARCH_WORKER_BASE = PULSE_WORKER_BASE;
+  const RADAR_WORKER_BASE = WORKER_BASE;
   const $ = (id) => document.getElementById(id);
 
   // --------------------------------------------------
@@ -1187,7 +1189,7 @@ btn.addEventListener("click", async () => {
           ? `order #${direct.id}`
           : q;
 
-      const r = await fetch(`${WORKER_BASE}/admin/nl-search`, {
+           const r = await fetch(`${SEARCH_WORKER_BASE}/admin/nl-search`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -1273,11 +1275,10 @@ if (results) {
       params.set("page", String(radarPage));
       if (radarIssueFilter) params.set("issue", radarIssueFilter);
 
-      const r = await fetch(`${WORKER_BASE}/admin/radar?${params.toString()}`, {
+            const r = await fetch(`${RADAR_WORKER_BASE}/admin/radar?${params.toString()}`, {
         method: "GET",
         credentials: "include"
       });
-
       const j = await r.json().catch(() => null);
 
       if (!r.ok || !j?.ok) {
