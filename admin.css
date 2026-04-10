@@ -2035,7 +2035,9 @@ button.aa-opp-card{
   gap:14px;
   align-items:start;
 }
-
+.store-manager-form-section {
+  grid-column: 1 / -1;
+}
 .store-manager-field{
   display:flex;
   flex-direction:column;
@@ -2228,7 +2230,12 @@ button.aa-opp-card{
   accent-color:#7c5cff;
   cursor:pointer;
 }
-
+.store-manager-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+}
 .store-manager-checkbox-label{
   font-size:14px;
   font-weight:600;
