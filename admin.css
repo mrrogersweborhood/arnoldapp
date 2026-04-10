@@ -2021,3 +2021,109 @@ button.aa-opp-card{
 .aa-hero-metric{background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
 .aa-hero-label{font-size:12px;font-weight:800;color:#64748b;text-transform:uppercase}
 .aa-hero-value{font-size:22px;font-weight:900;margin-top:4px}
+/* Store Manager modal form */
+
+.store-manager-form-card{
+  display:flex;
+  flex-direction:column;
+  gap:18px;
+}
+
+.store-manager-form-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:14px;
+  align-items:start;
+}
+
+.store-manager-field{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.store-manager-field.store-manager-field-wide{
+  grid-column:1 / -1;
+}
+
+.store-manager-field > span{
+  display:block;
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.78);
+}
+
+.store-manager-field input[type="text"],
+.store-manager-field input[type="number"],
+.store-manager-field select{
+  width:100%;
+  box-sizing:border-box;
+  min-height:46px;
+  padding:0 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.08);
+  color:#ffffff;
+  outline:none;
+  font-size:14px;
+  font-weight:800;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.store-manager-field input[type="text"]::placeholder,
+.store-manager-field input[type="number"]::placeholder{
+  color:rgba(255,255,255,.44);
+}
+
+.store-manager-field select{
+  appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
+}
+
+.store-manager-field input[type="text"]:focus,
+.store-manager-field input[type="number"]:focus,
+.store-manager-field select:focus{
+  border-color:rgba(168,85,247,.70);
+  box-shadow:0 0 0 3px rgba(168,85,247,.20);
+  background:rgba(255,255,255,.11);
+}
+
+.store-manager-field input[disabled]{
+  opacity:.72;
+  cursor:not-allowed;
+}
+
+.store-manager-field input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  margin:0;
+  accent-color:#A855F7;
+  flex:0 0 auto;
+}
+
+.store-manager-help{
+  font-size:13px;
+  font-weight:800;
+  line-height:1.5;
+  color:rgba(255,255,255,.72);
+}
+
+.store-manager-card-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:2px;
+}
+
+@media (max-width: 760px){
+  .store-manager-form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .store-manager-field.store-manager-field-wide{
+    grid-column:auto;
+  }
+}
