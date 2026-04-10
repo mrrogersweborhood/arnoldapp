@@ -110,13 +110,18 @@
     { value: "live", label: "Live" }
   ];
 
-  const STORE_TIMEZONE_OPTIONS = [
-    "UTC",
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "America/Phoenix"
+    const STORE_TIMEZONE_OPTIONS = [
+    { value: "UTC", label: "UTC" },
+
+    { value: "America/New_York", label: "Eastern (New York)" },
+    { value: "America/Chicago", label: "Central (Chicago)" },
+    { value: "America/Denver", label: "Mountain (Denver)" },
+    { value: "America/Los_Angeles", label: "Pacific (Los Angeles)" },
+
+    { value: "America/Phoenix", label: "Arizona (Phoenix — no DST)" },
+
+    { value: "America/Anchorage", label: "Alaska (Anchorage)" },
+    { value: "Pacific/Honolulu", label: "Hawaii (Honolulu)" }
   ];
 
   function normalizeGatewayForForm(value) {
@@ -139,10 +144,12 @@
     }).join("");
   }
 
-  function buildTimezoneOptions(selectedValue) {
-    return STORE_TIMEZONE_OPTIONS.map((timezone) => {
-      const selected = timezone === String(selectedValue ?? "") ? " selected" : "";
-      return `<option value="${esc(timezone)}"${selected}>${esc(timezone)}</option>`;
+    function buildTimezoneOptions(selectedValue) {
+    return STORE_TIMEZONE_OPTIONS.map((option) => {
+      const value = String(option?.value ?? "");
+      const label = String(option?.label ?? value);
+      const selected = value === String(selectedValue ?? "") ? " selected" : "";
+      return `<option value="${esc(value)}"${selected}>${esc(label)}</option>`;
     }).join("");
   }
 
