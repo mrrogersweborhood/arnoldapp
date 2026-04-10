@@ -2146,7 +2146,51 @@ button.aa-opp-card{
 .store-manager-card-actions .pulse-modal-action-btn{
   min-width:180px;
 }
+/* =========================
+   Store Manager – Metrics Layout Fix
+   ========================= */
 
+.store-manager-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin-top: 14px;
+}
+
+.store-manager-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0; /* prevents overflow */
+}
+
+.store-manager-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.55);
+}
+
+.store-manager-metric-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+
+  /* CRITICAL overflow fixes */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.store-manager-metric-value a {
+  color: #4F46E5;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.store-manager-metric-value a:hover {
+  text-decoration: underline;
+}
 @media (max-width: 760px){
   .store-manager-form-grid{
     grid-template-columns:1fr;
