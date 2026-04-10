@@ -2026,56 +2026,78 @@ button.aa-opp-card{
 .store-manager-form-card{
   display:flex;
   flex-direction:column;
-  gap:18px;
+  gap:12px;
 }
 
-.store-manager-form-card-polished{
-  max-height:min(76vh, 780px);
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-right:4px;
+.store-manager-form-card-compact{
+  padding:0;
 }
 
-.store-manager-form-layout{
-  display:grid;
-  grid-template-columns:minmax(0, 1.8fr) minmax(280px, .9fr);
-  gap:16px;
-  align-items:start;
-}
-
-.store-manager-form-main{
+.store-manager-form-head{
   display:flex;
-  flex-direction:column;
-  gap:16px;
-  min-width:0;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:0 0 2px;
 }
 
-.store-manager-form-rail{
-  min-width:0;
+.store-manager-form-title{
+  font-size:18px;
+  font-weight:950;
+  line-height:1.05;
+  color:#140F1F;
+}
+
+.store-manager-form-subtitle{
+  margin-top:4px;
+  font-size:12px;
+  font-weight:800;
+  color:#64748B;
+}
+
+.store-manager-form-mode-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:32px;
+  padding:0 12px;
+  border-radius:999px;
+  border:1px solid rgba(168,85,247,.18);
+  background:#ffffff;
+  color:#6D28D9;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  white-space:nowrap;
 }
 
 .store-manager-form-grid{
   display:grid;
   grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:14px;
+  gap:12px 14px;
   align-items:start;
+}
+
+.store-manager-form-grid-compact{
+  margin-top:2px;
 }
 
 .store-manager-form-section{
   display:flex;
   flex-direction:column;
-  gap:14px;
-  padding:18px;
+  gap:12px;
+  padding:14px;
   border:1px solid rgba(168,85,247,.14);
-  border-radius:18px;
-  background:linear-gradient(180deg, rgba(255,255,255,.96) 0%, rgba(248,241,255,.96) 100%);
+  border-radius:16px;
+  background:linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(248,241,255,.96) 100%);
   box-shadow:
-    0 12px 30px rgba(20,15,31,.08),
-    inset 0 1px 0 rgba(255,255,255,.75);
+    0 10px 22px rgba(20,15,31,.07),
+    inset 0 1px 0 rgba(255,255,255,.80);
 }
 
 .store-manager-form-section-title{
-  font-size:12px;
+  font-size:11px;
   font-weight:950;
   letter-spacing:.08em;
   text-transform:uppercase;
@@ -2085,7 +2107,7 @@ button.aa-opp-card{
 .store-manager-field{
   display:flex;
   flex-direction:column;
-  gap:8px;
+  gap:6px;
   padding:0;
   border:0;
   border-radius:0;
@@ -2099,9 +2121,9 @@ button.aa-opp-card{
 
 .store-manager-field > span{
   display:block;
-  font-size:12px;
+  font-size:11px;
   font-weight:950;
-  letter-spacing:.06em;
+  letter-spacing:.05em;
   text-transform:uppercase;
   color:#6B7280;
   line-height:1.2;
@@ -2112,16 +2134,16 @@ button.aa-opp-card{
 .store-manager-field select{
   width:100%;
   box-sizing:border-box;
-  min-height:52px;
-  padding:0 14px;
-  border-radius:14px;
+  min-height:44px;
+  padding:0 12px;
+  border-radius:12px;
   border:1px solid rgba(15,23,42,.12);
   background:#ffffff;
   color:#140F1F;
   outline:none;
-  font-size:15px;
+  font-size:14px;
   font-weight:800;
-  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease, transform .12s ease;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
   min-width:0;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.85);
 }
@@ -2141,7 +2163,7 @@ button.aa-opp-card{
 .store-manager-field input[type="number"]:focus,
 .store-manager-field select:focus{
   border-color:#A855F7;
-  box-shadow:0 0 0 3px rgba(168,85,247,.18);
+  box-shadow:0 0 0 3px rgba(168,85,247,.16);
   background:#fff;
 }
 
@@ -2153,23 +2175,27 @@ button.aa-opp-card{
 }
 
 .store-manager-field input[type="checkbox"]{
-  width:18px;
-  height:18px;
+  width:16px;
+  height:16px;
   margin:0;
   accent-color:#7C5CFF;
   flex:0 0 auto;
 }
 
+.store-manager-field-checkbox{
+  padding-top:2px;
+}
+
 .store-manager-help{
-  font-size:13px;
+  font-size:12px;
   font-weight:800;
-  line-height:1.5;
+  line-height:1.45;
   color:#475569;
 }
 
 .store-manager-checkbox-row{
   display:flex;
-  align-items:flex-start;
+  align-items:center;
   gap:10px;
   margin-top:0;
 }
@@ -2177,77 +2203,44 @@ button.aa-opp-card{
 .store-manager-checkbox-row input[type="checkbox"]{
   width:16px;
   height:16px;
-  margin-top:2px;
+  margin:0;
   accent-color:#7c5cff;
   cursor:pointer;
 }
 
 .store-manager-checkbox-label{
-  font-size:14px;
-  font-weight:700;
+  font-size:13px;
+  font-weight:800;
   color:#111827;
   cursor:pointer;
 }
 
 .store-manager-checkbox-help{
-  font-size:12px;
+  font-size:11px;
   font-weight:700;
-  line-height:1.6;
+  line-height:1.45;
   color:#64748B;
-}
-
-.store-manager-rail-panel{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  padding:16px;
-  border-radius:16px;
-  border:1px solid rgba(168,85,247,.12);
-  background:rgba(255,255,255,.82);
 }
 
 .store-manager-card-actions{
   display:flex;
   justify-content:flex-end;
   gap:12px;
-  margin-top:2px;
-  padding:16px 2px 2px;
-  position:sticky;
-  bottom:0;
-  background:linear-gradient(180deg, rgba(245,238,255,0) 0%, rgba(245,238,255,.98) 30%, rgba(245,238,255,.98) 100%);
+  margin-top:0;
+  padding-top:2px;
+  position:static;
+  background:transparent;
 }
 
-.store-manager-card-actions .pulse-modal-action-btn{
-  min-width:220px;
+.store-manager-card-actions-compact .pulse-modal-action-btn{
+  min-width:180px;
   flex:0 0 auto;
 }
 
-@media (max-width: 1100px){
-  .store-manager-form-layout{
-    grid-template-columns:1fr;
-  }
-
-  .store-manager-form-rail{
-    position:static;
-  }
-}
-
 @media (max-width: 760px){
-  .store-manager-modal-hero{
-    padding:16px;
-  }
-
-  .store-manager-modal-title{
-    font-size:22px;
-  }
-
-  .store-manager-modal-subtitle{
-    font-size:13px;
-  }
-
-  .store-manager-form-section{
-    padding:16px;
-    border-radius:18px;
+  .store-manager-form-head{
+    flex-direction:column;
+    align-items:flex-start;
   }
 
   .store-manager-form-grid{
@@ -2258,14 +2251,11 @@ button.aa-opp-card{
     grid-column:auto;
   }
 
-  .store-manager-card-actions{
-    padding-top:14px;
-  }
-
-  .store-manager-card-actions .pulse-modal-action-btn{
+  .store-manager-card-actions-compact .pulse-modal-action-btn{
     min-width:100%;
     width:100%;
   }
+}
 }
 /* =========================
    Store Manager – Metrics Layout Fix
@@ -2322,41 +2312,7 @@ button.aa-opp-card{
   }
 }
 /* === Store Manager Modal Sections === */
-.store-manager-form-section{
-  grid-column:1 / -1;
-  margin-top:18px;
-}
-
-.store-manager-form-section-title{
-  font-size:12px;
-  font-weight:800;
-  letter-spacing:.08em;
-  text-transform:uppercase;
-  color:#6B7280;
-  margin-bottom:10px;
-}
-
- /* === Checkbox Row Fix === */
-.store-manager-checkbox-row{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-top:6px;
-}
-
-.store-manager-checkbox-row input[type="checkbox"]{
-  width:16px;
-  height:16px;
-  accent-color:#7c5cff;
-  cursor:pointer;
-}
-
-.store-manager-checkbox-label{
-  font-size:14px;
-  font-weight:600;
-  color:#111827;
-  cursor:pointer;
-}
+/* compact modal rules are defined in the main Store Manager modal form block above */
 /* Store Manager modal footer suppression + final safety overrides */
 
 #pulse-modal.store-manager-modal #pulse-modal-footer{

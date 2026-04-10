@@ -98,7 +98,7 @@
     const timezone = String(store?.timezone || "—");
     const windowHours = store?.gateway_activity_window_hours ?? "—";
 
-    return `
+        return `
       <article class="pulse-gateway-card">
         <div class="pulse-gateway-top">
           <div>
@@ -115,11 +115,6 @@
             <div class="store-manager-summary-item">
               <span class="store-manager-summary-label">Gateway</span>
               <span class="store-manager-summary-value">${esc(formatLabel(gateway) || "Unknown")}</span>
-            </div>
-
-            <div class="store-manager-summary-item">
-              <span class="store-manager-summary-label">Execution</span>
-              <span class="store-manager-summary-value">${esc(executionMode)}</span>
             </div>
 
             <div class="store-manager-summary-item">
@@ -158,7 +153,7 @@
           </div>
         </div>
 
-        <div class="pulse-modal-actions store-manager-card-actions-row" style="margin-top:14px;">
+        <div class="pulse-modal-actions store-manager-card-actions-row" style="margin-top:12px;">
           <button
             class="pulse-modal-action-btn"
             data-store-action="edit"
@@ -177,6 +172,7 @@
         </div>
       </article>
     `;
+    
   }
 
   function renderStoresDashboard(payload) {
@@ -190,14 +186,16 @@
 
     return `
       <div class="pulse-shell">
-        <section class="card pulse-hero">
+                <section class="card pulse-hero">
           <div class="pulse-hero-top">
             <div>
               <div class="pulse-kicker">Platform</div>
               <div class="pulse-title">Store Manager</div>
               <div class="pulse-subtitle">Add, review, and maintain store-level Pulse configuration.</div>
             </div>
+          </div>
 
+          <div class="pulse-modal-actions" style="margin-top:16px; margin-bottom:14px;">
             <button
               id="btnAddStore"
               class="pulse-modal-action-btn"
