@@ -110,60 +110,55 @@
           </div>
         </div>
 
-        <div class="store-manager-metrics">
-          <div class="store-manager-metric">
-            <div class="store-manager-metric-label">Gateway</div>
-            <div class="store-manager-metric-value">${esc(formatLabel(gateway) || "Unknown")}</div>
-          </div>
+        <div class="store-manager-summary">
+          <div class="store-manager-summary-row store-manager-summary-row-primary">
+            <div class="store-manager-summary-item">
+              <span class="store-manager-summary-label">Gateway</span>
+              <span class="store-manager-summary-value">${esc(formatLabel(gateway) || "Unknown")}</span>
+            </div>
 
-          <div class="store-manager-metric">
-            <div class="store-manager-metric-label">Execution Mode</div>
-            <div class="store-manager-metric-value">${esc(executionMode)}</div>
-          </div>
+            <div class="store-manager-summary-item">
+              <span class="store-manager-summary-label">Execution</span>
+              <span class="store-manager-summary-value">${esc(executionMode)}</span>
+            </div>
 
-          <div class="store-manager-metric store-manager-metric-wide">
-            <div class="store-manager-metric-label">Store URL</div>
-            <div class="store-manager-metric-value">
-              ${
-                store?.store_url
-                  ? `<a href="${esc(store.store_url)}" target="_blank" rel="noopener noreferrer">${esc(store.store_url)}</a>`
-                  : "—"
-              }
+            <div class="store-manager-summary-item">
+              <span class="store-manager-summary-label">Timezone</span>
+              <span class="store-manager-summary-value">${esc(timezone)}</span>
+            </div>
+
+            <div class="store-manager-summary-item">
+              <span class="store-manager-summary-label">Retry Window</span>
+              <span class="store-manager-summary-value">${esc(String(windowHours))} hours</span>
+            </div>
+
+            <div class="store-manager-summary-item">
+              <span class="store-manager-summary-label">Order Notes</span>
+              <span class="store-manager-summary-value">
+                ${
+                  Number(store?.allow_order_note_writes || 0) === 1
+                    ? "Enabled"
+                    : "Disabled"
+                }
+              </span>
             </div>
           </div>
 
-          <div class="store-manager-metric">
-            <div class="store-manager-metric-label">Retry Window</div>
-            <div class="store-manager-metric-value">${esc(String(windowHours))} hours</div>
-          </div>
-
-          <div class="store-manager-metric">
-            <div class="store-manager-metric-label">Timezone</div>
-            <div class="store-manager-metric-value">${esc(timezone)}</div>
-          </div>
-
-          <div class="store-manager-metric">
-            <div class="store-manager-metric-label">Order Notes</div>
-            <div class="store-manager-metric-value">
-              ${
-                Number(store?.allow_order_note_writes || 0) === 1
-                  ? "Enabled"
-                  : "Disabled"
-              }
+          <div class="store-manager-summary-row store-manager-summary-row-url">
+            <div class="store-manager-summary-item store-manager-summary-item-url">
+              <span class="store-manager-summary-label">Store URL</span>
+              <span class="store-manager-summary-value store-manager-summary-url">
+                ${
+                  store?.store_url
+                    ? `<a href="${esc(store.store_url)}" target="_blank" rel="noopener noreferrer">${esc(store.store_url)}</a>`
+                    : "—"
+                }
+              </span>
             </div>
           </div>
         </div>
 
-                <div class="pulse-message-block">
-          <div class="pulse-message-label">Store configuration</div>
-          <div class="pulse-message-text">
-            Store ID <strong>${esc(storeId || "—")}</strong> •
-            ${esc(formatLabel(gateway) || "Unknown")} gateway •
-            ${esc(executionMode)} mode
-          </div>
-        </div>
-
-        <div class="pulse-modal-actions" style="margin-top:14px;">
+        <div class="pulse-modal-actions store-manager-card-actions-row" style="margin-top:14px;">
           <button
             class="pulse-modal-action-btn"
             data-store-action="edit"

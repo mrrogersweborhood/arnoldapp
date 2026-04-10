@@ -2375,3 +2375,122 @@ button.aa-opp-card{
 #pulse-modal.store-manager-modal .store-manager-card-actions{
   z-index:2;
 }
+/* =========================
+   Store Manager – Compact Summary Card
+   ========================= */
+
+.store-manager-summary{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:12px;
+  padding:12px 14px;
+  border:1px solid rgba(15,23,42,.08);
+  border-radius:10px;
+  background:#ffffff;
+  min-width:0;
+}
+
+.store-manager-summary-row{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap:10px 14px;
+  align-items:start;
+  min-width:0;
+}
+
+.store-manager-summary-row-primary{
+  padding-bottom:10px;
+  border-bottom:1px solid rgba(15,23,42,.08);
+}
+
+.store-manager-summary-row-url{
+  min-width:0;
+}
+
+.store-manager-summary-item{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
+
+.store-manager-summary-item-url{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:8px;
+  align-items:start;
+  width:100%;
+  min-width:0;
+}
+
+.store-manager-summary-label{
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:rgba(15,23,42,.55);
+  white-space:nowrap;
+  flex:0 0 auto;
+}
+
+.store-manager-summary-value{
+  font-size:14px;
+  font-weight:700;
+  line-height:1.4;
+  color:#111827;
+  min-width:0;
+}
+
+.store-manager-summary-url{
+  display:block;
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+.store-manager-summary-url a{
+  color:#4F46E5;
+  text-decoration:none;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+
+.store-manager-summary-url a:hover{
+  text-decoration:underline;
+}
+
+.store-manager-card-actions-row{
+  justify-content:flex-end;
+  gap:12px;
+}
+
+.store-manager-card-actions-row .pulse-modal-action-btn{
+  flex:0 0 auto;
+  min-width:148px;
+}
+
+@media (max-width: 760px){
+  .store-manager-summary-row{
+    flex-direction:column;
+    gap:8px;
+  }
+
+  .store-manager-summary-item{
+    width:100%;
+  }
+
+  .store-manager-summary-item-url{
+    grid-template-columns:1fr;
+    row-gap:4px;
+  }
+
+  .store-manager-card-actions-row{
+    flex-direction:column;
+  }
+
+  .store-manager-card-actions-row .pulse-modal-action-btn{
+    width:100%;
+    min-width:100%;
+  }
+}
