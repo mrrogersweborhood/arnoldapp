@@ -110,15 +110,20 @@
           </div>
         </div>
 
-        <div class="pulse-gateway-metrics">
-          <div class="pulse-metric">
-            <div class="pulse-metric-label">Gateway</div>
-            <div class="pulse-metric-value">${esc(formatLabel(gateway) || "Unknown")}</div>
+        <div class="store-manager-metrics">
+          <div class="store-manager-metric">
+            <div class="store-manager-metric-label">Gateway</div>
+            <div class="store-manager-metric-value">${esc(formatLabel(gateway) || "Unknown")}</div>
           </div>
 
-          <div class="pulse-metric">
-            <div class="pulse-metric-label">Store URL</div>
-            <div class="pulse-metric-value">
+          <div class="store-manager-metric">
+            <div class="store-manager-metric-label">Execution Mode</div>
+            <div class="store-manager-metric-value">${esc(executionMode)}</div>
+          </div>
+
+          <div class="store-manager-metric store-manager-metric-wide">
+            <div class="store-manager-metric-label">Store URL</div>
+            <div class="store-manager-metric-value">
               ${
                 store?.store_url
                   ? `<a href="${esc(store.store_url)}" target="_blank" rel="noopener noreferrer">${esc(store.store_url)}</a>`
@@ -127,31 +132,34 @@
             </div>
           </div>
 
-          <div class="pulse-metric">
-            <div class="pulse-metric-label">Timezone</div>
-            <div class="pulse-metric-value">${esc(timezone)}</div>
+          <div class="store-manager-metric">
+            <div class="store-manager-metric-label">Retry Window</div>
+            <div class="store-manager-metric-value">${esc(String(windowHours))} hours</div>
           </div>
 
-          <div class="pulse-metric">
-            <div class="pulse-metric-label">Retry Window</div>
-            <div class="pulse-metric-value">${esc(String(windowHours))}</div>
+          <div class="store-manager-metric">
+            <div class="store-manager-metric-label">Timezone</div>
+            <div class="store-manager-metric-value">${esc(timezone)}</div>
           </div>
-<div class="pulse-metric">
-  <div class="pulse-metric-label">Order Notes</div>
-  <div class="pulse-metric-value">
-    ${
-      Number(store?.allow_order_note_writes || 0) === 1
-        ? "Enabled"
-        : "Disabled"
-    }
-  </div>
-</div>
+
+          <div class="store-manager-metric">
+            <div class="store-manager-metric-label">Order Notes</div>
+            <div class="store-manager-metric-value">
+              ${
+                Number(store?.allow_order_note_writes || 0) === 1
+                  ? "Enabled"
+                  : "Disabled"
+              }
+            </div>
+          </div>
         </div>
 
-        <div class="pulse-message-block">
+                <div class="pulse-message-block">
           <div class="pulse-message-label">Store configuration</div>
           <div class="pulse-message-text">
-            ${esc(storeName)} is configured for ${esc(formatLabel(gateway))} in ${esc(executionMode)} mode.
+            Store ID <strong>${esc(storeId || "—")}</strong> •
+            ${esc(formatLabel(gateway) || "Unknown")} gateway •
+            ${esc(executionMode)} mode
           </div>
         </div>
 
