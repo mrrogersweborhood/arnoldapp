@@ -249,16 +249,20 @@
             />
           </label>
 
-          <label class="store-manager-field store-manager-field-wide">
-            <span style="display:flex; align-items:center; gap:10px;">
+          <div class="store-manager-form-section">
+            <div class="store-manager-form-section-title">WooCommerce Writes</div>
+
+            <div class="store-manager-checkbox-row">
               <input
                 id="storeFormAllowOrderNoteWrites"
                 type="checkbox"
                 ${allowOrderNoteWrites ? "checked" : ""}
               />
-              <span>Allow WooCommerce order note writes</span>
-            </span>
-          </label>
+              <label for="storeFormAllowOrderNoteWrites" class="store-manager-checkbox-label">
+                Allow WooCommerce order note writes
+              </label>
+            </div>
+          </div>
         </div>
 
         <div class="store-manager-card-actions">

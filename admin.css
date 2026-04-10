@@ -2200,3 +2200,38 @@ button.aa-opp-card{
     grid-column:auto;
   }
 }
+/* === Store Manager Modal Sections === */
+.store-manager-form-section{
+  margin-top:18px;
+}
+
+.store-manager-form-section-title{
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.65);
+  margin-bottom:10px;
+}
+
+/* === Checkbox Row Fix === */
+.store-manager-checkbox-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:10px;
+}
+
+.store-manager-checkbox-row input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  accent-color:#7c5cff;
+  cursor:pointer;
+}
+
+.store-manager-checkbox-label{
+  font-size:14px;
+  font-weight:600;
+  color:#ffffff;
+  cursor:pointer;
+}
