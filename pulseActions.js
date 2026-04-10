@@ -187,142 +187,98 @@
 
     modalTitle.textContent = isEdit ? "Edit Store" : "Create Store";
 
-    modalBody.innerHTML = `
-      <div class="store-manager-form-card store-manager-form-card-polished">
-        <div class="store-manager-modal-hero">
-          <div class="store-manager-modal-kicker">Store Manager</div>
-          <div class="store-manager-modal-title-row">
-            <div class="store-manager-modal-title-copy">
-              <div class="store-manager-modal-title">
-                ${isEdit ? "Edit Store Configuration" : "Create Store Configuration"}
-              </div>
-              <div class="store-manager-modal-subtitle">
-                ${isEdit ? "Update monitoring, execution, and WooCommerce write behavior for this store." : "Create a new monitored store for Pulse and define its execution behavior."}
-              </div>
-            </div>
-            <div class="store-manager-modal-badge">
-              ${isEdit ? esc(storeId || "Existing Store") : "New Store"}
-            </div>
-          </div>
-        </div>
-
-        <div class="store-manager-form-layout">
-          <div class="store-manager-form-main">
-            <section class="store-manager-form-section">
-              <div class="store-manager-form-section-head">
-                <div class="store-manager-form-section-title">Store Identity</div>
-                <div class="store-manager-form-section-copy">
-                  Core identifiers and storefront address.
-                </div>
-              </div>
-
-              <div class="store-manager-form-grid">
-                <label class="store-manager-field">
-                  <span>Store ID</span>
-                  <input
-                    id="storeFormStoreId"
-                    type="text"
-                    value="${esc(storeId)}"
-                    ${isEdit ? "disabled" : ""}
-                    placeholder="primary-store"
-                  />
-                </label>
-
-                <label class="store-manager-field">
-                  <span>Store Name</span>
-                  <input
-                    id="storeFormStoreName"
-                    type="text"
-                    value="${esc(storeName)}"
-                    placeholder="Main Store"
-                  />
-                </label>
-
-                <label class="store-manager-field store-manager-field-wide">
-                  <span>Store URL</span>
-                  <input
-                    id="storeFormStoreUrl"
-                    type="text"
-                    value="${esc(storeUrl)}"
-                    placeholder="https://okobserver.org"
-                  />
-                </label>
-              </div>
-            </section>
-
-            <section class="store-manager-form-section">
-              <div class="store-manager-form-section-head">
-                <div class="store-manager-form-section-title">Processing Rules</div>
-                <div class="store-manager-form-section-copy">
-                  Controls for execution mode, gateway scope, timezone, and gateway activity window.
-                </div>
-              </div>
-
-              <div class="store-manager-form-grid">
-                <label class="store-manager-field">
-                  <span>Execution Mode</span>
-                  <select id="storeFormExecutionMode">
-                    ${buildSelectOptions(STORE_EXECUTION_MODE_OPTIONS, executionMode)}
-                  </select>
-                </label>
-
-                <label class="store-manager-field">
-                  <span>Gateway</span>
-                  <select id="storeFormGateway">
-                    ${buildSelectOptions(STORE_GATEWAY_OPTIONS, gateway)}
-                  </select>
-                </label>
-
-                <label class="store-manager-field">
-                  <span>Timezone</span>
-                  <select id="storeFormTimezone">
-                    ${buildTimezoneOptions(timezone)}
-                  </select>
-                </label>
-
-                <label class="store-manager-field">
-                  <span>Gateway Activity Window (hours)</span>
-                  <input
-                    id="storeFormGatewayWindow"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value="${esc(String(gatewayWindowHours))}"
-                    placeholder="24"
-                  />
-                </label>
-              </div>
-            </section>
+        modalBody.innerHTML = `
+      <div class="store-manager-form-card">
+        <section class="store-manager-form-section">
+          <div class="store-manager-form-section-title">
+            ${isEdit ? "Edit Store" : "Create Store"}
           </div>
 
-          <aside class="store-manager-form-rail">
-            <section class="store-manager-form-section store-manager-form-section-rail">
-              <div class="store-manager-form-section-head">
-                <div class="store-manager-form-section-title">WooCommerce Writes</div>
-                <div class="store-manager-form-section-copy">
-                  Controls whether Pulse can write recovery activity into WooCommerce order notes.
-                </div>
+          <div class="store-manager-form-grid">
+            <label class="store-manager-field">
+              <span>Store ID</span>
+              <input
+                id="storeFormStoreId"
+                type="text"
+                value="${esc(storeId)}"
+                ${isEdit ? "disabled" : ""}
+                placeholder="primary-store"
+              />
+            </label>
+
+            <label class="store-manager-field">
+              <span>Store Name</span>
+              <input
+                id="storeFormStoreName"
+                type="text"
+                value="${esc(storeName)}"
+                placeholder="Main Store"
+              />
+            </label>
+
+            <label class="store-manager-field store-manager-field-wide">
+              <span>Store URL</span>
+              <input
+                id="storeFormStoreUrl"
+                type="text"
+                value="${esc(storeUrl)}"
+                placeholder="https://okobserver.org"
+              />
+            </label>
+
+            <label class="store-manager-field">
+              <span>Gateway</span>
+              <select id="storeFormGateway">
+                ${buildSelectOptions(STORE_GATEWAY_OPTIONS, gateway)}
+              </select>
+            </label>
+
+            <label class="store-manager-field">
+              <span>Execution Mode</span>
+              <select id="storeFormExecutionMode">
+                ${buildSelectOptions(STORE_EXECUTION_MODE_OPTIONS, executionMode)}
+              </select>
+            </label>
+
+            <label class="store-manager-field">
+              <span>Timezone</span>
+              <select id="storeFormTimezone">
+                ${buildTimezoneOptions(timezone)}
+              </select>
+            </label>
+
+            <label class="store-manager-field">
+              <span>Gateway Activity Window (hours)</span>
+              <input
+                id="storeFormGatewayWindow"
+                type="number"
+                min="1"
+                step="1"
+                value="${esc(String(gatewayWindowHours))}"
+                placeholder="24"
+              />
+            </label>
+
+            <div class="store-manager-field store-manager-field-wide">
+              <span>WooCommerce Writes</span>
+
+              <div class="store-manager-checkbox-row">
+                <input
+                  id="storeFormAllowOrderNoteWrites"
+                  type="checkbox"
+                  ${allowOrderNoteWrites ? "checked" : ""}
+                />
+                <label for="storeFormAllowOrderNoteWrites" class="store-manager-checkbox-label">
+                  Allow WooCommerce order note writes
+                </label>
               </div>
 
-              <div class="store-manager-rail-panel">
-                <div class="store-manager-checkbox-row">
-                  <input
-                    id="storeFormAllowOrderNoteWrites"
-                    type="checkbox"
-                    ${allowOrderNoteWrites ? "checked" : ""}
-                  />
-                  <label for="storeFormAllowOrderNoteWrites" class="store-manager-checkbox-label">
-                    Allow WooCommerce order note writes
-                  </label>
-                </div>
-
-                <div class="store-manager-checkbox-help">
-                  When enabled, Pulse can write recovery activity into WooCommerce order notes for this store.
-                </div>
+              <div class="store-manager-checkbox-help">
+                When enabled, Pulse can write recovery activity into WooCommerce order notes for this store.
               </div>
-            </section>
-          </aside>
-        </div>
+            </div>
+          </div>
+        </section>
 
         <div class="store-manager-card-actions">
           <button
