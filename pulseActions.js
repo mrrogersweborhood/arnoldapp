@@ -31,13 +31,17 @@
     }, 3000);
   }
 
-  function openPulseModal(title, body) {
+    function openPulseModal(title, body) {
     const modal = document.getElementById("pulse-modal");
     if (!modal) return;
 
     const titleEl = document.getElementById("pulse-modal-title");
     const bodyEl = document.getElementById("pulse-modal-body");
+    const footerEl = document.getElementById("pulse-modal-footer");
     if (!titleEl || !bodyEl) return;
+
+    modal.classList.remove("store-manager-modal");
+    if (footerEl) footerEl.style.display = "";
 
     titleEl.textContent = title;
 
@@ -83,9 +87,14 @@
     modal.classList.remove("hidden");
   }
 
-  function closePulseModal() {
+    function closePulseModal() {
     const modal = document.getElementById("pulse-modal");
+    const footerEl = document.getElementById("pulse-modal-footer");
     if (!modal) return;
+
+    modal.classList.remove("store-manager-modal");
+    if (footerEl) footerEl.style.display = "";
+
     modal.classList.add("hidden");
     window.__pulseModalGateway = null;
   }
@@ -180,14 +189,32 @@
 
     modalBody.innerHTML = `
       <div class="store-manager-form-card store-manager-form-card-polished">
-        <div class="pulse-modal-intro">
-          ${isEdit ? "Update store configuration and store behavior." : "Create a new monitored store for Pulse."}
+        <div class="store-manager-modal-hero">
+          <div class="store-manager-modal-kicker">Store Manager</div>
+          <div class="store-manager-modal-title-row">
+            <div class="store-manager-modal-title-copy">
+              <div class="store-manager-modal-title">
+                ${isEdit ? "Edit Store Configuration" : "Create Store Configuration"}
+              </div>
+              <div class="store-manager-modal-subtitle">
+                ${isEdit ? "Update monitoring, execution, and WooCommerce write behavior for this store." : "Create a new monitored store for Pulse and define its execution behavior."}
+              </div>
+            </div>
+            <div class="store-manager-modal-badge">
+              ${isEdit ? esc(storeId || "Existing Store") : "New Store"}
+            </div>
+          </div>
         </div>
 
         <div class="store-manager-form-layout">
           <div class="store-manager-form-main">
-            <div class="store-manager-form-section">
-              <div class="store-manager-form-section-title">Store Identity</div>
+            <section class="store-manager-form-section">
+              <div class="store-manager-form-section-head">
+                <div class="store-manager-form-section-title">Store Identity</div>
+                <div class="store-manager-form-section-copy">
+                  Core identifiers and storefront address.
+                </div>
+              </div>
 
               <div class="store-manager-form-grid">
                 <label class="store-manager-field">
@@ -221,10 +248,15 @@
                   />
                 </label>
               </div>
-            </div>
+            </section>
 
-            <div class="store-manager-form-section">
-              <div class="store-manager-form-section-title">Processing Rules</div>
+            <section class="store-manager-form-section">
+              <div class="store-manager-form-section-head">
+                <div class="store-manager-form-section-title">Processing Rules</div>
+                <div class="store-manager-form-section-copy">
+                  Controls for execution mode, gateway scope, timezone, and gateway activity window.
+                </div>
+              </div>
 
               <div class="store-manager-form-grid">
                 <label class="store-manager-field">
@@ -260,28 +292,35 @@
                   />
                 </label>
               </div>
-            </div>
+            </section>
           </div>
 
           <aside class="store-manager-form-rail">
-            <div class="store-manager-form-section">
-              <div class="store-manager-form-section-title">WooCommerce Writes</div>
-
-              <div class="store-manager-checkbox-row">
-                <input
-                  id="storeFormAllowOrderNoteWrites"
-                  type="checkbox"
-                  ${allowOrderNoteWrites ? "checked" : ""}
-                />
-                <label for="storeFormAllowOrderNoteWrites" class="store-manager-checkbox-label">
-                  Allow WooCommerce order note writes
-                </label>
+            <section class="store-manager-form-section store-manager-form-section-rail">
+              <div class="store-manager-form-section-head">
+                <div class="store-manager-form-section-title">WooCommerce Writes</div>
+                <div class="store-manager-form-section-copy">
+                  Controls whether Pulse can write recovery activity into WooCommerce order notes.
+                </div>
               </div>
 
-              <div class="store-manager-checkbox-help">
-                When enabled, Pulse can write recovery activity into WooCommerce order notes for this store.
+              <div class="store-manager-rail-panel">
+                <div class="store-manager-checkbox-row">
+                  <input
+                    id="storeFormAllowOrderNoteWrites"
+                    type="checkbox"
+                    ${allowOrderNoteWrites ? "checked" : ""}
+                  />
+                  <label for="storeFormAllowOrderNoteWrites" class="store-manager-checkbox-label">
+                    Allow WooCommerce order note writes
+                  </label>
+                </div>
+
+                <div class="store-manager-checkbox-help">
+                  When enabled, Pulse can write recovery activity into WooCommerce order notes for this store.
+                </div>
               </div>
-            </div>
+            </section>
           </aside>
         </div>
 
@@ -295,9 +334,13 @@
           </button>
         </div>
       </div>
-    `;
+        `;
 
-    document.getElementById("pulse-modal")?.classList.remove("hidden");
+    const modalEl = document.getElementById("pulse-modal");
+    const footerEl = document.getElementById("pulse-modal-footer");
+    modalEl?.classList.add("store-manager-modal");
+    if (footerEl) footerEl.style.display = "none";
+    modalEl?.classList.remove("hidden");
   }  function renderStoreDeleteModal(store) {
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
@@ -328,9 +371,13 @@
           </button>
         </div>
       </div>
-    `;
+       `;
 
-    document.getElementById("pulse-modal")?.classList.remove("hidden");
+    const modalEl = document.getElementById("pulse-modal");
+    const footerEl = document.getElementById("pulse-modal-footer");
+    modalEl?.classList.add("store-manager-modal");
+    if (footerEl) footerEl.style.display = "none";
+    modalEl?.classList.remove("hidden");
   }
 
   function getStoreFormPayload() {

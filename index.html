@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pulse Revenue Intelligence</title>
-<link rel="icon" type="image/png" href="./logo.png?v=2026-04-09-719">
+<link rel="icon" type="image/png" href="./logo.png?v=2026-04-09-819">
   <style>
 
 :root{
@@ -40,31 +40,52 @@
   z-index: 9999;
 }
 
-.pulse-modal-backdrop {
-  position: absolute;
+.pulse-modal {
+  position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 28px 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pulse-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 6, 14, 0.68);
+  backdrop-filter: blur(8px);
 }
 
 .pulse-modal-box {
   position: relative;
-  width: min(680px, calc(100vw - 32px));
-  margin: 88px auto;
-  background: linear-gradient(180deg, #1a1028 0%, #140b22 100%);
+  width: min(1120px, calc(100vw - 32px));
+  max-height: calc(100vh - 56px);
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at top left, rgba(168,85,247,.18) 0%, rgba(168,85,247,0) 30%),
+    linear-gradient(180deg, #1a1028 0%, #140b22 100%);
   color: #fff;
-  border-radius: 24px;
-  padding: 28px 28px 20px;
+  border-radius: 28px;
+  padding: 24px 24px 20px;
   z-index: 2;
   box-shadow: 0 34px 90px rgba(0,0,0,.46);
   border: 1px solid rgba(255,255,255,.10);
+  overflow: hidden;
 }
 
 .pulse-modal-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 16px;
   font-weight: 900;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
+  flex: 0 0 auto;
 }
 
 #pulse-modal-title {
@@ -115,7 +136,12 @@
   background: linear-gradient(180deg, #fee2e2 0%, #fecaca 100%);
 }
 .pulse-modal-body {
-  margin-bottom: 18px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding-right: 4px;
   line-height: 1.62;
   font-size: 17px;
   font-weight: 800;
@@ -185,9 +211,10 @@
 .pulse-modal-footer {
   display: flex;
   justify-content: flex-end;
-  margin-top: 18px;
+  margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,.08);
+  flex: 0 0 auto;
 }
 
 #pulse-modal-ok {
@@ -201,6 +228,45 @@
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 8px 18px rgba(147,51,234,.28);
+}
+@media (max-width: 1100px){
+  .pulse-modal {
+    padding: 20px 12px;
+  }
+
+  .pulse-modal-box {
+    width: min(980px, calc(100vw - 24px));
+    max-height: calc(100vh - 40px);
+    padding: 22px 20px 18px;
+  }
+}
+
+@media (max-width: 760px){
+  .pulse-modal {
+    padding: 10px;
+    align-items: stretch;
+  }
+
+  .pulse-modal-box {
+    width: 100%;
+    max-height: none;
+    min-height: calc(100vh - 20px);
+    border-radius: 22px;
+    padding: 18px 16px 16px;
+  }
+
+  #pulse-modal-title {
+    font-size: 22px;
+  }
+
+  .pulse-modal-footer {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+
+  #pulse-modal-ok {
+    min-width: 100%;
+  }
 }
 .pulse-modal-action-btn {
   appearance: none;
@@ -281,9 +347,9 @@ body{
 }
   
   </style>
- <script src="./formatters.js?v=2026-04-09-719"></script>
-  <link rel="stylesheet" href="./pulse.css?v=2026-04-09-719" />
-  <link rel="stylesheet" href="./admin.css?v=2026-04-09-719" />
+ <script src="./formatters.js?v=2026-04-09-819"></script>
+  <link rel="stylesheet" href="./pulse.css?v=2026-04-09-819" />
+  <link rel="stylesheet" href="./admin.css?v=2026-04-09-819" />
 </head>
 
 <body>
@@ -473,22 +539,22 @@ body{
       <button id="pulse-modal-close" aria-label="Close">✕</button>
     </div>
     <div id="pulse-modal-body" class="pulse-modal-body"></div>
-    <div class="pulse-modal-footer">
+    <div class="pulse-modal-footer" id="pulse-modal-footer">
       <button id="pulse-modal-ok">OK</button>
     </div>
   </div>
 </div>
 
-          <script src="./formatters.js?v=2026-04-09-719"></script>
-      <script src="./renderCustomer.js?v=2026-04-09-719"></script>
-        <script src="./renderHealth.js?v=2026-04-09-719"></script>
-      <script src="./renderActivity.js?v=2026-04-09-719"></script>
-           <script src="./pulseData.js?v=2026-04-09-719"></script>
-         <script src="./renderRadar.js?v=2026-04-09-719"></script>
-         <script src="./renderPulse.js?v=2026-04-09-719"></script>
-        <script src="./renderStores.js?v=2026-04-09-719"></script>
-        <script src="./pulseActions.js?v=2026-04-09-719"></script>
-                <script src="./main.js?v=2026-04-09-719"></script>
+          <script src="./formatters.js?v=2026-04-09-819"></script>
+      <script src="./renderCustomer.js?v=2026-04-09-819"></script>
+        <script src="./renderHealth.js?v=2026-04-09-819"></script>
+      <script src="./renderActivity.js?v=2026-04-09-819"></script>
+           <script src="./pulseData.js?v=2026-04-09-819"></script>
+         <script src="./renderRadar.js?v=2026-04-09-819"></script>
+         <script src="./renderPulse.js?v=2026-04-09-819"></script>
+        <script src="./renderStores.js?v=2026-04-09-819"></script>
+        <script src="./pulseActions.js?v=2026-04-09-819"></script>
+                <script src="./main.js?v=2026-04-09-819"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
