@@ -2204,6 +2204,7 @@ button.aa-opp-card{
 }
 /* === Store Manager Modal Sections === */
 .store-manager-form-section{
+  grid-column:1 / -1;
   margin-top:18px;
 }
 
@@ -2212,16 +2213,16 @@ button.aa-opp-card{
   font-weight:800;
   letter-spacing:.08em;
   text-transform:uppercase;
-  color:rgba(255,255,255,.65);
+  color:#6B7280;
   margin-bottom:10px;
 }
 
-/* === Checkbox Row Fix === */
+ /* === Checkbox Row Fix === */
 .store-manager-checkbox-row{
   display:flex;
   align-items:center;
   gap:10px;
-  margin-top:10px;
+  margin-top:6px;
 }
 
 .store-manager-checkbox-row input[type="checkbox"]{
@@ -2230,15 +2231,10 @@ button.aa-opp-card{
   accent-color:#7c5cff;
   cursor:pointer;
 }
-.store-manager-checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 6px;
-}
+
 .store-manager-checkbox-label{
   font-size:14px;
   font-weight:600;
-  color:#ffffff;
+  color:#111827;
   cursor:pointer;
 }
