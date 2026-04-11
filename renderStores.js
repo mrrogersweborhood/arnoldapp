@@ -147,9 +147,9 @@
           </div>
         </div>
 
-        <div class="pulse-modal-actions store-manager-card-actions-row" style="margin-top:12px;">
+                <div class="store-action-row store-manager-card-actions-row" style="margin-top:12px;">
           <button
-            class="pulse-modal-action-btn"
+            class="store-action-btn"
             data-store-action="edit"
             data-store-id="${esc(storeId)}"
           >
@@ -157,7 +157,7 @@
           </button>
 
           <button
-            class="pulse-modal-action-btn ghost"
+            class="store-action-btn ghost"
             data-store-action="delete"
             data-store-id="${esc(storeId)}"
           >
@@ -226,10 +226,10 @@
             isLoading
               ? ""
               : `
-          <div class="pulse-modal-actions" style="margin-top:16px; margin-bottom:14px;">
+                    <div class="store-action-row" style="margin-top:16px; margin-bottom:14px;">
             <button
               id="btnAddStore"
-              class="pulse-modal-action-btn"
+              class="store-action-btn"
               type="button"
             >
               Add Store

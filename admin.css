@@ -2236,7 +2236,49 @@ button.aa-opp-card{
   min-width:180px;
   flex:0 0 auto;
 }
+.store-action-row{
+  display:flex;
+  justify-content:flex-end;
+  gap:12px;
+  margin-top:0;
+  padding-top:2px;
+  position:static;
+  background:transparent;
+  flex-wrap:wrap;
+}
 
+.store-action-btn{
+  appearance:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:46px;
+  padding:12px 18px;
+  border-radius:14px;
+  border:1px solid rgba(168,85,247,.18);
+  background:linear-gradient(180deg, #ffffff 0%, #f7f1ff 100%);
+  color:#140F1F;
+  font-size:14px;
+  font-weight:900;
+  line-height:1.1;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(15,23,42,.08);
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  flex:0 0 auto;
+  min-width:148px;
+}
+
+.store-action-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 12px 24px rgba(15,23,42,.12);
+  border-color:rgba(168,85,247,.28);
+}
+
+.store-action-btn.ghost{
+  background:#ffffff;
+  color:#6B21A8;
+  border:1px solid rgba(168,85,247,.22);
+}
 @media (max-width: 760px){
   .store-manager-form-head{
     flex-direction:column;
@@ -2421,7 +2463,7 @@ button.aa-opp-card{
   gap:12px;
 }
 
-.store-manager-card-actions-row .pulse-modal-action-btn{
+.store-manager-card-actions-row .store-action-btn{
   flex:0 0 auto;
   min-width:148px;
 }
@@ -2445,7 +2487,7 @@ button.aa-opp-card{
     flex-direction:column;
   }
 
-  .store-manager-card-actions-row .pulse-modal-action-btn{
+  .store-manager-card-actions-row .store-action-btn{
     width:100%;
     min-width:100%;
   }
