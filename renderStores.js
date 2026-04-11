@@ -212,7 +212,7 @@
     isLoading = false
   }) {
     return `
-      <div class="pulse-shell">
+      <div class="pulse-shell pulse-store-manager">
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
             <div>
