@@ -179,13 +179,11 @@
   gap:14px;
 }
 
-.pulse-store-manager .pulse-grid{
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-}
 /* 🟢 Store Manager override — prevent early collapse */
 .pulse-store-manager .pulse-grid{
-  grid-template-columns:repeat(2, minmax(0, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
 }
+
 .pulse-gateway-card{
   border:1px solid rgba(15,23,42,.10);
   border-radius:18px;
@@ -992,7 +990,7 @@
 @media (max-width: 1200px){
   .pulse-stat-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-grid{grid-template-columns:1fr;}
-  .pulse-store-manager .pulse-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
+  .pulse-store-manager .pulse-grid{grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));}
   .pulse-incident-strip-metrics{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-scan-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-scan-item-wide{grid-column:span 2;}
