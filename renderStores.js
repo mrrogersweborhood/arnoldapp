@@ -92,8 +92,9 @@
     const timezone = String(store?.timezone || "—");
     const windowHours = store?.gateway_activity_window_hours ?? "—";
 
-    return `
-      <article class="pulse-gateway-card">
+        return `
+      <div class="pulse-shell pulse-store-manager">
+        <section class="card pulse-hero">
         <div class="pulse-gateway-top">
           <div>
             <div class="pulse-gateway-name">${esc(storeName)}</div>
