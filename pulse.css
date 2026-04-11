@@ -987,7 +987,8 @@
 
 @media (max-width: 1200px){
   .pulse-stat-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
-  .pulse-grid:not(.pulse-store-manager .pulse-grid){grid-template-columns:1fr;}
+  .pulse-grid{grid-template-columns:1fr;}
+  .pulse-store-manager .pulse-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-incident-strip-metrics{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-scan-grid{grid-template-columns:repeat(2, minmax(0, 1fr));}
   .pulse-scan-item-wide{grid-column:span 2;}
