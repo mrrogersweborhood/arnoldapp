@@ -84,20 +84,21 @@
     `;
   }
 
-  function renderStoreCard(store) {
+    function renderStoreCard(store) {
     const storeId = String(store?.store_id || "");
     const storeName = String(store?.store_name || "Untitled Store");
     const gateway = String(store?.gateway || "unknown");
     const executionMode = formatMode(store?.execution_mode);
     const timezone = String(store?.timezone || "—");
     const windowHours = store?.gateway_activity_window_hours ?? "—";
+    const brandColor = String(store?.brand_color || "#A855F7").trim() || "#A855F7";
 
         return `
-      <div class="pulse-shell pulse-store-manager">
-        <section class="card pulse-hero">
+            <div class="pulse-shell pulse-store-manager">
+        <section class="card pulse-hero" style="border-left:4px solid ${esc(brandColor)};">
         <div class="pulse-gateway-top">
           <div>
-            <div class="pulse-gateway-name">${esc(storeName)}</div>
+            <div class="pulse-gateway-name" style="color:${esc(brandColor)};">${esc(storeName)}</div>
             <div class="pulse-gateway-share">Store ID: ${esc(storeId || "—")}</div>
           </div>
           <div class="pulse-priority-pill ${executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium"}">
