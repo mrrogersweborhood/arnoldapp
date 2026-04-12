@@ -1419,6 +1419,7 @@ try {
       };
       lastRaw = lastPayload;
       window.__storeManagerPayload = storesJson;
+      populateActiveStoreSelect(storesJson?.stores || []);
 // 🟢 set default active store if none selected
 if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.stores.length) {
   const firstStore = storesJson.stores[0];
@@ -1555,6 +1556,7 @@ window.setActiveStore = function (storeId) {
 
   window.__activeStoreId = String(storeId);
   saveActiveStoreToStorage(window.__activeStoreId);
+  syncActiveStoreSelect();
 
   console.log("Active store set:", window.__activeStoreId);
 
@@ -1567,6 +1569,35 @@ window.doCustomerSearch = doSearch;
 window.doCustomerSearchByEmail = function (email) {
   return doSearch(email);
 };
+// 🟢 STORE SWITCHER UI
+
+function populateActiveStoreSelect(stores) {
+  const select = document.getElementById("activeStoreSelect");
+  const pill = document.getElementById("activeStorePill");
+
+  if (!select || !pill) return;
+
+  const rows = Array.isArray(stores) ? stores : [];
+
+  select.innerHTML = `
+    <option value="">Select store</option>
+    ${rows.map(s => `
+      <option value="${s.store_id}">
+        ${s.store_name || s.store_id}
+      </option>
+    `).join("")}
+  `;
+
+  pill.classList.toggle("is-hidden", rows.length === 0);
+
+  syncActiveStoreSelect();
+}
+
+function syncActiveStoreSelect() {
+  const select = document.getElementById("activeStoreSelect");
+  if (!select) return;
+  select.value = window.__activeStoreId || "";
+}
   // --------------------------------------------------
   // Helpers
   // --------------------------------------------------
@@ -1712,7 +1743,11 @@ $("navStores")?.addEventListener("click", (e) => {
   e.preventDefault();
   doStoreManager().catch(console.error);
 });
-
+document.getElementById("activeStoreSelect")?.addEventListener("change", (e) => {
+  const id = String(e.target?.value || "").trim();
+  if (!id || id === window.__activeStoreId) return;
+  window.setActiveStore(id);
+});
   window.addEventListener("DOMContentLoaded", async () => {
     // 🟢 load persisted active store
 loadActiveStoreFromStorage();
