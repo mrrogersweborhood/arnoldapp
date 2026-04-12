@@ -167,7 +167,7 @@
     const modalBody = document.getElementById("pulse-modal-body");
     if (!modalTitle || !modalBody) return;
 
-    const storeId = String(store?.store_id || "");
+        const storeId = String(store?.store_id || "");
     const storeName = String(store?.store_name || "");
     const storeUrl = String(store?.store_url || "");
     const gateway = normalizeGatewayForForm(store?.gateway || "");
@@ -175,7 +175,7 @@
     const timezone = normalizeTimezoneForForm(store?.timezone || "UTC");
     const gatewayWindowHours = Number(store?.gateway_activity_window_hours || 24) || 24;
     const allowOrderNoteWrites = Number(store?.allow_order_note_writes || 0) === 1;
-
+    const brandColor = String(store?.brand_color || "#A855F7").trim() || "#A855F7";
     modalTitle.textContent = isEdit ? "Edit Store" : "Create Store";
 
         modalBody.innerHTML = `
@@ -248,7 +248,7 @@
             </select>
           </label>
 
-          <label class="store-manager-field">
+                    <label class="store-manager-field">
             <span>Retry Window (hours)</span>
             <input
               id="storeFormGatewayWindow"
@@ -260,9 +260,30 @@
             />
           </label>
 
+          <div class="store-manager-field store-manager-field-wide">
+            <span>Brand Color</span>
+            <div class="store-manager-color-row">
+              <input
+                id="storeFormBrandColor"
+                type="color"
+                value="${esc(brandColor)}"
+              />
+              <input
+                id="storeFormBrandColorHex"
+                type="text"
+                value="${esc(brandColor)}"
+                placeholder="#A855F7"
+                spellcheck="false"
+                autocomplete="off"
+              />
+            </div>
+            <div class="store-manager-checkbox-help">
+              Choose a store identity color or enter a hex value.
+            </div>
+          </div>
+
           <div class="store-manager-field store-manager-field-wide store-manager-field-checkbox">
             <span>WooCommerce Writes</span>
-
             <div class="store-manager-checkbox-row">
               <input
                 id="storeFormAllowOrderNoteWrites"
@@ -336,7 +357,7 @@
     modalEl?.classList.remove("hidden");
   }
 
-  function getStoreFormPayload() {
+    function getStoreFormPayload() {
     return {
       store_id: String(document.getElementById("storeFormStoreId")?.value || "").trim(),
       store_name: String(document.getElementById("storeFormStoreName")?.value || "").trim(),
@@ -345,11 +366,12 @@
       execution_mode: String(document.getElementById("storeFormExecutionMode")?.value || "test").trim().toLowerCase(),
       timezone: normalizeTimezoneForForm(document.getElementById("storeFormTimezone")?.value || ""),
       gateway_activity_window_hours: Number(document.getElementById("storeFormGatewayWindow")?.value || 0) || 0,
-      allow_order_note_writes: document.getElementById("storeFormAllowOrderNoteWrites")?.checked ? 1 : 0
+      allow_order_note_writes: document.getElementById("storeFormAllowOrderNoteWrites")?.checked ? 1 : 0,
+      brand_color: String(document.getElementById("storeFormBrandColorHex")?.value || document.getElementById("storeFormBrandColor")?.value || "#A855F7").trim()
     };
   }
 
-  function validateStoreFormPayload(payload) {
+    function validateStoreFormPayload(payload) {
     if (!payload.store_id) return "Store ID is required.";
     if (!payload.store_name) return "Store name is required.";
     if (!payload.store_url) return "Store URL is required.";
@@ -358,6 +380,9 @@
     if (!payload.execution_mode) return "Execution mode is required.";
     if (!payload.timezone) return "Timezone is required.";
     if (!payload.gateway_activity_window_hours) return "Gateway activity window hours is required.";
+    if (!/^#([0-9A-Fa-f]{6})$/.test(String(payload.brand_color || "").trim())) {
+      return "Brand color must be a valid 6-digit hex value like #A855F7.";
+    }
     return "";
   }
 
@@ -628,10 +653,35 @@
       });
   });
 
+    function bindStoreBrandColorInputs() {
+    const colorInput = document.getElementById("storeFormBrandColor");
+    const hexInput = document.getElementById("storeFormBrandColorHex");
+    if (!colorInput || !hexInput) return;
+
+    colorInput.addEventListener("input", function () {
+      hexInput.value = colorInput.value;
+    });
+
+    hexInput.addEventListener("input", function () {
+      const value = String(hexInput.value || "").trim();
+      if (/^#([0-9A-Fa-f]{6})$/.test(value)) {
+        colorInput.value = value;
+      }
+    });
+
+    hexInput.addEventListener("blur", function () {
+      const value = String(hexInput.value || "").trim();
+      if (!/^#([0-9A-Fa-f]{6})$/.test(value)) {
+        hexInput.value = colorInput.value || "#A855F7";
+      }
+    });
+  }
+
   document.addEventListener("click", function (e) {
     const addBtn = e.target.closest("#btnAddStore");
     if (!addBtn) return;
     renderStoreFormModal("create", null);
+    bindStoreBrandColorInputs();
   });
 
   document.addEventListener("click", async function (e) {
@@ -644,6 +694,7 @@
 
     if (action === "edit") {
       renderStoreFormModal("edit", store || { store_id: storeId });
+      bindStoreBrandColorInputs();
       return;
     }
 
