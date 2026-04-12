@@ -1419,7 +1419,13 @@ try {
       };
       lastRaw = lastPayload;
       window.__storeManagerPayload = storesJson;
-
+// 🟢 set default active store if none selected
+if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.stores.length) {
+  const firstStore = storesJson.stores[0];
+  if (firstStore?.store_id) {
+    window.setActiveStore(firstStore.store_id);
+  }
+}
       if (storeManagerView) {
         storeManagerView.innerHTML = renderStoresDashboardSafe(storesJson);
       }
@@ -1525,6 +1531,38 @@ window.loadPulseDashboard = doPulseDashboard;
 window.doStoreManager = doStoreManager;
 window.doPulseDashboard = doPulseDashboard;
 window.doSearch = doSearch;
+// 🟢 ACTIVE STORE STATE (NEW)
+
+window.__activeStoreId = null;
+
+function loadActiveStoreFromStorage() {
+  try {
+    const saved = localStorage.getItem("pulse_active_store_id");
+    if (saved) {
+      window.__activeStoreId = saved;
+    }
+  } catch (_) {}
+}
+
+function saveActiveStoreToStorage(storeId) {
+  try {
+    localStorage.setItem("pulse_active_store_id", storeId);
+  } catch (_) {}
+}
+
+window.setActiveStore = function (storeId) {
+  if (!storeId) return;
+
+  window.__activeStoreId = String(storeId);
+  saveActiveStoreToStorage(window.__activeStoreId);
+
+  console.log("Active store set:", window.__activeStoreId);
+
+  // 🔁 refresh dashboard safely (no reload)
+  if (typeof window.loadPulseDashboard === "function") {
+    window.loadPulseDashboard();
+  }
+};
 window.doCustomerSearch = doSearch;
 window.doCustomerSearchByEmail = function (email) {
   return doSearch(email);
@@ -1676,6 +1714,8 @@ $("navStores")?.addEventListener("click", (e) => {
 });
 
   window.addEventListener("DOMContentLoaded", async () => {
+    // 🟢 load persisted active store
+loadActiveStoreFromStorage();
     const loggedIn = await refreshSession().catch(() => false);
 
     if (loggedIn) {
