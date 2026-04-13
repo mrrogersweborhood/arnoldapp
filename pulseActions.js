@@ -485,6 +485,22 @@
       throw new Error("Action not implemented yet");
     }
 
+    const currentStore = Array.isArray(window.__storeManagerPayload?.stores)
+      ? window.__storeManagerPayload.stores.find(
+          (row) => String(row?.store_id || "").trim() === String(window.__activeStoreId || window.__pulseStoreId || "okobserver").trim()
+        ) || null
+      : null;
+
+    const currentExecutionMode =
+      String(currentStore?.execution_mode || "test").trim().toLowerCase() === "live"
+        ? "LIVE"
+        : "TEST";
+
+    if (currentExecutionMode === "TEST") {
+      showPulseBanner("TEST MODE: No real action executed. This was blocked for safety.", "error");
+      throw new Error("TEST MODE: Action blocked.");
+    }
+
     const affectedData = await fetchPulseAffectedCustomers(gateway);
     const incident_ids = getIncidentIdsFromAffectedCustomers(affectedData);
 

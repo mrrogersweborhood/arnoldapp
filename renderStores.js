@@ -101,8 +101,8 @@
             <div class="pulse-gateway-name" style="color:${esc(brandColor)};">${esc(storeName)}</div>
             <div class="pulse-gateway-share">Store ID: ${esc(storeId || "—")}</div>
           </div>
-          <div class="pulse-priority-pill ${executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium"}">
-            ${esc(executionMode)}
+                    <div class="pulse-priority-pill ${executionMode === "LIVE" ? "pulse-priority-high" : "pulse-priority-medium"}">
+            ${executionMode === "LIVE" ? "LIVE — ACTIVE" : "TEST — SAFE MODE"}
           </div>
         </div>
 
@@ -200,7 +200,15 @@
 
     return `<div class="pulse-grid">${stores.map(renderStoreCard).join("")}</div>`;
   }
+function renderTestModeBanner(testStores) {
+  if (!testStores || Number(testStores) === 0) return "";
 
+  return `
+    <div class="pulse-test-banner">
+      ⚠ TEST MODE ACTIVE — ${esc(String(testStores))} store(s) are not executing real actions
+    </div>
+  `;
+}
   function renderStoresShell({
     title,
     subtitle,
@@ -216,6 +224,7 @@
     return `
       <div class="pulse-shell pulse-store-manager">
         <section class="card pulse-hero">
+  ${renderTestModeBanner(testStores)}
           <div class="pulse-hero-top">
             <div>
               <div class="pulse-kicker">Platform</div>
