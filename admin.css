@@ -2121,6 +2121,9 @@ button.aa-opp-card{
   display:flex;
   flex-direction:column;
   gap:12px;
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
 }
 
 .store-manager-form-card-compact{
@@ -2171,6 +2174,9 @@ button.aa-opp-card{
   grid-template-columns:repeat(2, minmax(0, 1fr));
   gap:18px 16px;
   align-items:start;
+  min-width:0;
+  width:100%;
+  box-sizing:border-box;
 }
 
 .store-manager-form-grid-compact{
