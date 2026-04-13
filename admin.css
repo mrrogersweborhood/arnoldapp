@@ -2315,7 +2315,64 @@ button.aa-opp-card{
   line-height:1.45;
   color:#64748B;
 }
+.store-manager-color-control{
+  display:grid;
+  grid-template-columns:56px minmax(0, 1fr);
+  gap:12px;
+  align-items:center;
+}
 
+.store-manager-color-swatch{
+  display:block;
+  width:56px;
+  height:44px;
+  margin:0;
+  cursor:pointer;
+}
+
+#storeFormBrandColor{
+  position:absolute;
+  opacity:0;
+  pointer-events:none;
+}
+
+.store-manager-color-preview{
+  display:block;
+  width:56px;
+  height:44px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.55),
+    0 1px 2px rgba(15,23,42,.06);
+}
+
+.store-manager-color-input-wrap{
+  min-width:0;
+}
+
+.store-manager-color-input-wrap #storeFormBrandColorHex{
+  width:100%;
+}
+
+.store-manager-color-help{
+  margin-top:6px;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.45;
+  color:#64748B;
+}
+
+@media (max-width: 760px){
+  .store-manager-color-control{
+    grid-template-columns:1fr;
+  }
+
+  .store-manager-color-swatch,
+  .store-manager-color-preview{
+    width:100%;
+  }
+}
 .store-manager-card-actions{
   display:flex;
   justify-content:flex-end;

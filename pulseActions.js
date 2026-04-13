@@ -262,23 +262,34 @@
 
           <div class="store-manager-field store-manager-field-wide">
             <span>Brand Color</span>
-            <div class="store-manager-color-row">
-              <input
-                id="storeFormBrandColor"
-                type="color"
-                value="${esc(brandColor)}"
-              />
-              <input
-                id="storeFormBrandColorHex"
-                type="text"
-                value="${esc(brandColor)}"
-                placeholder="#A855F7"
-                spellcheck="false"
-                autocomplete="off"
-              />
-            </div>
-            <div class="store-manager-checkbox-help">
-              Choose a store identity color or enter a hex value.
+
+            <div class="store-manager-color-control">
+              <label for="storeFormBrandColor" class="store-manager-color-swatch">
+                <input
+                  id="storeFormBrandColor"
+                  type="color"
+                  value="${esc(brandColor)}"
+                />
+                <span
+                  id="storeFormBrandColorPreview"
+                  class="store-manager-color-preview"
+                  style="background:${esc(brandColor)};"
+                ></span>
+              </label>
+
+              <div class="store-manager-color-input-wrap">
+                <input
+                  id="storeFormBrandColorHex"
+                  type="text"
+                  value="${esc(brandColor)}"
+                  placeholder="#A855F7"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+                <div class="store-manager-color-help">
+                  Choose a store identity color or enter a hex value.
+                </div>
+              </div>
             </div>
           </div>
 
@@ -656,16 +667,23 @@
     function bindStoreBrandColorInputs() {
     const colorInput = document.getElementById("storeFormBrandColor");
     const hexInput = document.getElementById("storeFormBrandColorHex");
-    if (!colorInput || !hexInput) return;
+    const preview = document.getElementById("storeFormBrandColorPreview");
+    if (!colorInput || !hexInput || !preview) return;
+
+    function syncPreview(nextValue) {
+      preview.style.background = nextValue;
+    }
 
     colorInput.addEventListener("input", function () {
       hexInput.value = colorInput.value;
+      syncPreview(colorInput.value);
     });
 
     hexInput.addEventListener("input", function () {
       const value = String(hexInput.value || "").trim();
       if (/^#([0-9A-Fa-f]{6})$/.test(value)) {
         colorInput.value = value;
+        syncPreview(value);
       }
     });
 
@@ -674,7 +692,10 @@
       if (!/^#([0-9A-Fa-f]{6})$/.test(value)) {
         hexInput.value = colorInput.value || "#A855F7";
       }
+      syncPreview(hexInput.value);
     });
+
+    syncPreview(colorInput.value || "#A855F7");
   }
 
   document.addEventListener("click", function (e) {
