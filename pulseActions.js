@@ -765,46 +765,7 @@ modalEl.onclick = (e) => {
     }
 
     return;
-
-      const confirmDelete = confirm(
-        `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`
-      );
-
-      if (!confirmDelete) return;
-
-      try {
-        btn.disabled = true;
-        btn.textContent = "Deleting...";
-
-        const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            store_id: resolvedStoreId
-          })
-        });
-
-        const data = await res.json().catch(() => null);
-
-        if (!data?.ok) {
-          throw new Error(data?.error || "Delete failed");
-        }
-
-        showPulseBanner("Store deleted.", "success");
-        refreshStoreManagerView();
-      } catch (err) {
-        console.error("Delete store failed:", err);
-        showPulseBanner(err?.message || "Failed to delete store.", "error");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Delete Store";
-      }
-
-      return;
-    }
+  }
   });
 
   document.addEventListener("click", async function (e) {
