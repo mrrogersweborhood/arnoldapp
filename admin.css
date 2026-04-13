@@ -2578,7 +2578,11 @@ body:not(.pulse-modal-open) .store-manager-form-grid {
 }
 
 /* PREVENT MODAL BODY RULES FROM LEAKING */
-body:not(.pulse-modal-open) #pulse-modal,
+/* 🔴 FIX: do NOT destroy modal layout when closed */
+body:not(.pulse-modal-open) #pulse-modal {
+  display: none !important;
+}
+
 body:not(.pulse-modal-open) .pulse-modal-body {
   all: unset;
 }
