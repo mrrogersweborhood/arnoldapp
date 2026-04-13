@@ -328,6 +328,20 @@
     const footerEl = document.getElementById("pulse-modal-footer");
 
     modalEl?.classList.add("store-manager-modal");
+    // ✅ Attach close handler for Store Manager modal
+modalEl.onclick = (e) => {
+  const bounds = modalEl.getBoundingClientRect();
+  const clickX = e.clientX;
+  const clickY = e.clientY;
+
+  const isTopRight =
+    clickX > bounds.right - 60 &&
+    clickY < bounds.top + 60;
+
+  if (isTopRight) {
+    modalEl.classList.add("hidden");
+  }
+};
     if (footerEl) footerEl.style.display = "none";
 
     modalBody.scrollTop = 0;
@@ -706,30 +720,51 @@
     syncPreview(colorInput.value || "#A855F7");
   }
 
-  document.addEventListener("click", function (e) {
-    const addBtn = e.target.closest("#btnAddStore");
-    if (!addBtn) return;
-    renderStoreFormModal("create", null);
-    bindStoreBrandColorInputs();
-  });
-
-  document.addEventListener("click", async function (e) {
-    const btn = e.target.closest("[data-store-action]");
+   document.addEventListener("click", async function (e) {
+    const btn = e.target.closest('[data-store-action="delete"]');
     if (!btn) return;
 
-    const action = String(btn.getAttribute("data-store-action") || "").trim();
-    const storeId = String(btn.getAttribute("data-store-id") || "").trim();
-    const store = findStoreById(storeId);
+    const resolvedStoreId = btn.getAttribute("data-store-id");
+    const storeName = btn.closest(".pulse-gateway-card")?.querySelector(".pulse-gateway-name")?.textContent || resolvedStoreId;
 
-    if (action === "edit") {
-      renderStoreFormModal("edit", store || { store_id: storeId });
-      bindStoreBrandColorInputs();
-      return;
+    const confirmDelete = confirm(
+      `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      btn.disabled = true;
+      btn.textContent = "Deleting...";
+
+      const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/stores/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          store_id: resolvedStoreId
+        })
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!data?.ok) {
+        throw new Error(data?.error || "Delete failed");
+      }
+
+      showPulseBanner("Store deleted.", "success");
+      refreshStoreManagerView();
+    } catch (err) {
+      console.error("Delete store failed:", err);
+      showPulseBanner(err?.message || "Failed to delete store.", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Delete Store";
     }
 
-    if (action === "delete") {
-      const resolvedStoreId = btn.getAttribute("data-store-id");
-      const storeName = btn.closest(".pulse-gateway-card")?.querySelector(".pulse-gateway-name")?.textContent || resolvedStoreId;
+    return;
 
       const confirmDelete = confirm(
         `Delete Store\n\nAre you sure you want to delete "${storeName}"?\n\nThis action cannot be undone.`

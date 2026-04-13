@@ -1428,7 +1428,16 @@ if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.s
   }
 }
       if (storeManagerView) {
-        storeManagerView.innerHTML = renderStoresDashboardSafe(storesJson);
+        if (window.__storeManagerMode === "edit" || window.__storeManagerMode === "create") {
+          storeManagerView.innerHTML = (
+            typeof window.renderStoreEditorView === "function"
+              ? window.renderStoreEditorView(window.__storeManagerMode, window.__storeManagerEditingStore)
+              : renderStoresDashboardSafe(storesJson)
+          );
+          bindStoreEditorControls();
+        } else {
+          storeManagerView.innerHTML = renderStoresDashboardSafe(storesJson);
+        }
       }
     } catch (err) {
       const errorHtml = `
@@ -1532,8 +1541,36 @@ window.loadPulseDashboard = doPulseDashboard;
 window.doStoreManager = doStoreManager;
 window.doPulseDashboard = doPulseDashboard;
 window.doSearch = doSearch;
-// 🟢 ACTIVE STORE STATE (NEW)
 
+// 🟢 STORE MANAGER PAGE-EDITOR STATE
+window.__storeManagerMode = "list";
+window.__storeManagerEditingStore = null;
+
+window.showStoreManagerList = function () {
+  window.__storeManagerMode = "list";
+  window.__storeManagerEditingStore = null;
+  if (typeof window.doStoreManager === "function") {
+    return window.doStoreManager();
+  }
+};
+
+window.showStoreManagerEditor = function (mode, store) {
+  const storeManagerView = $("storeManagerView");
+  if (!storeManagerView) return;
+
+  const safeMode = String(mode || "create").trim().toLowerCase() === "edit" ? "edit" : "create";
+  const safeStore = store && typeof store === "object" ? store : null;
+
+  window.__storeManagerMode = safeMode;
+  window.__storeManagerEditingStore = safeStore;
+
+  if (typeof window.renderStoreEditorView === "function") {
+    storeManagerView.innerHTML = window.renderStoreEditorView(safeMode, safeStore);
+    bindStoreEditorControls();
+  }
+};
+
+// 🟢 ACTIVE STORE STATE (NEW)
 window.__activeStoreId = null;
 
 function loadActiveStoreFromStorage() {
@@ -1597,6 +1634,141 @@ function syncActiveStoreSelect() {
   const select = document.getElementById("activeStoreSelect");
   if (!select) return;
   select.value = window.__activeStoreId || "";
+}
+
+function getStoreEditorPayload() {
+  return {
+    store_id: String(document.getElementById("storeEditorStoreId")?.value || "").trim(),
+    store_name: String(document.getElementById("storeEditorStoreName")?.value || "").trim(),
+    store_url: String(document.getElementById("storeEditorStoreUrl")?.value || "").trim(),
+    gateway: String(document.getElementById("storeEditorGateway")?.value || "").trim().toLowerCase(),
+    execution_mode: String(document.getElementById("storeEditorExecutionMode")?.value || "test").trim().toLowerCase(),
+    timezone: String(document.getElementById("storeEditorTimezone")?.value || "UTC").trim() || "UTC",
+    gateway_activity_window_hours: Number(document.getElementById("storeEditorGatewayWindow")?.value || 0) || 0,
+    allow_order_note_writes: document.getElementById("storeEditorAllowOrderNoteWrites")?.checked ? 1 : 0,
+    brand_color: String(
+      document.getElementById("storeEditorBrandColorHex")?.value ||
+      document.getElementById("storeEditorBrandColor")?.value ||
+      "#A855F7"
+    ).trim()
+  };
+}
+
+function validateStoreEditorPayload(payload) {
+  if (!payload.store_id) return "Store ID is required.";
+  if (!payload.store_name) return "Store name is required.";
+  if (!payload.store_url) return "Store URL is required.";
+  if (!/^https?:\/\//i.test(payload.store_url)) return "Store URL must start with http:// or https://";
+  if (!payload.gateway) return "Gateway is required.";
+  if (!payload.execution_mode) return "Execution mode is required.";
+  if (!payload.timezone) return "Timezone is required.";
+  if (!payload.gateway_activity_window_hours) return "Gateway activity window hours is required.";
+  if (!/^#([0-9A-Fa-f]{6})$/.test(String(payload.brand_color || "").trim())) {
+    return "Brand color must be a valid 6-digit hex value like #A855F7.";
+  }
+  return "";
+}
+
+function bindStoreEditorControls() {
+  const backBtn = document.getElementById("btnStoreEditorBack");
+  const cancelBtn = document.getElementById("btnStoreEditorCancel");
+  const saveBtn = document.getElementById("btnStoreEditorSave");
+  const colorInput = document.getElementById("storeEditorBrandColor");
+  const hexInput = document.getElementById("storeEditorBrandColorHex");
+  const preview = document.getElementById("storeEditorBrandColorPreview");
+
+  if (backBtn && !backBtn.dataset.bound) {
+    backBtn.dataset.bound = "true";
+    backBtn.addEventListener("click", () => {
+      window.showStoreManagerList();
+    });
+  }
+
+  if (cancelBtn && !cancelBtn.dataset.bound) {
+    cancelBtn.dataset.bound = "true";
+    cancelBtn.addEventListener("click", () => {
+      window.showStoreManagerList();
+    });
+  }
+
+  if (colorInput && hexInput && preview && !colorInput.dataset.bound) {
+    const syncPreview = (value) => {
+      preview.style.background = value;
+    };
+
+    colorInput.dataset.bound = "true";
+
+    colorInput.addEventListener("input", function () {
+      hexInput.value = colorInput.value;
+      syncPreview(colorInput.value);
+    });
+
+    hexInput.addEventListener("input", function () {
+      const value = String(hexInput.value || "").trim();
+      if (/^#([0-9A-Fa-f]{6})$/.test(value)) {
+        colorInput.value = value;
+        syncPreview(value);
+      }
+    });
+
+    hexInput.addEventListener("blur", function () {
+      const value = String(hexInput.value || "").trim();
+      if (!/^#([0-9A-Fa-f]{6})$/.test(value)) {
+        hexInput.value = colorInput.value || "#A855F7";
+      }
+      syncPreview(hexInput.value);
+    });
+
+    syncPreview(colorInput.value || "#A855F7");
+  }
+
+  if (saveBtn && !saveBtn.dataset.bound) {
+    saveBtn.dataset.bound = "true";
+    saveBtn.addEventListener("click", async () => {
+      const submitAction = String(saveBtn.getAttribute("data-store-editor-submit") || "").trim();
+      const payload = getStoreEditorPayload();
+      const validationError = validateStoreEditorPayload(payload);
+
+      if (validationError) {
+        setStatus("warn", validationError);
+        return;
+      }
+
+      const endpoint =
+        submitAction === "update"
+          ? "https://pulse-worker.bob-b5c.workers.dev/stores/update"
+          : "https://pulse-worker.bob-b5c.workers.dev/stores/create";
+
+      const originalLabel = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Processing...";
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if (!data?.ok) {
+          throw new Error(data?.error || "Save store failed.");
+        }
+
+        setStatus("", submitAction === "update" ? "Store updated." : "Store created.");
+        window.__storeManagerMode = "list";
+        window.__storeManagerEditingStore = null;
+        await window.doStoreManager();
+      } catch (err) {
+        setStatus("warn", err?.message || "Save store failed.");
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = originalLabel;
+      }
+    });
+  }
 }
   // --------------------------------------------------
   // Helpers
@@ -1741,8 +1913,34 @@ $("navPulse")?.addEventListener("click", (e) => {
 
 $("navStores")?.addEventListener("click", (e) => {
   e.preventDefault();
+  window.__storeManagerMode = "list";
+  window.__storeManagerEditingStore = null;
   doStoreManager().catch(console.error);
 });
+
+document.addEventListener("click", (e) => {
+  const editBtn = e.target.closest('[data-store-action="edit"]');
+  if (!editBtn) return;
+
+  e.preventDefault();
+
+  const storeId = String(editBtn.getAttribute("data-store-id") || "").trim();
+  const stores = Array.isArray(window.__storeManagerPayload?.stores)
+    ? window.__storeManagerPayload.stores
+    : [];
+  const store = stores.find((row) => String(row?.store_id || "") === storeId) || { store_id: storeId };
+
+  window.showStoreManagerEditor("edit", store);
+});
+
+document.addEventListener("click", (e) => {
+  const addBtn = e.target.closest("#btnAddStore");
+  if (!addBtn) return;
+
+  e.preventDefault();
+  window.showStoreManagerEditor("create", null);
+});
+
 document.getElementById("activeStoreSelect")?.addEventListener("change", (e) => {
   const id = String(e.target?.value || "").trim();
   if (!id || id === window.__activeStoreId) return;
