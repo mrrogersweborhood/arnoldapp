@@ -896,7 +896,11 @@
 
     if (!trigger) return;
 
-    const action = String(trigger.getAttribute("data-action") || "").trim();
+    let action = String(trigger.getAttribute("data-action") || "").trim();
+
+// ✅ Normalize UI tokens → system actions
+if (action === "RETRY_LATER") action = "pause";
+if (action === "RETRY_NOW") action = "retry";
     const gateway = String(trigger.getAttribute("data-gateway") || "").trim();
     if (!action || !gateway) return;
 
