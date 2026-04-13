@@ -58,7 +58,10 @@
   background: rgba(8, 6, 14, 0.68);
   backdrop-filter: blur(8px);
 }
-
+/* 🧨 CRITICAL FIX — hide backdrop when modal is hidden */
+#pulse-modal.hidden .pulse-modal-backdrop {
+  display: none !important;
+}
 .pulse-modal-box {
   position: relative;
   width: min(1040px, calc(100vw - 64px));
