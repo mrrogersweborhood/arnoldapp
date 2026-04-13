@@ -324,12 +324,17 @@
       </div>
         `;
 
-    const modalEl = document.getElementById("pulse-modal");
+        const modalEl = document.getElementById("pulse-modal");
     const footerEl = document.getElementById("pulse-modal-footer");
+
     modalEl?.classList.add("store-manager-modal");
     if (footerEl) footerEl.style.display = "none";
+
+    modalBody.scrollTop = 0;
     modalEl?.classList.remove("hidden");
-  }  function renderStoreDeleteModal(store) {
+  }
+
+  function renderStoreDeleteModal(store) {
     const modalTitle = document.getElementById("pulse-modal-title");
     const modalBody = document.getElementById("pulse-modal-body");
     if (!modalTitle || !modalBody) return;
@@ -363,12 +368,15 @@
 
     const modalEl = document.getElementById("pulse-modal");
     const footerEl = document.getElementById("pulse-modal-footer");
-    modalEl?.classList.add("store-manager-modal");
+
+    modalEl?.classList.remove("store-manager-modal");
     if (footerEl) footerEl.style.display = "none";
+
+    modalBody.scrollTop = 0;
     modalEl?.classList.remove("hidden");
   }
 
-    function getStoreFormPayload() {
+  function getStoreFormPayload() {
     return {
       store_id: String(document.getElementById("storeFormStoreId")?.value || "").trim(),
       store_name: String(document.getElementById("storeFormStoreName")?.value || "").trim(),
