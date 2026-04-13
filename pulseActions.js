@@ -765,7 +765,6 @@ modalEl.onclick = (e) => {
     }
 
     return;
-  }
   });
 
   document.addEventListener("click", async function (e) {
