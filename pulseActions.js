@@ -31,7 +31,7 @@
     }, 3000);
   }
 
-    function openPulseModal(title, body) {
+    window.openPulseModal = function (title, body) {
     const modal = document.getElementById("pulse-modal");
     if (!modal) return;
 
@@ -478,7 +478,7 @@
       : [];
   }
 
-  async function executePulseGatewayAction(action, gateway) {
+  window.executePulseGatewayAction = function (action, gateway) {
     const endpoint = getPulseActionEndpoint(action);
 
     if (!endpoint) {
