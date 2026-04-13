@@ -103,64 +103,91 @@
    ========================= */
 
 .store-switcher-pill{
-  display:flex;
+  position:relative;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
   align-items:center;
-  gap:8px;
-  padding:6px 10px;
+  column-gap:10px;
+
+  min-width:240px;
+  height:40px;
+
+  padding:0 36px 0 14px;
+
   border-radius:999px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  height:34px;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
+
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+  backdrop-filter:blur(10px);
+
+  transition:background .12s ease, border-color .12s ease, box-shadow .12s ease;
 }
 
 .store-switcher-pill:hover{
   background:rgba(255,255,255,.14);
   border-color:rgba(255,255,255,.28);
-  box-shadow:0 6px 14px rgba(0,0,0,.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 6px 14px rgba(0,0,0,.18);
 }
 
-/* Dropdown */
+/* label */
+.store-switcher-label{
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.68);
+  white-space:nowrap;
+}
 
+/* select */
 .store-switcher-select{
   appearance:none;
   -webkit-appearance:none;
   -moz-appearance:none;
+
+  width:100%;
+  min-width:0;
+  height:100%;
+
   border:none;
   background:transparent;
+
   color:#ffffff;
-  font-size:13px;
+  font-size:14px;
   font-weight:900;
+
   outline:none;
   cursor:pointer;
-  min-width:180px;
-  padding-right:10px;
+  padding:0;
 }
-
-/* Dropdown options */
 
 .store-switcher-select option{
   color:#0f172a;
 }
 
-/* Chevron indicator */
-
+/* chevron */
 .store-switcher-pill::after{
   content:"▾";
   position:absolute;
-  right:12px;
+  right:14px;
   top:50%;
   transform:translateY(-50%);
   font-size:12px;
-  font-weight:900;
-  color:rgba(255,255,255,.85);
+  font-weight:950;
+  color:rgba(255,255,255,.88);
   pointer-events:none;
-  transition:transform .12s ease;
 }
 
-/* Optional subtle click feedback */
-
-.store-switcher-pill:active::after{
-  transform:translateY(-50%) scale(0.92);
+/* mobile */
+@media (max-width:760px){
+  .store-switcher-pill{
+    width:100%;
+    max-width:260px;
+    min-width:0;
+  }
 }
 @media (max-width: 760px){
   .topbar{
