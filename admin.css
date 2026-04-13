@@ -98,18 +98,34 @@
    Store Switcher Pill
    ========================= */
 
+/* =========================
+   Store Switcher Pill — Polished
+   ========================= */
+
 .store-switcher-pill{
+  position:relative;
   display:flex;
   align-items:center;
-  padding:6px 10px;
+  padding:6px 34px 6px 12px; /* space for chevron */
   border-radius:999px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.18);
   backdrop-filter:blur(10px);
+  transition:background .12s ease, border-color .12s ease, box-shadow .12s ease;
 }
+
+.store-switcher-pill:hover{
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.28);
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+}
+
+/* Dropdown */
 
 .store-switcher-select{
   appearance:none;
+  -webkit-appearance:none;
+  -moz-appearance:none;
   border:none;
   background:transparent;
   color:#ffffff;
@@ -117,11 +133,35 @@
   font-weight:900;
   outline:none;
   cursor:pointer;
-  min-width:140px;
+  min-width:180px;
+  padding-right:10px;
 }
+
+/* Dropdown options */
 
 .store-switcher-select option{
   color:#0f172a;
+}
+
+/* Chevron indicator */
+
+.store-switcher-pill::after{
+  content:"▾";
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:12px;
+  font-weight:900;
+  color:rgba(255,255,255,.85);
+  pointer-events:none;
+  transition:transform .12s ease;
+}
+
+/* Optional subtle click feedback */
+
+.store-switcher-pill:active::after{
+  transform:translateY(-50%) scale(0.92);
 }
 @media (max-width: 760px){
   .topbar{
