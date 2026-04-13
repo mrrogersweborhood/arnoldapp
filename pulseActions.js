@@ -896,11 +896,25 @@
 
     if (!trigger) return;
 
-    let action = String(trigger.getAttribute("data-action") || "").trim();
+    let action = String(trigger.getAttribute("data-action") || "").trim().toLowerCase();
 
-// ✅ Normalize UI tokens → system actions
-if (action === "RETRY_LATER") action = "pause";
-if (action === "RETRY_NOW") action = "retry";
+// ✅ Normalize ALL possible inputs
+if (action === "retry_later") action = "pause";
+if (action === "retry_now") action = "retry";
+
+// ✅ Allow direct actions (THIS WAS MISSING)
+if (action === "pause" || action === "retry" || action === "resume") {
+  window.__pulseModalGateway = gateway;
+
+  if (typeof window.openPulseModal === "function") {
+    window.openPulseModal(
+      gateway.toUpperCase() + " Actions",
+      `Select an action for <strong>${gateway.toUpperCase()}</strong>`
+    );
+  }
+
+  return; // 🔥 CRITICAL — STOP HERE
+}
     const gateway = String(trigger.getAttribute("data-gateway") || "").trim();
     if (!action || !gateway) return;
 
