@@ -309,7 +309,7 @@
             </div>
           </div>
 
-          <div class="store-manager-form-card store-manager-form-card-compact">
+          <div class="store-manager-form-card">
             <div class="store-manager-form-head">
               <div>
                 <div class="store-manager-form-title">
@@ -325,7 +325,7 @@
               </div>
             </div>
 
-            <div class="store-manager-form-grid store-manager-form-grid-compact">
+            <div class="store-manager-form-grid">
               <label class="store-manager-field">
                 <span>Store ID</span>
                 <input
