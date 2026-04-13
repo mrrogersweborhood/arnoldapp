@@ -103,15 +103,14 @@
    ========================= */
 
 .store-switcher-pill{
-  position:relative;
   display:flex;
   align-items:center;
-  padding:6px 34px 6px 12px; /* space for chevron */
+  gap:8px;
+  padding:6px 10px;
   border-radius:999px;
-  background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.18);
-  backdrop-filter:blur(10px);
-  transition:background .12s ease, border-color .12s ease, box-shadow .12s ease;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  height:34px;
 }
 
 .store-switcher-pill:hover{
