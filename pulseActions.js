@@ -78,36 +78,36 @@
     modal.classList.remove("hidden");
   }
 
-   function closePulseModal() {
-  const modal = document.getElementById("pulse-modal");
-  if (!modal) return;
-
-  // hide modal
-  modal.classList.add("hidden");
-
-  // clear modal state
-  window.__pulseModalGateway = null;
-
-  // 🧨 HARD RESET BACKDROP (THIS IS THE FIX)
-  const backdrop = document.querySelector(".pulse-modal-backdrop");
-  if (backdrop) {
-    backdrop.style.display = "none";
-  }
-
-  // 🧨 also restore it for next open
-  setTimeout(() => {
-    if (backdrop) backdrop.style.display = "";
-  }, 0);
-}
+  function closePulseModal() {
     const modal = document.getElementById("pulse-modal");
     const footerEl = document.getElementById("pulse-modal-footer");
+    const bodyEl = document.getElementById("pulse-modal-body");
+    const titleEl = document.getElementById("pulse-modal-title");
+    const backdrop = document.querySelector(".pulse-modal-backdrop");
+
     if (!modal) return;
 
     modal.classList.remove("store-manager-modal");
-    if (footerEl) footerEl.style.display = "";
-
     modal.classList.add("hidden");
+
+    if (footerEl) footerEl.style.display = "";
+    if (bodyEl) {
+      bodyEl.innerHTML = "";
+      bodyEl.scrollTop = 0;
+    }
+    if (titleEl) {
+      titleEl.textContent = "Action";
+    }
+
+    modal.onclick = null;
     window.__pulseModalGateway = null;
+
+    if (backdrop) {
+      backdrop.style.display = "none";
+      setTimeout(() => {
+        backdrop.style.display = "";
+      }, 0);
+    }
   }
 
   function formatPulseMoney(value) {
@@ -348,37 +348,21 @@
     const footerEl = document.getElementById("pulse-modal-footer");
 
     modalEl?.classList.add("store-manager-modal");
-    // ✅ Attach close handler for Store Manager modal
-modalEl.onclick = (e) => {
-  const bounds = modalEl.getBoundingClientRect();
-  const clickX = e.clientX;
-  const clickY = e.clientY;
 
-  const isTopRight =
-    clickX > bounds.right - 60 &&
-    clickY < bounds.top + 60;
+    // ✅ Attach one close handler for Store Manager modal
+    modalEl.onclick = (e) => {
+      const bounds = modalEl.getBoundingClientRect();
+      const clickX = e.clientX;
+      const clickY = e.clientY;
 
-  if (isTopRight) {
-    // ✅ Use canonical close
-    closePulseModal();
-  }
-};
-// 🟢 prevent stacked handlers / stale modal behavior
-modalEl.onclick = null;
+      const isTopRight =
+        clickX > bounds.right - 60 &&
+        clickY < bounds.top + 60;
 
-modalEl.addEventListener("click", (e) => {
-  const bounds = modalEl.getBoundingClientRect();
-  const clickX = e.clientX;
-  const clickY = e.clientY;
-
-  const isTopRight =
-    clickX > bounds.right - 60 &&
-    clickY < bounds.top + 60;
-
-  if (isTopRight) {
-    closePulseModal();
-  }
-});
+      if (isTopRight) {
+        closePulseModal();
+      }
+    };
     if (footerEl) footerEl.style.display = "none";
 
     modalBody.scrollTop = 0;
