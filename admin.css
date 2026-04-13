@@ -2552,6 +2552,36 @@ button.aa-opp-card{
   }
 }
 /* === Store Manager Modal Sections === */
+/* =========================
+   Store Manager – FULL PAGE OVERRIDE (CRITICAL FIX)
+   ========================= */
+
+/* BREAK OUT OF MODAL CONSTRAINTS */
+body:not(.pulse-modal-open) .store-manager-form-card,
+body:not(.pulse-modal-open) .store-manager-form-grid,
+body:not(.pulse-modal-open) .store-manager-form-section {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+/* REMOVE ANY MODAL WIDTH/HEIGHT LIMITS */
+body:not(.pulse-modal-open) .store-manager-form-card {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* ENSURE GRID CAN EXPAND FULL WIDTH */
+body:not(.pulse-modal-open) .store-manager-form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100% !important;
+}
+
+/* PREVENT MODAL BODY RULES FROM LEAKING */
+body:not(.pulse-modal-open) #pulse-modal,
+body:not(.pulse-modal-open) .pulse-modal-body {
+  all: unset;
+}
 /* Store form uses a dedicated full-height modal mode.
    This replaces the shared action-modal shell behavior instead of layering tiny overrides on top. */
 
