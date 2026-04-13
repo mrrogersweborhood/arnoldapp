@@ -339,9 +339,26 @@ modalEl.onclick = (e) => {
     clickY < bounds.top + 60;
 
   if (isTopRight) {
-    modalEl.classList.add("hidden");
+    // ✅ Use canonical close
+    closePulseModal();
   }
 };
+// 🟢 prevent stacked handlers / stale modal behavior
+modalEl.onclick = null;
+
+modalEl.addEventListener("click", (e) => {
+  const bounds = modalEl.getBoundingClientRect();
+  const clickX = e.clientX;
+  const clickY = e.clientY;
+
+  const isTopRight =
+    clickX > bounds.right - 60 &&
+    clickY < bounds.top + 60;
+
+  if (isTopRight) {
+    closePulseModal();
+  }
+});
     if (footerEl) footerEl.style.display = "none";
 
     modalBody.scrollTop = 0;
