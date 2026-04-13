@@ -78,7 +78,27 @@
     modal.classList.remove("hidden");
   }
 
-    function closePulseModal() {
+   function closePulseModal() {
+  const modal = document.getElementById("pulse-modal");
+  if (!modal) return;
+
+  // hide modal
+  modal.classList.add("hidden");
+
+  // clear modal state
+  window.__pulseModalGateway = null;
+
+  // 🧨 HARD RESET BACKDROP (THIS IS THE FIX)
+  const backdrop = document.querySelector(".pulse-modal-backdrop");
+  if (backdrop) {
+    backdrop.style.display = "none";
+  }
+
+  // 🧨 also restore it for next open
+  setTimeout(() => {
+    if (backdrop) backdrop.style.display = "";
+  }, 0);
+}
     const modal = document.getElementById("pulse-modal");
     const footerEl = document.getElementById("pulse-modal-footer");
     if (!modal) return;
