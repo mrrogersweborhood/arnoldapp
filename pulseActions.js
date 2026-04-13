@@ -478,7 +478,7 @@
       : [];
   }
 
-  window.executePulseGatewayAction = function (action, gateway) {
+  window.executePulseGatewayAction = async function (action, gateway) {
     const endpoint = getPulseActionEndpoint(action);
 
     if (!endpoint) {
