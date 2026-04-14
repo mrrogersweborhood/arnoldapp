@@ -40,6 +40,7 @@
     const footerEl = document.getElementById("pulse-modal-footer");
     if (!titleEl || !bodyEl) return;
 
+    document.body.classList.add("pulse-modal-open");
     modal.classList.remove("store-manager-modal");
     if (footerEl) footerEl.style.display = "";
 
@@ -78,7 +79,7 @@
     modal.classList.remove("hidden");
   }
 
-  function closePulseModal() {
+   function closePulseModal() {
     const modal = document.getElementById("pulse-modal");
     const footerEl = document.getElementById("pulse-modal-footer");
     const bodyEl = document.getElementById("pulse-modal-body");
@@ -87,6 +88,7 @@
 
     if (!modal) return;
 
+    document.body.classList.remove("pulse-modal-open");
     modal.classList.remove("store-manager-modal");
     modal.classList.add("hidden");
 
