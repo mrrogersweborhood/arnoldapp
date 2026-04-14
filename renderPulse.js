@@ -223,7 +223,8 @@
         <div id="pulse-slot-action-outcome"></div>
         <div id="pulse-slot-incident-strip"></div>
         <div id="pulse-slot-automation-state"></div>
-        <div id="pulse-slot-hero"></div>
+<div id="pulse-slot-automation-history"></div>
+<div id="pulse-slot-hero"></div>
         <div id="pulse-slot-gateway-intelligence"></div>
         <div id="pulse-slot-reasons"></div>
         <div id="pulse-slot-repeat-offenders"></div>
@@ -377,7 +378,50 @@
       </section>
     `;
   }
+    function renderPulseAutomationHistorySection(rows = []) {
+    if (!rows.length) {
+      return `
+        <section class="card aa-section">
+          <div class="aa-section-head">
+            <div class="aa-section-title">Automation Activity</div>
+            <div class="aa-section-subtitle">No automation activity yet.</div>
+          </div>
+        </section>
+      `;
+    }
 
+    return `
+      <section class="card aa-section">
+        <div class="aa-section-head">
+          <div class="aa-section-title">Automation Activity</div>
+          <div class="aa-section-subtitle">Recent automated and manual state actions.</div>
+        </div>
+
+        <div class="pulse-automation-history">
+          ${rows.map((row) => `
+            <div class="pulse-automation-row">
+              <div class="pulse-automation-row-main">
+                <strong>${esc(String(row?.action || "").toUpperCase())}</strong>
+                — ${esc(formatPulseGatewayName(row?.gateway))}
+              </div>
+
+              <div class="pulse-automation-row-meta">
+                ${esc(formatPulseInteger(row?.affected_count || 0))} affected • ${esc(String(row?.execution_mode || "").toUpperCase())}
+              </div>
+
+              <div class="pulse-automation-row-message">
+                ${esc(String(row?.message || ""))}
+              </div>
+
+              <div class="pulse-automation-row-time">
+                ${esc(row?.created_at ? new Date(row.created_at).toLocaleString() : "Unknown time")}
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }
   function renderPulseIncidentStrip({
     isLoading,
     activeIncident,
@@ -522,6 +566,9 @@
 
   function buildPulseViewModel(analysis, summary, options = {}) {
     const isLoading = options.isLoading === true;
+    const automationRows = Array.isArray(options?.automation?.rows)
+      ? options.automation.rows
+      : [];
 
     // 🔥 HARD RESET OF RENDER-SCOPE UI STATE (CRITICAL)
     // Prevent stale optimistic state from leaking into a fresh render.
@@ -790,6 +837,7 @@ const automationStateSection = renderPulseAutomationStateCard({
   isLoading,
   analysis,
   summary,
+  automationRows,
   activeIncident,
   activeDecision
 });
@@ -1147,6 +1195,7 @@ const automationStateSection = renderPulseAutomationStateCard({
     return {
       actionOutcomeBanner,
       incidentStrip,
+      automationHistorySection: renderPulseAutomationHistorySection(automationRows),
       heroSection: `
         <section class="card pulse-hero">
           <div class="pulse-hero-top">
@@ -1272,6 +1321,7 @@ const automationStateSection = renderPulseAutomationStateCard({
         actionOutcomeBanner,
         incidentStrip,
         automationStateSection,
+        automationHistorySection,
         heroSection,
         gatewaySection,
         reasonsSection,
@@ -1282,6 +1332,7 @@ const automationStateSection = renderPulseAutomationStateCard({
       const slotOutcome = document.getElementById("pulse-slot-action-outcome");
       const slotIncident = document.getElementById("pulse-slot-incident-strip");
       const slotAutomationState = document.getElementById("pulse-slot-automation-state");
+      const slotAutomationHistory = document.getElementById("pulse-slot-automation-history");
       const slotHero = document.getElementById("pulse-slot-hero");
       const slotGateways = document.getElementById("pulse-slot-gateway-intelligence");
       const slotReasons = document.getElementById("pulse-slot-reasons");
@@ -1315,8 +1366,9 @@ const automationStateSection = renderPulseAutomationStateCard({
     }
   }
 }
-      if (slotIncident) slotIncident.innerHTML = incidentStrip || "";
+       if (slotIncident) slotIncident.innerHTML = incidentStrip || "";
       if (slotAutomationState) slotAutomationState.innerHTML = automationStateSection || "";
+      if (slotAutomationHistory) slotAutomationHistory.innerHTML = automationHistorySection || "";
       if (slotHero) slotHero.innerHTML = heroSection || "";
       if (slotGateways) slotGateways.innerHTML = gatewaySection || "";
       if (slotReasons) slotReasons.innerHTML = reasonsSection || "";

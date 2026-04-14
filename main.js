@@ -1477,14 +1477,16 @@ if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.s
         );
       }
 
-      try {
-        const [analysisRes, summaryRes] = await Promise.all([
+try {
+        const [analysisRes, summaryRes, automationRes] = await Promise.all([
           fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
-          fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" })
+          fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" }),
+          fetch(`${PULSE_WORKER_BASE}/pulse/automation-history`, { method: "GET" })
         ]);
 
         const analysisJson = await analysisRes.json().catch(() => null);
         const summaryJson = await summaryRes.json().catch(() => null);
+        const automationJson = await automationRes.json().catch(() => null);
 
         if (!analysisRes.ok || !analysisJson?.ok) {
           setStatus("warn", friendlyText(analysisJson?.error || "Pulse analysis failed."));
@@ -1500,7 +1502,8 @@ if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.s
           ok: true,
           pulse: {
             analysis: analysisJson,
-            summary: summaryJson
+            summary: summaryJson,
+            automation: automationJson
           }
         };
         lastRaw = lastPayload;
@@ -1510,7 +1513,9 @@ if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.s
 
           // 🟢 STEP 2 — HYDRATE EXISTING PULSE SHELL IN PLACE
           window.updatePulseView(
-            renderPulseDashboardSafe(analysisJson, summaryJson)
+            renderPulseDashboardSafe(analysisJson, summaryJson, {
+              automation: automationJson
+            })
           );
         }
 
