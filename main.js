@@ -1508,13 +1508,17 @@ try {
         };
         lastRaw = lastPayload;
 
-        if (results) {
+         if (results) {
           results.dataset.pulseInitialized = "true";
 
           // 🟢 STEP 2 — HYDRATE EXISTING PULSE SHELL IN PLACE
           window.updatePulseView(
             renderPulseDashboardSafe(analysisJson, summaryJson, {
-              automation: automationJson
+              automation: {
+                rows: Array.isArray(automationJson?.events)
+                  ? automationJson.events
+                  : []
+              }
             })
           );
         }
