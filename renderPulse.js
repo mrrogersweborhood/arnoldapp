@@ -383,8 +383,8 @@
       return `
         <section class="card aa-section">
           <div class="aa-section-head">
-            <div class="aa-section-title">Automation Activity</div>
-            <div class="aa-section-subtitle">No automation activity yet.</div>
+            <div class="aa-section-title">Automation History</div>
+            <div class="aa-section-subtitle">No system actions recorded yet.</div>
           </div>
         </section>
       `;
@@ -393,11 +393,22 @@
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Automation Activity</div>
-          <div class="aa-section-subtitle">Recent automated and manual state actions.</div>
+          <div>
+            <div class="aa-section-title">Automation History</div>
+            <div class="aa-section-subtitle">Recent system actions (audit log)</div>
+          </div>
+
+          <button
+            class="pulse-automation-toggle"
+            type="button"
+            data-action="pulse-toggle-automation-history"
+            aria-expanded="false"
+          >
+            View history
+          </button>
         </div>
 
-        <div class="pulse-automation-history">
+        <div class="pulse-automation-history is-collapsed">
           ${rows.map((row) => `
             <div class="pulse-automation-row">
               <div class="pulse-automation-row-main">
@@ -1387,6 +1398,29 @@ const automationStateSection = renderPulseAutomationStateCard({
   function bindPulseInteractions() {
         // Incident strip primary action is owned by pulseActions.js.
     // Do not bind a direct fetch/action path here.
+
+    // Toggle automation history
+    document.querySelectorAll('[data-action="pulse-toggle-automation-history"]').forEach((btn) => {
+      btn.onclick = () => {
+        const section = btn.closest(".aa-section");
+        if (!section) return;
+
+        const history = section.querySelector(".pulse-automation-history");
+        if (!history) return;
+
+        const isCollapsed = history.classList.contains("is-collapsed");
+
+        if (isCollapsed) {
+          history.classList.remove("is-collapsed");
+          btn.textContent = "Hide history";
+          btn.setAttribute("aria-expanded", "true");
+        } else {
+          history.classList.add("is-collapsed");
+          btn.textContent = "View history";
+          btn.setAttribute("aria-expanded", "false");
+        }
+      };
+    });
 
     // Inline customer email click → search
     document.querySelectorAll(".pulse-inline-customers-row[data-email]").forEach((row) => {
