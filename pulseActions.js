@@ -721,6 +721,7 @@
         console.error(err);
         btn.disabled = false;
         btn.textContent = originalLabel;
+        closePulseModal();
         showPulseBanner(err?.message || `Action failed for ${gateway}`, "error");
       });
   });
