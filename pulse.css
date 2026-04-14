@@ -862,41 +862,69 @@
 .pulse-automation-history{
   display:flex;
   flex-direction:column;
-  gap:12px;
+  gap:14px;
 }
 
 .pulse-automation-row{
-  padding:12px 14px;
-  border-radius:12px;
-  background:rgba(255,255,255,.72);
+  padding:14px 16px;
+  border-radius:14px;
+  background:rgba(255,255,255,.82);
   border:1px solid rgba(15,23,42,.08);
-  box-shadow:0 4px 10px rgba(15,23,42,.04);
+  box-shadow:0 6px 14px rgba(15,23,42,.05);
 }
 
 .pulse-automation-row-main{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
   font-size:14px;
-  font-weight:950;
+  line-height:1.35;
   color:#0b1220;
-  line-height:1.3;
+}
+
+.pulse-automation-action{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(139,92,246,.10);
+  border:1px solid rgba(139,92,246,.18);
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:#6d28d9;
+}
+
+.pulse-automation-separator{
+  color:#94a3b8;
+  font-weight:900;
+}
+
+.pulse-automation-gateway{
+  font-size:14px;
+  font-weight:900;
+  color:#0f172a;
 }
 
 .pulse-automation-row-meta{
-  margin-top:4px;
+  margin-top:8px;
   font-size:12px;
   font-weight:800;
   color:#64748b;
 }
 
 .pulse-automation-row-message{
-  margin-top:6px;
+  margin-top:8px;
   font-size:13px;
   font-weight:800;
   color:#334155;
-  line-height:1.45;
+  line-height:1.5;
 }
 
 .pulse-automation-row-time{
-  margin-top:6px;
+  margin-top:8px;
   font-size:11px;
   font-weight:800;
   color:#64748b;

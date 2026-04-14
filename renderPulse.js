@@ -401,8 +401,9 @@
           ${rows.map((row) => `
             <div class="pulse-automation-row">
               <div class="pulse-automation-row-main">
-                <strong>${esc(String(row?.action || "").toUpperCase())}</strong>
-                — ${esc(formatPulseGatewayName(row?.gateway))}
+                <span class="pulse-automation-action">${esc(String(row?.action || "").toUpperCase())}</span>
+                <span class="pulse-automation-separator">—</span>
+                <span class="pulse-automation-gateway">${esc(formatPulseGatewayName(row?.gateway))}</span>
               </div>
 
               <div class="pulse-automation-row-meta">
