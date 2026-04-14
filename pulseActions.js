@@ -896,7 +896,9 @@
 
     if (!trigger) return;
 
+    const gateway = String(trigger.getAttribute("data-gateway") || "").trim();
     let action = String(trigger.getAttribute("data-action") || "").trim().toLowerCase();
+    if (!action || !gateway) return;
 
 // ✅ Normalize ALL possible inputs
 if (action === "retry_later") action = "pause";
@@ -915,8 +917,6 @@ if (action === "pause" || action === "retry" || action === "resume") {
 
   return; // 🔥 CRITICAL — STOP HERE
 }
-    const gateway = String(trigger.getAttribute("data-gateway") || "").trim();
-    if (!action || !gateway) return;
 
     window.__pulseModalGateway = gateway;
 
