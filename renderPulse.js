@@ -1428,7 +1428,7 @@ const automationStateSection = renderPulseAutomationStateCard({
               <div class="pulse-section-subtitle">Recommended recovery actions, priorities, and next steps.</div>
             </div>
           </div>
-          <div class="pulse-grid">
+          <div class="pulse-grid ${!isLoading && gateways.length === 1 ? "pulse-grid-single-gateway" : ""}">
             ${gatewayCards}
           </div>
         </section>

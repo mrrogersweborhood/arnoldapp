@@ -179,6 +179,14 @@
   gap:14px;
 }
 
+.pulse-grid.pulse-grid-single-gateway{
+  grid-template-columns:1fr;
+}
+
+.pulse-grid.pulse-grid-single-gateway .pulse-gateway-card{
+  grid-column:1 / -1;
+}
+
 /* 🟢 Store Manager override — prevent early collapse */
 .pulse-store-manager .pulse-grid{
   grid-template-columns:repeat(auto-fit, minmax(420px, 1fr));
