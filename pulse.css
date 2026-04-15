@@ -179,12 +179,21 @@
   gap:14px;
 }
 
+/* Single gateway = compact SaaS hero mode */
 .pulse-grid.pulse-grid-single-gateway{
   grid-template-columns:1fr;
+  gap:10px; /* tighter vertical rhythm */
 }
 
 .pulse-grid.pulse-grid-single-gateway .pulse-gateway-card{
   grid-column:1 / -1;
+  padding:12px; /* reduce bulk */
+}
+
+/* tighten inner metrics ONLY in single mode */
+.pulse-grid.pulse-grid-single-gateway .pulse-gateway-metrics{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:8px;
 }
 
 /* 🟢 Store Manager override — prevent early collapse */
