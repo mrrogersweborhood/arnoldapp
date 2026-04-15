@@ -1143,7 +1143,26 @@
     width:100%;
   }
 }
+/* Style for the scanner button (similar to existing primary button styles) */
+#run-scanner-button {
+  padding: 12px 25px;
+  background-color: #007bff; /* Match with primary color */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  width: 100%; /* Full width inside its container */
+}
 
+#run-scanner-button:hover {
+  background-color: #0056b3; /* Hover state */
+}
+
+#run-scanner-button:active {
+  background-color: #003f7f; /* Active state */
+}
 /* ===== Pulse Modal UX Upgrade ===== */
 
 .pulse-modal-intro {
@@ -1195,7 +1214,26 @@
   color: #fff;
   width: 100%;
 }
+/* Style for the scanner button (similar to existing primary button styles) */
+#run-scanner-button {
+  padding: 12px 25px;
+  background-color: #007bff; /* Match with primary color */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 20px;
+  width: 100%; /* Full width inside its container */
+}
 
+#run-scanner-button:hover {
+  background-color: #0056b3; /* Hover state */
+}
+
+#run-scanner-button:active {
+  background-color: #003f7f; /* Active state */
+}
 .pulse-modal-action-btn.danger {
   background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
   color: #fff;
