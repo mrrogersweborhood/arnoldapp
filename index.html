@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pulse Revenue Intelligence</title>
-<link rel="icon" type="image/png" href="./logo.png?v=2026-04-13-0041">
+<link rel="icon" type="image/png" href="./logo.png?v=2026-04-13-0043">
   <style>
 
 :root{
@@ -363,9 +363,9 @@ body{
 }
   
   </style>
- <script src="./formatters.js?v=2026-04-13-0041"></script>
-  <link rel="stylesheet" href="./pulse.css?v=2026-04-13-0041" />
-  <link rel="stylesheet" href="./admin.css?v=2026-04-13-0041" />
+ <script src="./formatters.js?v=2026-04-13-0043"></script>
+  <link rel="stylesheet" href="./pulse.css?v=2026-04-13-0043" />
+  <link rel="stylesheet" href="./admin.css?v=2026-04-13-0043" />
 </head>
 
 <body>
@@ -470,62 +470,8 @@ body{
         </div>
       </div>
 
-<div class="scanner-panel">
-  <h3>Last Scanner Run</h3>
-
-  <!-- Scan History Section -->
-  <div id="scanner-status">
-    <div class="scan-history" id="scan-history" style="display: none;">
-      <p><strong>Last scan completed:</strong> <span id="scan-timestamp"></span></p>
-    </div>
-    <div class="no-scan-history" id="no-scan-history" style="display: none;">
-      <p>No scan history available yet.</p>
-    </div>
-  </div>
-
-  <!-- Insert the "Run the scanner" button here -->
-  <button id="run-scanner-button" onclick="runScanner()" class="btn btn-primary">Run the scanner</button>
-</div>
-  <!-- Scan History Section -->
-  <div id="scanner-status">
-    <div class="scan-history" id="scan-history" style="display: none;">
-      <p><strong>Last scan completed:</strong> <span id="scan-timestamp"></span></p>
-    </div>
-    
-    <div class="no-scan-history" id="no-scan-history" style="display: none;">
-      <p>No scan history available yet.</p>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading" id="loading" style="display: none;">
-      <p>Running the scan...</p>
-    </div>
-  </div>
-
-  <!-- Button to Trigger Scanner -->
-  <div class="scanner-panel">
-  <h3>Last Scanner Run</h3>
-
-  <!-- Scan History Section -->
-  <div id="scanner-status">
-    <div class="scan-history" id="scan-history" style="display: none;">
-      <p><strong>Last scan completed:</strong> <span id="scan-timestamp"></span></p>
-    </div>
-    
-    <div class="no-scan-history" id="no-scan-history" style="display: none;">
-      <p>No scan history available yet.</p>
-    </div>
-
-    <!-- Loading State -->
-    <div class="loading" id="loading" style="display: none;">
-      <p>Running the scan...</p>
-    </div>
-  </div>
-
-  <!-- Button inside a well-styled container -->
-  <button id="run-scanner-button" onclick="runScanner()" class="btn btn-primary">Run the scanner</button>
-</div>
-</div>
+<!-- Scanner panel removed from index.html.
+     Scanner UI must be rendered dynamically by renderPulse.js only. -->
       <div id="radarKpiBand" class="card radar-kpi-band is-hidden">
         <div class="radar-kpi-head">
           <div>
@@ -624,16 +570,16 @@ body{
   </div>
 </div>
 
-          <script src="./formatters.js?v=2026-04-13-0041"></script>
-      <script src="./renderCustomer.js?v=2026-04-13-0041"></script>
-        <script src="./renderHealth.js?v=2026-04-13-0041"></script>
-      <script src="./renderActivity.js?v=2026-04-13-0041"></script>
-           <script src="./pulseData.js?v=2026-04-13-0041"></script>
-         <script src="./renderRadar.js?v=2026-04-13-0041"></script>
-         <script src="./renderPulse.js?v=2026-04-13-0041"></script>
-        <script src="./renderStores.js?v=2026-04-13-0041"></script>
-        <script src="./pulseActions.js?v=2026-04-13-0041"></script>
-                <script src="./main.js?v=2026-04-13-0041"></script>
+          <script src="./formatters.js?v=2026-04-13-0043"></script>
+      <script src="./renderCustomer.js?v=2026-04-13-0043"></script>
+        <script src="./renderHealth.js?v=2026-04-13-0043"></script>
+      <script src="./renderActivity.js?v=2026-04-13-0043"></script>
+           <script src="./pulseData.js?v=2026-04-13-0043"></script>
+         <script src="./renderRadar.js?v=2026-04-13-0043"></script>
+         <script src="./renderPulse.js?v=2026-04-13-0043"></script>
+        <script src="./renderStores.js?v=2026-04-13-0043"></script>
+        <script src="./pulseActions.js?v=2026-04-13-0043"></script>
+                <script src="./main.js?v=2026-04-13-0043"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
