@@ -220,12 +220,12 @@
   function renderPulseShell() {
     return `
       <div id="pulse-shell" class="pulse-shell">
-        <div id="pulse-slot-action-outcome"></div>
-        <div id="pulse-slot-incident-strip"></div>
-        <div id="pulse-slot-automation-state"></div>
-<div id="pulse-slot-automation-history"></div>
-<div id="pulse-slot-hero"></div>
         <div id="pulse-slot-gateway-intelligence"></div>
+        <div id="pulse-slot-hero"></div>
+        <div id="pulse-slot-incident-strip"></div>
+        <div id="pulse-slot-action-outcome"></div>
+        <div id="pulse-slot-automation-state"></div>
+        <div id="pulse-slot-automation-history"></div>
         <div id="pulse-slot-reasons"></div>
         <div id="pulse-slot-repeat-offenders"></div>
         <div id="pulse-slot-last-scan">
