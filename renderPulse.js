@@ -228,7 +228,10 @@
         <div id="pulse-slot-gateway-intelligence"></div>
         <div id="pulse-slot-reasons"></div>
         <div id="pulse-slot-repeat-offenders"></div>
-        <div id="pulse-slot-last-scan"></div>
+        <div id="pulse-slot-last-scan">
+  <!-- Insert button here -->
+  <button id="run-scanner-button" onclick="runScanner()" class="btn btn-primary">Run the scanner</button>
+</div>
       </div>
     `;
   }
