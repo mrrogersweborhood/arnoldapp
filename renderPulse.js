@@ -858,85 +858,13 @@ const automationStateSection = renderPulseAutomationStateCard({
 });
      const gatewayCards = isLoading
       ? `
-        <article class="pulse-gateway-card">
+        <article class="pulse-gateway-card pulse-gateway-card-single">
           <div class="pulse-gateway-top">
             <div>
-              <div class="aa-loading-row" style="width:140px; height:28px;"></div>
-              <div class="aa-loading-row" style="width:150px; margin-top:10px;"></div>
+              <div class="aa-loading-row" style="width:160px; height:28px;"></div>
+              <div class="aa-loading-row" style="width:200px; margin-top:10px;"></div>
             </div>
-            <div class="aa-loading-row" style="width:52px; height:30px; border-radius:999px;"></div>
-          </div>
-
-          <div class="pulse-gateway-metrics">
-            <div class="pulse-metric">
-              <div class="pulse-metric-label"><div class="aa-loading-row" style="width:62px;"></div></div>
-              <div class="pulse-metric-value"><div class="aa-loading-row" style="width:48px; height:24px;"></div></div>
-            </div>
-            <div class="pulse-metric">
-              <div class="pulse-metric-label"><div class="aa-loading-row" style="width:76px;"></div></div>
-              <div class="pulse-metric-value"><div class="aa-loading-row" style="width:48px; height:24px;"></div></div>
-            </div>
-            <div class="pulse-metric">
-              <div class="pulse-metric-label"><div class="aa-loading-row" style="width:128px;"></div></div>
-              <div class="pulse-metric-value"><div class="aa-loading-row" style="width:96px; height:24px;"></div></div>
-            </div>
-            <div class="pulse-metric">
-              <div class="pulse-metric-label"><div class="aa-loading-row" style="width:86px;"></div></div>
-              <div class="pulse-metric-value"><div class="aa-loading-row" style="width:62px; height:24px;"></div></div>
-            </div>
-          </div>
-
-          <div class="pulse-gateway-message">
-            <div class="aa-loading-row" style="width:100%; margin-top:2px;"></div>
-            <div class="aa-loading-row" style="width:92%; margin-top:8px;"></div>
-          </div>
-
-          <div
-            class="pulse-gateway-recovery pulse-priority-medium"
-            style="margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03);"
-          >
-            <div
-              class="pulse-gateway-recovery-label"
-              style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75;"
-            >
-              <div class="aa-loading-row" style="width:150px;"></div>
-            </div>
-
-            <div
-              class="pulse-gateway-recovery-value"
-              style="font-size:14px; font-weight:700; margin-top:8px;"
-            >
-              <div class="aa-loading-row" style="width:140px;"></div>
-            </div>
-
-            <div
-              class="pulse-gateway-recovery-reason"
-              style="font-size:12px; margin-top:8px; opacity:.85;"
-            >
-              <div class="aa-loading-row" style="width:96%;"></div>
-            </div>
-          </div>
-
-          <div class="pulse-gateway-playbook" style="margin-top:10px;">
-            <div class="aa-loading-row" style="width:88%;"></div>
-          </div>
-
-          <div class="pulse-gateway-playbook" style="margin-top:8px; opacity:.86;">
-            <div class="aa-loading-row" style="width:72%;"></div>
-          </div>
-
-          <div class="pulse-gateway-actions" style="margin-top:14px;">
-            <div class="aa-loading-row" style="width:146px; height:34px; border-radius:999px;"></div>
-          </div>
-        </article>
-
-        <article class="pulse-gateway-card">
-          <div class="pulse-gateway-top">
-            <div>
-              <div class="aa-loading-row" style="width:140px; height:28px;"></div>
-              <div class="aa-loading-row" style="width:150px; margin-top:10px;"></div>
-            </div>
-            <div class="aa-loading-row" style="width:52px; height:30px; border-radius:999px;"></div>
+            <div class="aa-loading-row" style="width:60px; height:30px; border-radius:999px;"></div>
           </div>
 
           <div class="pulse-gateway-metrics">
