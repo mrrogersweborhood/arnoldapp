@@ -1018,47 +1018,11 @@ const automationStateSection = renderPulseAutomationStateCard({
                 )}
               </div>
 
-              <div
-                class="pulse-gateway-recovery pulse-priority-${recoveryToken}"
-                style="margin-top:10px; padding:10px 12px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03);"
-              >
-                <div
-                  class="pulse-gateway-recovery-label"
-                  style="font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; opacity:.75;"
-                >
-                  Recovery recommendation
-                </div>
-
-                <div
-                  class="pulse-gateway-recovery-value"
-                  style="font-size:14px; font-weight:700; margin-top:4px;"
-                >
-                  ${esc(recoveryLabel)}
-                </div>
-
-                ${
-                  recoveryReason
-                    ? `
-                      <div
-                        class="pulse-gateway-recovery-reason"
-                        style="font-size:12px; margin-top:6px; opacity:.85;"
-                      >
-                        ${esc(recoveryReason)}
-                      </div>
-                    `
-                    : ""
-                }
-              </div>
-
-              <div class="pulse-gateway-playbook" style="margin-top:10px;">
-                ${esc(gateway?.playbook || "Monitor gateway performance.")}
-              </div>
-
               <div class="pulse-gateway-playbook" style="margin-top:8px; opacity:.86;">
                 ${esc(successMeta)}
               </div>
 
-              <div class="pulse-gateway-actions" style="margin-top:14px;">
+              <div class="pulse-gateway-actions" style="margin-top:12px;">
                 <button
                   class="pulse-action-pill pulse-action-pill-secondary"
                   type="button"
