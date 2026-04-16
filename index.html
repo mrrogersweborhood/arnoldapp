@@ -6,7 +6,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Pulse Revenue Intelligence</title>
-<link rel="icon" type="image/png" href="./logo.png?v=2026-04-15-0020">
+<link rel="icon" type="image/png" href="./logo.png?v=2026-04-15-0021">
   <style>
 
 :root{
@@ -364,7 +364,31 @@ body{
   padding-top: 14px;
   border-top: 1px solid rgba(168,85,247,.12);
 }
+/* subtle container signal so section doesn't disappear visually */
+.aa-section:has(.pulse-automation-group) {
+  background: linear-gradient(
+    180deg,
+    rgba(168,85,247,.05) 0%,
+    rgba(168,85,247,0) 100%
+  );
+}
 
+/* slightly stronger section title when automation is present */
+.aa-section:has(.pulse-automation-group) .aa-section-title {
+  color: #6b21a8;
+  letter-spacing: .02em;
+}
+
+/* improve affordance of rows (click/scan feel) */
+.pulse-automation-group {
+  padding: 10px 12px;
+  border-radius: 12px;
+  transition: background .15s ease;
+}
+
+.pulse-automation-group:hover {
+  background: rgba(168,85,247,.06);
+}
 .pulse-automation-group-head {
   display: flex;
   justify-content: space-between;
@@ -460,9 +484,9 @@ body{
 }
   
   </style>
- <script src="./formatters.js?v=2026-04-15-0020"></script>
-  <link rel="stylesheet" href="./pulse.css?v=2026-04-15-0020" />
-  <link rel="stylesheet" href="./admin.css?v=2026-04-15-0020" />
+ <script src="./formatters.js?v=2026-04-15-0021"></script>
+  <link rel="stylesheet" href="./pulse.css?v=2026-04-15-0021" />
+  <link rel="stylesheet" href="./admin.css?v=2026-04-15-0021" />
 </head>
 
 <body>
@@ -667,16 +691,16 @@ body{
   </div>
 </div>
 
-          <script src="./formatters.js?v=2026-04-15-0020"></script>
-      <script src="./renderCustomer.js?v=2026-04-15-0020"></script>
-        <script src="./renderHealth.js?v=2026-04-15-0020"></script>
-      <script src="./renderActivity.js?v=2026-04-15-0020"></script>
-           <script src="./pulseData.js?v=2026-04-15-0020"></script>
-         <script src="./renderRadar.js?v=2026-04-15-0020"></script>
-         <script src="./renderPulse.js?v=2026-04-15-0020"></script>
-        <script src="./renderStores.js?v=2026-04-15-0020"></script>
-        <script src="./pulseActions.js?v=2026-04-15-0020"></script>
-                <script src="./main.js?v=2026-04-15-0020"></script>
+          <script src="./formatters.js?v=2026-04-15-0021"></script>
+      <script src="./renderCustomer.js?v=2026-04-15-0021"></script>
+        <script src="./renderHealth.js?v=2026-04-15-0021"></script>
+      <script src="./renderActivity.js?v=2026-04-15-0021"></script>
+           <script src="./pulseData.js?v=2026-04-15-0021"></script>
+         <script src="./renderRadar.js?v=2026-04-15-0021"></script>
+         <script src="./renderPulse.js?v=2026-04-15-0021"></script>
+        <script src="./renderStores.js?v=2026-04-15-0021"></script>
+        <script src="./pulseActions.js?v=2026-04-15-0021"></script>
+                <script src="./main.js?v=2026-04-15-0021"></script>
 </body>
 </html>
 <!-- 🔴 index.html -->
