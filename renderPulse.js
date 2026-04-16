@@ -364,7 +364,7 @@
         )
       );
 
-    return `
+        return `
       <section class="card aa-section">
         <div class="aa-section-head">
           <div class="aa-section-title">Automation State</div>
@@ -384,8 +384,13 @@
               ${stateMeta}
             </div>
 
-            <div class="pulse-incident-strip-status-reason">
-              ${stateReason}
+            <div class="pulse-automation-decision">
+              <div class="pulse-automation-decision-label">
+                Decision Engine
+              </div>
+              <div class="pulse-automation-decision-text">
+                ${stateReason}
+              </div>
             </div>
           </div>
         </div>
@@ -422,7 +427,9 @@
         <div class="aa-section-head">
           <div>
             <div class="aa-section-title">Automation History</div>
-            <div class="aa-section-subtitle">Recent system actions grouped by gateway</div>
+            <div class="aa-section-subtitle">
+  ${esc(formatPulseInteger(total))} actions • ${esc(topGateway)} most active • Last: ${esc(lastTime)}
+</div>
           </div>
 
           <button
@@ -434,7 +441,24 @@
             View history
           </button>
         </div>
+        const total = rows.length;
 
+const lastRow = rows[0] || {};
+const lastTime = lastRow?.created_at
+  ? new Date(lastRow.created_at).toLocaleString()
+  : "Unknown";
+
+const gatewayCounts = rows.reduce((acc, r) => {
+  const g = String(r?.gateway || "unknown").toLowerCase();
+  acc[g] = (acc[g] || 0) + 1;
+  return acc;
+}, {});
+
+const topGatewayKey = Object.keys(gatewayCounts).sort(
+  (a, b) => gatewayCounts[b] - gatewayCounts[a]
+)[0] || "unknown";
+
+const topGateway = formatPulseGatewayName(topGatewayKey);
         <div class="pulse-automation-history is-collapsed">
           ${gatewayOrder.map((gatewayKey) => {
             const gatewayRows = grouped[gatewayKey] || [];
