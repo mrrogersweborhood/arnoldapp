@@ -858,7 +858,7 @@ const automationStateSection = renderPulseAutomationStateCard({
 });
      const gatewayCards = isLoading
       ? `
-        <article class="pulse-gateway-card pulse-gateway-card-single">
+          <article class="pulse-gateway-card pulse-gateway-card-single pulse-gateway-card-hero">
           <div class="pulse-gateway-top">
             <div>
               <div class="aa-loading-row" style="width:160px; height:28px;"></div>
