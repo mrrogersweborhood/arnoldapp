@@ -975,8 +975,25 @@ const automationStateSection = renderPulseAutomationStateCard({
                 </div>
               </div>
 
-                            <div class="pulse-gateway-playbook" style="margin-top:8px; opacity:.86;">
-                ${esc(successMeta)}
+                            <div class="pulse-gateway-decision">
+                <div class="pulse-decision-header">
+                  <div class="pulse-decision-title">
+                    ${esc(recoveryLabel)}
+                  </div>
+
+                  <div class="pulse-confidence">
+                    <div class="pulse-confidence-bar">
+                      <div class="pulse-confidence-fill" style="width:${esc(formatPulsePercent((Number(incident?.confidence || 0) || 0) * 100))};"></div>
+                    </div>
+                    <div class="pulse-confidence-label">
+                      ${esc(formatPulsePercent((Number(incident?.confidence || 0) || 0) * 100))} confidence
+                    </div>
+                  </div>
+                </div>
+
+                <div class="pulse-decision-meta">
+                  ${esc(successMeta)}
+                </div>
               </div>
 
               <div class="pulse-gateway-actions" style="margin-top:12px;">
@@ -1175,7 +1192,7 @@ const automationStateSection = renderPulseAutomationStateCard({
             </div>
           </section>
         `
-        : `
+         : `
           <section class="card pulse-section pulse-last-scan-card">
             <div class="pulse-section-head">
               <div>
@@ -1183,7 +1200,16 @@ const automationStateSection = renderPulseAutomationStateCard({
                 <div class="pulse-section-subtitle">No scan history available yet.</div>
               </div>
             </div>
-            <div class="pulse-last-scan-footer">Run the scanner to populate the last scan panel.</div>
+
+            <div class="pulse-last-scan-footer">
+              <button
+                class="pulse-action-pill pulse-action-pill-primary"
+                type="button"
+                data-action="pulse-run-scan"
+              >
+                Run Scan
+              </button>
+            </div>
           </section>
         `;
 
@@ -1426,7 +1452,7 @@ const automationStateSection = renderPulseAutomationStateCard({
       };
     });
 
-    // Repeat offender email click → search
+     // Repeat offender email click → search
     document.querySelectorAll(".pulse-offender-email").forEach((el) => {
       el.onclick = () => {
         const email = el.getAttribute("data-email");
@@ -1434,6 +1460,58 @@ const automationStateSection = renderPulseAutomationStateCard({
 
         if (typeof window.doSearch === "function") {
           window.doSearch(email);
+        }
+      };
+    });
+
+    // Run scanner
+    document.querySelectorAll('.pulse-action-pill[data-action="pulse-run-scan"]').forEach((btn) => {
+      btn.onclick = async () => {
+        const originalText = btn.textContent;
+        btn.textContent = "Running…";
+        btn.disabled = true;
+
+        try {
+          const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/scanner/run", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok || data?.ok === false) {
+            throw new Error(data?.error || data?.message || "Scanner run failed.");
+          }
+
+          try {
+            localStorage.setItem("pulse_last_scan", JSON.stringify({
+              time: new Date().toISOString(),
+              processed: Number(data?.processed || 0) || 0,
+              incidents_created: Number(data?.incidents_created || 0) || 0,
+              incidents_skipped: Number(data?.incidents_skipped || 0) || 0,
+              recent_success_count: Number(data?.recent_success_count || 0) || 0
+            }));
+          } catch (_) {}
+
+          if (typeof window.showPulseBanner === "function") {
+            window.showPulseBanner("Scanner run completed.", "success");
+          }
+
+          if (typeof window.loadPulseDashboard === "function") {
+            await window.loadPulseDashboard();
+          } else if (typeof window.doPulseDashboard === "function") {
+            await window.doPulseDashboard();
+          }
+        } catch (err) {
+          console.error("Run scanner failed:", err);
+          if (typeof window.showPulseBanner === "function") {
+            window.showPulseBanner(err?.message || "Scanner run failed.", "error");
+          }
+        } finally {
+          btn.textContent = originalText;
+          btn.disabled = false;
         }
       };
     });
