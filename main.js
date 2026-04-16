@@ -1478,15 +1478,17 @@ if (!window.__activeStoreId && Array.isArray(storesJson?.stores) && storesJson.s
       }
 
 try {
-        const [analysisRes, summaryRes, automationRes] = await Promise.all([
+        const [analysisRes, summaryRes, automationRes, scanRes] = await Promise.all([
           fetch(`${PULSE_WORKER_BASE}/pulse/failure-analysis`, { method: "GET" }),
           fetch(`${PULSE_WORKER_BASE}/pulse/summary`, { method: "GET" }),
-          fetch(`${PULSE_WORKER_BASE}/pulse/automation-history`, { method: "GET" })
+          fetch(`${PULSE_WORKER_BASE}/pulse/automation-history`, { method: "GET" }),
+          fetch(`${PULSE_WORKER_BASE}/scanner/runs/latest`, { method: "GET" })
         ]);
 
         const analysisJson = await analysisRes.json().catch(() => null);
         const summaryJson = await summaryRes.json().catch(() => null);
         const automationJson = await automationRes.json().catch(() => null);
+        const scanJson = await scanRes.json().catch(() => null);
 
         if (!analysisRes.ok || !analysisJson?.ok) {
           setStatus("warn", friendlyText(analysisJson?.error || "Pulse analysis failed."));
@@ -1498,12 +1500,15 @@ try {
           return;
         }
 
+        window.__pulseLatestScan = scanJson?.ok ? scanJson.run : null;
+
         lastPayload = {
           ok: true,
           pulse: {
             analysis: analysisJson,
             summary: summaryJson,
-            automation: automationJson
+            automation: automationJson,
+            latest_scan: window.__pulseLatestScan
           }
         };
         lastRaw = lastPayload;

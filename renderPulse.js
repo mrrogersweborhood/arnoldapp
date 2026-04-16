@@ -153,6 +153,17 @@
 
   function getLastScanInfo() {
     try {
+      if (window.__pulseLatestScan) {
+        const run = window.__pulseLatestScan;
+
+        return {
+          time: run.run_completed_at || run.run_started_at || null,
+          processed: run.processed || 0,
+          incidents_created: run.incidents_created || 0,
+          incidents_skipped: run.incidents_skipped || 0
+        };
+      }
+
       const raw = localStorage.getItem("pulse_last_scan");
       if (!raw) return null;
       return JSON.parse(raw);
@@ -381,7 +392,7 @@
       </section>
     `;
   }
-    function renderPulseAutomationHistorySection(rows = []) {
+  function renderPulseAutomationHistorySection(rows = []) {
     if (!rows.length) {
       return `
         <section class="card aa-section">
@@ -393,12 +404,25 @@
       `;
     }
 
+    const grouped = rows.reduce((acc, row) => {
+      const key = String(row?.gateway || "unknown").trim().toLowerCase() || "unknown";
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(row);
+      return acc;
+    }, {});
+
+    const gatewayOrder = Object.keys(grouped).sort((a, b) => {
+      return grouped[b].length - grouped[a].length || a.localeCompare(b);
+    });
+
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
           <div>
             <div class="aa-section-title">Automation History</div>
-            <div class="aa-section-subtitle">Recent system actions (audit log)</div>
+            <div class="aa-section-subtitle">Recent system actions grouped by gateway</div>
           </div>
 
           <button
@@ -412,27 +436,50 @@
         </div>
 
         <div class="pulse-automation-history is-collapsed">
-          ${rows.map((row) => `
-            <div class="pulse-automation-row">
-              <div class="pulse-automation-row-main">
-                <span class="pulse-automation-action">${esc(String(row?.action || "").toUpperCase())}</span>
-                <span class="pulse-automation-separator">—</span>
-                <span class="pulse-automation-gateway">${esc(formatPulseGatewayName(row?.gateway))}</span>
-              </div>
+          ${gatewayOrder.map((gatewayKey) => {
+            const gatewayRows = grouped[gatewayKey] || [];
+            const gatewayLabel = formatPulseGatewayName(gatewayKey);
 
-              <div class="pulse-automation-row-meta">
-                ${esc(formatPulseInteger(row?.affected_count || 0))} affected • ${esc(String(row?.execution_mode || "").toUpperCase())}
-              </div>
+            return `
+              <div class="pulse-automation-group">
+                <div class="pulse-automation-group-head">
+                  <div class="pulse-automation-group-title">${esc(gatewayLabel)}</div>
+                  <div class="pulse-automation-group-count">
+                    ${esc(formatPulseInteger(gatewayRows.length))} event${gatewayRows.length === 1 ? "" : "s"}
+                  </div>
+                </div>
 
-              <div class="pulse-automation-row-message">
-                ${esc(String(row?.message || ""))}
-              </div>
+                <div class="pulse-automation-group-rows">
+                  ${gatewayRows.map((row) => `
+                    <div class="pulse-automation-row">
+                      <div class="pulse-automation-row-top">
+                        <div class="pulse-automation-row-main">
+                          <span class="pulse-automation-action">${esc(String(row?.action || "").toUpperCase())}</span>
+                        </div>
 
-              <div class="pulse-automation-row-time">
-                ${esc(row?.created_at ? new Date(row.created_at).toLocaleString() : "Unknown time")}
+                        <div class="pulse-automation-row-badges">
+                          <span class="pulse-automation-count">
+                            ${esc(formatPulseInteger(row?.affected_count || 0))} affected
+                          </span>
+                          <span class="pulse-automation-mode">
+                            ${esc(String(row?.execution_mode || "").toUpperCase() || "UNKNOWN")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div class="pulse-automation-row-message">
+                        ${esc(String(row?.message || ""))}
+                      </div>
+
+                      <div class="pulse-automation-row-time">
+                        ${esc(row?.created_at ? new Date(row.created_at).toLocaleString() : "Unknown time")}
+                      </div>
+                    </div>
+                  `).join("")}
+                </div>
               </div>
-            </div>
-          `).join("")}
+            `;
+          }).join("")}
         </div>
       </section>
     `;
