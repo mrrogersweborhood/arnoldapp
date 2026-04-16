@@ -209,6 +209,11 @@
   box-shadow:0 6px 16px rgba(15,23,42,.05);
 }
 
+.pulse-gateway-card-hero{
+  padding:12px 14px;
+  box-shadow:0 4px 12px rgba(15,23,42,.04);
+}
+
 /* 🟢 EXPANDED CARD — FULL WIDTH (FIXES TABLE CRUSHING) */
 .pulse-gateway-card-expanded{
   grid-column: 1 / -1;
@@ -223,17 +228,28 @@
   gap:12px;
   margin-bottom:12px;
 }
+.pulse-gateway-card-hero .pulse-gateway-top{
+  margin-bottom:10px;
+}
 .pulse-gateway-name{
   font-size:21px;
   font-weight:950;
   color:#0b1220;
   line-height:1.1;
 }
+.pulse-gateway-card-hero .pulse-gateway-name{
+  font-size:18px;
+  line-height:1.05;
+}
 .pulse-gateway-share{
   margin-top:4px;
   font-size:12px;
   font-weight:900;
   color:#64748b;
+}
+.pulse-gateway-card-hero .pulse-gateway-share{
+  margin-top:3px;
+  font-size:11px;
 }
 .pulse-priority-pill,
 .pulse-action-pill{
@@ -303,11 +319,19 @@
   gap:10px;
   margin-bottom:12px;
 }
+.pulse-gateway-card-hero .pulse-gateway-metrics{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
 .pulse-metric{
   border:1px solid rgba(15,23,42,.08);
   border-radius:14px;
   background:rgba(255,255,255,.8);
   padding:10px;
+}
+.pulse-gateway-card-hero .pulse-metric{
+  padding:8px 10px;
 }
 .pulse-metric-label{
   font-size:11px;
@@ -317,15 +341,47 @@
   letter-spacing:.04em;
   margin-bottom:6px;
 }
+.pulse-gateway-card-hero .pulse-metric-label{
+  margin-bottom:4px;
+}
 .pulse-metric-value{
   font-size:18px;
   font-weight:950;
   color:#0b1220;
 }
+.pulse-gateway-card-hero .pulse-metric-value{
+  font-size:16px;
+}
 .pulse-message-block{
   margin-top:10px;
   border-top:1px solid rgba(15,23,42,.08);
   padding-top:12px;
+}
+
+.pulse-gateway-message{
+  font-size:15px;
+  line-height:1.5;
+  color:#0f172a;
+}
+
+.pulse-gateway-card-hero .pulse-gateway-message{
+  font-size:13px;
+  line-height:1.35;
+}
+
+.pulse-gateway-card-hero .pulse-gateway-recovery{
+  margin-top:8px !important;
+  padding:8px 10px !important;
+}
+
+.pulse-gateway-card-hero .pulse-gateway-playbook{
+  margin-top:8px !important;
+  font-size:13px;
+  line-height:1.35;
+}
+
+.pulse-gateway-card-hero .pulse-gateway-actions{
+  margin-top:10px !important;
 }
 
 /* Product-style affected customers list inside gateway cards */

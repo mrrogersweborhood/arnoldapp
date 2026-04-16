@@ -1033,7 +1033,7 @@ const automationStateSection = renderPulseAutomationStateCard({
             if (intelligenceStatus === "OUTAGE") intelligenceToken = "high";
             else if (intelligenceStatus === "DEGRADED" || intelligenceStatus === "SPIKE") intelligenceToken = "medium";
 
-            const successMeta = hasRecentSuccessForGateway
+                        const successMeta = hasRecentSuccessForGateway
               ? `Recent successes ${formatPulseInteger(recentSuccessCountForGateway)}`
               : (
                   Number.isFinite(minutesSinceSuccess) && minutesSinceSuccess >= 0
@@ -1041,8 +1041,10 @@ const automationStateSection = renderPulseAutomationStateCard({
                     : "No recent success observed"
                 );
 
+            const isSingleGatewayHero = gateways.length === 1;
+
             return `
-            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] ? "pulse-gateway-card-expanded" : ""}">
+            <article class="pulse-gateway-card pulse-priority-${priorityToken}-card ${isSingleGatewayHero ? "pulse-gateway-card-hero" : ""} ${window.__pulseExpandedGateways?.[String(gateway?.gateway || "").toLowerCase()] ? "pulse-gateway-card-expanded" : ""}">
               <div class="pulse-gateway-top">
                 <div>
                   <div class="pulse-gateway-name">
