@@ -182,18 +182,19 @@
 /* Single gateway = compact SaaS hero mode */
 .pulse-grid.pulse-grid-single-gateway{
   grid-template-columns:1fr;
-  gap:10px; /* tighter vertical rhythm */
+  gap:8px;
 }
 
 .pulse-grid.pulse-grid-single-gateway .pulse-gateway-card{
   grid-column:1 / -1;
-  padding:12px; /* reduce bulk */
+  padding:14px 16px;
 }
 
 /* tighten inner metrics ONLY in single mode */
 .pulse-grid.pulse-grid-single-gateway .pulse-gateway-metrics{
   grid-template-columns:repeat(4, minmax(0, 1fr));
-  gap:8px;
+  gap:10px;
+  margin-bottom:10px;
 }
 
 /* 🟢 Store Manager override — prevent early collapse */
@@ -229,7 +230,7 @@
   margin-bottom:12px;
 }
 .pulse-gateway-card-hero .pulse-gateway-top{
-  margin-bottom:10px;
+  margin-bottom:8px;
 }
 .pulse-gateway-name{
   font-size:21px;
@@ -238,8 +239,8 @@
   line-height:1.1;
 }
 .pulse-gateway-card-hero .pulse-gateway-name{
-  font-size:18px;
-  line-height:1.05;
+  font-size:24px;
+  line-height:1.02;
 }
 .pulse-gateway-share{
   margin-top:4px;
@@ -248,8 +249,9 @@
   color:#64748b;
 }
 .pulse-gateway-card-hero .pulse-gateway-share{
-  margin-top:3px;
-  font-size:11px;
+  margin-top:5px;
+  font-size:14px;
+  color:#475569;
 }
 .pulse-priority-pill,
 .pulse-action-pill{
@@ -321,7 +323,7 @@
 }
 .pulse-gateway-card-hero .pulse-gateway-metrics{
   grid-template-columns:repeat(4, minmax(0, 1fr));
-  gap:8px;
+  gap:10px;
   margin-bottom:10px;
 }
 .pulse-metric{
@@ -331,7 +333,7 @@
   padding:10px;
 }
 .pulse-gateway-card-hero .pulse-metric{
-  padding:8px 10px;
+  padding:10px 12px;
 }
 .pulse-metric-label{
   font-size:11px;
@@ -342,7 +344,9 @@
   margin-bottom:6px;
 }
 .pulse-gateway-card-hero .pulse-metric-label{
+  font-size:12px;
   margin-bottom:4px;
+  color:#64748b;
 }
 .pulse-metric-value{
   font-size:18px;
@@ -350,7 +354,8 @@
   color:#0b1220;
 }
 .pulse-gateway-card-hero .pulse-metric-value{
-  font-size:16px;
+  font-size:20px;
+  line-height:1.05;
 }
 .pulse-message-block{
   margin-top:10px;
@@ -365,19 +370,21 @@
 }
 
 .pulse-gateway-card-hero .pulse-gateway-message{
-  font-size:13px;
-  line-height:1.35;
+  font-size:16px;
+  line-height:1.45;
+  color:#0f172a;
 }
 
 .pulse-gateway-card-hero .pulse-gateway-recovery{
   margin-top:8px !important;
-  padding:8px 10px !important;
+  padding:10px 12px !important;
 }
 
 .pulse-gateway-card-hero .pulse-gateway-playbook{
   margin-top:8px !important;
-  font-size:13px;
-  line-height:1.35;
+  font-size:15px;
+  line-height:1.45;
+  color:#334155;
 }
 
 .pulse-gateway-card-hero .pulse-gateway-actions{
