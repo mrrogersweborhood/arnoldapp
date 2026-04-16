@@ -422,6 +422,25 @@
       return grouped[b].length - grouped[a].length || a.localeCompare(b);
     });
 
+    const total = rows.length;
+
+    const lastRow = rows[0] || {};
+    const lastTime = lastRow?.created_at
+      ? new Date(lastRow.created_at).toLocaleString()
+      : "Unknown";
+
+    const gatewayCounts = rows.reduce((acc, r) => {
+      const g = String(r?.gateway || "unknown").toLowerCase();
+      acc[g] = (acc[g] || 0) + 1;
+      return acc;
+    }, {});
+
+    const topGatewayKey = Object.keys(gatewayCounts).sort(
+      (a, b) => gatewayCounts[b] - gatewayCounts[a]
+    )[0] || "unknown";
+
+    const topGateway = formatPulseGatewayName(topGatewayKey);
+
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
@@ -441,24 +460,7 @@
             View history
           </button>
         </div>
-        const total = rows.length;
 
-const lastRow = rows[0] || {};
-const lastTime = lastRow?.created_at
-  ? new Date(lastRow.created_at).toLocaleString()
-  : "Unknown";
-
-const gatewayCounts = rows.reduce((acc, r) => {
-  const g = String(r?.gateway || "unknown").toLowerCase();
-  acc[g] = (acc[g] || 0) + 1;
-  return acc;
-}, {});
-
-const topGatewayKey = Object.keys(gatewayCounts).sort(
-  (a, b) => gatewayCounts[b] - gatewayCounts[a]
-)[0] || "unknown";
-
-const topGateway = formatPulseGatewayName(topGatewayKey);
         <div class="pulse-automation-history is-collapsed">
           ${gatewayOrder.map((gatewayKey) => {
             const gatewayRows = grouped[gatewayKey] || [];
