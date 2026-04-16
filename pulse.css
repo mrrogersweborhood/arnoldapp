@@ -281,6 +281,11 @@
   transition:all .08s ease;
 }
 
+.pulse-action-pill.is-loading{
+  opacity:.75;
+  pointer-events:none;
+}
+
 .pulse-gateway-card-hero .pulse-action-pill{
   transition:transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
 }

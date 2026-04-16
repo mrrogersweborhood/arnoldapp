@@ -1159,7 +1159,7 @@ const automationStateSection = renderPulseAutomationStateCard({
         </section>
       `
       : lastScanInfo
-        ? `
+         ? `
           <section class="card pulse-section pulse-last-scan-card">
             <div class="pulse-section-head">
               <div>
@@ -1189,6 +1189,16 @@ const automationStateSection = renderPulseAutomationStateCard({
                 <div class="pulse-last-scan-label">Last successful payment seen</div>
                 <div class="pulse-last-scan-value pulse-last-scan-value-small">${esc(lastSuccessAt ? new Date(lastSuccessAt).toLocaleString() : "No recent success observed")}</div>
               </div>
+            </div>
+
+            <div class="pulse-last-scan-footer">
+              <button
+                class="pulse-action-pill pulse-action-pill-primary"
+                type="button"
+                data-action="pulse-run-scan"
+              >
+                Run Scan Again
+              </button>
             </div>
           </section>
         `
@@ -1408,7 +1418,7 @@ const automationStateSection = renderPulseAutomationStateCard({
         // Incident strip primary action is owned by pulseActions.js.
     // Do not bind a direct fetch/action path here.
 
-    // Toggle automation history
+     // Toggle automation history
     document.querySelectorAll('[data-action="pulse-toggle-automation-history"]').forEach((btn) => {
       btn.onclick = () => {
         const section = btn.closest(".aa-section");
@@ -1427,6 +1437,62 @@ const automationStateSection = renderPulseAutomationStateCard({
           history.classList.add("is-collapsed");
           btn.textContent = "View history";
           btn.setAttribute("aria-expanded", "false");
+        }
+      };
+    });
+
+    // Run scan
+    document.querySelectorAll('.pulse-action-pill[data-action="pulse-run-scan"]').forEach((btn) => {
+      btn.onclick = async () => {
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.classList.add("is-loading");
+        btn.textContent = "Running scan…";
+
+        try {
+          const response = await fetch("https://pulse-worker.bob-b5c.workers.dev/scanner/run", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || data?.ok === false) {
+            throw new Error(data?.error || data?.message || "Scan failed");
+          }
+
+          try {
+            localStorage.setItem("pulse_last_scan", JSON.stringify({
+              time: new Date().toISOString(),
+              processed: Number(data?.scanned || 0) || 0,
+              incidents_created: Number(data?.incidents_created || 0) || 0,
+              incidents_skipped: Number(data?.incidents_skipped || 0) || 0,
+              recent_success_count: Number(data?.recent_success_count || 0) || 0
+            }));
+          } catch (_) {}
+
+          showPulseBanner("Scanner run completed.", "success");
+
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          if (typeof window.loadPulseDashboard === "function") {
+            await window.loadPulseDashboard();
+          } else if (typeof window.doPulseDashboard === "function") {
+            await window.doPulseDashboard();
+          } else if (typeof window.buildPulseViewModel === "function" && typeof window.hydratePulseView === "function") {
+            window.hydratePulseView(
+              window.buildPulseViewModel(window.__pulseLastAnalysis, window.__pulseLastSummary || null)
+            );
+          }
+        } catch (err) {
+          console.error("Run scanner failed:", err);
+          showPulseBanner(err?.message || "Scanner run failed.", "error");
+         } finally {
+          btn.classList.remove("is-loading");
+          btn.disabled = false;
+          btn.textContent = originalText;
         }
       };
     });
@@ -1464,57 +1530,7 @@ const automationStateSection = renderPulseAutomationStateCard({
       };
     });
 
-    // Run scanner
-    document.querySelectorAll('.pulse-action-pill[data-action="pulse-run-scan"]').forEach((btn) => {
-      btn.onclick = async () => {
-        const originalText = btn.textContent;
-        btn.textContent = "Running…";
-        btn.disabled = true;
 
-        try {
-          const res = await fetch("https://pulse-worker.bob-b5c.workers.dev/scanner/run", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            }
-          });
-
-          const data = await res.json().catch(() => ({}));
-
-          if (!res.ok || data?.ok === false) {
-            throw new Error(data?.error || data?.message || "Scanner run failed.");
-          }
-
-          try {
-            localStorage.setItem("pulse_last_scan", JSON.stringify({
-              time: new Date().toISOString(),
-              processed: Number(data?.processed || 0) || 0,
-              incidents_created: Number(data?.incidents_created || 0) || 0,
-              incidents_skipped: Number(data?.incidents_skipped || 0) || 0,
-              recent_success_count: Number(data?.recent_success_count || 0) || 0
-            }));
-          } catch (_) {}
-
-          if (typeof window.showPulseBanner === "function") {
-            window.showPulseBanner("Scanner run completed.", "success");
-          }
-
-          if (typeof window.loadPulseDashboard === "function") {
-            await window.loadPulseDashboard();
-          } else if (typeof window.doPulseDashboard === "function") {
-            await window.doPulseDashboard();
-          }
-        } catch (err) {
-          console.error("Run scanner failed:", err);
-          if (typeof window.showPulseBanner === "function") {
-            window.showPulseBanner(err?.message || "Scanner run failed.", "error");
-          }
-        } finally {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      };
-    });
 
     // Toggle customers
     document.querySelectorAll('.pulse-action-pill[data-action="pulse-toggle-customers"][data-gateway]').forEach((toggle) => {
