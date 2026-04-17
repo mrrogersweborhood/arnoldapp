@@ -1052,17 +1052,18 @@ h2{
 
     .aa-notes-cell{ text-align:right; }
     .aa-notes-toggle{
-      cursor:pointer;
-      border:0;
-      background:transparent;
-      color:var(--brand);
-      font-weight:950;
-      font-size:14px;
-      display:inline-flex;
-      align-items:center;
-      gap:10px;
-      padding:4px 6px;
-    }
+  cursor:pointer;
+  border:1px solid rgba(168,85,247,.20);
+  background:rgba(168,85,247,.08);
+  color:var(--brand);
+  font-weight:950;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:6px 10px;
+  border-radius:999px;
+}
     .aa-notes-count{
       display:inline-flex;
       align-items:center;
@@ -1078,10 +1079,15 @@ h2{
       font-weight:950;
     }
     .aa-notes-arrow{
-      font-size:12px;
-      color:rgba(147,51,234,.98);
-      transform:translateY(1px);
-    }
+  font-size:18px;
+  line-height:1;
+  color:rgba(147,51,234,.98);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:20px;
+  height:20px;
+}
 
     /* Expanded notes row */
 
