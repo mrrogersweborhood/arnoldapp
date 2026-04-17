@@ -11,71 +11,74 @@ function renderCustomerCard(customer) {
     const name = [fn, ln].filter(Boolean).join(" ").trim() || "—";
 
     return `
-      <div class="aa-card">
-        <div class="aa-card-title">Customer</div>
+  <div class="aa-card">
 
-        <div class="aa-tiles customer" style="grid-template-columns:repeat(4, minmax(0, 1fr));">
-          <div class="aa-tile">
-            <div class="aa-label">Name</div>
-            <div class="aa-value">${esc(String(name))}</div>
-          </div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
 
-          <div class="aa-tile">
-            <div class="aa-label">Email</div>
-            <div class="aa-value">${esc(String(email))}</div>
-          </div>
-
-          <div class="aa-tile">
-            <div class="aa-label">Customer ID</div>
-            <div class="aa-value">${esc(String(id))}</div>
-          </div>
-
-          <div class="aa-tile">
-            <div class="aa-label">Username</div>
-            <div class="aa-value">${esc(String(username))}</div>
-          </div>
+      <div>
+        <div style="font-size:20px; font-weight:600;">
+          ${esc(String(name))}
         </div>
-
-        <div class="aa-copy-row" style="margin-top:12px;">
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open WP
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Subscriptions
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Orders
-          </a>
-
-          <a
-            class="aa-copy-btn"
-            href="https://okobserver.org/wp-admin/post-new.php?post_type=shop_order&customer_id=${esc(String(id))}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            New Order
-          </a>
+        <div class="aa-muted" style="margin-top:4px;">
+          ${esc(String(email))}
+        </div>
+        <div class="aa-muted" style="font-size:12px; margin-top:2px;">
+          ID: ${esc(String(id))}
         </div>
       </div>
-    `;
-  }
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+
+        <div class="aa-tile">
+          <div class="aa-label">Subscriptions</div>
+          <div class="aa-value">${esc(String(customer?.subscriptions_count ?? "—"))}</div>
+        </div>
+
+        <div class="aa-tile">
+          <div class="aa-label">Orders</div>
+          <div class="aa-value">${esc(String(customer?.orders_count ?? "—"))}</div>
+        </div>
+
+        <div class="aa-tile">
+          <div class="aa-label">Revenue</div>
+          <div class="aa-value">${esc(String(customer?.total_spent ?? "—"))}</div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="aa-copy-row" style="margin-top:12px;">
+      <a
+        class="aa-copy-btn"
+        href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Open WP
+      </a>
+
+      <a
+        class="aa-copy-btn"
+        href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Subscriptions
+      </a>
+
+      <a
+        class="aa-copy-btn"
+        href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Orders
+      </a>
+    </div>
+
+  </div>
+`;  }
 
 function renderAddressBlock(title, addr, fallbackAddr) {
     const a = addr || null;
@@ -210,14 +213,103 @@ function renderCustomerPage({
       ${healthHTML || ""}
       ${activityHTML || ""}
 
-      <div class="aa-card">
+       <div class="aa-card">
         <div class="aa-card-title">Subscriptions</div>
-        <pre>${esc(JSON.stringify(subscriptions || [], null, 2))}</pre>
+
+        ${
+          Array.isArray(subscriptions) && subscriptions.length
+            ? `
+              <div class="aa-table-wrap">
+                <table class="aa-table" style="min-width:980px;">
+                  <thead>
+                    <tr>
+                      <th>Subscription</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                      <th>Start Date</th>
+                      <th>Next Payment</th>
+                      <th>Billing</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${subscriptions.map((sub) => {
+                      const subId = sub?.id != null ? `#${String(sub.id)}` : "—";
+                      const status = String(sub?.status ?? "—");
+                      const total = String(sub?.total ?? "—");
+                      const currency = String(sub?.currency ?? "").trim();
+                      const startDate = String(sub?.start_date ?? "—");
+                      const nextPayment = String(sub?.next_payment_date ?? "—");
+                      const interval = String(sub?.billing_interval ?? "").trim();
+                      const period = String(sub?.billing_period ?? "").trim();
+                      const billing = interval && period
+                        ? `Every ${interval} ${period}`
+                        : "—";
+
+                      return `
+                        <tr>
+                          <td>${esc(subId)}</td>
+                          <td>${esc(status)}</td>
+                          <td>${esc(currency ? `${total} ${currency}` : total)}</td>
+                          <td>${esc(startDate)}</td>
+                          <td>${esc(nextPayment)}</td>
+                          <td>${esc(billing)}</td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+            : `<div class="aa-muted">No subscriptions found.</div>`
+        }
       </div>
 
       <div class="aa-card">
         <div class="aa-card-title">Orders</div>
-        <pre>${esc(JSON.stringify(orders || [], null, 2))}</pre>
+
+        ${
+          Array.isArray(orders) && orders.length
+            ? `
+              <div class="aa-table-wrap">
+                <table class="aa-table" style="min-width:880px;">
+                  <thead>
+                    <tr>
+                      <th>Order</th>
+                      <th>Status</th>
+                      <th>Total</th>
+                      <th>Date</th>
+                      <th>Payment Method</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${orders.map((order) => {
+                      const orderId = order?.id != null ? `#${String(order.id)}` : "—";
+                      const status = String(order?.status ?? "—");
+                      const total = String(order?.total ?? "—");
+                      const currency = String(order?.currency ?? "").trim();
+                      const dateCreated = String(order?.date_created ?? "—");
+                      const paymentMethod = String(
+                        order?.payment_method_title ??
+                        order?.payment_method ??
+                        "—"
+                      );
+
+                      return `
+                        <tr>
+                          <td>${esc(orderId)}</td>
+                          <td>${esc(status)}</td>
+                          <td>${esc(currency ? `${total} ${currency}` : total)}</td>
+                          <td>${esc(dateCreated)}</td>
+                          <td>${esc(paymentMethod)}</td>
+                        </tr>
+                      `;
+                    }).join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+            : `<div class="aa-muted">No orders found.</div>`
+        }
       </div>
 
     </div>
