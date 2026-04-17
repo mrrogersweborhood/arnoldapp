@@ -295,11 +295,13 @@ function toggleLoginSearchUI(isLoggedIn) {
   }
 let sessionCache = null;
 
-async function refreshSession() {
-  // ✅ prevent overlapping calls (THIS is the fix)
-  if (sessionCache) return sessionCache;
+async function refreshSession(options = {}) {
+  const force = options === true || options?.force === true;
 
-  sessionCache = (async () => {
+  // ✅ prevent overlapping calls unless we are explicitly forcing a re-check
+  if (!force && sessionCache) return sessionCache;
+
+  const run = (async () => {
     try {
       const r = await fetch(`${PULSE_WORKER_BASE}/admin/status`, {
         method: "GET",
@@ -309,7 +311,6 @@ async function refreshSession() {
       if (!r.ok) throw new Error("status not ok");
 
       const j = await r.json().catch(() => null);
-
       const loggedIn = !!j?.loggedIn;
 
       if (loggedIn) {
@@ -322,25 +323,41 @@ async function refreshSession() {
       setSessionPill(false, null);
       toggleLoginSearchUI(false);
       setLoggedOutLanding(false);
-
-      // 🔥 HARD RESET UI STATE
       setDashboardChrome("search");
+
+      const results = $("results");
+      if (results) results.innerHTML = "";
 
       return false;
 
     } catch (err) {
       console.warn("refreshSession failed", err);
 
-      // ⚠️ DO NOT nuke session on transient failure
+      // ✅ on an explicit forced auth re-check, fail closed and reset the UI
+      if (force) {
+        setSessionPill(false, null);
+        toggleLoginSearchUI(false);
+        setLoggedOutLanding(false);
+        setDashboardChrome("search");
+
+        const results = $("results");
+        if (results) results.innerHTML = "";
+      }
+
       return false;
 
     } finally {
-      // allow future refresh after short delay
-      setTimeout(() => { sessionCache = null; }, 2000);
+      if (!force) {
+        setTimeout(() => { sessionCache = null; }, 2000);
+      }
     }
   })();
 
-  return sessionCache;
+  if (!force) {
+    sessionCache = run;
+  }
+
+  return run;
 }
 
 
@@ -1274,6 +1291,19 @@ btn.addEventListener("click", async () => {
               : r.status === 404
                 ? "Search target not found."
                 : "Search failed.";
+
+        const authFailure =
+          r.status === 401 ||
+          r.status === 403 ||
+          errorText === "Not logged in" ||
+          errorText === "Invalid session" ||
+          errorText === "Admin required";
+
+        if (authFailure) {
+          await refreshSession({ force: true });
+          setStatus("warn", "Session expired. Please log in again.");
+          return;
+        }
 
         setStatus("warn", friendlyText(errorText));
         if (results && !cachedShell) results.innerHTML = "";
