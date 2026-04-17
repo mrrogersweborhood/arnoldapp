@@ -188,29 +188,33 @@ function renderCustomerPage({
 }) {
   const customerCard = renderCustomerCard(customer);
 
-  const billingCard = renderAddressBlock(
+   const billingCard = renderAddressBlock(
     "Billing",
     customer?.billing,
     null
   );
 
-  const shippingCard = renderAddressBlock(
-    "Shipping",
-    customer?.shipping,
-    customer?.billing
-  );
+  const isSameAddress = JSON.stringify(customer?.billing || {}) === JSON.stringify(customer?.shipping || {});
+
+  const shippingCard = isSameAddress
+    ? `
+      <div class="aa-card">
+        <div class="aa-card-title">Shipping</div>
+        <div class="aa-muted">Same as billing</div>
+      </div>
+    `
+    : renderAddressBlock(
+        "Shipping",
+        customer?.shipping,
+        customer?.billing
+      );
 
   return `
     <div class="aa-results">
 
       ${customerCard}
 
-      <div class="aa-grid two">
-        ${billingCard}
-        ${shippingCard}
-      </div>
-
-      ${healthHTML || ""}
+       ${healthHTML || ""}
       ${activityHTML || ""}
 
        <div class="aa-card">
@@ -310,6 +314,11 @@ function renderCustomerPage({
             `
             : `<div class="aa-muted">No orders found.</div>`
         }
+      </div>
+
+      <div class="aa-grid two" style="margin-top:16px;">
+        ${billingCard}
+        ${shippingCard}
       </div>
 
     </div>
