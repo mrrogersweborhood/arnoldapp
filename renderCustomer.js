@@ -56,9 +56,11 @@ const summaryHTML = summary?.headline
       </div>
     </div>
 
-     ${healthInlineHTML}
+     <div style="margin-top:16px;">
+       ${healthInlineHTML}
+     </div>
 
-    <div class="aa-copy-row" style="margin-top:12px;">
+    <div class="aa-copy-row" style="margin-top:16px;">
       <a
         class="aa-copy-btn"
         href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"

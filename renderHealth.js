@@ -68,21 +68,37 @@ if (tone === "problem" || tone === "watch") {
         </div>
         ${alertHtml}
         <div class="aa-health-compact">
-          <div class="aa-health-row">
-            <strong>${esc(headline)}</strong>
+
+          <div class="aa-health-row" style="margin-bottom:10px;">
+            <strong style="font-size:16px;">
+              ${esc(headline)}
+            </strong>
             ${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}
           </div>
 
-          <div class="aa-health-row">
-            Latest: ${esc(latestOrderId)} 
-            ${latestOrder ? renderStatusPill(latestOrderStatus) : ""}
-            <span class="aa-muted">${esc(latestOrderDate)}</span>
+          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+
+            <div class="aa-health-block">
+              <div class="aa-label">Latest</div>
+              <div>
+                ${esc(latestOrderId)}
+                ${latestOrder ? renderStatusPill(latestOrderStatus) : ""}
+              </div>
+              <div class="aa-muted">${esc(latestOrderDate)}</div>
+            </div>
+
+            <div class="aa-health-block">
+              <div class="aa-label">Failed</div>
+              <div>${esc(String(failedCount))}</div>
+            </div>
+
+            <div class="aa-health-block">
+              <div class="aa-label">Next</div>
+              <div>${esc(nextPayment)}</div>
+            </div>
+
           </div>
 
-          <div class="aa-health-row">
-            Failed payments: ${esc(String(failedCount))}
-            ${nextPayment !== "—" ? `<span class="aa-muted">• Next ${esc(nextPayment)}</span>` : ""}
-          </div>
         </div>
       </section>
     `;
