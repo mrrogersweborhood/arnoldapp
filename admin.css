@@ -1342,20 +1342,22 @@ table.aa-totals-table tr.aa-totals-total td{
 
 .aa-health-summary-row{
   display:grid;
-  grid-template-columns:minmax(240px, 1.1fr) minmax(0, 1.9fr);
-  gap:18px;
-  align-items:start;
+  grid-template-columns:minmax(260px, 1fr) minmax(0, 1.7fr);
+  gap:16px;
+  align-items:stretch;
 }
 
 .aa-health-summary-main{
   display:flex;
   flex-direction:column;
-  gap:10px;
+  justify-content:center;
+  gap:12px;
   min-width:0;
+  padding:6px 0;
 }
 
 .aa-health-headline{
-  font-size:20px;
+  font-size:18px;
   font-weight:950;
   line-height:1.15;
   color:#0b1220;
@@ -1371,13 +1373,13 @@ table.aa-totals-table tr.aa-totals-total td{
 .aa-health-metrics{
   display:grid;
   grid-template-columns:repeat(3, minmax(0, 1fr));
-  gap:12px;
+  gap:10px;
   min-width:0;
 }
 
 .aa-health-block{
   min-width:0;
-  padding:12px 14px;
+  padding:10px 12px;
   border:1px solid rgba(15,23,42,.10);
   border-radius:14px;
   background:#fff;
@@ -1492,11 +1494,14 @@ table.aa-totals-table tr.aa-totals-total td{
   border-color:rgba(15,23,42,.12);
 }
 .aa-customer-section-card{
-  padding:14px;
+  padding:16px 14px;
 }
 
 .aa-customer-section-card > .aa-card-title{
   margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
 }
 
 .aa-customer-data-stack{
@@ -1518,59 +1523,41 @@ table.aa-totals-table tr.aa-totals-total td{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:12px;
+  gap:14px;
   cursor:pointer;
   user-select:none;
-  min-height:40px;
+  min-height:56px;
+  margin-bottom:0;
+  padding:0 2px;
+  font-size:16px;
+  font-weight:900;
 }
 
 .aa-customer-accordion-toggle .aa-chevron{
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  width:32px;
-  height:32px;
+  width:42px;
+  height:42px;
   border-radius:999px;
-  font-size:18px;
+  font-size:22px;
   line-height:1;
   color:var(--brand);
-  background:rgba(168,85,247,.08);
-  border:1px solid rgba(168,85,247,.16);
-  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+  background:rgba(168,85,247,.12);
+  border:1px solid rgba(168,85,247,.22);
+  box-shadow:0 4px 10px rgba(168,85,247,.10);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
   flex:0 0 auto;
 }
 
 .aa-customer-accordion-toggle:hover .aa-chevron{
-  background:rgba(168,85,247,.14);
-  border-color:rgba(168,85,247,.24);
+  background:rgba(168,85,247,.18);
+  border-color:rgba(168,85,247,.30);
+  box-shadow:0 6px 14px rgba(168,85,247,.16);
 }
 
 .aa-customer-accordion-toggle.is-open .aa-chevron{
   transform:rotate(180deg);
-}
-/* Billing Data Accordion (Customer View) */
-
-.aa-customer-data-stack.aa-collapsed{
-  max-height:0;
-  overflow:hidden;
-  padding-top:0;
-  margin-top:0;
-  transition:max-height .25s ease;
-}
-
-.aa-customer-data-stack{
-  transition:max-height .25s ease;
-}
-
-/* Chevron animation */
-
-.aa-chevron{
-  display:inline-block;
-  transition:transform .2s ease;
-}
-
-.aa-chevron.open{
-  transform:rotate(90deg);
 }
 .aa-customer-section-card .aa-card{
   margin-top:0;
