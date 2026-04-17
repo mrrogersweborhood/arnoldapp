@@ -67,20 +67,23 @@ if (tone === "problem" || tone === "watch") {
           <div class="aa-section-subtitle">Quick support summary</div>
         </div>
         ${alertHtml}
-        <div class="aa-health-compact">
+          <div class="aa-health-compact">
+          <div class="aa-health-summary-row">
 
-          <div class="aa-health-row" style="margin-bottom:10px;">
-            <strong style="font-size:16px;">
+          <div class="aa-health-summary-main">
+            <div class="aa-health-headline">
               ${esc(headline)}
-            </strong>
-            ${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}
+            </div>
+            <div class="aa-health-status-line">
+              ${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}
+            </div>
           </div>
 
-          <div style="display:flex; gap:16px; flex-wrap:wrap;">
+            <div class="aa-health-metrics">
 
             <div class="aa-health-block">
               <div class="aa-label">Latest</div>
-              <div>
+              <div class="aa-health-block-value">
                 ${esc(latestOrderId)}
                 ${latestOrder ? renderStatusPill(latestOrderStatus) : ""}
               </div>
@@ -89,16 +92,17 @@ if (tone === "problem" || tone === "watch") {
 
             <div class="aa-health-block">
               <div class="aa-label">Failed</div>
-              <div>${esc(String(failedCount))}</div>
+              <div class="aa-health-block-value">${esc(String(failedCount))}</div>
             </div>
 
             <div class="aa-health-block">
               <div class="aa-label">Next</div>
-              <div>${esc(nextPayment)}</div>
+                <div class="aa-health-block-value">${esc(nextPayment)}</div>
             </div>
 
           </div>
 
+          </div>
         </div>
       </section>
     `;

@@ -226,9 +226,12 @@ function renderCustomerPage({
 
       <div class="aa-card aa-customer-section-card">
 
-        <div class="aa-card-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.querySelector('.aa-chevron').classList.toggle('open');">
+         <div
+          class="aa-card-title aa-customer-accordion-toggle"
+          onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.classList.toggle('is-open');"
+        >
           <span>Billing Data</span>
-          <span class="aa-chevron" style="font-size:14px;">▸</span>
+          <span class="aa-chevron" aria-hidden="true">▾</span>
         </div>
 
         <div class="aa-customer-data-stack aa-collapsed">
