@@ -21,11 +21,11 @@ function renderNotesToggle(kind, id, notes) {
   const safeNotes = Array.isArray(notes) ? notes : [];
   const arrow = isOpen ? "▼" : "▾";
 
-  return `
+   return `
     <button class="aa-notes-toggle" data-kind="${esc(kind)}" data-id="${esc(String(id))}">
       <span class="aa-notes-label">Notes</span>
       <span class="aa-notes-count">${esc(String(safeNotes.length || 0))}</span>
-      <span class="aa-notes-arrow">${arrow}</span>
+      <span class="aa-notes-arrow" aria-hidden="true">${arrow}</span>
     </button>
   `;
 }

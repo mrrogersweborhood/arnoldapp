@@ -19,7 +19,7 @@ const summaryHTML = summary?.headline
   `
   : "";
     return `
-  <div class="aa-card">
+  <div class="aa-card aa-card-compact">
 
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
 
@@ -62,7 +62,7 @@ const summaryHTML = summary?.headline
 
     <div class="aa-copy-row" style="margin-top:16px;">
       <a
-        class="aa-copy-btn"
+        class="aa-copy-btn aa-copy-btn-primary"
         href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
         target="_blank"
         rel="noopener noreferrer"
@@ -71,7 +71,7 @@ const summaryHTML = summary?.headline
       </a>
 
       <a
-        class="aa-copy-btn"
+        class="aa-copy-btn aa-copy-btn-secondary aa-copy-btn-subscriptions"
         href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
         target="_blank"
         rel="noopener noreferrer"
@@ -80,7 +80,7 @@ const summaryHTML = summary?.headline
       </a>
 
       <a
-        class="aa-copy-btn"
+        class="aa-copy-btn aa-copy-btn-secondary aa-copy-btn-orders"
         href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
         target="_blank"
         rel="noopener noreferrer"
@@ -247,7 +247,7 @@ style="padding-right:6px;"
         </div>
 
         <div class="aa-customer-data-stack aa-collapsed">
-          <div class="aa-card">
+          <div class="aa-card aa-card-compact">
             <div class="aa-card-title">Subscriptions</div>
 
         ${
@@ -298,7 +298,7 @@ style="padding-right:6px;"
         }
       </div>
 
-      <div class="aa-card">
+      <div class="aa-card aa-card-compact">
         <div class="aa-card-title">Orders</div>
 
         ${
