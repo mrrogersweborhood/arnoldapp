@@ -67,26 +67,21 @@ if (tone === "problem" || tone === "watch") {
           <div class="aa-section-subtitle">Quick support summary</div>
         </div>
         ${alertHtml}
-        <div class="aa-health-grid">
-          <div class="aa-health-card aa-health-card-${esc(tone)}">
-            <div class="aa-health-kicker">Health</div>
-            <div class="aa-health-value">${esc(headline)}</div>
-            <div class="aa-health-meta">${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}</div>
+        <div class="aa-health-compact">
+          <div class="aa-health-row">
+            <strong>${esc(headline)}</strong>
+            ${primarySub ? renderStatusPill(subStatus) : '<span class="aa-muted">No subscription</span>'}
           </div>
-          <div class="aa-health-card">
-            <div class="aa-health-kicker">Latest payment</div>
-            <div class="aa-health-value">${esc(latestOrderId)}</div>
-            <div class="aa-health-meta">${latestOrder ? `${renderStatusPill(latestOrderStatus)} <span class="aa-muted">${esc(latestOrderDate)}</span>` : '<span class="aa-muted">No orders</span>'}</div>
+
+          <div class="aa-health-row">
+            Latest: ${esc(latestOrderId)} 
+            ${latestOrder ? renderStatusPill(latestOrderStatus) : ""}
+            <span class="aa-muted">${esc(latestOrderDate)}</span>
           </div>
-          <div class="aa-health-card">
-            <div class="aa-health-kicker">Latest total</div>
-            <div class="aa-health-value">${esc(latestOrderTotal)}</div>
-            <div class="aa-health-meta">${latestOrderDate !== "—" ? esc(latestOrderDate) : '<span class="aa-muted">—</span>'}</div>
-          </div>
-          <div class="aa-health-card">
-            <div class="aa-health-kicker">Failed/problem payments</div>
-            <div class="aa-health-value">${esc(String(failedCount))}</div>
-            <div class="aa-health-meta">${nextPayment !== "—" ? `Next payment ${esc(nextPayment)}` : '<span class="aa-muted">No next payment</span>'}</div>
+
+          <div class="aa-health-row">
+            Failed payments: ${esc(String(failedCount))}
+            ${nextPayment !== "—" ? `<span class="aa-muted">• Next ${esc(nextPayment)}</span>` : ""}
           </div>
         </div>
       </section>

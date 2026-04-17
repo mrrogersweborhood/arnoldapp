@@ -218,15 +218,15 @@ function renderCustomerPage({
         customer?.billing
       );
 
-  return `
+   return `
     <div class="aa-results">
 
       ${customerCard}
 
-       ${healthHTML || ""}
       ${activityHTML || ""}
+      ${healthHTML || ""}
 
-       <div class="aa-card">
+      <div class="aa-card">
         <div class="aa-card-title">Subscriptions</div>
 
         ${
