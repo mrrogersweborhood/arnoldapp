@@ -56,13 +56,7 @@ const summaryHTML = summary?.headline
       </div>
     </div>
 
-    ${healthInlineHTML}
-
-    <div class="aa-copy-row" style="margin-top:12px;">
-
-     </div>
-
-    ${healthInlineHTML}
+     ${healthInlineHTML}
 
     <div class="aa-copy-row" style="margin-top:12px;">
       <a
@@ -202,7 +196,7 @@ function renderCustomerPage({
   activityHTML,
   healthHTML
 }) {
-  const customerCard = renderCustomerCard(customer);
+  const customerCard = renderCustomerCard(customer, healthHTML || "");
 
    const billingCard = renderAddressBlock(
     "Billing",
