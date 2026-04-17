@@ -225,7 +225,6 @@ function renderCustomerPage({
       ${customerCard}
 
       ${activityHTML || ""}
-      ${healthHTML || ""}
 
       <div class="aa-card">
         <div class="aa-card-title">Subscriptions</div>
@@ -326,9 +325,26 @@ function renderCustomerPage({
         }
       </div>
 
-      <div class="aa-grid two" style="margin-top:16px;">
-        ${billingCard}
-        ${shippingCard}
+      <div class="aa-card" style="margin-top:16px;">
+        <div class="aa-card-title">Contact & Address</div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:10px;">
+
+          <div>
+            <div class="aa-muted" style="font-size:12px; font-weight:700; margin-bottom:8px;">
+              Billing
+            </div>
+            ${billingCard}
+          </div>
+
+          <div>
+            <div class="aa-muted" style="font-size:12px; font-weight:700; margin-bottom:8px;">
+              Shipping
+            </div>
+            ${shippingCard}
+          </div>
+
+        </div>
       </div>
 
     </div>
