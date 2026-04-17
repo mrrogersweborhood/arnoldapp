@@ -2,7 +2,7 @@
 // Arnold Admin — SAFE SPLIT PASS 1 (customer/address renderers only)
 // (Markers are comments only: 🟢 renderCustomer.js ... 🔴 renderCustomer.js)
 
-function renderCustomerCard(customer) {
+function renderCustomerCard(customer, healthInlineHTML = "") {
     const id = customer?.id ?? "—";
     const email = String(customer?.email ?? customer?.billing?.email ?? "").trim() || "—";
     const username = customer?.username ?? customer?.email ?? "—";
@@ -36,7 +36,7 @@ const summaryHTML = summary?.headline
         ${summaryHTML}
       </div>
 
-      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+       <div style="display:flex; gap:12px; flex-wrap:wrap;">
 
         <div class="aa-tile">
           <div class="aa-label">Subscriptions</div>
@@ -54,10 +54,17 @@ const summaryHTML = summary?.headline
         </div>
 
       </div>
-
     </div>
 
-     <div class="aa-copy-row" style="margin-top:12px;">
+    ${healthInlineHTML}
+
+    <div class="aa-copy-row" style="margin-top:12px;">
+
+     </div>
+
+    ${healthInlineHTML}
+
+    <div class="aa-copy-row" style="margin-top:12px;">
       <a
         class="aa-copy-btn"
         href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
