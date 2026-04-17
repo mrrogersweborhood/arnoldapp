@@ -219,9 +219,20 @@ function renderCustomerPage({
 
       ${customerCard}
 
-      <div class="aa-card aa-customer-section-card">
-        <div class="aa-card-title">Recovery Activity</div>
-        ${activityHTML || `<div class="aa-muted">No recent activity found.</div>`}
+       <div class="aa-card aa-customer-section-card">
+
+        <div
+          class="aa-card-title aa-customer-accordion-toggle"
+          onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.classList.toggle('is-open');"
+        >
+          <span>Recovery Activity</span>
+          <span class="aa-chevron" aria-hidden="true">▾</span>
+        </div>
+
+        <div class="aa-customer-data-stack aa-collapsed">
+          ${activityHTML || `<div class="aa-muted">No recent activity found.</div>`}
+        </div>
+
       </div>
 
       <div class="aa-card aa-customer-section-card">
@@ -229,8 +240,9 @@ function renderCustomerPage({
          <div
           class="aa-card-title aa-customer-accordion-toggle"
           onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.classList.toggle('is-open');"
+style="padding-right:6px;"
         >
-          <span>Billing Data</span>
+          <span>Order & Support History</span>
           <span class="aa-chevron" aria-hidden="true">▾</span>
         </div>
 

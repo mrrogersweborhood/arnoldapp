@@ -733,34 +733,34 @@ h2{
 
     .aa-tiles.onecol{ grid-template-columns:1fr; }
     .aa-contact-heading{
-  font-size:11px;
-  font-weight:650;
-  letter-spacing:.06em;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.08em;
   text-transform:uppercase;
-  color:#6b7280;
-  margin-bottom:8px;
+  color:#8b7aa8;
+  margin-bottom:10px;
 }
 
 .aa-address-block{
-  font-size:14px;
-  line-height:1.5;
+  font-size:13px;
+  line-height:1.45;
 }
 
 .aa-address-name{
   font-size:14px;
-  font-weight:600;
-  color:#0b1220;
-  margin-bottom:4px;
-}
-
-.aa-address-lines{
-  color:#475569;
+  font-weight:700;
+  color:#1f1630;
   margin-bottom:6px;
 }
 
+.aa-address-lines{
+  color:#5f6678;
+  margin-bottom:8px;
+}
+
 .aa-address-meta{
-  font-size:13px;
-  color:#64748b;
+  font-size:12px;
+  color:#7a8598;
 }
 
 .aa-address-meta a{
@@ -1495,6 +1495,7 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 .aa-customer-section-card{
   padding:16px 14px;
+  position:relative;
 }
 
 .aa-customer-section-card > .aa-card-title{
@@ -1503,7 +1504,17 @@ table.aa-totals-table tr.aa-totals-total td{
   align-items:center;
   justify-content:space-between;
 }
+.aa-customer-section-card .aa-contact-heading + .aa-address-block{
+  padding-top:2px;
+}
 
+.aa-customer-section-card[style*="margin-top:16px"]{
+  background:linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(248,244,255,.94) 100%);
+}
+
+.aa-customer-section-card[style*="margin-top:16px"] .aa-address-block{
+  max-width:340px;
+}
 .aa-customer-data-stack{
   display:flex;
   flex-direction:column;
