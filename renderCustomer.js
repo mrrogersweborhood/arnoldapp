@@ -225,9 +225,13 @@ function renderCustomerPage({
       </div>
 
       <div class="aa-card aa-customer-section-card">
-        <div class="aa-card-title">Billing Data</div>
 
-        <div class="aa-customer-data-stack">
+        <div class="aa-card-title" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.querySelector('.aa-chevron').classList.toggle('open');">
+          <span>Billing Data</span>
+          <span class="aa-chevron" style="font-size:14px;">▸</span>
+        </div>
+
+        <div class="aa-customer-data-stack aa-collapsed">
           <div class="aa-card">
             <div class="aa-card-title">Subscriptions</div>
 

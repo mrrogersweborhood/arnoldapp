@@ -1437,7 +1437,30 @@ table.aa-totals-table tr.aa-totals-total td{
   flex-direction:column;
   gap:14px;
 }
+/* Billing Data Accordion (Customer View) */
 
+.aa-customer-data-stack.aa-collapsed{
+  max-height:0;
+  overflow:hidden;
+  padding-top:0;
+  margin-top:0;
+  transition:max-height .25s ease;
+}
+
+.aa-customer-data-stack{
+  transition:max-height .25s ease;
+}
+
+/* Chevron animation */
+
+.aa-chevron{
+  display:inline-block;
+  transition:transform .2s ease;
+}
+
+.aa-chevron.open{
+  transform:rotate(90deg);
+}
 .aa-customer-section-card .aa-card{
   margin-top:0;
 }
