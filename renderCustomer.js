@@ -9,13 +9,21 @@ function renderCustomerCard(customer) {
     const fn = (customer?.first_name ?? "").trim();
     const ln = (customer?.last_name ?? "").trim();
     const name = [fn, ln].filter(Boolean).join(" ").trim() || "—";
-
+// 🟢 NEW: worker-driven summary (if present)
+const summary = customer?.summary || {};
+const summaryHTML = summary?.headline
+  ? `
+        <div style="margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.14); font-size:13px; font-weight:700; color:#4c1d95;">
+          ${esc(String(summary.headline || ""))}
+        </div>
+  `
+  : "";
     return `
   <div class="aa-card">
 
     <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
 
-      <div>
+       <div>
         <div style="font-size:20px; font-weight:600;">
           ${esc(String(name))}
         </div>
@@ -25,6 +33,7 @@ function renderCustomerCard(customer) {
         <div class="aa-muted" style="font-size:12px; margin-top:2px;">
           ID: ${esc(String(id))}
         </div>
+        ${summaryHTML}
       </div>
 
       <div style="display:flex; gap:12px; flex-wrap:wrap;">
@@ -48,7 +57,7 @@ function renderCustomerCard(customer) {
 
     </div>
 
-    <div class="aa-copy-row" style="margin-top:12px;">
+     <div class="aa-copy-row" style="margin-top:12px;">
       <a
         class="aa-copy-btn"
         href="https://okobserver.org/wp-admin/user-edit.php?user_id=${esc(String(id))}"
