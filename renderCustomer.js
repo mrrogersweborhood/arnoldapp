@@ -161,32 +161,25 @@ function renderAddressBlock(title, addr, fallbackAddr) {
     const phoneHref = isBilling && showPhone !== "—" ? `tel:${String(showPhone).replace(/[^\d+]/g, "")}` : "";
 
     return `
-      <div class="aa-card">
-        <div class="aa-card-title">${esc(title)}</div>
+  <div class="aa-address-block">
 
-        <div class="aa-tiles onecol">
-          <div class="aa-tile">
-            <div class="aa-label">Name</div>
-            <div class="aa-value">${esc(showName)}</div>
-          </div>
+    <div class="aa-address-name">
+      ${esc(showName)}
+    </div>
 
-          <div class="aa-tile">
-            <div class="aa-label">Address</div>
-            <div class="aa-value">${showAddrLines}</div>
-          </div>
+    <div class="aa-address-lines">
+      ${showAddrLines}
+    </div>
 
-          <div class="aa-tile">
-            <div class="aa-label">Email</div>
-            ${isBilling && emailHref ? `<div class="aa-value"><a href="${esc(emailHref)}">${esc(showEmail)}</a></div>` : `<div class="aa-value">${esc(showEmail)}</div>`}
-          </div>
+    <div class="aa-address-meta">
+      ${isBilling && emailHref
+        ? `<a href="${esc(emailHref)}">${esc(showEmail)}</a>`
+        : esc(showEmail)}
+      ${showPhone !== "—" ? ` • ${isBilling && phoneHref ? `<a href="${esc(phoneHref)}">${esc(showPhone)}</a>` : esc(showPhone)}` : ""}
+    </div>
 
-          <div class="aa-tile">
-            <div class="aa-label">Phone</div>
-            ${isBilling && phoneHref ? `<div class="aa-value"><a href="${esc(phoneHref)}">${esc(showPhone)}</a></div>` : `<div class="aa-value">${esc(showPhone)}</div>`}
-          </div>
-        </div>
-      </div>
-    `;
+  </div>
+`;
   }
 
 function renderCustomerPage({
@@ -206,11 +199,11 @@ function renderCustomerPage({
 
   const isSameAddress = JSON.stringify(customer?.billing || {}) === JSON.stringify(customer?.shipping || {});
 
-  const shippingCard = isSameAddress
+   const shippingCard = isSameAddress
     ? `
-      <div class="aa-card">
-        <div class="aa-card-title">Shipping</div>
-        <div class="aa-muted">Same as billing</div>
+      <div class="aa-address-block">
+        <div class="aa-address-name">Same as billing</div>
+        <div class="aa-address-meta">Shipping uses the billing address on file.</div>
       </div>
     `
     : renderAddressBlock(
@@ -224,10 +217,17 @@ function renderCustomerPage({
 
       ${customerCard}
 
-      ${activityHTML || ""}
+      <div class="aa-card aa-customer-section-card">
+        <div class="aa-card-title">Recovery Activity</div>
+        ${activityHTML || `<div class="aa-muted">No recent activity found.</div>`}
+      </div>
 
-      <div class="aa-card">
-        <div class="aa-card-title">Subscriptions</div>
+      <div class="aa-card aa-customer-section-card">
+        <div class="aa-card-title">Billing Data</div>
+
+        <div class="aa-customer-data-stack">
+          <div class="aa-card">
+            <div class="aa-card-title">Subscriptions</div>
 
         ${
           Array.isArray(subscriptions) && subscriptions.length
@@ -325,20 +325,23 @@ function renderCustomerPage({
         }
       </div>
 
-      <div class="aa-card" style="margin-top:16px;">
+       </div>
+      </div>
+
+      <div class="aa-card aa-customer-section-card" style="margin-top:16px;">
         <div class="aa-card-title">Contact & Address</div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:10px;">
 
           <div>
-            <div class="aa-muted" style="font-size:12px; font-weight:700; margin-bottom:8px;">
+            <div class="aa-contact-heading">
               Billing
             </div>
             ${billingCard}
           </div>
 
           <div>
-            <div class="aa-muted" style="font-size:12px; font-weight:700; margin-bottom:8px;">
+            <div class="aa-contact-heading">
               Shipping
             </div>
             ${shippingCard}
