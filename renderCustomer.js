@@ -176,4 +176,52 @@ function renderAddressBlock(title, addr, fallbackAddr) {
     `;
   }
 
+function renderCustomerPage({
+  customer,
+  subscriptions,
+  orders,
+  activityHTML,
+  healthHTML
+}) {
+  const customerCard = renderCustomerCard(customer);
+
+  const billingCard = renderAddressBlock(
+    "Billing",
+    customer?.billing,
+    null
+  );
+
+  const shippingCard = renderAddressBlock(
+    "Shipping",
+    customer?.shipping,
+    customer?.billing
+  );
+
+  return `
+    <div class="aa-results">
+
+      ${customerCard}
+
+      <div class="aa-grid two">
+        ${billingCard}
+        ${shippingCard}
+      </div>
+
+      ${healthHTML || ""}
+      ${activityHTML || ""}
+
+      <div class="aa-card">
+        <div class="aa-card-title">Subscriptions</div>
+        <pre>${esc(JSON.stringify(subscriptions || [], null, 2))}</pre>
+      </div>
+
+      <div class="aa-card">
+        <div class="aa-card-title">Orders</div>
+        <pre>${esc(JSON.stringify(orders || [], null, 2))}</pre>
+      </div>
+
+    </div>
+  `;
+}
+
 // 🔴 renderCustomer.js

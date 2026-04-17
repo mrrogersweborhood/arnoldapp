@@ -1088,6 +1088,24 @@ btn.addEventListener("click", async () => {
       `;
     }
 
+    const healthCard = typeof window.renderSubscriptionHealthSummary === "function"
+      ? window.renderSubscriptionHealthSummary(customer, subscriptions, orders)
+      : "";
+
+    const activityCard = typeof window.renderCustomerActivity === "function"
+      ? window.renderCustomerActivity(customer, subscriptions, orders)
+      : "";
+
+    if (typeof window.renderCustomerPage === "function") {
+      return window.renderCustomerPage({
+        customer,
+        subscriptions,
+        orders,
+        activityHTML: activityCard,
+        healthHTML: healthCard
+      });
+    }
+
     const customerCard = typeof window.renderCustomerCard === "function"
       ? window.renderCustomerCard(customer)
       : "";
@@ -1098,14 +1116,6 @@ btn.addEventListener("click", async () => {
 
     const shippingCard = typeof window.renderAddressBlock === "function"
       ? window.renderAddressBlock("Shipping", customer?.shipping)
-      : "";
-
-    const healthCard = typeof window.renderSubscriptionHealthSummary === "function"
-      ? window.renderSubscriptionHealthSummary(customer, subscriptions, orders)
-      : "";
-
-    const activityCard = typeof window.renderCustomerActivity === "function"
-      ? window.renderCustomerActivity(customer, subscriptions, orders)
       : "";
 
     return `
@@ -1122,7 +1132,7 @@ btn.addEventListener("click", async () => {
         </div>
       </section>
 
-            ${healthCard}
+      ${healthCard}
       ${activityCard}
     `;
   }
