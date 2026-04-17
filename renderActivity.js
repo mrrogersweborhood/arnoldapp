@@ -142,10 +142,12 @@ idHtml: id
       });
     }
 
-    rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+     rows.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
 
-    const bodyHtml = rows.length
-      ? rows.map((r) => `
+    const recentRows = rows.slice(0, 12);
+
+    const bodyHtml = recentRows.length
+      ? recentRows.map((r) => `
           <tr class="${r.rowClass || ''}">
             <td>${r.idHtml}</td>
             <td>${esc(fmtDateWithAge(r.date))}</td>
