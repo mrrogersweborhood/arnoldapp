@@ -50,7 +50,13 @@ const summaryHTML = summary?.headline
 
         <div class="aa-tile">
           <div class="aa-label">Revenue</div>
-          <div class="aa-value">${esc(String(customer?.total_spent ?? "—"))}</div>
+          <div class="aa-value" id="aa-revenue-value-${esc(String(id))}">
+            ${
+              customer?.total_spent != null && String(customer?.total_spent).trim() !== ""
+                ? esc(String(customer.total_spent))
+                : `<span class="aa-inline-spinner" aria-hidden="true"></span>`
+            }
+          </div>
         </div>
 
       </div>

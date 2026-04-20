@@ -1387,6 +1387,26 @@ if (results) {
   bindNotesToggles(results);
   bindCopyButtons(results);
   bindOpenCandidateButtons(results);
+
+  const revenueCustomerId = j?.context?.customer?.id;
+  const revenueEl = revenueCustomerId != null
+    ? document.getElementById(`aa-revenue-value-${String(revenueCustomerId)}`)
+    : null;
+
+  if (revenueCustomerId != null && revenueEl) {
+    fetch(`${PULSE_WORKER_BASE}/customer/revenue?customer_id=${encodeURIComponent(String(revenueCustomerId))}`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then((r) => r.json().catch(() => null))
+      .then((revenueJson) => {
+        if (!revenueJson?.ok) return;
+        const nextEl = document.getElementById(`aa-revenue-value-${String(revenueCustomerId)}`);
+        if (!nextEl) return;
+        nextEl.textContent = String(revenueJson?.total_spent ?? "—");
+      })
+      .catch(() => {});
+  }
 }
 
       setStatus("", "Search complete.");
