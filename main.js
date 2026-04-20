@@ -754,6 +754,40 @@ function getCachedCustomerShellPayloadForQuery(q) {
     });
   }
 
+  function captureCustomerAccordionState(container) {
+    if (!container) return [];
+
+    return Array.from(container.querySelectorAll(".aa-customer-accordion-toggle")).map((toggle) => {
+      const labelEl = toggle.querySelector("span");
+      const label = String(labelEl?.textContent || "").trim();
+      const body = toggle.nextElementSibling;
+      const isOpen = toggle.classList.contains("is-open") && body && !body.classList.contains("aa-collapsed");
+
+      return { label, isOpen };
+    });
+  }
+
+  function restoreCustomerAccordionState(container, states) {
+    if (!container || !Array.isArray(states) || !states.length) return;
+
+    container.querySelectorAll(".aa-customer-accordion-toggle").forEach((toggle) => {
+      const labelEl = toggle.querySelector("span");
+      const label = String(labelEl?.textContent || "").trim();
+      const body = toggle.nextElementSibling;
+      const match = states.find((item) => item.label === label);
+
+      if (!body || !match) return;
+
+      if (match.isOpen) {
+        toggle.classList.add("is-open");
+        body.classList.remove("aa-collapsed");
+      } else {
+        toggle.classList.remove("is-open");
+        body.classList.add("aa-collapsed");
+      }
+    });
+  }
+
   function bindNotesToggles(container) {
     if (!container) return;
 
@@ -773,7 +807,12 @@ function getCachedCustomerShellPayloadForQuery(q) {
         if (lastMode === "search" && lastPayload) {
           const results = $("results");
           if (!results) return;
+
+          const accordionState = captureCustomerAccordionState(results);
+
           results.innerHTML = renderResults(lastPayload);
+
+          restoreCustomerAccordionState(results, accordionState);
           bindNotesToggles(results);
           bindCopyButtons(results);
           bindOpenCandidateButtons(results);
