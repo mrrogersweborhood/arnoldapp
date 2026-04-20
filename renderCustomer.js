@@ -40,7 +40,14 @@ const summaryHTML = summary?.headline
           ${esc(String(name))}
         </div>
         <div class="aa-muted" style="margin-top:4px;">
-          ${esc(String(email))}
+          <span
+            class="aa-copy-email"
+            data-email="${esc(String(email))}"
+            style="cursor:pointer; text-decoration:underline;"
+            title="Click to copy email"
+          >
+            ${esc(String(email))}
+          </span>
         </div>
         <div class="aa-muted" style="font-size:12px; margin-top:2px;">
           ID: ${esc(String(id))}
@@ -374,5 +381,22 @@ style="padding-right:6px;"
     </div>
   `;
 }
+
+// 🟢 ADD: email copy handler
+document.addEventListener("click", function (e) {
+  const el = e.target.closest(".aa-copy-email");
+  if (!el) return;
+
+  const email = el.getAttribute("data-email");
+  if (!email) return;
+
+  navigator.clipboard.writeText(email).then(() => {
+    const original = el.textContent;
+    el.textContent = "Copied!";
+    setTimeout(() => {
+      el.textContent = original;
+    }, 1200);
+  });
+});
 
 // 🔴 renderCustomer.js
