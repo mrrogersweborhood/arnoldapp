@@ -1056,9 +1056,14 @@ h2{
     }
     .aa-muted{ color:var(--muted); font-weight:850; }
 
-    /* Notes toggle (right aligned) */
+     /* Notes toggle (right aligned) */
 
-    .aa-notes-cell{ text-align:right; }
+    .aa-notes-cell{
+      display:flex;
+      justify-content:flex-end;
+      align-items:center;
+      text-align:right;
+    } 
     .aa-notes-toggle{
   cursor:pointer;
   border:1px solid rgba(168,85,247,.20);
@@ -1068,8 +1073,9 @@ h2{
   font-size:14px;
   display:inline-flex;
   align-items:center;
-  gap:10px;
-  padding:6px 10px;
+  justify-content:flex-end; /* 🔥 anchors content to the right */
+  gap:8px;                  /* slightly tighter */
+  padding:6px 8px;          /* reduces right-side float */
   border-radius:999px;
 }
     .aa-notes-count{
