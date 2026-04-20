@@ -1406,8 +1406,9 @@ if (results) {
         nextEl.textContent = String(revenueJson?.total_spent ?? "—");
 nextEl.classList.add("aa-value-loaded");
       })
-      .catch(() => {});
+       .catch(() => {});
   }
+}
 
       setStatus("", "Search complete.");
       renderRawJson();
