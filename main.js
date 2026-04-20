@@ -758,7 +758,10 @@ function getCachedCustomerShellPayloadForQuery(q) {
     if (!container) return;
 
     container.querySelectorAll(".aa-notes-toggle").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         const kind = btn.getAttribute("data-kind");
         const id = btn.getAttribute("data-id");
         if (!kind || !id) return;
