@@ -180,9 +180,9 @@ function renderAddressBlock(title, addr, fallbackAddr) {
       ${showAddrLines}
     </div>
 
-    <div class="aa-address-meta">
-      ${isBilling && emailHref
-        ? `<a href="${esc(emailHref)}">${esc(showEmail)}</a>`
+     <div class="aa-address-meta">
+      ${isBilling && showEmail !== "—"
+        ? `<span class="aa-copy-email" data-email="${esc(showEmail)}" style="cursor:pointer; text-decoration:underline;" title="Click to copy email">${esc(showEmail)}</span>`
         : esc(showEmail)}
       ${showPhone !== "—" ? ` • ${isBilling && phoneHref ? `<a href="${esc(phoneHref)}">${esc(showPhone)}</a>` : esc(showPhone)}` : ""}
     </div>
