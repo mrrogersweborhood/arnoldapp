@@ -11,10 +11,22 @@ function renderCustomerCard(customer, healthInlineHTML = "") {
     const name = [fn, ln].filter(Boolean).join(" ").trim() || "—";
 // 🟢 NEW: worker-driven summary (if present)
 const summary = customer?.summary || {};
+
+function formatSummaryHeadline(text) {
+  const s = String(text || "");
+
+  return s.replace(
+    /(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/g,
+    (_, yyyy, mm, dd, hh, min, sec) => {
+      return `${mm}/${dd}/${yyyy} ${hh}:${min}:${sec}`;
+    }
+  );
+}
+
 const summaryHTML = summary?.headline
   ? `
         <div style="margin-top:10px; padding:10px 12px; border-radius:12px; background:rgba(168,85,247,.08); border:1px solid rgba(168,85,247,.14); font-size:13px; font-weight:700; color:#4c1d95;">
-          ${esc(String(summary.headline || ""))}
+          ${esc(formatSummaryHeadline(summary.headline))}
         </div>
   `
   : "";
