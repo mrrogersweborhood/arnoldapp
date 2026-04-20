@@ -997,6 +997,10 @@ h2{
   white-space:nowrap;
   background:#fff;
 }
+
+.aa-table tbody td:last-child{
+  text-align:right;
+}
 .aa-table tbody tr:hover td{
   background:rgba(30,144,255,.04);
 }
@@ -1077,6 +1081,7 @@ h2{
   gap:8px;                  /* slightly tighter */
   padding:6px 8px;          /* reduces right-side float */
   border-radius:999px;
+  margin-left:auto;
 }
     .aa-notes-count{
       display:inline-flex;
