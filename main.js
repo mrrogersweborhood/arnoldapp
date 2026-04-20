@@ -1404,10 +1404,11 @@ if (results) {
         const nextEl = document.getElementById(`aa-revenue-value-${String(revenueCustomerId)}`);
         if (!nextEl) return;
         nextEl.textContent = String(revenueJson?.total_spent ?? "—");
+nextEl.classList.add("aa-value-loaded");
       })
       .catch(() => {});
   }
-}
+}x
 
       setStatus("", "Search complete.");
       renderRawJson();

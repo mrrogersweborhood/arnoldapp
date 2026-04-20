@@ -583,7 +583,18 @@ h2{
   animation:aaSpin 0.8s linear infinite;
   flex:0 0 auto;
 }
+.aa-value-loaded{
+  opacity:0;
+  transform:translateY(2px);
+  animation:aaValueFadeIn 0.18s ease forwards;
+}
 
+@keyframes aaValueFadeIn{
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
 .aa-status-center-text{
   display:inline-block;
 }
