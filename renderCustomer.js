@@ -87,24 +87,6 @@ const summaryHTML = summary?.headline
       >
         Open WP
       </a>
-
-      <a
-        class="aa-copy-btn aa-copy-btn-secondary aa-copy-btn-subscriptions"
-        href="https://okobserver.org/wp-admin/edit.php?post_type=shop_subscription&_customer_user=${esc(String(id))}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Subscriptions
-      </a>
-
-      <a
-        class="aa-copy-btn aa-copy-btn-secondary aa-copy-btn-orders"
-        href="https://okobserver.org/wp-admin/edit.php?post_type=shop_order&_customer_user=${esc(String(id))}"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Orders
-      </a>
     </div>
 
   </div>
@@ -243,7 +225,7 @@ function renderCustomerPage({
           class="aa-card-title aa-customer-accordion-toggle"
           onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.classList.toggle('is-open');"
         >
-          <span>Recovery Activity</span>
+            <span>Activity Timeline</span>
           <span class="aa-chevron" aria-hidden="true">▾</span>
         </div>
 
@@ -260,7 +242,7 @@ function renderCustomerPage({
           onclick="this.nextElementSibling.classList.toggle('aa-collapsed'); this.classList.toggle('is-open');"
 style="padding-right:6px;"
         >
-          <span>Order & Support History</span>
+            <span>Orders & Subscriptions</span>
           <span class="aa-chevron" aria-hidden="true">▾</span>
         </div>
 
