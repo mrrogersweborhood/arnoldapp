@@ -1408,7 +1408,6 @@ nextEl.classList.add("aa-value-loaded");
       })
       .catch(() => {});
   }
-}x
 
       setStatus("", "Search complete.");
       renderRawJson();
