@@ -229,7 +229,7 @@ function renderCustomerPage({
           <span class="aa-chevron" aria-hidden="true">▾</span>
         </div>
 
-        <div class="aa-customer-data-stack aa-collapsed">
+         <div class="aa-customer-data-stack">
           ${activityHTML || `<div class="aa-muted">No recent activity found.</div>`}
         </div>
 
