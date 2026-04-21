@@ -40,6 +40,36 @@ window.WOO_ADMIN = window.WOO_ADMIN || "https://okobserver.org/wp-admin/post.php
     "Prioritizing repeat problem subscribers…",
     "Preparing radar page…"
   ];
+
+  function applySidebarCollapsedState(isCollapsed) {
+    document.body.classList.toggle("sidebar-collapsed", !!isCollapsed);
+
+    const btn = $("btnSidebarToggle");
+    if (btn) {
+      btn.setAttribute("aria-expanded", String(!isCollapsed));
+      btn.setAttribute("title", isCollapsed ? "Show navigation" : "Hide navigation");
+    }
+  }
+
+  function loadSidebarCollapsedState() {
+    try {
+      return localStorage.getItem("pulse_sidebar_collapsed") === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function saveSidebarCollapsedState(isCollapsed) {
+    try {
+      localStorage.setItem("pulse_sidebar_collapsed", isCollapsed ? "1" : "0");
+    } catch (_) {}
+  }
+
+  function toggleSidebarCollapsedState() {
+    const next = !document.body.classList.contains("sidebar-collapsed");
+    applySidebarCollapsedState(next);
+    saveSidebarCollapsedState(next);
+  }
   // --------------------------------------------------
   // Status / UI helpers
   // --------------------------------------------------
@@ -2021,6 +2051,11 @@ $("btnLogout")?.addEventListener("click", (e) => {    e.preventDefault();
     doRadar(1, "").catch(console.error);
   });
 
+  $("btnSidebarToggle")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleSidebarCollapsedState();
+  });
+
 $("navPulse")?.addEventListener("click", (e) => {
   e.preventDefault();
   doPulseDashboard().catch(console.error);
@@ -2064,6 +2099,7 @@ document.getElementById("activeStoreSelect")?.addEventListener("change", (e) => 
   window.setActiveStore(id);
 });
   window.addEventListener("DOMContentLoaded", async () => {
+    applySidebarCollapsedState(loadSidebarCollapsedState());
     // 🟢 load persisted active store
 loadActiveStoreFromStorage();
     const loggedIn = await refreshSession().catch(() => false);
