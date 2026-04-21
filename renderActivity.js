@@ -56,7 +56,7 @@ function renderCustomerActivity(customer, subs, orders) {
         rowClass: "",
         idHtml: "—",
         date: customer.date_created,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(customer?.outcome_label || "Customer created")}</div><div class="aa-event-sub">Account created</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(customer?.event_label || "Customer created")}</div><div class="aa-event-sub">${esc(customer?.event_subtext || "Account created")}</div></div>`,
         statusHtml: '<span class="aa-muted">—</span>',
         total: customer?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Account created</div><div class="aa-detail-secondary">Customer record opened in WooCommerce</div></div>`,
@@ -86,7 +86,7 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
   ? `<a class="aa-sub-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
   : "—",
         date: s?.start_date || s?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(s?.outcome_label || "—")}</div><div class="aa-event-sub">Subscription activity</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(s?.event_label || "—")}</div><div class="aa-event-sub">${esc(s?.event_subtext || "Subscription activity")}</div></div>`,
         statusHtml: renderStatusPill(subStatus),
         total: s?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Next ${esc(nextPayment)}</div><div class="aa-detail-secondary">Billing ${esc(billing)}</div></div>`,
@@ -131,7 +131,7 @@ idHtml: id
   ? `<a class="aa-order-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
   : "—",
         date: o?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(o?.outcome_label || "—")}</div><div class="aa-event-sub">Order activity</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(o?.event_label || "—")}</div><div class="aa-event-sub">${esc(o?.event_subtext || "Order activity")}</div></div>`,
         statusHtml: renderStatusPill(status || "—"),
         total: o?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">${esc(payment)}</div><div class="aa-detail-secondary">${esc(items)}</div></div>`,
