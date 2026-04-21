@@ -50,15 +50,15 @@ function renderCustomerActivity(customer, subs, orders) {
     }
 
     if (customer?.date_created) {
-      rows.push({
+       rows.push({
         kind: "customer",
         id: "",
         rowClass: "",
         idHtml: "—",
         date: customer.date_created,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Customer created</div><div class="aa-event-sub">Account created</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(customer?.outcome_label || "Customer created")}</div><div class="aa-event-sub">Account created</div></div>`,
         statusHtml: '<span class="aa-muted">—</span>',
-        total: "—",
+        total: customer?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Account created</div><div class="aa-detail-secondary">Customer record opened in WooCommerce</div></div>`,
         notesHtml: '<span class="aa-muted">—</span>',
         expandedNotesRow: ""
@@ -86,9 +86,9 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
   ? `<a class="aa-sub-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
   : "—",
         date: s?.start_date || s?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">Subscription started</div><div class="aa-event-sub">Recurring subscription</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(s?.outcome_label || "Subscription started")}</div><div class="aa-event-sub">Recurring subscription</div></div>`,
         statusHtml: renderStatusPill(subStatus),
-        total: "—",
+        total: s?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Next ${esc(nextPayment)}</div><div class="aa-detail-secondary">Billing ${esc(billing)}</div></div>`,
         notesHtml: renderNotesToggle("sub", id || "sub", notes),
         expandedNotesRow: isOpen
@@ -123,7 +123,7 @@ const event = subscriptions.some((s) => String(s?.parent_id ?? "").trim() === id
         ? "aa-row-problem"
         : "";
 
-      rows.push({
+       rows.push({
         kind: "order",
         id,
         rowClass,
@@ -131,9 +131,9 @@ idHtml: id
   ? `<a class="aa-order-id" href="${__aaWooAdmin()}?post=${esc(id)}&action=edit" target="_blank" rel="noopener noreferrer">#${esc(id)}</a>`
   : "—",
         date: o?.date_created || null,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(event)}</div><div class="aa-event-sub">Order activity</div></div>`,
+        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(o?.outcome_label || event)}</div><div class="aa-event-sub">Order activity</div></div>`,
         statusHtml: renderStatusPill(status || "—"),
-        total: fmtMoney(o?.total, o?.currency),
+        total: o?.impact_display || fmtMoney(o?.total, o?.currency),
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">${esc(payment)}</div><div class="aa-detail-secondary">${esc(items)}</div></div>`,
         notesHtml: renderNotesToggle("order", id || "order", notes),
         expandedNotesRow: isOpen
