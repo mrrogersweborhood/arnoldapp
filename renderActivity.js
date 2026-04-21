@@ -88,7 +88,7 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
         date: s?.start_date || s?.date_created || null,
         eventHtml: `<div class="aa-event-wrap">
   <div class="aa-event-main">
-    ${esc(s?.event_label || "—")}
+    <span class="aa-event-title">${esc(s?.event_label || "—")}</span>
     ${s?.event_priority ? `<span class="aa-priority aa-priority-${esc(String(s.event_priority))}">${esc(String(s.event_priority).toUpperCase())}</span>` : ""}
   </div>
   <div class="aa-event-sub">${esc(s?.event_subtext || "Subscription activity")}</div>
@@ -139,7 +139,7 @@ idHtml: id
         date: o?.date_created || null,
         eventHtml: `<div class="aa-event-wrap">
   <div class="aa-event-main">
-    ${esc(o?.event_label || "—")}
+    <span class="aa-event-title">${esc(o?.event_label || "—")}</span>
     ${o?.event_priority ? `<span class="aa-priority aa-priority-${esc(String(o.event_priority))}">${esc(String(o.event_priority).toUpperCase())}</span>` : ""}
   </div>
   <div class="aa-event-sub">${esc(o?.event_subtext || "Order activity")}</div>
