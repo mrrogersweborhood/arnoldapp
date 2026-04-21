@@ -56,7 +56,11 @@ function renderCustomerActivity(customer, subs, orders) {
         rowClass: "",
         idHtml: "—",
         date: customer.date_created,
-        eventHtml: `<div class="aa-event-wrap"><div class="aa-event-main">${esc(customer?.event_label || "Customer created")}</div><div class="aa-event-sub">${esc(customer?.event_subtext || "Account created")}</div></div>`,
+        eventHtml: `<div class="aa-event-wrap">
+  <div class="aa-event-main">${esc(customer?.event_label || "Customer created")}</div>
+  <div class="aa-event-sub">${esc(customer?.event_subtext || "Account created")}</div>
+  <div class="aa-event-meta">Customer record opened in WooCommerce</div>
+</div>`,
         statusHtml: '<span class="aa-muted">—</span>',
         total: customer?.impact_display || "—",
         detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Account created</div><div class="aa-detail-secondary">Customer record opened in WooCommerce</div></div>`,
