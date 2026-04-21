@@ -164,7 +164,7 @@ idHtml: id
     return `
       <section class="card aa-section">
         <div class="aa-section-head">
-          <div class="aa-section-title">Customer Activity</div>
+          <div class="aa-section-title">Activity Timeline</div>
           <div class="aa-section-subtitle">Newest first • support timeline</div>
         </div>
         <div class="aa-table-wrap aa-compact-wrap">
