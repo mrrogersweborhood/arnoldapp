@@ -1165,17 +1165,17 @@ h2{
   height:20px;
 }
 
-    /* Expanded notes row */
+     /* Expanded notes row */
 
     .aa-notes-row td{
-      background:rgba(15,23,42,.02);
-      padding:12px;
+      background:transparent;
+      padding:6px 8px;
     }
     .aa-notes-box{
-      border:1px solid var(--border);
-      border-radius:12px;
-      background:#fff;
-      padding:10px;
+      border:1px solid rgba(15,23,42,.08);
+      border-radius:10px;
+      background:#fafafa;
+      padding:8px;
     }
     .aa-note{
       border:1px solid rgba(15,23,42,.10);
@@ -1394,7 +1394,31 @@ table.aa-totals-table tr.aa-totals-total td{
   justify-content:space-between;
   gap:10px;
 }
+.aa-event-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
 
+.aa-event-title{
+  font-size:16px;
+  font-weight:950;
+  color:#0b1220;
+  line-height:1.2;
+}
+
+.aa-event-sub{
+  font-size:13px;
+  font-weight:700;
+  color:#475569;
+}
+
+.aa-event-meta{
+  font-size:12px;
+  font-weight:700;
+  color:#94a3b8;
+  margin-top:2px;
+}
 .aa-event-title{
   font-weight:700;
   color:#0b1220;
@@ -1839,10 +1863,10 @@ table.aa-totals-table tr.aa-totals-total td{
 }
 
 .aa-table tbody td{
-  font-size:15px;
+  font-size:14px;
   font-weight:500;
   color:#0b1220;
-  padding:13px 16px;
+  padding:10px 12px;
 }
 .aa-table tbody tr:hover td{
   background:rgba(168,85,247,.08);
