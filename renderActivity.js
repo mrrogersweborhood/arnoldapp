@@ -96,10 +96,11 @@ const rowClass = String(subStatus).toLowerCase() === 'failed'
     ${s?.event_priority ? `<span class="aa-priority aa-priority-${esc(String(s.event_priority))}">${esc(String(s.event_priority).toUpperCase())}</span>` : ""}
   </div>
   <div class="aa-event-sub">${esc(s?.event_subtext || "Subscription activity")}</div>
+<div class="aa-event-meta">Next ${esc(nextPayment)} • Billing ${esc(billing)}</div>
 </div>`,
         statusHtml: renderStatusPill(subStatus),
         total: s?.impact_display || "—",
-        detailsHtml: `<div class="aa-detail-wrap"><div class="aa-detail-primary">Next ${esc(nextPayment)}</div><div class="aa-detail-secondary">Billing ${esc(billing)}</div></div>`,
+        detailsHtml: `<div class="aa-detail-wrap"></div>`,
         notesHtml: renderNotesToggle("sub", id || "sub", notes),
         expandedNotesRow: isOpen
           ? `<tr class="aa-notes-row"><td colspan="7"><div class="aa-notes-box">${buildNotesHtml(notes)}</div></td></tr>`
